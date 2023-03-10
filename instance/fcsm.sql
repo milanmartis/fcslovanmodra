@@ -1,20 +1,17 @@
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS "user" (
-	"id"	SERIAL  NOT NULL,
-	"username"	VARCHAR(20) NOT NULL,
-	"email"	VARCHAR(120) NOT NULL,
-	"image_file"	VARCHAR(20) NOT NULL,
-	"password"	VARCHAR(60) NOT NULL,
-	PRIMARY KEY("id"),
-	UNIQUE("username"),
-	UNIQUE("email")
+	id SERIAL PRIMARY KEY,
+	username VARCHAR(20) UNIQUE NOT NULL,
+	email VARCHAR(120) UNIQUE NOT NULL,
+	image_file VARCHAR(20) NOT NULL,
+	password VARCHAR(60) NOT NULL
 );
 CREATE TABLE IF NOT EXISTS "post" (
-	"id"	INTEGER NOT NULL,
-	"title"	VARCHAR(100) NOT NULL,
-	"date_posted"	TIMESTAMP NOT NULL,
-	"content"	TEXT NOT NULL,
-	"user_id"	INTEGER NOT NULL,
+	id	INTEGER NOT NULL,
+	title	VARCHAR(100) NOT NULL,
+	date_posted	TIMESTAMP NOT NULL,
+	content	TEXT NOT NULL,
+	user_id	INTEGER NOT NULL,
 	FOREIGN KEY("user_id") REFERENCES "user"("id"),
 	PRIMARY KEY("id")
 );
