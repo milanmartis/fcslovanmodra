@@ -27,6 +27,7 @@ def register():
 
 @users.route("/login", methods=['GET', 'POST'])
 def login():
+    print(current_user)
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
     form = LoginForm()
