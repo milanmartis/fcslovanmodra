@@ -60,22 +60,25 @@ body {
   select:-webkit-autofill,
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus {
-  border: 1px solid #4d7cff;
+  border: 1px solid #6d9bff;
   -webkit-text-fill-color: #fff;
   -webkit-box-shadow: 0 0 0px 1000px #000 inset;
   transition: background-color 5000s ease-in-out 0s;
   }
   
   label {
-    color: #ffffff;
+    color: #e2d4d4;
   }
   
   
   
-  
+  legend{
+    color: #6d9bff;
+
+  }
   
   h1 {
-    color: #4d7cff;
+    color: #6d9bff;
     text-transform: uppercase;
     text-align: center;
     padding-top: 16px;
@@ -87,7 +90,7 @@ body {
   
   h3 {
     /* color:#ff0606; */
-    color: #4d7cff;
+    color: #6d9bff;
     text-align: center;
     font-size: 24px;
     font-weight: 800;
@@ -97,7 +100,7 @@ body {
   }
   
   h4 {
-    color: #4d7cff;
+    color: #6d9bff;
     text-transform: uppercase;
     text-align: center;
     font-size: 12px;
@@ -128,7 +131,7 @@ body {
   
   input[type="checkbox"] {
   
-    border: 2px solid #4d7cff;
+    border: 2px solid #6d9bff;
   
     color: #fff;
   
@@ -141,8 +144,8 @@ body {
   .groupz {
     border-radius: 114px !important;
     background-color: #030303;
-    border: 4px solid #4d7cff;
-    color: #4d7cff;
+    border: 4px solid #6d9bff;
+    color: #6d9bff;
     font-weight: 600;
     font-size: 120%;
     padding: 2px 18px 3px 18px;
@@ -153,8 +156,8 @@ body {
   nav {
     border-radius: 14px !important;
     background-color: #030303;
-    border: 4px solid #4d7cff;
-    color: #4d7cff;
+    border: 4px solid #6d9bff;
+    color: #6d9bff;
     font-weight: 600;
     font-size: 120%;
     padding: 2px 6px 3px 6px;
@@ -167,7 +170,7 @@ body {
   }
   
   a {
-    color: #4d7cff;
+    color: #6d9bff;
   
   }
   
@@ -177,7 +180,7 @@ body {
   }
   
   .nav-item a {
-    color: #4d7cff;
+    color: #6d9bff;
     padding-left: 4px;
     margin-left: 4px;
   }
@@ -188,9 +191,9 @@ body {
   }
   
   .navbar-dark .navbar-toggler {
-    color: #4d7cff;
+    color: #6d9bff;
     opacity: 1.0;
-    border: 0px solid #4d7cff;
+    border: 0px solid #6d9bff;
     margin-right: 22px;
     padding: 5px;
   }
@@ -233,7 +236,7 @@ body {
   
   
   .navbar-dark .navbar-nav .nav-link {
-    color: #4d7cff;
+    color: #6d9bff;
   }
   
   .navbar-dark .navbar-nav .nav-link:hover {
@@ -251,7 +254,7 @@ body {
   }
   
   .navbar-light .navbar-toggler[aria-expanded=true] .navbar-toggler-icon:before {
-    color: #4d7cff;
+    color: #6d9bff;
     content: "\f07c";
   }
   
@@ -284,7 +287,7 @@ body {
   input {
     border-radius: 14px !important;
     background-color: #030303;
-    border: 4px solid #4d7cff;
+    border: 4px solid #6d9bff;
     color: #fff;
     padding: 2px 12px 3px 12px;
   }
@@ -292,7 +295,7 @@ body {
   .form-control {
     border-radius: 14px !important;
     background-color: #030303;
-    border: 1px solid #4d7cff;
+    border: 1px solid #6d9bff;
     color: #fff;
     padding: 2px 12px 3px 12px;
   }
@@ -314,8 +317,8 @@ body {
     max-width: 99px;
     border-radius: 14px !important;
     background-color: #030303;
-    border: 0px solid #4d7cff;
-    color: #4d7cff;
+    border: 0px solid #6d9bff;
+    color: #6d9bff;
     padding: 2px 2px 3px 2px;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     text-align: center;
@@ -370,10 +373,10 @@ body {
   }
   
   input[type="text"] {
-    /* color: #4d7cff; */
+    /* color: #6d9bff; */
     border-radius: 14px !important;
     background-color: transparent;
-    border: 1px solid #4d7cff;
+    border: 1px solid #6d9bff;
     color: #fff;
     font-size: 120%;
     text-align: left;
@@ -381,10 +384,10 @@ body {
     margin: 0px;
   }
   input[type="textarea"] {
-    /* color: #4d7cff; */
+    /* color: #6d9bff; */
     border-radius: 14px !important;
     background-color: transparent;
-    border: 1px solid #4d7cff;
+    border: 1px solid #6d9bff;
     color: #fff;
     font-size: 120%;
     text-align: left;
@@ -393,10 +396,10 @@ body {
   }
   
   input[type="email"] {
-    /* color: #4d7cff; */
+    /* color: #6d9bff; */
     border-radius: 14px !important;
     background-color: transparent;
-    border: 1px solid #4d7cff;
+    border: 1px solid #6d9bff;
     color: #fff;
     font-size: 100%;
     text-align: left;
@@ -405,14 +408,14 @@ body {
   }
   
   input[type="email"]:focus {
-    /* color: #4d7cff; */
+    /* color: #6d9bff; */
     background-color: #1d1d1d;
   
   
   }
   
   input[type="email"]::before {
-    /* color: #4d7cff; */
+    /* color: #6d9bff; */
     font-size: 100%;
     text-align: left;
     padding: 4px;
@@ -420,10 +423,10 @@ body {
   }
   
   input[type="password"] {
-    /* color: #4d7cff; */
+    /* color: #6d9bff; */
     border-radius: 14px !important;
     background-color: transparent;
-    border: 1px solid #4d7cff;
+    border: 1px solid #6d9bff;
     color: #fff;
     font-size: 100%;
     text-align: left;
@@ -443,9 +446,9 @@ body {
   .btn-user.focus,
   .btn-result:focus {
     background-color: #1d1d1d;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
-    /* color: #4d7cff; */
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
+    /* color: #6d9bff; */
     outline: 0;
     box-shadow: none !important;
   }
@@ -460,9 +463,9 @@ body {
   
   
   .btn-outline-dark:disabled {
-    border: 2px solid #4d7cff;
+    border: 2px solid #6d9bff;
     background-color: transparent;
-    color: #4d7cff;
+    color: #6d9bff;
   }
   
   .article-metadata2{
@@ -475,8 +478,8 @@ body {
     max-width: 260px;
     border-radius: 14px !important;
     background-color: #030303;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
     font-weight: 600;
     font-size: 100%;
     padding: 2px 12px 4px 12px;
@@ -486,8 +489,8 @@ body {
   }
   
   .btn:hover, .btn:active{
-    background-color: #4d7cff;
-    border: 2px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
     color: #030303;
   
   }
@@ -495,8 +498,8 @@ body {
   .btn:click,
   .btn:active {
   
-    background-color: #4d7cff;
-    border: 4px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 4px solid #6d9bff;
     color: #bfb5ac;
   }
   
@@ -505,8 +508,8 @@ body {
   .btn-demo {
     max-width: 260px;
     border-radius: 14px !important;
-    background-color: #4d7cff;
-    border: 2px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
     color: #030303;
     font-weight: 600;
     font-size: 100%;
@@ -518,8 +521,8 @@ body {
   
   .btn-demo:hover {
     background-color: #030303;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
   
   }
   
@@ -528,8 +531,8 @@ body {
     max-width: 260px;
     border-radius: 14px !important;
     background-color: #030303;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
     font-weight: 600;
     font-size: 100%;
     padding: 20px 20px 20px 20px;
@@ -539,8 +542,8 @@ body {
   }
   
   .btn-main:hover {
-    background-color: #4d7cff;
-    border: 2px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
     color: #030303;
   
   }
@@ -548,8 +551,8 @@ body {
   .btn-main:click,
   .btn-main:active {
   
-    background-color: #4d7cff;
-    border: 4px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 4px solid #6d9bff;
     color: #bfb5ac;
   }
   
@@ -559,8 +562,8 @@ body {
     box-shadow: none !important;
     outline: none !important;
     background-color: red;
-    border: 0px solid #4d7cff;
-    color: #4d7cff;
+    border: 0px solid #6d9bff;
+    color: #6d9bff;
   }
   
   
@@ -568,8 +571,8 @@ body {
   .btn2 {
     border-radius: 14px !important;
     background-color: #420909;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
     font-weight: 600;
     font-size: 100%;
     padding: 2px 2px 2px 2px;
@@ -586,8 +589,8 @@ body {
   
   .btn3 {
     border-radius: 114px !important;
-    background-color: #4d7cff;
-    border: 2px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
     color: #030303;
     width: 50px;
     font-weight: 600;
@@ -600,14 +603,14 @@ body {
   
   .btn3:hover {
     background-color: #030303;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
   }
   .btn32 {
     border-radius: 114px !important;
     background-color: #030303;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
     width: 50px;
     font-weight: 600;
     font-size: 100%;
@@ -618,8 +621,8 @@ body {
   }
   
   .btn32:hover {
-    background-color: #4d7cff;
-    border: 2px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
     color: #030303;
   }
   
@@ -630,8 +633,8 @@ body {
   .btn-user {
     border-radius: 0px !important;
     background-color: transparent;
-    border: 0px solid #4d7cff;
-    color: #4d7cff;
+    border: 0px solid #6d9bff;
+    color: #6d9bff;
   
     font-weight: 800;
     font-size: 60%;
@@ -649,7 +652,7 @@ body {
   
   
   .navbar-dark .navbar-nav .nav-link {
-    color: #4d7cff;
+    color: #6d9bff;
     background: transparent;
     text-align: center;
     padding: 4px;
@@ -662,7 +665,7 @@ body {
   
   
   .navbar-nav {
-    color: #4d7cff;
+    color: #6d9bff;
     background: transparent;
     text-align: center;
   
@@ -680,8 +683,8 @@ body {
   .btn-result {
     width: 140px;
     border-radius: 14px;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
     font-weight: 600;
     font-size: 100%;
     padding: 2px 2px 2px 2px;
@@ -711,8 +714,8 @@ body {
   
   .btn-result:hover {
     text-transform: uppercase;
-    background-color: #4d7cff;
-    border: 2px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
     color: #030303;
   }
   
@@ -721,8 +724,8 @@ body {
   
   .btn4 {
     border-radius: 114px !important;
-    background-color: #4d7cff;
-    border: 2px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
     color: #030303;
     width: 90px;
     font-weight: 600;
@@ -735,8 +738,8 @@ body {
   
   .btn4:hover {
     background-color: #030303;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
   
   }
   
@@ -749,14 +752,14 @@ body {
   .form-control:focus {
   
     background-color: transparent;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
   }
   
   
   .btn2:hover {
-    background-color: #4d7cff;
-    border: 2px solid #4d7cff;
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
     color: #030303;
   
   }
@@ -765,9 +768,9 @@ body {
   .btn-primary:disabled {
   
     background-color: transparent;
-    border: 2px solid #4d7cff;
+    border: 2px solid #6d9bff;
   
-    color: #4d7cff;
+    color: #6d9bff;
   }
   
   .btn2 [disabled] {
@@ -775,13 +778,13 @@ body {
     box-shadow: none !important;
     outline: none !important;
     background-color: transparent;
-    border: 0px solid #4d7cff;
-    color: #4d7cff;
+    border: 0px solid #6d9bff;
+    color: #6d9bff;
   }
   
   .btn2:disabled:hover {
     background-color: transparent;
-    color: #4d7cff;
+    color: #6d9bff;
   }
   
   
@@ -792,8 +795,8 @@ body {
     box-shadow: none !important;
     outline: none !important;
     background-color: transparent;
-    border: 0px solid #4d7cff;
-    color: #4d7cff;
+    border: 0px solid #6d9bff;
+    color: #6d9bff;
   }
   
   .btn3 .btn-outline-dark[disabled] {
@@ -801,8 +804,8 @@ body {
     box-shadow: none !important;
     outline: none !important;
     background-color: transparent;
-    border: 0px solid #4d7cff;
-    color: #4d7cff;
+    border: 0px solid #6d9bff;
+    color: #6d9bff;
   }
   
   .btn-result .btn-outline-dark[disabled] {
@@ -810,8 +813,8 @@ body {
     box-shadow: none !important;
     outline: none !important;
     background-color: transparent;
-    border: 0px solid #4d7cff;
-    color: #4d7cff;
+    border: 0px solid #6d9bff;
+    color: #6d9bff;
   }
   
   .btn-user .btn-outline-dark[disabled] {
@@ -819,15 +822,15 @@ body {
     box-shadow: none !important;
     outline: none !important;
     background-color: transparent;
-    border: 0px solid #4d7cff;
-    color: #4d7cff;
+    border: 0px solid #6d9bff;
+    color: #6d9bff;
   }
   
   .modal-content {
     border-radius: 14px !important;
     background-color: #030303;
-    border: 4px solid #4d7cff;
-    color: #4d7cff;
+    border: 4px solid #6d9bff;
+    color: #6d9bff;
     font-weight: 600;
     font-size: 120%;
     padding: 2px 6px 3px 6px;
@@ -841,8 +844,8 @@ body {
   .content-section-sidebar{
     border-radius: 14px !important;
     background-color: #030303;
-    border: 2px solid #4d7cff;
-    color: #4d7cff;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
     font-weight: 600;
     font-size: 120%;
     padding: 2px 6px 3px 6px;
@@ -856,7 +859,7 @@ body {
 
 
   .list-group-item-light {
-    color: #4d7cff;
+    color: #6d9bff;
     background-color: transparent;
     padding: 4px;
   }
@@ -933,7 +936,7 @@ body {
     text-align: center;
     font-weight: 700;
     margin-top: -6px;
-    color: #4d7cff;
+    color: #6d9bff;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   
   }
@@ -946,7 +949,7 @@ body {
     text-align: center;
     font-weight: 700;
     margin-top: -6px;
-    color: #4d7cff;
+    color: #6d9bff;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   
   
@@ -959,7 +962,7 @@ body {
     text-align: center;
     font-weight: 700;
     margin-top: -6px;
-    color: #4d7cff;
+    color: #6d9bff;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   
   
@@ -973,7 +976,7 @@ body {
     text-align: center;
     font-weight: 700;
     margin-top: -6px;
-    color: #4d7cff;
+    color: #6d9bff;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   
   }
@@ -1029,7 +1032,7 @@ body {
     color: #030303;
   }
   .table tr:hover {
-    background-color: #4d7cff;
+    background-color: #6d9bff;
     
     color: #030303;
   } */
@@ -1076,7 +1079,7 @@ body {
   }
   
   .table thead th {
-    border-bottom: 0.12pt solid #4d7cff;
+    border-bottom: 0.12pt solid #6d9bff;
     padding: 2px 2px 10px 2px;
     margin-bottom: 4px;
   }
@@ -1100,7 +1103,7 @@ body {
   
   table {
     overflow: hidden;
-    border: 0px solid #4d7cff;
+    border: 0px solid #6d9bff;
   
     padding: 2px 1px 1px 2px;
     background-color: transparent;
@@ -1110,7 +1113,7 @@ body {
   }
   
   td.tab-points {
-    color: #4d7cff;
+    color: #6d9bff;
     font-size: 85%;
     padding: 8px;
     margin: 4px;
@@ -1132,7 +1135,7 @@ body {
   
   td.tab-name {
     min-width:80px;
-    color: #4d7cff;
+    color: #6d9bff;
     font-size: 80%;
     text-align: left;
     padding: 8px;
@@ -1145,7 +1148,7 @@ body {
     margin-bottom: 10px;
     padding: 2px;
     border: 0px;
-    color: #4d7cff;
+    color: #6d9bff;
     font-weight: 800;
     font-size: 110%;
     background-color: transparent;
@@ -1154,7 +1157,7 @@ body {
   td {
     padding: 2px;
     border: 0px;
-    color: #4d7cff;
+    color: #6d9bff;
     font-weight: 600;
     font-size: 80%;
     background-color: transparent;
@@ -1180,7 +1183,7 @@ body {
   .nav {
     border-radius: 20px;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    color: #4d7cff;
+    color: #6d9bff;
     font-size: 23px;
   
   }
@@ -1209,7 +1212,7 @@ body {
     background-color: transparent;
     content: '}';
     font-size: 45px;
-    color: #4d7cff;
+    color: #6d9bff;
     opacity: 0.4;
   }
   
@@ -1217,7 +1220,7 @@ body {
     background-color: transparent;
     content: '{';
     font-size: 45px;
-    color: #4d7cff;
+    color: #6d9bff;
     opacity: 0.4;
   }
   
@@ -1252,10 +1255,10 @@ body {
     margin-top: 2px;
     border-radius: 10px;
     border: 0;
-    background: #4d7cff;
+    background: #6d9bff;
   
   }
   
   ol.carousel-indicators li.active {
-    background: #4d7cff;
+    background: #6d9bff;
   }
