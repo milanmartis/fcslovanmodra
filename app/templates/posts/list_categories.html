@@ -2,19 +2,21 @@
 {% block content %}
 <br><br>
 
+<div class="article-metadata">
+
+
+    <div class="article-metadata2">
+      <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{{ url_for('posts.new_category') }}">New Category</a>
+    </div>
+
+</div>
+
     {% for category in categories.items %}
 
         <article class="media content-section">
           <div class="media-body">
 
-            <div class="article-metadata">
 
-
-                <div class="article-metadata2">
-                  <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{{ url_for('posts.new_category', category_id=category.id) }}">New Category</a>
-                </div>
-      
-            </div>
 
             <h3><a class="article-title" href="{{ url_for('posts.update_category', category_id=category.id) }}">{{ category.name }}</a></h3>
           </div>

@@ -1,7 +1,8 @@
 
 from flask import render_template, request, Blueprint
-from app.models import Post
+from app.models import Post, PostGallery, Category
 from flask import Blueprint
+from app import db
 
 main = Blueprint('main', __name__)
 
@@ -11,8 +12,13 @@ main = Blueprint('main', __name__)
 @main.route("/home")
 def home():
     page = request.args.get('page', 1, type=int)
-    posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
-    return render_template('home.html', posts=posts)
+    # posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
+    posts = Post.query.join(PostGallery, Category).filter(
+        Post.id == PostGallery.post_id).filter(Category.id == Post.category_id).filter(PostGallery.orderz<1).order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
+    
+    category = Category.query.all()
+    
+    return render_template('home.html', posts=posts, category=category)
 
 
 @main.route("/about")

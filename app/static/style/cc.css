@@ -26,7 +26,8 @@ body {
   .article-metadata {
     padding-bottom: 1px;
     margin-bottom: 4px;
-    border-bottom: 1px solid #e3e3e3
+    border-bottom: 0px solid #e3e3e3;
+    margin-top:5px;
   }
   
   .article-metadata a:hover {
@@ -70,7 +71,16 @@ body {
     color: #e2d4d4;
   }
   
+  img{
+    border-radius: 14px !important;
+    background-color: #030303;
+    border: 0px solid #6d9bff;
+    color: #6d9bff;
+    font-weight: 600;
+    font-size: 100%;
+    margin-bottom: 8px;
   
+  }
   
   legend{
     color: #6d9bff;

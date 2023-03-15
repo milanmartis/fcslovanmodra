@@ -1,10 +1,16 @@
 from flask import (render_template, url_for, flash,
-                   redirect, request, abort, Blueprint)
+                   redirect, request, abort, Blueprint, current_app)
 from flask_login import current_user, login_required
 from app import db
-from app.models import Post, Category
+from app.models import Post, Category, PostGallery
 from app.posts.forms import PostForm, CategoryForm
 from flask import Blueprint
+from werkzeug.utils import secure_filename
+import secrets
+from PIL import Image
+# from app.posts.utils import save_picture
+
+import os
 
 posts = Blueprint('posts', __name__)
 
@@ -15,10 +21,37 @@ posts = Blueprint('posts', __name__)
 @login_required
 def new_post():
     form = PostForm()
+
     form.category.choices = [(category.id, category.name) for category in Category.query.all()]
     if form.validate_on_submit():
         post = Post(title=form.title.data, content=form.content.data, author=current_user, category_id=form.category.data)
         db.session.add(post)
+        db.session.commit()
+        path_image = os.path.join(str(current_app.root_path)+'/static/posts/'+str(post.id)+'/gallery/')
+        try:
+            os.makedirs(path_image)
+        except OSError as error:
+            print(error) 
+
+        # for file in form.pictures.data:
+        file = form.picture.data
+        file_filename = secure_filename(file.filename)
+        form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
+        pictures = []
+        filez = 0
+
+        for file in form.pictures.data:
+            print(file.filename)
+            with open(os.path.realpath(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery/'+str(file.filename)), 'wb') as f:
+                    f.write(file.read())
+
+            # file_filename = secure_filename(file.filename)
+            # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
+            pictures = PostGallery(title=form.title.data, image_file2=file.filename, orderz=1, post_id=post.id)
+            db.session.add(pictures)
+
+        picture = PostGallery(title=form.title.data, image_file2=file_filename, orderz=0, post_id=post.id)
+        db.session.add(picture)
         db.session.commit()
         flash('Your post has been created!', 'success')
         return redirect(url_for('main.home'))
@@ -28,8 +61,26 @@ def new_post():
 
 @posts.route("/post/<int:post_id>")
 def post(post_id):
-    post = Post.query.get_or_404(post_id)
-    return render_template('posts/post.html', title=post.title, post=post)
+    # post = Post.query.get_or_404(post_id)
+    post = Post.query.join(PostGallery).filter(
+        Post.id == PostGallery.post_id).filter(PostGallery.orderz<1).filter(Post.id==post_id).first()
+    galleries = PostGallery.query.filter(PostGallery.post_id==post_id).all()
+    category = Category.query.all()
+    return render_template('posts/post.html', title=post.title, post=post, galleries=galleries, category=category)
+
+
+@posts.route("/posts/category/<int:category>")
+def category_posts(category):
+    print(category)
+    page = request.args.get('page', 1, type=int)
+    category = Category.query.filter_by(id=category).first_or_404()
+    posts = Post.query\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page=page, per_page=5)
+    return render_template('posts/category_posts.html', posts=posts, category=category)
+
+
+
 
 
 @posts.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
@@ -39,10 +90,21 @@ def update_post(post_id):
     if post.author != current_user:
         abort(403)
     form = PostForm()
+    form.category.choices = [(category.id, category.name) for category in Category.query.all()]
     if form.validate_on_submit():
         post.title = form.title.data
         post.content = form.content.data
         post.category_id = form.category.data
+
+        # if form.pictures.data:
+        file = form.pictures.data
+        file_filename = secure_filename(file.filename)
+        form.pictures.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post_id), file_filename))
+
+        postgall = PostGallery.query.filter_by(post_id=post_id).first()
+        postgall.title = form.title.data
+        postgall.image_file2 = file_filename
+
         db.session.commit()
         flash('Your post has been updated!', 'success')
         return redirect(url_for('posts.post', post_id=post.id))

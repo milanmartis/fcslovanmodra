@@ -1,19 +1,17 @@
 {% extends "layout.html" %}
 {% block content %}
-    {% for post in posts %}
+    <h1 class="mb-3">{{ category.name }} 
+        <!-- ({{ posts.total }}) -->
+    </h1>
+    {% for post in posts.items %}
         <article class="media content-section">
           <div class="media-body">
             <div class="article-metadata">
-            {% for cat in category %}
-            {% if cat.id == post.category_id %}
-            <a class="mr-2" href="{{ url_for('posts.category_posts', category=cat.id) }}">{{ cat.name }}</a>
-            {% endif %}
-            {% endfor %}
-
+              <a class="mr-2" href="{{ url_for('posts.category_posts', category=category.id) }}">{{ category.name }}</a>
               <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
             </div>
-            
-            
+
+
             {% for gall in post.gallery %}
             {% if gall.orderz == 0 %}
             <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
@@ -21,18 +19,22 @@
             </a>
             {% endif %}
             {% endfor %}
-            
+
+
+
+
+
             <h2><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
-            <p class="article-content">{{ post.content[:250] }}</p>
+            <p class="article-content">{{ post.content }}</p>
           </div>
         </article>
     {% endfor %}
     {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
       {% if page_num %}
         {% if posts.page == page_num %}
-          <a class="btn btn-info mb-4" href="{{ url_for('main.home', page=page_num) }}">{{ page_num }}</a>
+          <a class="btn btn-info mb-4" href="{{ url_for('posts.category_posts', category=category.id, page=page_num) }}">{{ page_num }}</a>
         {% else %}
-          <a class="btn btn-outline-info mb-4" href="{{ url_for('main.home', page=page_num) }}">{{ page_num }}</a>
+          <a class="btn btn-outline-info mb-4" href="{{ url_for('posts.category_posts', category=category.id, page=page_num) }}">{{ page_num }}</a>
         {% endif %}
       {% else %}
         ...
