@@ -1068,11 +1068,12 @@ li {
 .modal {
 }
   .modal-content {
-
+position: relative;
+top:66px;
   width: 100%;
   border-radius: 10px !important;
-  background-color: transparent;
-  border: 0px solid #6d9bff;
+  background-color: #000;
+  border: 2px solid #6d9bff;
   color: #6d9bff;
   font-weight: 600;
   font-size: 120%;

@@ -18,7 +18,7 @@ def home():
     
     category = Category.query.all()
     
-    return render_template('home.html', posts=posts, category=category)
+    return render_template('home.html', posts=posts, category=category, teamz=main_menu())
 
 
 @main.route("/about")
