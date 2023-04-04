@@ -6,8 +6,6 @@ from flask_security import RoleMixin
 from flask_login import UserMixin
 
 from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import UUID
-import uuid
 from datetime import datetime
 
 
@@ -34,7 +32,6 @@ def load_user(user_id):
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    uuid = db.Column(db.Text(length=36), default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     image_file = db.Column(db.String(20), nullable=False,

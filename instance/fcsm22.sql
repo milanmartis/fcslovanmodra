@@ -1,7 +1,6 @@
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS "user" (
 	"id"	SERIAL NOT NULL,
-	"uuid"	TEXT,
 	"username"	VARCHAR(20) NOT NULL,
 	"email"	VARCHAR(120) NOT NULL,
 	"image_file"	VARCHAR(20) NOT NULL,
@@ -123,7 +122,7 @@ CREATE TABLE IF NOT EXISTS "product_gallery" (
 	FOREIGN KEY("product_id") REFERENCES "product"("id"),
 	PRIMARY KEY("id")
 );
-INSERT INTO "user" VALUES (1,'1a3e4be1-fd21-41f7-833e-6cca7e666fd8','milanmartis','milanmartis@gmail.com','55ceab7e6619e11e.jpg','$2b$12$V7MBiE4MQZMhFUCF8RE4tuj/f0p22ZOBnMox2sg0r7nw4A/DbM0/e');
+INSERT INTO "user" VALUES (1,'milanmartis','milanmartis@gmail.com','55ceab7e6619e11e.jpg','$2b$12$V7MBiE4MQZMhFUCF8RE4tuj/f0p22ZOBnMox2sg0r7nw4A/DbM0/e');
 -- INSERT INTO "user" VALUES (5,'e2ac49a3-a17b-4812-859d-b9ef4979dbe5','Ronaldo','info@appdesign.sk','default.jpg','$2b$12$wiHkosu3JZW4/B3mPw/SEuOmG6sKM4R9B091zz88SLNJpkZUDll16');
 -- INSERT INTO "user" VALUES (6,'7deab31c-c941-4fd8-be35-61460aa0b6a6','Messi','martis@gasparikmasovyroba.sk','7a89e109d637ec33.jpg','$2b$12$Ly2mIHM67PEfo9M4t8LVeu6DHjzq/tgs9d0VtXo9NK7.tnkXzx/Iu');
 -- INSERT INTO "user" VALUES (7,'e0619cbc-2c44-4b20-87be-ed9bebaec9c8','lklk','milanmuhuhartis@gmail.com','default.jpg','$2b$12$DDNkPIbN.YFxW66t4G0J6OJMfClm53T8tq0U9PNnF3k/nM7IQLpFe');
@@ -179,7 +178,7 @@ INSERT INTO "role" VALUES (7,'Rodič');
 -- Wissa, who plays for DR Congo and has been a vital part of Brentford’s impressive season, says his club teammates have tried to support Toney as much as possible as the 27-year-old continues to be targeted with racist abuse online.',1,4);
 -- INSERT INTO "post" VALUES (6,'Tričko','2023-03-31 19:48:45','XXL',1,5);
 -- INSERT INTO "post" VALUES (7,'Tričko','2023-03-31 19:50:20','XXL',1,5);
-INSERT INTO "member" VALUES (2,'Christiano Ronaldo','+421917360277','Sládkovičova 22','90001','Modra',5,'288149ebe5b09638.jpg',NULL,NULL);
+INSERT INTO "member" VALUES (1,'Milan Martis','+421917360277','Sládkovičova 22','90001','Modra',1,'288149ebe5b09638.jpg',NULL,NULL);
 -- INSERT INTO "member" VALUES (3,'Milan Martiš','+421917360277','Sládkovičova 22','90001','Modra',6,'0751291063f521be.jpg',NULL,NULL);
 -- INSERT INTO "member" VALUES (4,'Milan Martiš','+421917360277','Sládkovičova 22','90001','Modra',8,'default.png',NULL,NULL);
 -- INSERT INTO "member" VALUES (5,'Janko Hraško','+421917360277','Sládkovičova 22','90001','Modra',9,'default.png',NULL,NULL);
@@ -208,7 +207,7 @@ INSERT INTO "member" VALUES (2,'Christiano Ronaldo','+421917360277','Sládkovič
 -- INSERT INTO "post_gallery" VALUES (14,'Social media can be ‘dangerous’ for soccer players','230317140215-01-wissa-premier-league-abuse.webp',1,5);
 -- INSERT INTO "post_gallery" VALUES (15,'Social media can be ‘dangerous’ for soccer players','230317140320-02-wissa-premier-league-abuse.webp',1,5);
 -- INSERT INTO "post_gallery" VALUES (16,'Social media can be ‘dangerous’ for soccer players','230317140320-02-wissa-premier-league-abuse.webp',0,5);
--- INSERT INTO "roles_members" VALUES (3,2);
+INSERT INTO "roles_members" VALUES (1,1);
 -- INSERT INTO "roles_members" VALUES (3,3);
 -- INSERT INTO "roles_members" VALUES (3,4);
 -- INSERT INTO "roles_members" VALUES (3,5);
