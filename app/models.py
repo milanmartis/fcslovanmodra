@@ -2,7 +2,7 @@ from datetime import datetime
 from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 from flask import current_app
 from app import db, login_manager
-from flask_security import RoleMixin
+# from flask_security import RoleMixin
 from flask_login import UserMixin
 
 from sqlalchemy.sql import func
@@ -129,7 +129,7 @@ class Events(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
-class Role(db.Model, RoleMixin):
+class Role(db.Model):
     __tablename__ = 'role'
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(180), unique=True)
