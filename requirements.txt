@@ -146,7 +146,6 @@ python-slugify==7.0.0
 python-stripe==0.0.6
 pytrends==4.8.0
 pytz==2022.2.1
-pywin32==305
 pywin32-ctypes==0.2.0
 PyYAML==6.0
 qiniu==7.10.0
