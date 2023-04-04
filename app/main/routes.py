@@ -29,7 +29,10 @@ def about():
 # @main.route("/menu")
 def main_menu():
     menuteam = Team.query.all()
-    return menuteam
+    if menuteam:
+        return menuteam
+    else:
+        return ''
 
 
 
