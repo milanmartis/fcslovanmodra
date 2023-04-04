@@ -18,7 +18,7 @@ def home():
     
     category = Category.query.all()
     
-    return render_template('home.html', posts=posts, category=category, teamz=main_menu())
+    return render_template('home.html', posts=posts, category=category)
 
 
 @main.route("/about")
@@ -28,11 +28,11 @@ def about():
 
 # @main.route("/menu")
 def main_menu():
-    menuteam = 'menu'
-    # menuteam = Team.query.all()
-    # if menuteam:
-    return menuteam
-
+    menuteam = Team.query.all()
+    if menuteam:
+        return menuteam
+    else:
+        return ''
 
 
 
