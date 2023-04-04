@@ -12,7 +12,7 @@ class ProductForm(FlaskForm):
     is_visible = BooleanField('Visible')
     price = DecimalField(places=2, validators=[DataRequired()])
     old_price = DecimalField(places=2, validators=[DataRequired()])
-    picture = FileField('Tile Image upload')
+    picture = FileField('Title Image upload')
     pictures = MultipleFileField('Gallery Image(s) upload', render_kw={'multiple': True})
     submit = SubmitField('Post')
 

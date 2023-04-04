@@ -1,6 +1,6 @@
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS "user" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"uuid"	TEXT,
 	"username"	VARCHAR(30) NOT NULL,
 	"email"	VARCHAR(120) NOT NULL,
@@ -11,23 +11,23 @@ CREATE TABLE IF NOT EXISTS "user" (
 	UNIQUE("username")
 );
 CREATE TABLE IF NOT EXISTS "product_category" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"name"	VARCHAR(200) NOT NULL,
 	PRIMARY KEY("id")
 );
 CREATE TABLE IF NOT EXISTS "category" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"name"	VARCHAR(200) NOT NULL,
 	PRIMARY KEY("id")
 );
 CREATE TABLE IF NOT EXISTS "role" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"name"	VARCHAR(80),
 	UNIQUE("name"),
 	PRIMARY KEY("id")
 );
 CREATE TABLE IF NOT EXISTS "post" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"title"	VARCHAR(100) NOT NULL,
 	"date_posted"	timestamp NOT NULL,
 	"content"	TEXT NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS "post" (
 	PRIMARY KEY("id")
 );
 CREATE TABLE IF NOT EXISTS "events" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"title"	VARCHAR(250) NOT NULL,
 	"start_event"	timestamp,
 	"end_event"	timestamp,
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS "events" (
 	PRIMARY KEY("id")
 );
 CREATE TABLE IF NOT EXISTS "post_gallery" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"title"	VARCHAR(100) NOT NULL,
 	"image_file2"	VARCHAR(100) NOT NULL,
 	"orderz"	INTEGER,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS "post_gallery" (
 	PRIMARY KEY("id")
 );
 CREATE TABLE IF NOT EXISTS "product" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"title"	VARCHAR(100) NOT NULL,
 	"date_posted"	timestamp NOT NULL,
 	"content"	TEXT NOT NULL,
@@ -70,20 +70,20 @@ CREATE TABLE IF NOT EXISTS "product" (
 	PRIMARY KEY("id")
 );
 CREATE TABLE IF NOT EXISTS "team" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"name"	VARCHAR(250) NOT NULL,
 	"score_scrap"	VARCHAR(250),
 	"player_list_scrap"	VARCHAR(250),
 	PRIMARY KEY("id")
 );
 CREATE TABLE IF NOT EXISTS "position" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"name"	VARCHAR(180),
 	UNIQUE("name"),
 	PRIMARY KEY("id")
 );
 CREATE TABLE IF NOT EXISTS "member" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"name"	VARCHAR(250) NOT NULL,
 	"phone"	VARCHAR(250) NOT NULL,
 	"address"	VARCHAR(250) NOT NULL,
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS "roles_members" (
 	FOREIGN KEY("member_id") REFERENCES "member"("id")
 );
 CREATE TABLE IF NOT EXISTS "product_gallery" (
-	"id"	INTEGER NOT NULL,
+	"id"	SERIAL NOT NULL,
 	"title"	VARCHAR(100) NOT NULL,
 	"image_file2"	VARCHAR(30) NOT NULL,
 	"orderz"	INTEGER,
@@ -179,7 +179,7 @@ INSERT INTO "role" VALUES (7,'Rodič');
 -- Wissa, who plays for DR Congo and has been a vital part of Brentford’s impressive season, says his club teammates have tried to support Toney as much as possible as the 27-year-old continues to be targeted with racist abuse online.',1,4);
 -- INSERT INTO "post" VALUES (6,'Tričko','2023-03-31 19:48:45','XXL',1,5);
 -- INSERT INTO "post" VALUES (7,'Tričko','2023-03-31 19:50:20','XXL',1,5);
--- INSERT INTO "member" VALUES (1,'Milan Martis','+421917360277','Sládkovičova 22','90001','Modra',1,'288149ebe5b09638.jpg',NULL,NULL);
+INSERT INTO "member" VALUES (1,'Milan Martis','+421917360277','Sládkovičova 22','90001','Modra',1,'288149ebe5b09638.jpg',NULL,NULL);
 -- INSERT INTO "member" VALUES (3,'Milan Martiš','+421917360277','Sládkovičova 22','90001','Modra',6,'0751291063f521be.jpg',NULL,NULL);
 -- INSERT INTO "member" VALUES (4,'Milan Martiš','+421917360277','Sládkovičova 22','90001','Modra',8,'default.png',NULL,NULL);
 -- INSERT INTO "member" VALUES (5,'Janko Hraško','+421917360277','Sládkovičova 22','90001','Modra',9,'default.png',NULL,NULL);
@@ -208,7 +208,7 @@ INSERT INTO "role" VALUES (7,'Rodič');
 -- INSERT INTO "post_gallery" VALUES (14,'Social media can be ‘dangerous’ for soccer players','230317140215-01-wissa-premier-league-abuse.webp',1,5);
 -- INSERT INTO "post_gallery" VALUES (15,'Social media can be ‘dangerous’ for soccer players','230317140320-02-wissa-premier-league-abuse.webp',1,5);
 -- INSERT INTO "post_gallery" VALUES (16,'Social media can be ‘dangerous’ for soccer players','230317140320-02-wissa-premier-league-abuse.webp',0,5);
--- INSERT INTO "roles_members" VALUES (1,1);
+INSERT INTO "roles_members" VALUES (1,1);
 -- INSERT INTO "roles_members" VALUES (3,3);
 -- INSERT INTO "roles_members" VALUES (3,4);
 -- INSERT INTO "roles_members" VALUES (3,5);
@@ -234,10 +234,10 @@ INSERT INTO "role" VALUES (7,'Rodič');
 -- INSERT INTO "teams_members" VALUES (5,4);
 -- INSERT INTO "teams_members" VALUES (5,5);
 -- INSERT INTO "teams_members" VALUES (2,4);
-INSERT INTO "position" VALUES (1,'Brankár');
-INSERT INTO "position" VALUES (2,'Obranca');
-INSERT INTO "position" VALUES (3,'Záložník');
-INSERT INTO "position" VALUES (4,'Útočník');
+-- INSERT INTO "position" VALUES (1,'Brankár');
+-- INSERT INTO "position" VALUES (2,'Obranca');
+-- INSERT INTO "position" VALUES (3,'Záložník');
+-- INSERT INTO "position" VALUES (4,'Útočník');
 -- INSERT INTO "positions_members" VALUES (2,1);
 -- INSERT INTO "product_category" VALUES (1,'Merch');
 -- INSERT INTO "product_category" VALUES (2,'Live Stream');

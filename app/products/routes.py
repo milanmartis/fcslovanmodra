@@ -119,9 +119,13 @@ def update_product(product_id):
             file_filename = secure_filename(file.filename)
             form.picture.data.save(os.path.join(current_app.root_path+'/static/products/'+str(product_id), file_filename))
 
-            productgall = ProductGallery.query.filter_by(product_id=product_id and ProductGallery.orderz==0).first()
-            productgall.title = form.title.data
-            productgall.image_file2 = file_filename
+       
+            productgall = ProductGallery.query.filter(ProductGallery.orderz==0).filter(ProductGallery.product_id==product_id).first()
+            productgall.title=form.title.data
+            productgall.image_file2=file_filename
+
+
+
 
         db.session.commit()
         flash('Your Product has been updated!', 'success')

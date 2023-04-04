@@ -4,9 +4,9 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
 from app.config import Config
-from flask_bootstrap import Bootstrap
+# from flask_bootstrap import Bootstrap
 
-bootstrap = Bootstrap()
+# bootstrap = Bootstrap()
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -19,12 +19,11 @@ mail = Mail()
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(Config)
-
     db.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
-    bootstrap.init_app(app)
+    # bootstrap.init_app(app)
 
     from app.users.routes import users
     from app.posts.routes import posts

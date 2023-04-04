@@ -119,17 +119,35 @@ def update_post(post_id):
         post.category_id = form.category.data
 
         if form.picture.data:
+            # for file in form.pictures.data:
             file = form.picture.data
             file_filename = secure_filename(file.filename)
-            form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post_id), file_filename))
+            form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
+            
+            picture = PostGallery.query.filter(PostGallery.orderz==0).filter(PostGallery.post_id==post_id).first()
+            picture.title=form.title.data
+            picture.image_file2=file_filename
+        
+        if form.pictures.data:
+            pictures = []
+            filez = 0
 
-            postgall = PostGallery.query.filter_by(post_id=post_id and PostGallery.orderz==0).first()
-            postgall.title = form.title.data
-            postgall.image_file2 = file_filename
+            for file in form.pictures.data:
+                print(file.filename)
+                with open(os.path.realpath(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery/'+str(file.filename)), 'wb') as f:
+                        f.write(file.read())
+
+                # file_filename = secure_filename(file.filename)
+                # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
+                pictures = PostGallery(title=form.title.data, image_file2=file.filename, orderz=1, post_id=post.id)
+                db.session.add(pictures)
+
 
         db.session.commit()
+        
         flash('Your post has been updated!', 'success')
         return redirect(url_for('posts.post', post_id=post.id))
+    
     elif request.method == 'GET':
         form.title.data = post.title
         form.content.data = post.content
