@@ -28,7 +28,7 @@ def register():
 
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user = User(username=form.username.data, email=form.email.data, password=hashed_password)
+        user = User(username=form.username.data, email=form.email.data, password=hashed_password, uuid=str(uuid.uuid4()))
         db.session.add(user)
         db.session.commit()
         role = Role.query.filter(Role.id.in_(form.role.data)).all()
@@ -61,7 +61,7 @@ def login():
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('main.home'))
         else:
-            flash('Login Unsuccessful. Please check e-mail or password', 'danger')
+            flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('users/login.html', title='Login', form=form, teamz=main_menu())
 
 

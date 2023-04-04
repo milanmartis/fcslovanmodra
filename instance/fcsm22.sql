@@ -1,9 +1,10 @@
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS "user" (
 	"id"	SERIAL NOT NULL,
-	"username"	VARCHAR(20) NOT NULL,
+	"uuid"	TEXT,
+	"username"	VARCHAR(30) NOT NULL,
 	"email"	VARCHAR(120) NOT NULL,
-	"image_file"	VARCHAR(20) NOT NULL,
+	"image_file"	VARCHAR(50) NOT NULL,
 	"password"	VARCHAR(60) NOT NULL,
 	PRIMARY KEY("id"),
 	UNIQUE("email"),
@@ -122,7 +123,7 @@ CREATE TABLE IF NOT EXISTS "product_gallery" (
 	FOREIGN KEY("product_id") REFERENCES "product"("id"),
 	PRIMARY KEY("id")
 );
-INSERT INTO "user" VALUES (1,'milanmartis','milanmartis@gmail.com','55ceab7e6619e11e.jpg','$2b$12$V7MBiE4MQZMhFUCF8RE4tuj/f0p22ZOBnMox2sg0r7nw4A/DbM0/e');
+INSERT INTO "user" VALUES (1,'1a3e4be1-fd21-41f7-833e-6cca7e666fd8','milanmartis','milanmartis@gmail.com','55ceab7e6619e11e.jpg','$2b$12$V7MBiE4MQZMhFUCF8RE4tuj/f0p22ZOBnMox2sg0r7nw4A/DbM0/e');
 -- INSERT INTO "user" VALUES (5,'e2ac49a3-a17b-4812-859d-b9ef4979dbe5','Ronaldo','info@appdesign.sk','default.jpg','$2b$12$wiHkosu3JZW4/B3mPw/SEuOmG6sKM4R9B091zz88SLNJpkZUDll16');
 -- INSERT INTO "user" VALUES (6,'7deab31c-c941-4fd8-be35-61460aa0b6a6','Messi','martis@gasparikmasovyroba.sk','7a89e109d637ec33.jpg','$2b$12$Ly2mIHM67PEfo9M4t8LVeu6DHjzq/tgs9d0VtXo9NK7.tnkXzx/Iu');
 -- INSERT INTO "user" VALUES (7,'e0619cbc-2c44-4b20-87be-ed9bebaec9c8','lklk','milanmuhuhartis@gmail.com','default.jpg','$2b$12$DDNkPIbN.YFxW66t4G0J6OJMfClm53T8tq0U9PNnF3k/nM7IQLpFe');

@@ -2,10 +2,12 @@ from datetime import datetime
 from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 from flask import current_app
 from app import db, login_manager
-# from flask_security import RoleMixin
+from flask_security import RoleMixin
 from flask_login import UserMixin
 
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 from datetime import datetime
 
 
@@ -32,6 +34,7 @@ def load_user(user_id):
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.Text(length=36), default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     image_file = db.Column(db.String(20), nullable=False,
@@ -51,7 +54,7 @@ class User(db.Model, UserMixin):
             user_id = s.loads(token)['user_id']
         except:
             return None
-        return User.query.get(user_id)
+        return User.query.get(int(user_id))
 
     def __repr__(self):
         return f"User('{self.username}', '{self.email}', '{self.image_file}')"
@@ -129,7 +132,7 @@ class Events(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
-class Role(db.Model):
+class Role(db.Model, RoleMixin):
     __tablename__ = 'role'
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(180), unique=True)
