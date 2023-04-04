@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 import secrets
 from PIL import Image
 # from app.posts.utils import save_picture
+from app.main.routes import main_menu
 
 import os
 
@@ -16,6 +17,25 @@ posts = Blueprint('posts', __name__)
 
 
 ################  POSTS  #################
+
+
+
+
+
+@posts.route("/posts", methods=['GET'])
+def list_posts():
+    page = request.args.get('page', 1, type=int)
+    # posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
+    posts = Post.query.join(PostGallery, Category).filter(
+        Post.id == PostGallery.post_id).filter(Category.id == Post.category_id).filter(PostGallery.orderz<1).order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
+    
+    category = Category.query.all()
+    
+    return render_template('home.html', posts=posts, category=category, teamz=main_menu())
+
+
+
+
 
 @posts.route("/post/new", methods=['GET', 'POST'])
 @login_required
@@ -56,7 +76,7 @@ def new_post():
         flash('Your post has been created!', 'success')
         return redirect(url_for('main.home'))
     return render_template('posts/create_post.html', title='New Post',
-                           form=form, legend='New Post')
+                           form=form, legend='New Post', teamz=main_menu())
 
 
 @posts.route("/post/<int:post_id>")
@@ -66,7 +86,7 @@ def post(post_id):
         Post.id == PostGallery.post_id).filter(PostGallery.orderz<1).filter(Post.id==post_id).first()
     galleries = PostGallery.query.filter(PostGallery.post_id==post_id).all()
     category = Category.query.all()
-    return render_template('posts/post.html', title=post.title, post=post, galleries=galleries, category=category)
+    return render_template('posts/post.html', title=post.title, post=post, galleries=galleries, category=category, teamz=main_menu())
 
 
 @posts.route("/posts/category/<int:category>")
@@ -75,9 +95,11 @@ def category_posts(category):
     page = request.args.get('page', 1, type=int)
     category = Category.query.filter_by(id=category).first_or_404()
     posts = Post.query\
+        .join(Category)\
+        .filter(Category.id==category.id)\
         .order_by(Post.date_posted.desc())\
         .paginate(page=page, per_page=5)
-    return render_template('posts/category_posts.html', posts=posts, category=category)
+    return render_template('posts/category_posts.html', posts=posts, category=category, teamz=main_menu())
 
 
 
@@ -96,14 +118,14 @@ def update_post(post_id):
         post.content = form.content.data
         post.category_id = form.category.data
 
-        # if form.pictures.data:
-        file = form.pictures.data
-        file_filename = secure_filename(file.filename)
-        form.pictures.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post_id), file_filename))
+        if form.picture.data:
+            file = form.picture.data
+            file_filename = secure_filename(file.filename)
+            form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post_id), file_filename))
 
-        postgall = PostGallery.query.filter_by(post_id=post_id).first()
-        postgall.title = form.title.data
-        postgall.image_file2 = file_filename
+            postgall = PostGallery.query.filter_by(post_id=post_id and PostGallery.orderz==0).first()
+            postgall.title = form.title.data
+            postgall.image_file2 = file_filename
 
         db.session.commit()
         flash('Your post has been updated!', 'success')
@@ -113,12 +135,18 @@ def update_post(post_id):
         form.content.data = post.content
         form.category.data = post.category_id
     return render_template('posts/create_post.html', title='Update Post',
-                           form=form, legend='Update Post')
+                           form=form, legend='Update Post', teamz=main_menu())
 
 
-@posts.route("/post/<int:post_id>/delete", methods=['POST'])
+@posts.route("/post/<int:post_id>/delete", methods=['POST','GET'])
 @login_required
 def delete_post(post_id):
+
+    postgall = PostGallery.query.filter_by(post_id=post_id).all()
+    for gal in postgall:
+        pg = PostGallery.query.get(gal.id)
+        db.session.delete(pg)
+
     post = Post.query.get_or_404(post_id)
     if post.author != current_user:
         abort(403)
@@ -136,7 +164,7 @@ def delete_post(post_id):
 def list_categories():
     page = request.args.get('page', 1, type=int)
     categories = Category.query.order_by(Category.id.desc()).paginate(page=page, per_page=5)
-    return render_template('posts/list_categories.html', categories=categories)
+    return render_template('posts/list_categories.html', categories=categories, teamz=main_menu())
 
 
 @posts.route("/category/new", methods=['GET', 'POST'])
@@ -148,15 +176,15 @@ def new_category():
         db.session.add(category)
         db.session.commit()
         flash('Your category has been created!', 'success')
-        return redirect(url_for('posts.new_post'))
-    return render_template('posts/create_category.html', title='New Category',
-                           form=form, legend='New Category')
+        return redirect(url_for('posts.list_categories'))
+    return render_template('posts/create_category.html', title='New Post Category',
+                           form=form, legend='New Post Category', teamz=main_menu())
 
 
 @posts.route("/category/<int:category_id>")
 def category(category_id):
     category = Category.query.get_or_404(category_id)
-    return render_template('posts/category.html', name=category.name, category=category)
+    return render_template('posts/category.html', name=category.name, category=category, teamz=main_menu())
 
 
 @posts.route("/category/<int:category_id>/update", methods=['GET', 'POST'])
@@ -170,11 +198,11 @@ def update_category(category_id):
         category.name = form.name.data
         db.session.commit()
         flash('A category has been updated!', 'success')
-        return redirect(url_for('posts.category', category_id=category.id))
+        return redirect(url_for('posts.list_categories', category_id=category.id))
     elif request.method == 'GET':
         form.name.data = category.name
     return render_template('posts/create_category.html', title='Update Category',
-                           form=form, legend='Update Category')
+                           form=form, legend='Update Category', teamz=main_menu())
 
 
 @posts.route("/category/<int:category_id>/delete", methods=['POST'])

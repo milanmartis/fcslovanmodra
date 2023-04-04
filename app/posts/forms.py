@@ -14,7 +14,7 @@ class PostForm(FlaskForm):
     submit = SubmitField('Post')
 
 class CategoryForm(FlaskForm):
-    name = StringField('Name A Category', validators=[DataRequired()])
+    name = StringField('', validators=[DataRequired()])
     submit = SubmitField('Save It')
 
 

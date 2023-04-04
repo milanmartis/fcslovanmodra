@@ -20,9 +20,11 @@
             </div>
 
         </fieldset>
-        <div class="form-group">
+        <div class="form-group" style="float:left;">
             {{ form.submit(class="btn btn-outline-info") }}
         </div>
     </form>
+    <button onclick="javascript:location.href='{{ url_for('posts.list_categories') }}';" class="btn btn-sm" />Back</button>
+
 </div>
 {% endblock content %}

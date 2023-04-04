@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
-    <h1 class="mb-3">{{ category.name }} 
+    <h3 class="mb-3">{{ category.name }} 
         <!-- ({{ posts.total }}) -->
-    </h1>
+    </h3>
     {% for post in posts.items %}
         <article class="media content-section">
           <div class="media-body">
@@ -25,7 +25,7 @@
 
 
             <h2><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
-            <p class="article-content">{{ post.content }}</p>
+            <p class="article-content">{{ post.content[:250]+'...'}}</p>
           </div>
         </article>
     {% endfor %}

@@ -1,0 +1,69 @@
+{% extends "layout.html" %} {% block content %}
+<h1>PRODUCT CATEGORIES PAGE</h1>
+<div class="article-metadata">
+  <div class="article-metadata2">
+    <a
+      class="btn btn-secondary btn-sm mt-1 mb-1"
+      href="{{ url_for('products.new_category') }}"
+    >
+      New Category
+    </a>
+  </div>
+</div>
+<article class="media content-section">
+  <div class="media-body">
+    {% for category in categories %}
+
+
+    <div class="article-metadata2 d-flex flex-row">
+      <a
+        class="btn btn-sm-item mt-1 mb-1 w-100"
+        href="{{ url_for('products.update_category', product_category_id=category.id) }}"
+      >
+      {{ category.name }}
+      </a>
+
+      <button
+        type="button"
+        class="btn btn-sm m-1"
+        data-toggle="modal"
+        data-target="#deleteModal{{category.id}}"
+      >
+        Delete
+      </button>
+
+    </div>
+
+    <div
+      class="modal fade"
+      id="deleteModal{{category.id}}"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="deleteModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title" py run.py>Delete „{{category.name}}“?</h2>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm" data-dismiss="modal">
+                Close
+              </button>
+              <form
+                action="{{ url_for('products.delete_category', product_category_id=category.id) }}"
+                method="POST"
+              >
+                <input class="btn btn-sm" type="submit" value="Delete" />
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</article>
+<!-- Modal -->
+{% endblock content %}

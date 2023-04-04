@@ -1,6 +1,6 @@
 
 from flask import render_template, request, Blueprint
-from app.models import Post, PostGallery, Category
+from app.models import Post, PostGallery, Category, Team
 from flask import Blueprint
 from app import db
 
@@ -18,10 +18,19 @@ def home():
     
     category = Category.query.all()
     
-    return render_template('home.html', posts=posts, category=category)
+    return render_template('home.html', posts=posts, category=category, teamz=main_menu())
 
 
 @main.route("/about")
 def about():
-    return render_template('about.html', title='About')
+    return render_template('about.html', title='About', teamz=main_menu())
+
+
+# @main.route("/menu")
+def main_menu():
+    menuteam = Team.query.all()
+    return menuteam
+
+
+
 

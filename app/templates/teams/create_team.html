@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+{% block content %}
+<h3>Team Page Update</h3>
+
+<div class="content-section">
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <div class="form-group">
+                {{ form.name.label(class="form-control-label") }}
+                {% if form.name.errors %}
+                    {{ form.name(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.name.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.name(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.score_scrap.label(class="form-control-label") }}
+                {% if form.score_scrap.errors %}
+                    {{ form.score_scrap(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.score_scrap.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.score_scrap(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.player_list_scrap.label(class="form-control-label") }}
+                {% if form.player_list_scrap.errors %}
+                    {{ form.player_list_scrap(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.player_list_scrap.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.player_list_scrap(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.player_list_scrap.label(class="form-control-label") }}
+                {% if form.player_list_scrap.errors %}
+                    {{ form.player_list_scrap(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.player_list_scrap.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.player_list_scrap(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+        </fieldset>
+        <div class="form-group" style="float:left;">
+            {{ form.submit(class="btn btn-outline-info") }}
+        </div>
+    </form>
+    <button onclick="javascript:location.href='{{ url_for('team.list_teams') }}';" class="btn btn-sm" />Back</button>
+    
+</div>
+{% endblock content %}

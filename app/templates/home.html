@@ -6,7 +6,9 @@
             <div class="article-metadata">
             {% for cat in category %}
             {% if cat.id == post.category_id %}
-            <a class="mr-2" href="{{ url_for('posts.category_posts', category=cat.id) }}">{{ cat.name }}</a>
+            <span>
+              <a class="mr-2" href="{{ url_for('posts.category_posts', category=cat.id) }}">{{ cat.name }}</a>
+            </span>
             {% endif %}
             {% endfor %}
 

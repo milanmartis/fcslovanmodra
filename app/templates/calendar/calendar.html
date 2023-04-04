@@ -1,0 +1,438 @@
+{% extends "layout.html" %}
+{% block content %}
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
+    <link
+      href="https://cdn.jsdelivr.net/timepicker.js/latest/timepicker.min.css"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style/fullcalendar.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="http://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='style/calendar.css') }}"
+    />
+  </head>
+    <header class="site-header" >
+      {% include 'menu.html' %}
+    </header>
+    <br />
+    <br />
+    <br />
+    <!-- <h1 align="center">Club Calendar</h1> -->
+    <br />
+    <div class="container">
+      <div id="schedule-calendar"></div>
+
+      <div
+        class="modal fade"
+        id="confirm-delete"
+        tabindex="-1"
+        role="dialog"
+        aria-labelledby="myModalLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              Are you sure to delete this shedule?
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-delete-confirm" id="delete-confirmed-submit">
+                Delete
+              </button>
+              <button type="button" class="btn btn-ok" data-dismiss="modal">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="info-updated"
+        class="modal fade bd-example-modal-lg"
+        tabindex="-1"
+        role="dialog"
+        aria-labelledby="myLargeModalLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-sm">
+          <h1>Shedule updated successfully</h1>
+        </div>
+      </div>
+      <div
+        id="info-added"
+        class="modal fade bd-example-modal-lg"
+        tabindex="-1"
+        role="dialog"
+        aria-labelledby="myLargeModalLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-sm">
+          <h1>Shedule added</h1>
+        </div>
+      </div>
+
+      <!-- Add Modal -->
+      <div class="modal fade" id="schedule-add">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+              <h4 class="modal-title">Add Your Schedule</h4>
+              <button type="button" class="close" data-dismiss="modal">
+                &times;
+              </button>
+            </div>
+            <!-- Modal body -->
+            <div class="modal-body">
+              <form>
+                <div class="form-group">
+                  <label>Schedule Name:</label>
+                  <input
+                    type="text"
+                    id="eventTitle"
+                    name="eventTitle"
+                    class="form-control"
+                  />
+                </div>
+                <div class="row">
+                  <div class="col-6">
+                    <div class="form-group">
+                      <label>Start:</label>
+                      <input
+                        type="datetime-local"
+                        id="eventStart"
+                        name="eventStart"
+                        class="form-control"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="form-group">
+                      <label>End:</label>
+                      <input
+                        type="datetime-local"
+                        id="eventEnd"
+                        name="eventEnd"
+                        class="form-control"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer">
+              <!-- <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button> -->
+              <button
+                id="add-submit"
+                type="button"
+                class="btn btn-ok"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Modal -->
+      <div class="modal fade" id="schedule-edit">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+              <h4 class="modal-title">Edit Your Schedule</h4>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+            <!-- Modal body -->
+            <div class="modal-body">
+              <form>
+                <div class="form-group">
+                  <label>Schedule Name:</label>
+                  <input
+                    type="text"
+                    id="eventTitleUpdate"
+                    name="eventTitleUpdate"
+                    class="form-control"
+                    value=""
+                  />
+                  <input
+                    type="datetime-local"
+                    id="eventStartUpdate"
+                    name="eventStartUpdate"
+                    class="form-control"
+                    value=""
+                  />
+                  <input
+                    type="datetime-local"
+                    id="eventEndUpdate"
+                    name="eventEndUpdate"
+                    class="form-control"
+                    value=""
+                  />
+                  <input
+                    type="hidden"
+                    id="eventIdUpdate"
+                    name="eventIdUpdate"
+                    class="form-control"
+                    value=""
+                  />
+                </div>
+              </form>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer">
+              <!-- <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button> -->
+              <button id="update-submit" type="button" class="btn btn-ok">
+                Save
+              </button>
+              <button
+                id="delete-submit"
+                type="button"
+                class="btn btn-delete"
+                data-toggle="modal"
+                data-target="#confirm-delete"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="currentColor"
+                  class="bi bi-trash"
+                  viewBox="0 0 16 14"
+                >
+                  <path
+                    d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"
+                  />
+                  <path
+                    fill-rule="evenodd"
+                    d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/timepicker.js/latest/timepicker.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="{{ url_for('static', filename='js/fullcalendar.js') }}"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+        $(document).ready(function() {
+
+          $('#schedule-calendar').fullCalendar({
+            editable:true,
+            header:{
+             right:'prev,next today',
+             left:'title',
+             //right:'month,agendaWeek,agendaDay'
+            },
+            firstDay: 1,
+            events: [{% for row in calendar %}{ id : '{{row.id}}', title : '{{row.title}}', start : '{{row.start_event}}', end : '{{row.end_event}}', }, {% endfor %}],
+            nextDayThreshold: "00:00:00",
+            selectable:true,
+            selectHelper:true,
+            select: function (start, end, jsEvent, view) {
+              var start = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
+              var end = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
+              $('#schedule-add').modal('show');
+              $('#eventTitle').val('');
+              $('#eventStart').val(start);
+              $('#eventEnd').val(end);
+
+            },
+
+            selectOverlap: function(event) {
+              return ! event.block;
+            },
+
+            eventClick: function(event) {
+              var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
+              var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
+              $('#eventTitleUpdate').val(event.title);
+              $('#eventStartUpdate').val(start);
+              $('#eventEndUpdate').val(end);
+              $('#eventIdUpdate').val(event.id);
+              $('#schedule-edit').modal('show');
+            },
+
+            //dayClick: function(date, jsEvent, view) {
+             // $('#schedule-add').modal('show');
+            //},
+
+            eventDrop:function(event) {
+              var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
+              var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
+              var title = event.title;
+              var id = event.id;
+              $.ajax({
+              url:"/calendar/update",
+              type:"POST",
+              data:{title:title, start:start, end:end, id:id},
+              success:function()
+              {
+                $('#info-updated').modal('show');
+              }
+              });
+            }
+          });
+
+
+
+      $('#add-submit').on('click', function(e){
+        // We don't want this to act as a link so cancel the link action
+          e.preventDefault();
+
+          AddNewSchedulle();
+        });
+
+      $('#delete-submit').on('click', function(e){
+        // We don't want this to act as a link so cancel the link action
+          //e.preventDefault();
+          $('#confirm-delete').modal('show');
+
+        });
+
+        function AddNewSchedulle(){
+        $("#schedule-add").modal('hide');
+
+          title = $('#eventTitle').val();
+          start = $('#eventStart').val();
+          end = $('#eventEnd').val();
+
+          $.ajax({
+            url:"/calendar/insert",
+            type:"POST",
+            data:{title:title, start:start, end:end},
+            success:function(data)
+            {
+              //alert(data)
+             //alert("Added Successfully");
+            // window.location.replace("/calendar");
+            //window.location.replace("/calendar");
+            $('#info-added').modal('show');
+            window.location.replace("/calendar");
+
+            }
+           })
+
+          $("#schedule-calendar").fullCalendar('renderEvent',
+            {
+                title: $('#eventTitle').val(),
+                start: new Date($('#eventStart').val()).toISOString(),
+                end: new Date($('#eventEnd').val()).toISOString(),
+            },
+            true);
+         }
+
+
+        function UpdateSchedulle(){
+          
+          title = $('#eventTitleUpdate').val();
+          start = $('#eventStartUpdate').val();
+          end = $('#eventEndUpdate').val();
+          id = $('#eventIdUpdate').val();
+          
+          $.ajax({
+            url:"/calendar/update",
+            type:"POST",
+            data:{title:title, start:start, end:end, id:id},
+            success:function(data)
+            {
+              //alert(data)
+              //alert("Added Successfully");
+              // window.location.replace("/calendar");
+              //window.location.replace("/calendar");
+              $('#schedule-edit').modal('hide');
+              $('#info-updated').modal('show');
+              window.location.replace("/calendar");
+
+            }
+           });
+
+         }
+
+
+
+
+         $('#confirm-delete').on('show.bs.modal', function() {
+          $("#schedule-edit").modal('hide');
+         });
+
+
+
+         $('#delete-confirmed-submit').on('click', function(e){
+            e.preventDefault();
+            DeleteSchedulle();
+            $('#confirm-delete').modal('hide');
+          });
+
+
+
+         $('#update-submit').on('click', function(e){
+            UpdateSchedulle(e);
+          });
+
+        function DeleteSchedulle(){
+
+
+          title = $('#eventTitleUpdate').val();
+          start = $('#eventStartUpdate').val();
+          end = $('#eventEndUpdate').val();
+          id = $('#eventIdUpdate').val();
+
+          $.ajax({
+            url:"/calendar/ajax_delete",
+            type:"POST",
+            data:{id:id},
+            success:function()
+            {
+            $(this).hide()
+            //$("#schedule-calendar").fullCalendar('refetchEvents');
+            //alert("Event Removed");
+            window.location.replace("/calendar");
+
+            }
+          })
+
+         }
+
+
+        });
+    </script>
+    {% endblock %}
+
