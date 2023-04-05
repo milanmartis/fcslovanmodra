@@ -1066,19 +1066,17 @@ li {
 
 .modal-backdrop{
   z-index: -20;
-
+  
 }
 
 .modal-content {
-  position: fixed;
+  z-index: 9999999;
   top:66px;
-  width: 100%;
   border-radius: 10px !important;
   background-color: #000;
   border: 2px solid #6d9bff;
   color: #6d9bff;
   font-weight: 600;
-  font-size: 120%;
   padding: 2px 6px 3px 6px;
   text-align: center;
   overflow: hidden;
@@ -1093,7 +1091,6 @@ li {
   border: 2px solid #6d9bff;
   color: #6d9bff;
   font-weight: 600;
-  font-size: 120%;
   padding: 2px 6px 3px 6px;
   text-align: center;
   overflow: hidden;
@@ -1112,7 +1109,6 @@ li {
 
 .modal-header {
   border: 0px;
-  padding-top: 20px;
 }
 
 .modal-footer {
