@@ -128,19 +128,19 @@ def update_post(post_id):
             picture.title=form.title.data
             picture.image_file2=file_filename
         
-        if form.pictures.data:
-            pictures = []
-            filez = 0
+        # if form.pictures.data:
+        #     pictures = []
+        #     filez = 0
 
-            for file in form.pictures.data:
-                print(file.filename)
-                with open(os.path.realpath(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery/'+str(file.filename)), 'wb') as f:
-                        f.write(file.read())
+        #     for file in form.pictures.data:
+        #         print(file.filename)
+        #         with open(os.path.realpath(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery/'+str(file.filename)), 'wb') as f:
+        #                 f.write(file.read())
 
-                # file_filename = secure_filename(file.filename)
-                # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
-                pictures = PostGallery(title=form.title.data, image_file2=file.filename, orderz=1, post_id=post.id)
-                db.session.add(pictures)
+        #         # file_filename = secure_filename(file.filename)
+        #         # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
+        #         pictures = PostGallery(title=form.title.data, image_file2=file.filename, orderz=1, post_id=post.id)
+        #         db.session.add(pictures)
 
 
         db.session.commit()
