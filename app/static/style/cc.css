@@ -277,7 +277,7 @@ input[type="checkbox"] {
 }
 
 nav {
-  z-index: 999;
+  z-index: 1;
   overflow: visible;
   position: relative;
   border-radius: 10px !important;
@@ -1065,14 +1065,12 @@ li {
 }
 
 .modal-backdrop{
-  z-index: 1041;
-  position: sticky;
+  z-index: -20;
 
 }
 
 .modal-content {
-  z-index: 9999;
-  position: sticky;
+  position: fixed;
   top:66px;
   width: 100%;
   border-radius: 10px !important;

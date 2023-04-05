@@ -1,6 +1,6 @@
-<head>
-
-   <meta
+{% extends "layout.html" %}
+{% block content %}
+    <meta
       name="viewport"
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
@@ -23,13 +23,8 @@
       type="text/css"
       href="{{ url_for('static', filename='style/calendar.css') }}"
     />
-  </head>
-    <header class="site-header" >
-      {% include 'menu.html' %}
-    </header>
-    <br />
-    <br />
-    <br />
+
+
     <!-- <h1 align="center">Club Calendar</h1> -->
     <br />
     <div class="container">
@@ -434,4 +429,5 @@
 
         });
     </script>
+    {% endblock %}
 

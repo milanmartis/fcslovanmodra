@@ -7,7 +7,6 @@ from app.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,Upda
 from app.users.utils import save_picture, send_reset_email, save_picture_member
 from flask import Blueprint
 import uuid
-from flask_security import roles_accepted
 from app.main.routes import main_menu
 
 
@@ -28,7 +27,7 @@ def register():
 
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user = User(username=form.username.data, email=form.email.data, password=hashed_password, uuid=str(uuid.uuid4()))
+        user = User(uuid=str(uuid.uuid4()), username=form.username.data, email=form.email.data, password=hashed_password)
         db.session.add(user)
         db.session.commit()
         role = Role.query.filter(Role.id.in_(form.role.data)).all()
@@ -51,8 +50,7 @@ def register():
 
 @users.route("/login", methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('main.home'))
+
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
