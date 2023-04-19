@@ -840,6 +840,12 @@ ol.carousel-indicators li{
 }
 
 
+a:hover{
+  color:#386ad4
+}
+
+
+
 .btn-demo {
   max-width: 260px;
   border-radius: 10px !important;
@@ -1064,7 +1070,7 @@ ol.carousel-indicators li{
   left: -100px;
   border-radius: 10px !important;
   background-color: #000;
-  border: 4px solid #6d9bff;
+  border: 2px solid #6d9bff;
   font-weight: 400;
   font-size: 90%;
   padding: 2px 2px 2px 2px;

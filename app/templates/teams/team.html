@@ -11,16 +11,19 @@
     <div class="row">
     
       {% for player in members %}
+      <div class="col-6 col-md-4 col-lg-4">
+
       {% if player.position[0].id==4 %}
       <a href="{{ url_for('users.member', member_id=player.id) }}">
-        <div class="card" style="width: 18rem;">
+        <div class="card" style="width: 100%;padding:0px;margin:0px;">
           <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
           <div class="card-body">
-            <h5 class="card-title">{{ player.name }}</h5>
+            <h3>{{ player.name }}</h3>
           </div>
         </div>
       </a>
       {% endif %}
+    </div>
       {% endfor %}
     </div>
 
@@ -35,7 +38,7 @@
         <div class="card" style="width: 18rem;">
           <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
           <div class="card-body">
-            <h5 class="card-title">{{ player.name }}</h5>
+            <h3>{{ player.name }}</h3>
           </div>
         </div>
       </a>
@@ -53,7 +56,7 @@
         <div class="card" style="width: 18rem;">
           <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
           <div class="card-body">
-            <h5 class="card-title">{{ player.name }}</h5>
+            <h3>{{ player.name }}</h3>
           </div>
         </div>
       </a>
@@ -70,7 +73,7 @@
         <div class="card" style="width: 18rem;">
           <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
           <div class="card-body">
-            <h5 class="card-title">{{ player.name }}</h5>
+            <h3>{{ player.name }}</h3>
           </div>
         </div>
       </a>
@@ -87,7 +90,7 @@
           <div class="card" style="width: 18rem;">
             <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
             <div class="card-body">
-              <h5 class="card-title">{{ player.name }}</h5>
+              <h3>{{ player.name }}</h3>
             </div>
           </div>
         </a>
