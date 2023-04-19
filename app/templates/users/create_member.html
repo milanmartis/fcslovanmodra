@@ -54,7 +54,8 @@
                         {{ form.name(class="form-control form-control-lg") }}
                         {% endif %}
                     </div>
-                        <div class="form-group">
+
+                    <div class="form-group">
                     {{ form.phone.label(class="form-control-label") }}
                     {% if form.phone.errors %}
                         {{ form.phone(class="form-control form-control-lg is-invalid") }}
@@ -67,6 +68,33 @@
                         {{ form.phone(class="form-control form-control-lg") }}
                         {% endif %}
                     </div>
+                    <div class="form-group">
+                    {{ form.weight.label(class="form-control-label") }}
+                    {% if form.weight.errors %}
+                        {{ form.weight(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.weight.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        {{ form.weight(class="form-control form-control-lg") }}
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                    {{ form.height.label(class="form-control-label") }}
+                    {% if form.weight.errors %}
+                        {{ form.height(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.height.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        {{ form.height(class="form-control form-control-lg") }}
+                        {% endif %}
+                    </div>
+
                     </div>
 
                     <div class="form-group col-md-1">
@@ -74,13 +102,13 @@
 
                     </div>
                     <div class="form-group col-md-5">
-                        <div class="media">
-                            <img width="100%" src="{{ image_file }}">
+                        <div class="media d-flex justify-content-center">
+                            <img width="225" src="{{ image_file }}">
                     
                           </div>
 
                         {{ form.picturemember.label() }}
-                        {{ form.picturemember(class="form-control-file") }}
+                        {{ form.picturemember(class="form-control-file ") }}
                         {% if form.picturemember.errors %}
                             {% for error in form.picturemember.errors %}
                                 <span class="text-danger">{{ error }}</span></br>
@@ -89,6 +117,7 @@
 
 
                     </div>
+
                 </div>
 
 

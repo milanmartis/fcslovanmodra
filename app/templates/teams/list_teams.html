@@ -12,6 +12,7 @@
 </div>
 <article class="media content-section">
   <div class="media-body">
+    {% if teams %}
     {% for team in teams %}
 
 
@@ -68,6 +69,13 @@
       </div>
     </div>
     {% endfor %}
+    {% else %}
+    <center>
+    <div class="article-metadata2 d-flex flex-row w-100">
+      <h3 class="nodata">NO DATA</h3>
+    </div>
+  </center>
+    {% endif %}
   </div>
 </article>
 <!-- Modal -->

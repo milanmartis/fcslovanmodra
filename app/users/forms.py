@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField, SelectMultipleField, IntegerField, RadioField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField, SelectMultipleField, IntegerField, RadioField, TextAreaField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, StopValidation
 from flask_login import current_user
 from app.models import User
@@ -130,6 +130,13 @@ class UpdateAccountForm(FlaskForm):
                         validators=[DataRequired(), Email()])
     picture = FileField('Update Profile Picture', validators=[
                         FileAllowed(['jpg', 'png'])])
+    
+    
+    name = StringField('Name & Surname', validators=[DataRequired()])
+    phone = StringField('Phone Number (+421...)', validators=[DataRequired()])
+    address = StringField('Street', validators=[DataRequired()])
+    psc = StringField('Post Code', validators=[DataRequired()])
+    city = StringField('City', validators=[DataRequired()])
 
     submit = SubmitField('Update')
 
@@ -174,6 +181,8 @@ class ResetPasswordForm(FlaskForm):
 
 class RolesForm(FlaskForm):
     name = StringField('name', validators=[DataRequired()])
+    description = TextAreaField('Description')
+    
     submit = SubmitField('Save Role')
 
 

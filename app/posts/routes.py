@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 import secrets
 from PIL import Image
 # from app.posts.utils import save_picture
-from app.main.routes import main_menu
+from app.main.routes import RightColumn
 
 import os
 
@@ -31,7 +31,7 @@ def list_posts():
     
     category = Category.query.all()
     
-    return render_template('home.html', posts=posts, category=category, teamz=main_menu())
+    return render_template('home.html', posts=posts, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -76,7 +76,7 @@ def new_post():
         flash('Your post has been created!', 'success')
         return redirect(url_for('main.home'))
     return render_template('posts/create_post.html', title='New Post',
-                           form=form, legend='New Post', teamz=main_menu())
+                           form=form, legend='New Post', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/post/<int:post_id>")
@@ -86,7 +86,7 @@ def post(post_id):
         Post.id == PostGallery.post_id).filter(PostGallery.orderz<1).filter(Post.id==post_id).first()
     galleries = PostGallery.query.filter(PostGallery.post_id==post_id).all()
     category = Category.query.all()
-    return render_template('posts/post.html', title=post.title, post=post, galleries=galleries, category=category, teamz=main_menu())
+    return render_template('posts/post.html', title=post.title, post=post, galleries=galleries, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/posts/category/<int:category>")
@@ -95,12 +95,10 @@ def category_posts(category):
     page = request.args.get('page', 1, type=int)
     category = Category.query.filter_by(id=category).first_or_404()
     posts = Post.query\
-        .join(Category)\
-        .filter(Category.id==category.id)\
+        .filter(Post.category_id==category.id)\
         .order_by(Post.date_posted.desc())\
         .paginate(page=page, per_page=5)
-    return render_template('posts/category_posts.html', posts=posts, category=category, teamz=main_menu())
-
+    return render_template('posts/category_posts.html', posts=posts, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -153,7 +151,7 @@ def update_post(post_id):
         form.content.data = post.content
         form.category.data = post.category_id
     return render_template('posts/create_post.html', title='Update Post',
-                           form=form, legend='Update Post', teamz=main_menu())
+                           form=form, post_id=post_id, legend='Update Post', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/post/<int:post_id>/delete", methods=['POST','GET'])
@@ -182,7 +180,7 @@ def delete_post(post_id):
 def list_categories():
     page = request.args.get('page', 1, type=int)
     categories = Category.query.order_by(Category.id.desc()).paginate(page=page, per_page=5)
-    return render_template('posts/list_categories.html', categories=categories, teamz=main_menu())
+    return render_template('posts/list_categories.html', categories=categories, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/category/new", methods=['GET', 'POST'])
@@ -196,13 +194,13 @@ def new_category():
         flash('Your category has been created!', 'success')
         return redirect(url_for('posts.list_categories'))
     return render_template('posts/create_category.html', title='New Post Category',
-                           form=form, legend='New Post Category', teamz=main_menu())
+                           form=form, legend='New Post Category', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/category/<int:category_id>")
 def category(category_id):
     category = Category.query.get_or_404(category_id)
-    return render_template('posts/category.html', name=category.name, category=category, teamz=main_menu())
+    return render_template('posts/category.html', name=category.name, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/category/<int:category_id>/update", methods=['GET', 'POST'])
@@ -220,7 +218,7 @@ def update_category(category_id):
     elif request.method == 'GET':
         form.name.data = category.name
     return render_template('posts/create_category.html', title='Update Category',
-                           form=form, legend='Update Category', teamz=main_menu())
+                           form=form, legend='Update Category', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/category/<int:category_id>/delete", methods=['POST'])

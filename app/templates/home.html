@@ -1,21 +1,9 @@
 {% extends "layout.html" %}
 {% block content %}
+
     {% for post in posts %}
         <article class="media content-section">
           <div class="media-body">
-            <div class="article-metadata">
-            {% for cat in category %}
-            {% if cat.id == post.category_id %}
-            <span>
-              <a class="mr-2" href="{{ url_for('posts.category_posts', category=cat.id) }}">{{ cat.name }}</a>
-            </span>
-            {% endif %}
-            {% endfor %}
-
-              <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
-            </div>
-            
-            
             {% for gall in post.gallery %}
             {% if gall.orderz == 0 %}
             <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
@@ -23,8 +11,21 @@
             </a>
             {% endif %}
             {% endfor %}
+            <div class="article-metadata">
+              {% for cat in category %}
+              {% if cat.id == post.category_id %}
+              <span>
+                <a class="mt-10 mr-2" href="{{ url_for('posts.category_posts', category=cat.id) }}">{{ cat.name }}</a>
+              </span>
+              {% endif %}
+              {% endfor %}
+
+                <small class="text-muted">{{ post.date_posted.strftime('%d. %m. %Y') }}</small>
+            </div>
             
-            <h2><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
+            
+            
+            <h2 style="padding-top: 10px;"><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
             <p class="article-content">{{ post.content[:250] }}</p>
           </div>
         </article>

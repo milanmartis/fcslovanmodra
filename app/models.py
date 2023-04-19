@@ -11,9 +11,15 @@ import uuid
 from datetime import datetime
 
 
-roles_members = db.Table('roles_members',
-                         db.Column('member_id', db.Integer(),
-                                   db.ForeignKey('member.id')),
+
+# teams_events = db.Table('teams_events',
+#                          db.Column('team_id', db.Integer(),
+#                                    db.ForeignKey('team.id')),
+#                          db.Column('event_id', db.Integer(), db.ForeignKey('event.id')))
+
+roles_users = db.Table('roles_users',
+                         db.Column('user_id', db.Integer(),
+                                   db.ForeignKey('user.id')),
                          db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
 
 teams_members = db.Table('teams_members',
@@ -42,6 +48,8 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(60), nullable=False)
     posts = db.relationship('Post', backref='author', lazy=True)
     products = db.relationship('Product', backref='saler', lazy=True)
+    roles = db.relationship('Role', secondary=roles_users, lazy='subquery',
+                            backref=db.backref('roled', lazy=True))
 
     def get_reset_token(self):
         s = Serializer(current_app.config['SECRET_KEY'])
@@ -57,8 +65,13 @@ class User(db.Model, UserMixin):
         return User.query.get(int(user_id))
 
     def __repr__(self):
-        return f"User('{self.username}', '{self.email}', '{self.image_file}')"
-
+        # return f"User('{self.username}', '{self.email}', '{self.image_file}', '{self.roles}')"
+        return f"User('{self.username}', '{self.email}', '{self.image_file}', '{self.roles}')"
+    
+    
+    def has_roles(self, *args):
+        return set(args).issubset({role.name for role in self.roles})
+    
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -123,19 +136,31 @@ class ProductGallery(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
 
 
-class Events(db.Model):
-    __tablename__ = 'events'
+class Event(db.Model):
+    __tablename__ = 'event'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(250), nullable=False)
-    start_event = db.Column(db.DateTime(timezone=True), onupdate=func.now())
-    end_event = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    start_event = db.Column(db.DateTime(timezone=True))
+    end_event = db.Column(db.DateTime(timezone=True))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    event_category_id = db.Column(db.Integer, db.ForeignKey('event_category.id'), nullable=False)
+    event_team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+
+    # teams = db.relationship('Team', secondary=teams_events, lazy='subquery',
+    #                     backref=db.backref('teamvent', lazy=True))
+
+class EventCategory(db.Model):
+    __tablename__ = 'event_category'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    # event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
 
 
 class Role(db.Model, RoleMixin):
     __tablename__ = 'role'
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(180), unique=True)
+    description = db.Column(db.Text)
 
 
 class Team(db.Model):
@@ -151,6 +176,21 @@ class Position(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(180), unique=True)
 
+
+class Player(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    # member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    name = db.Column(db.String(250), nullable=False)
+    position = db.Column(db.Integer)
+    team = db.Column(db.String(250), nullable=False)
+    score = db.Column(db.Integer)
+    yellow_card = db.Column(db.Integer)
+    red_card = db.Column(db.Integer)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+
+    
+    
+    
 
 class Member(db.Model):
     __tablename__ = 'member'
@@ -170,7 +210,40 @@ class Member(db.Model):
                                backref=db.backref('positioned', lazy=True))
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    roles = db.relationship('Role', secondary=roles_members, lazy='subquery',
-                            backref=db.backref('roled', lazy=True))
+
     teams = db.relationship('Team', secondary=teams_members, lazy='subquery',
                             backref=db.backref('teamed', lazy=True))
+    
+
+
+class ScoreTable(db.Model):
+    __tablename__ = 'score_table'
+    id = db.Column(db.Integer, primary_key=True)
+    club = db.Column(db.String(250), nullable=False)
+    games = db.Column(db.Integer)
+    wins = db.Column(db.Integer)
+    draws = db.Column(db.Integer)
+    loses = db.Column(db.Integer)
+    score = db.Column(db.String(20), nullable=False)
+    points = db.Column(db.Integer)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+
+
+
+class Order(db.Model):
+    __tablename__ = 'order'
+    id = db.Column(db.Integer, primary_key=True)
+    produc_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer)
+    amount = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    is_paid = db.Column(db.Boolean(), default=False)
+    order_date = db.Column(db.DateTime, nullable=False, default=func.now())
+    storno = db.Column(db.Boolean(), default=False)
+
+
+    
+
+    
+
+    

@@ -108,7 +108,12 @@
             {{ form.submit(class="btn btn-outline-info") }}
         </div>
     </form>
+    {% set product = product_id %}
+    {% if product %}
+    <button onclick="javascript:location.href='{{ url_for('products.product', product_id=product) }}';" class="btn btn-sm" />Back</button>
+    {% else %}
     <button onclick="javascript:location.href='{{ url_for('products.list_products') }}';" class="btn btn-sm" />Back</button>
+    {% endif %}
 
 </div>
 {% endblock content %}

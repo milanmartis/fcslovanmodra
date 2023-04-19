@@ -1,19 +1,21 @@
 <nav class="navbar navbar-expand-md navbar-dark bg-steel">
     <div class="container">
 
-      <a class="navbar-brand p-0 m-0" href="/"><img class="image-logo" src="{{ url_for('static', filename='main/logo-slovan-modra-biele.png') }}" width="50">  FC Slovan Modra</a>
+      <a class="navbar-brand p-0 m-0" href="/"><img class="image-logo" src="{{ url_for('static', filename='profile_pics/68cc54d8cc2d4dd9.png') }}" height="50" width="50">  FC Slovan Modra</a>
       
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarToggle"  >
           <div class="navbar-nav mr-auto">
-              <a class="nav-item nav-link" href="{{ url_for('main.home') }}">Club</a>
-              <ul class="navbar-nav mr-auto">
+            <ul class="navbar-nav mr-auto text-center">
+            <li class="nav-item nav-link ">
+              <a href="{{ url_for('main.about') }}">Club</a>
+            </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="margin-left:-27px;margin-top:-1px;">Team</a>
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" style="margin-right:-10px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Team</a>
 
-              <div class="dropdown-menu" aria-labelledby="navbarDropdown" >
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                 
                 <br>
                 {% for team in teamz %}
@@ -23,17 +25,30 @@
               </div>
             </li>
 
-        </ul>
+            <li class="nav-item nav-link">
+              
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('posts.list_posts') }}">Posts</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('products.list_products') }}">Live</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.sponsors') }}">Partners</a>
+              </li>
+              {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+              <li class="nav-item">
+                <a class="nav-link" href="#" data-toggle="modal" data-target="#calenadrModal">Kalendár</a>
+              </li>
+              {% endif %}
 
-          <a class="nav-item nav-link" href="{{ url_for('posts.list_posts') }}">Posts</a>
-          <a class="nav-item nav-link" href="{{ url_for('products.list_products') }}">E-Shop</a>
-          <a class="nav-item nav-link" href="{{ url_for('main.about') }}">About</a>
-
+            </ul>
 
 
         </div>
         <!-- Navbar Right Side -->
         <div class="navbar-nav" >
+        
           {% if not current_user.is_authenticated %}
           <div class="navbar-nav mr-auto">
             <a class="nav-item nav-link" href="{{ url_for('users.login') }}">Login</a>
@@ -41,13 +56,15 @@
           </div>
           {% endif %}
           {% if current_user.is_authenticated %}
-          <ul class="navbar-nav mr-auto">
+          <ul class="navbar-nav mr-auto" >
             <li class="nav-item dropdown">
                 
                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                   <img class="rounded-circle account-img2" src="/static/profile_pics/{{current_user.image_file}}">
         
               </a>
+              {% if current_user.has_roles('Admin') %}
+
               <div class="dropdown-menu mb-10" aria-labelledby="navbarDropdown" >
                 <a class="nav-item nav-link" href="{{ url_for('posts.new_post') }}">New Post</a>
                 <a class="nav-item nav-link" href="{{ url_for('products.new_product') }}">New Product</a>
@@ -59,6 +76,12 @@
                 <a class="nav-item nav-link" href="{{ url_for('users.account') }}">My Account</a>
                 <a class="nav-item nav-link" href="{{ url_for('users.logout') }}">Logout</a>
               </div>
+              {% else %}
+              <div class="dropdown-menu mb-10" aria-labelledby="navbarDropdown" >
+              <a class="nav-item nav-link" href="{{ url_for('users.account') }}">My Account</a>
+              <a class="nav-item nav-link" href="{{ url_for('users.logout') }}">Logout</a>       
+              </div>       
+              {% endif %}
             </li>
           </ul>
         {% endif %}

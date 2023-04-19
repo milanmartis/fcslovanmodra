@@ -1,3 +1,4 @@
+
 /*!
  * FullCalendar v3.4.0 Stylesheet
  * Docs & License: https://fullcalendar.io/
@@ -51,7 +52,7 @@ body .fc { /* extra precedence to overcome jqui */
 
 .fc-unthemed td.fc-today {
 	content: "TODAY";
-	border-radius: 14px;
+	border-radius: 9px;
 	background: #3c5894;
     border: 0px solid #3a87ad;
     padding:2px;
@@ -588,6 +589,8 @@ temporary rendered events).
 }
 .fc-title{
 	color:#000;
+	font-size: 160%;
+	font-weight: 700;
 }
 .fc-event  {
 	background: transparent;
@@ -1444,3 +1447,8 @@ be a descendant of the grid when it is being dragged.
 .fc-unthemed .fc-list-empty { /* theme will provide own background */
 	background-color: #eee;
 }
+.calendarcss{
+	background-color: #000;
+	border: 2px solid #6d9bff;
+  }
+  

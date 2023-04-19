@@ -591,6 +591,11 @@ input[type="password"] {
 
 }
 
+.info-updated{
+  
+}
+
+
 .btn-delete {
   max-width: 260px;
   border-radius: 8px !important;
@@ -943,22 +948,12 @@ input[type="password"] {
   color: #6d9bff;
 }
 
-.modal-content {
-  width: 100%;
-  border-radius: 14px !important;
-  background-color: transparent;
-  border: 0px solid #6d9bff;
-  color: #6d9bff;
-  font-weight: 600;
-  font-size: 120%;
-  padding: 2px 6px 3px 6px;
-  text-align: center;
-  overflow: hidden;
-  margin-bottom: 18px;
-  margin-left: 6px;
-  margin-right: 12px;
-}
 
+
+.fc-day-grid-container.fc-scroller {
+  height: auto!important;
+  overflow-y: auto;
+}
 .content-section-sidebar {
   border-radius: 14px !important;
   background-color: #030303;
@@ -982,15 +977,7 @@ input[type="password"] {
   padding: 4px;
 }
 
-.modal-header {
-  border: 0px;
-  padding-top: 20px;
-}
 
-.modal-footer {
-  padding: 15px;
-  border:0px;
-}
 
 .close{
   font-weight: 800;
@@ -1328,30 +1315,7 @@ ol.carousel-indicators li.active {
 
 
 }
-.modal-dialog{
-  border-radius: 14px !important;
-  background-color: #030303;
-  border: 2px solid #6d9bff;
-  color: #6d9bff;
-  font-weight: 600;
-  font-size: 100%;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  cursor: pointer; 
-  padding-bottom: 10px;
-}
 
 
 
 
-
-.modal-cover {
-  background: rgba(0, 0, 0, 0.45);
-  display: none;
-  left: 0;
-  position: fixed;
-  right: 0;
-  top: 0;
-  bottom:0;
-  width: auto !important;
-  z-index: 99999;
-}

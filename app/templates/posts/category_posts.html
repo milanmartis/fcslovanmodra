@@ -1,17 +1,11 @@
 {% extends "layout.html" %}
 {% block content %}
-    <h3 class="mb-3">{{ category.name }} 
+    <h3 class="mb-3"><a href="{{ url_for('posts.list_posts')}}">All category</a> / {{ category.name }} 
         <!-- ({{ posts.total }}) -->
     </h3>
     {% for post in posts.items %}
         <article class="media content-section">
           <div class="media-body">
-            <div class="article-metadata">
-              <a class="mr-2" href="{{ url_for('posts.category_posts', category=category.id) }}">{{ category.name }}</a>
-              <small class="text-muted">{{ post.date_posted.strftime('%Y-%m-%d') }}</small>
-            </div>
-
-
             {% for gall in post.gallery %}
             {% if gall.orderz == 0 %}
             <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
@@ -19,6 +13,12 @@
             </a>
             {% endif %}
             {% endfor %}
+            <div class="article-metadata">
+              <a class="mr-2" href="{{ url_for('posts.category_posts', category=category.id) }}">{{ category.name }}</a>
+              <small class="text-muted">{{ post.date_posted.strftime('%d. %m. %Y') }}</small>
+            </div>
+
+
 
 
 

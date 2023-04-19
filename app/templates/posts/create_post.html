@@ -67,6 +67,8 @@
             {{ form.submit(class="btn btn-outline-info") }}
         </div>
     </form>
+    {% set post_id = '1' %}
+
     <button onclick="javascript:location.href='{{ url_for('posts.list_posts') }}';" class="btn btn-sm" />Back</button>
 
 </div>

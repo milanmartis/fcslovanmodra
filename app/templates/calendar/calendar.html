@@ -1,5 +1,15 @@
-{% extends "layout.html" %}
-{% block content %}
+
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" />
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/cc.css') }}">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
+
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
@@ -21,218 +31,348 @@
     <link
       rel="stylesheet"
       type="text/css"
-      href="{{ url_for('static', filename='style/calendar.css') }}"
+      href="{{ url_for('static', filename='style/cc.css') }}"
     />
 
+    
+    <main role="main" class="container">
+      <h3 style="padding-top:12px;">Kalendár</h3>
 
-    <!-- <h1 align="center">Club Calendar</h1> -->
-    <br />
-    <div class="container">
-      <div id="schedule-calendar"></div>
-
-      <div
-        class="modal fade"
-        id="confirm-delete"
-        tabindex="-1"
-        role="dialog"
-        aria-labelledby="myModalLabel"
-        aria-hidden="true"
-      >
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              Are you sure to delete this shedule?
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-delete-confirm" id="delete-confirmed-submit">
-                Delete
-              </button>
-              <button type="button" class="btn btn-ok" data-dismiss="modal">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        id="info-updated"
-        class="modal fade bd-example-modal-lg"
-        tabindex="-1"
-        role="dialog"
-        aria-labelledby="myLargeModalLabel"
-        aria-hidden="true"
-      >
-        <div class="modal-dialog modal-sm">
-          <h1>Shedule updated successfully</h1>
-        </div>
-      </div>
-      <div
-        id="info-added"
-        class="modal fade bd-example-modal-lg"
-        tabindex="-1"
-        role="dialog"
-        aria-labelledby="myLargeModalLabel"
-        aria-hidden="true"
-      >
-        <div class="modal-dialog modal-sm">
-          <h1>Shedule added</h1>
-        </div>
-      </div>
-
-      <!-- Add Modal -->
-      <div class="modal fade" id="schedule-add">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <!-- Modal Header -->
-            <div class="modal-header">
-              <h4 class="modal-title">Add Your Schedule</h4>
-              <button type="button" class="close" data-dismiss="modal">
-                &times;
-              </button>
-            </div>
-            <!-- Modal body -->
-            <div class="modal-body">
-              <form>
-                <div class="form-group">
-                  <label>Schedule Name:</label>
-                  <input
-                    type="text"
-                    id="eventTitle"
-                    name="eventTitle"
-                    class="form-control"
-                  />
+      <div class="row">
+        <div class="col-12">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  {{ message }}
                 </div>
-                <div class="row">
-                  <div class="col-6">
-                    <div class="form-group">
-                      <label>Start:</label>
-                      <input
-                        type="datetime-local"
-                        id="eventStart"
-                        name="eventStart"
-                        class="form-control"
-                      />
-                    </div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+
+          <br />
+          <div class="container">
+            <div id="schedule-calendar"></div>
+      
+            <div
+              class="modal fade"
+              id="confirm-delete"
+              tabindex="-1"
+              role="dialog"
+              aria-labelledby="myModalLabel"
+              aria-hidden="true"
+            >
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    Are you sure to delete this shedule?
                   </div>
-                  <div class="col-6">
-                    <div class="form-group">
-                      <label>End:</label>
-                      <input
-                        type="datetime-local"
-                        id="eventEnd"
-                        name="eventEnd"
-                        class="form-control"
-                      />
-                    </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-delete-confirm" id="delete-confirmed-submit">
+                      Delete
+                    </button>
+                    <button type="button" class="btn btn-ok" data-dismiss="modal">
+                      Cancel
+                    </button>
                   </div>
                 </div>
-              </form>
+              </div>
             </div>
-            <!-- Modal footer -->
-            <div class="modal-footer">
-              <!-- <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button> -->
-              <button
-                id="add-submit"
-                type="button"
-                class="btn btn-ok"
-              >
-                Save
-              </button>
+      
+            <div
+              id="info-updated"
+              class="modal fade bd-example-modal-lg"
+              tabindex="-1"
+              role="dialog"
+              aria-labelledby="myLargeModalLabel"
+              aria-hidden="true"
+            >
+              <div class="modal-dialog modal-sm">
+                <h1>Shedule updated successfully</h1>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
+            <div
+              id="info-added"
+              class="modal fade bd-example-modal-lg"
+              tabindex="-1"
+              role="dialog"
+              aria-labelledby="myLargeModalLabel"
+              aria-hidden="true"
+            >
+              <div class="modal-dialog modal-sm">
+                <h1>Shedule added</h1>
+              </div>
+            </div>
+            {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
 
-      <!-- Edit Modal -->
-      <div class="modal fade" id="schedule-edit">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <!-- Modal Header -->
-            <div class="modal-header">
-              <h4 class="modal-title">Edit Your Schedule</h4>
-              <button
-                type="button"
-                class="close"
-                data-dismiss="modal"
-                aria-label="Close"
-              >
-                <span aria-hidden="true">×</span>
-              </button>
-            </div>
-            <!-- Modal body -->
-            <div class="modal-body">
-              <form>
-                <div class="form-group">
-                  <label>Schedule Name:</label>
-                  <input
-                    type="text"
-                    id="eventTitleUpdate"
-                    name="eventTitleUpdate"
-                    class="form-control"
-                    value=""
-                  />
-                  <input
-                    type="datetime-local"
-                    id="eventStartUpdate"
-                    name="eventStartUpdate"
-                    class="form-control"
-                    value=""
-                  />
-                  <input
-                    type="datetime-local"
-                    id="eventEndUpdate"
-                    name="eventEndUpdate"
-                    class="form-control"
-                    value=""
-                  />
-                  <input
-                    type="hidden"
-                    id="eventIdUpdate"
-                    name="eventIdUpdate"
-                    class="form-control"
-                    value=""
-                  />
+            <!-- Add Modal -->
+            <div class="modal fade" id="schedule-add">
+              <div class="modal-dialog">
+                <div class="modal-content" style="background-color: #000;border: 2px solid #6d9bff;">
+                  <!-- Modal Header -->
+                  <div class="modal-header">
+                    <h3 class="modal-title">Add New Schedule</h3>
+                    <button type="button" class="close" data-dismiss="modal">
+                      &times;
+                    </button>
+                  </div>
+                  <!-- Modal body -->
+                  <div class="modal-body">
+                    <form action="javascript:;">
+                      
+                      <div class="form-group">
+                        {{ form.title.label(class="form-control-label") }}
+                        {% if form.title.errors %}
+                        {{ form.title(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.title.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        {{ form.title(class="form-control form-control-lg") }}
+                        {% endif %}
+                    </div>
+                      <div class="form-group">
+                        {{ form.category.label(class="form-control-label") }}
+                        {% if form.category.errors %}
+                            {{ form.category(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.category.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.category(class="form-control form-control-lg") }}
+                        {% endif %}
+                    </div>
+                      <div class="form-group">
+                        {{ form.team.label(class="form-control-label") }}
+                        {% if form.team.errors %}
+                            {{ form.team(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.team.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.team(class="form-control form-control-lg") }}
+                        {% endif %}
+                    </div>
+      
+      
+      
+      
+                      <div class="row">
+                        <div class="form-group col-6">
+                          {{ form.start.label(class="form-control-label") }}
+                          {% if form.start.errors %}
+                          {{ form.start(class="form-control form-control-lg is-invalid") }}
+                          <div class="invalid-feedback">
+                              {% for error in form.start.errors %}
+                              <span>{{ error }}</span>
+                              {% endfor %}
+                          </div>
+                          {% else %}
+                          {{ form.start(class="form-control form-control-lg") }}
+                          {% endif %}
+                        </div>
+                        <div class="form-group col-6">
+                          {{ form.end.label(class="form-control-label") }}
+                          {% if form.end.errors %}
+                          {{ form.end(class="form-control form-control-lg is-invalid") }}
+                          <div class="invalid-feedback">
+                              {% for error in form.end.errors %}
+                              <span>{{ error }}</span>
+                              {% endfor %}
+                          </div>
+                          {% else %}
+                          {{ form.end(class="form-control form-control-lg") }}
+                          {% endif %}
+                        </div>
+                      </div>
+                    </form>
+                    <div class="form-group" style="float:right;">
+                      <submit
+                      id="add-submit"
+                      type="button"
+                      class="btn btn-ok"
+                    >Save
+                      </submit>
+                  </div>
+                  
+                        
+                                    </div>
+                                    <!-- Modal footer -->
+                                    <div class="modal-footer">
+                                      
+                  </div>
                 </div>
-              </form>
+              </div>
             </div>
-            <!-- Modal footer -->
-            <div class="modal-footer">
-              <!-- <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button> -->
-              <button id="update-submit" type="button" class="btn btn-ok">
-                Save
-              </button>
-              <button
-                id="delete-submit"
-                type="button"
-                class="btn btn-delete"
-                data-toggle="modal"
-                data-target="#confirm-delete"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  fill="currentColor"
-                  class="bi bi-trash"
-                  viewBox="0 0 16 14"
-                >
-                  <path
-                    d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"
-                  />
-                  <path
-                    fill-rule="evenodd"
-                    d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"
-                  />
-                </svg>
-              </button>
+            {% endif %}
+            {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+            {% set disable = '' %}
+            {% else %}
+            {% set disable = 'disabled' %}
+            {% endif %}
+            
+            <!-- Edit Modal -->
+            <div class="modal fade" id="schedule-edit">
+              <div class="modal-dialog">
+                <div class="modal-content" style="background-color: #000;border: 2px solid #6d9bff;">
+                  <!-- Modal Header -->
+                  <div class="modal-header">
+                    {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+                    <h3 class="modal-title">Edit Your Schedule</h3>
+                    {% else %}
+                    <center><h3 class="modal-title">{{ form2.category2(disabled=True, class="title-calendar-h3") }} - {{ form2.team2(disabled=True, class="title-calendar-h3") }}</h3></center>
+                    {% endif %}
+                    
+                    <button
+                    type="button"
+                    class="close"
+                    data-dismiss="modal"
+                    aria-label="Close"
+                    >
+                    <span aria-hidden="true">×</span>
+                  </button>
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body">
+                  <form action="javascript:;">
+                    
+                    <div class="form-group">
+                      <label>Schedule Name:</label>
+    
+                      <input
+                      {{disable}}
+                        type="text"
+                        id="title2"
+                        name="title2"
+                        class="form-control"
+                        value=""
+                      />
+                    </div>
+            
+                    {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+                    <div class="form-group">
+                      {{ form2.category2.label(class="form-control-label") }}
+                      {% if form2.category2.errors %}
+                          {{ form2.category2(class="form-control form-control-lg is-invalid") }}
+                          <div class="invalid-feedback">
+                              {% for error in form2.category2.errors %}
+                                  <span>{{ error }}</span>
+                              {% endfor %}
+                          </div>
+                      {% else %}
+                      {{ form2.category2(class="form-control form-control-lg") }}
+                      {% endif %}
+                      
+                    </div>
+                    {% endif %}
+                    
+      
+
+                    {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+                      <div class="form-group">
+                        {{ form2.team2.label(class="form-control-label") }}
+                        {% if form2.team2.errors %}
+                            {{ form2.team2(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form2.team2.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                        {{ form2.team2(class="form-control form-control-lg") }}
+                        {% endif %}
+                      </div>
+                      {% endif %}
+      
+
+                        <div class="row">
+                            <div class="form-group col-6">
+                              <label>Start:</label>
+      
+                              <input
+                              {{disable}}
+                              type="datetime-local"
+                              id="start2"
+                              name="start2"
+                              class="form-control"
+                              value=""
+                              />
+                            </div>
+      
+                            <div class="form-group col-6">
+                              <label>End:</label>
+                          <input
+                          {{disable}}
+                            type="datetime-local"
+                            id="end2"
+                            name="end2"
+                            class="form-control"
+                            value=""
+                        />
+                        </div>
+      
+                        </div>
+      
+                        <input
+                          type="hidden"
+                          id="id2"
+                          name="id2"
+                          class="form-control"
+                          value=""
+                        />
+                      </form>
+      
+                  </div>
+                  <!-- Modal footer -->
+                  {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+                  <div class="modal-footer">
+                    <!-- <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button> -->
+                    <button id="update-submit" type="button" class="btn btn-ok">
+                      Save
+                    </button>
+
+                    <button
+                      id="delete-submit"
+                      type="button"
+                      class="btn btn-delete"
+                      data-toggle="modal"
+                      data-target="#confirm-delete"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        fill="currentColor"
+                        class="bi bi-trash"
+                        viewBox="0 0 16 14"
+                      >
+                        <path
+                          d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"
+                        />
+                        <path
+                          fill-rule="evenodd"
+                          d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/timepicker.js/latest/timepicker.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
     <script src="{{ url_for('static', filename='js/fullcalendar.js') }}"></script>
@@ -246,188 +386,268 @@
       integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
       crossorigin="anonymous"
     ></script>
-    <script>
-        $(document).ready(function() {
+          <script>
+              $(document).ready(function() {
+                
+                $('#schedule-calendar').fullCalendar({
+                  editable:true,
+                  timezone:"local",
+                  eventOrder: 'start, end',
+                  timeFormat: 'H:mm',
+                  header:{
+                   right:'prev,next today',
+                   left:'title',
+                   //right:'month,agendaWeek,agendaDay'
+                  },
+                  firstDay: 1,
+                  events: [{% for row in calendar %}{ id : '{{row.id}}', title : '{{row.title}}', start : '{{row.start_event}}', end : '{{row.end_event}}', category : '{{row.event_category_id}}', team : '{{row.event_team_id}}'}, {% endfor %}],
+                  nextDayThreshold: "00:00:00",
+                  selectable:true,
+                  selectHelper:true,
+                  select: function (start, end, jsEvent, view) {
+                    //new
+                    var start = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
+                    var end = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
+                    $('#schedule-add').modal('show');
+                    $('#title').val('');
+                    $('#start').val(start);
+                    $('#end').val(end);
+      
+                  },
 
-          $('#schedule-calendar').fullCalendar({
-            editable:true,
-            header:{
-             right:'prev,next today',
-             left:'title',
-             //right:'month,agendaWeek,agendaDay'
-            },
-            firstDay: 1,
-            events: [{% for row in calendar %}{ id : '{{row.id}}', title : '{{row.title}}', start : '{{row.start_event}}', end : '{{row.end_event}}', }, {% endfor %}],
-            nextDayThreshold: "00:00:00",
-            selectable:true,
-            selectHelper:true,
-            select: function (start, end, jsEvent, view) {
-              var start = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
-              var end = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
-              $('#schedule-add').modal('show');
-              $('#eventTitle').val('');
-              $('#eventStart').val(start);
-              $('#eventEnd').val(end);
-
-            },
-
-            selectOverlap: function(event) {
-              return ! event.block;
-            },
-
-            eventClick: function(event) {
-              var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
-              var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
-              $('#eventTitleUpdate').val(event.title);
-              $('#eventStartUpdate').val(start);
-              $('#eventEndUpdate').val(end);
-              $('#eventIdUpdate').val(event.id);
-              $('#schedule-edit').modal('show');
-            },
-
-            //dayClick: function(date, jsEvent, view) {
-             // $('#schedule-add').modal('show');
-            //},
-
-            eventDrop:function(event) {
-              var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
-              var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
-              var title = event.title;
-              var id = event.id;
-              $.ajax({
-              url:"/calendar/update",
-              type:"POST",
-              data:{title:title, start:start, end:end, id:id},
-              success:function()
-              {
-                $('#info-updated').modal('show');
-              }
+      
+                  eventClick: function(event) {
+                    //update
+                    //alert(event.team);
+                    var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
+                    var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
+                    $('#title2').val(event.title);
+                    $('#start2').val(start);
+                    $('#end2').val(end);
+                    $('#team2').val(event.team);
+                    $('#category2').val(event.category);
+                    $('#id2').val(event.id);
+                    $('#schedule-edit').modal('show');
+                  },
+      
+                  //dayClick: function(date, jsEvent, view) {
+                   // $('#schedule-add').modal('show');
+                  //},
+      
+                  eventDrop:function(event) {
+                    var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
+                    var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
+                    var title = event.title;
+                    var category = event.category;
+                    var team = event.team;
+                    var id = event.id;
+                    $.ajax({
+                    url:"/calendar/update",
+                    type:"POST",
+                    data:{title:title, start:start, end:end, category:category, team:team, id:id},
+                    success:function()
+                    {
+                      $('#info-updated').modal('show');
+                      setTimeout(function(){
+                        $('#info-updated').modal("hide");
+                     }, 2500);
+                    }
+                    });
+                  }
+                });
+      
+      
+      
+            $('#add-submit').on('click', function(e){
+              // We don't want this to act as a link so cancel the link action
+                e.preventDefault();
+      
+                AddNewSchedulle();
               });
-            }
-          });
+      
+            $('#delete-submit').on('click', function(e){
+              // We don't want this to act as a link so cancel the link action
+                e.preventDefault();
+                $('#confirm-delete').modal('show');
+      
+              });
+      
+              function AddNewSchedulle(){
+                
 
 
+                title = $('#title').val();
+                team = $('#team').val();
+                category = $('#category').val();
+                start = $('#start').val();
+                end = $('#end').val();
+                //alert(team);
+                if (start<end){
+                  $.ajax({
+                    url:"/calendar/insert",
+                    type:"POST",
+                    data:{title:title, start:start, end:end, team:team, category:category},
+                    success:function(data)
+                    {
+                      $('#id2').val(data)
+                      //alert("Added Successfully");
+                      // window.location.replace("/calendar");
+                      //window.location.replace("/calendar");
+                      $('#info-added').modal('show');
+                      setTimeout(function(){
+                        $('#info-added').modal("hide");
+                     }, 2500);
+                      // window.location.replace("/calendar");
+                      
+                    }
+                  })
+                  $("#schedule-add").modal('hide');
+                  $("#schedule-calendar").fullCalendar('renderEvent',
+                  {
+                  title: $('#title').val(),
+                  start: new Date($('#start').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
+                  end: new Date($('#end').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
+                  category: $('#category').val(),
+                  team: $('#team').val(),
+                  id: $('#id').val(),
+                },
+                true);
+                
+              }else{
+                alert('Start must be sooner');
+                return false;
+              }
+                
+              }
+              
+                $('#update-submit').on('click', function(e){
+                  e.preventDefault();
+                 
+                   UpdateSchedulle( $('#id2').val());
+                 });
+       
+                
+              function UpdateSchedulle(){
+              
+                title2 = $('#title2').val();
+                start2 = $('#start2').val();
+                category2 = $('#category2').val();
+                team2 = $('#team2 :selected').val();
+                end2 = $('#end2').val();
+                id2 = $('#id2').val();
+               // alert(team2);
+                if (start2<end2){
+                $.ajax({
+                  url:"/calendar/update",
+                  type:"POST",
+                  data:{title:title2, team:team2, category:category2, start:start2, end:end2, id:id2},
+                  success:function(data)
+                  {
+                    //alert(data)
+                    //alert("Added Successfully");
+                    // window.location.replace("/calendar");
+                    //window.location.replace("/calendar");
+                    $('#schedule-edit').modal('hide');
+                    $('#info-updated').modal('show');
+                    setTimeout(function(){
+                      $('#info-updated').modal("hide");
+                   }, 2500);
+                    //window.location.replace("/calendar");
+      
+                  }
+                 });
+                 $("#schedule-calendar").fullCalendar('removeEvents',id2);
 
-      $('#add-submit').on('click', function(e){
-        // We don't want this to act as a link so cancel the link action
-          e.preventDefault();
+                 $("#schedule-calendar").fullCalendar('renderEvent',
+                 {
+                   title: $('#title2').val(),
+                   start: $('#start2').val(),
+                   end: $('#end2').val(),
+                   category: $('#category2').val(),
+                   team: $('#team2').val(),
+                   
+                   id: $('#id2').val()
+                 },
+                   true);
 
-          AddNewSchedulle();
-        });
-
-      $('#delete-submit').on('click', function(e){
-        // We don't want this to act as a link so cancel the link action
-          //e.preventDefault();
-          $('#confirm-delete').modal('show');
-
-        });
-
-        function AddNewSchedulle(){
-        $("#schedule-add").modal('hide');
-
-          title = $('#eventTitle').val();
-          start = $('#eventStart').val();
-          end = $('#eventEnd').val();
-
-          $.ajax({
-            url:"/calendar/insert",
-            type:"POST",
-            data:{title:title, start:start, end:end},
-            success:function(data)
-            {
-              //alert(data)
-             //alert("Added Successfully");
-            // window.location.replace("/calendar");
-            //window.location.replace("/calendar");
-            $('#info-added').modal('show');
-            window.location.replace("/calendar");
-
-            }
-           })
-
-          $("#schedule-calendar").fullCalendar('renderEvent',
-            {
-                title: $('#eventTitle').val(),
-                start: new Date($('#eventStart').val()).toISOString(),
-                end: new Date($('#eventEnd').val()).toISOString(),
-            },
-            true);
-         }
-
-
-        function UpdateSchedulle(){
-          
-          title = $('#eventTitleUpdate').val();
-          start = $('#eventStartUpdate').val();
-          end = $('#eventEndUpdate').val();
-          id = $('#eventIdUpdate').val();
-          
-          $.ajax({
-            url:"/calendar/update",
-            type:"POST",
-            data:{title:title, start:start, end:end, id:id},
-            success:function(data)
-            {
-              //alert(data)
-              //alert("Added Successfully");
-              // window.location.replace("/calendar");
-              //window.location.replace("/calendar");
-              $('#schedule-edit').modal('hide');
-              $('#info-updated').modal('show');
-              window.location.replace("/calendar");
-
-            }
-           });
-
-         }
+                  }else{
+                    alert('Start must be sooner');
+                    return false;
+                  }
+                 }
+      
+      
+      
+      
+               $('#confirm-delete').on('show.bs.modal', function() {
+                $("#schedule-edit").modal('hide');
+               });
+      
+      
+      
+               $('#delete-confirmed-submit').on('click', function(e){
+                  e.preventDefault();
+                  DeleteSchedulle();
+                  $('#confirm-delete').modal('hide');
+                });
+      
+      
+      
+              function DeleteSchedulle(){
+      
+      
+                title2 = $('#title2').val();
+                start2 = $('#start2').val();
+                end2 = $('#end2').val();
+                id2 = $('#id2').val();
+      
+                $.ajax({
+                  url:"/calendar/ajax_delete",
+                  type:"POST",
+                  data:{id:id2},
+                  success:function()
+                  {
+                  $('#modal').hide()
+                  $("#schedule-calendar").fullCalendar('removeEvents',id2);
 
 
+                  //alert("Event Removed");
+                  //window.location.replace("/calendar");
+      
+                  }
+                })
+      
+               }
+      
+      
+              });
+          </script>
+
+        </div>
 
 
-         $('#confirm-delete').on('show.bs.modal', function() {
-          $("#schedule-edit").modal('hide');
-         });
+      </div>
+    </main>
 
 
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
 
-         $('#delete-confirmed-submit').on('click', function(e){
-            e.preventDefault();
-            DeleteSchedulle();
-            $('#confirm-delete').modal('hide');
-          });
-
-
-
-         $('#update-submit').on('click', function(e){
-            UpdateSchedulle(e);
-          });
-
-        function DeleteSchedulle(){
-
-
-          title = $('#eventTitleUpdate').val();
-          start = $('#eventStartUpdate').val();
-          end = $('#eventEndUpdate').val();
-          id = $('#eventIdUpdate').val();
-
-          $.ajax({
-            url:"/calendar/ajax_delete",
-            type:"POST",
-            data:{id:id},
-            success:function()
-            {
-            $(this).hide()
-            //$("#schedule-calendar").fullCalendar('refetchEvents');
-            //alert("Event Removed");
-            window.location.replace("/calendar");
-
-            }
-          })
-
-         }
-
-
-        });
-    </script>
-    {% endblock %}
-
+    <script src="https://cdn.jsdelivr.net/timepicker.js/latest/timepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="{{ url_for('static', filename='js/fullcalendar.js') }}"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script>

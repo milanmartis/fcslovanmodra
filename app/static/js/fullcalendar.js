@@ -634,6 +634,8 @@ FC.durationHasTime = durationHasTime;
 var dayIDs = [ 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat' ];
 var unitsDesc = [ 'year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond' ]; // descending
 
+// var dayIDs = [ 'ne', 'po', 'ut', 'st', 'št', 'pi', 'so' ];
+// var unitsDesc = [ 'rok', 'mesiac', 'týždeň', 'deň', 'hodina', 'minúta', 'sekunda', 'milisekunda' ]; // descending
 
 // Diffs the two moments into a Duration where full-days are recorded first, then the remaining time.
 // Moments will have their timezones normalized.
@@ -7423,13 +7425,20 @@ DayGrid.mixin({
 		if (seg.isStart) {
 			timeText = this.getEventTimeText(event);
 			if (timeText) {
-				timeHtml = '<span class="fc-time">' + htmlEscape(timeText) + '</span>';
+			//	timeHtml = '<span class="fc-time">' + htmlEscape(timeText) + '</span>';
 			}
 		}
+if(event.team==1){team_name='A team';}
+else if (event.team==2){team_name='U19';}
+else if (event.team==3){team_name='U17';}
+else if (event.team==4){team_name='U15';}
+else if (event.team==5){team_name='U13';}
+else if (event.team==6){team_name='U11';}
+else if (event.team==7){team_name='U9';}
 
 		titleHtml =
 			'<span class="fc-title">' +
-				(htmlEscape(event.title || '') || '&nbsp;') + // we always want one line of height
+				(htmlEscape(team_name || '') || '&nbsp;') + // we always want one line of height
 			'</span>';
 		
 		return '<a class="' + classes.join(' ') + '"' +
@@ -12451,8 +12460,6 @@ Calendar.mixin({
 
 });
 
-;;
-
 Calendar.defaults = {
 
 	titleRangeSeparator: ' \u2013 ', // en dash
@@ -12465,7 +12472,7 @@ Calendar.defaults = {
 
 	// display
 	defaultView: 'month',
-	aspectRatio: 1.35,
+	aspectRatio: 1.05,
 	header: {
 		left: 'title',
 		center: '',

@@ -2,7 +2,39 @@
 <article class="media content-section">
   <!-- <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/' + post.author.image_file) }}"> -->
   <div class="media-body">
+
+    {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+
     <div class="article-metadata">
+      {% if post.author == current_user %}
+      <div class="article-metadata-admin">
+        <a
+        class="btn btn-secondary btn-sm mt-1 mb-1"
+        href="{{ url_for('posts.update_post', post_id=post.id) }}"
+        >
+        Update
+      </a>
+      <button
+      type="button"
+      class="btn btn-sm m-1"
+      data-toggle="modal"
+      data-target="#deleteModal"
+      >
+      Delete
+        </button>
+      </div>
+      {% endif %}
+    </div>
+    
+    {% endif %}
+
+    <div>
+      {% for gall in post.gallery %} {% if gall.orderz == 0 %}
+      <img
+      width="100%"
+      src="{{ url_for('static', filename='posts/'+post.id|string+'/'+gall.image_file2|string) }}"
+      />
+      {% endif %} {% endfor %}
       {% for cat in category %} {% if cat.id==post.category_id %}
       <a
         class="mr-2"
@@ -11,36 +43,10 @@
         {{ cat.name }}
       </a>
       {% endif %} {% endfor %}
-
+      
       <small class="text-muted">
         {{ post.date_posted.strftime('%Y-%m-%d') }}
       </small>
-      {% if post.author == current_user %}
-      <div class="article-metadata-admin">
-        <a
-          class="btn btn-secondary btn-sm mt-1 mb-1"
-          href="{{ url_for('posts.update_post', post_id=post.id) }}"
-        >
-          Update
-        </a>
-        <button
-          type="button"
-          class="btn btn-sm m-1"
-          data-toggle="modal"
-          data-target="#deleteModal"
-        >
-          Delete
-        </button>
-      </div>
-      {% endif %}
-    </div>
-    <div>
-      {% for gall in post.gallery %} {% if gall.orderz == 0 %}
-      <img
-        width="100%"
-        src="{{ url_for('static', filename='posts/'+post.id|string+'/'+gall.image_file2|string) }}"
-      />
-      {% endif %} {% endfor %}
     </div>
     <h2 class="article-title">{{ post.title }}</h2>
     <p class="article-content">{{ post.content }}</p>
@@ -50,7 +56,7 @@
   <div class="container">
     <div class="row">
       {% for pic in galleries %} {% if pic.orderz > 0 %}
-
+      
       <div class="col-sm-6">
         <!-- Button trigger modal -->
         <a
@@ -66,15 +72,15 @@
 
         <!-- Modal -->
         <div
-          class="modal fade slide right"
+          class="modal fade"
           id="exampleModalLong{{pic.id}}"
           tabindex="-1"
           role="dialog"
           aria-labelledby="exampleModalLongTitle"
           aria-hidden="true"
         >
-          <div class="modal-dialog" role="document">
-            <div class="modal-content">
+          <div class="w-200 modal-dialog" role="document">
+            <div class="modal-content gallery">
               <img
                 class="w-100"
                 src="{{ url_for('static', filename='posts/'+post.id|string+'/gallery/'+pic.image_file2|string) }}"
