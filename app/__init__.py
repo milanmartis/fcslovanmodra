@@ -4,7 +4,6 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
 from app.config import Config
-from flask_modals import Modal
 from flask_security import Security, SQLAlchemyUserDatastore
 
 
@@ -17,7 +16,6 @@ from flask_security import Security, SQLAlchemyUserDatastore
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
-modal = Modal()
 
    
 login_manager = LoginManager()
@@ -35,7 +33,6 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
-    modal.init_app(app)
     # bootstrap.init_app(app)
 
 
