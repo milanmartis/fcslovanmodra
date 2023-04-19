@@ -477,6 +477,12 @@ footer {
   }
 
 
+
+  .navbar-toggler-icon{
+    width:45px;
+  }
+
+
   .navbar-dark .brand {
     display: none;
   }
