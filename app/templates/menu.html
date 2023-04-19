@@ -38,7 +38,7 @@
               </li>
               {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
               <li class="nav-item">
-                <a class="nav-link" href="#" data-toggle="modal" data-target="#calenadrModal">Kalendár</a>
+                <a class="nav-link" href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
               </li>
               {% endif %}
 
