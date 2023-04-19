@@ -6,24 +6,31 @@
     {% for product in products %}
         <article class="media content-section eshop-item">
 
+          <div class="row">
+            <div class="col-sm-12 col-md-6">
+
             <div class="product-img">
                 {% for gall in product.product_gallery %} {% if gall.orderz == 0 %}
                 <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
                 <img
                   
-                  width="190"
-                  height="190"
+                  width="100%"
                   src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}"
                 /></a>
                 {% endif %} {% endfor %}
             </div>
+
+
+          </div>
+          <div class="col-sm-12 col-md-6">
+
 
           <div class="media-body products-titles">
             <div class="article-metadata">
             {% for cat in category %}
             {% if cat.id == product.product_category_id %}
             <span>
-              <a class="mr-2" href="{{ url_for('products.category_products', category=cat.id) }}">{{ cat.name }}</a>
+              <a class="w-100" href="{{ url_for('products.category_products', category=cat.id) }}">{{ cat.name }}</a>
             </span>
             {% endif %}
             {% endfor %}
@@ -47,9 +54,11 @@
                 <button onclick="javascript:location.href='{{ url_for('products.product', product_id=product.id) }}';" class="btn btn-sm" />View</button>
                 <button onclick="javascript:location.href='{{ url_for('products.list_products') }}';" class="btn btn-sm" />Buy</button>
             </p>
-            
+          </div>
+          </div>
 
           </div>
+
         </article>
     {% endfor %}
 

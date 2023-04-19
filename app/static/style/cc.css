@@ -758,13 +758,14 @@ ol.carousel-indicators li{
 
 }
 
-.btn-live {
+.btnlive {
   border: 2px solid red;
   background-color: transparent;
   color: red;
 }
 
-.btn-live:hover {
+.btnlive:hover,
+.btnlive:hover  {
   border: 2px solid red;
   background-color: red;
   color: #fff;
@@ -799,7 +800,8 @@ ol.carousel-indicators li{
 }
 
 .btn:hover,
-.btn:active {
+.btn:active,
+.btn:focus {
   background-color: #6d9bff;
   border: 2px solid #6d9bff;
   color: #030303;
