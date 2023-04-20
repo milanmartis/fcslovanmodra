@@ -348,7 +348,7 @@
     {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
 
     <div
-      onfocus="javascript:document.getElementById('calendar_iframe').contentWindow.location.reload();"
+      onfocus="javascript:document.getElementById('calendar_iframe').contentWindow.location.reload();" 
       class="modal fade"
       id="calenadrModal"
       tabindex="-1"
@@ -357,9 +357,16 @@
       aria-hidden="true"
       style="z-index: 999999999999999999999999999999;"
     >
-      <div class="modal-dialog" role="document" style="overflow:none;margin:auto;padding: 6px;">
-        <div class="modal-content" style="height: 650px;overflow:none;">
-<iframe id="calendar_iframe" style="z-index:9999;height:100%;margin:-4px;padding:0px;width:100%;border:none;overflow:none;background-color: black;" src="{{ url_for('calendar.index') }}"></iframe>
+      <div class="modal-dialog" role="document" style="overflow:none;margin:auto;padding-top: 16px;">
+        <div class="modal-content" style="height: 660px;overflow:none;">
+          <button
+          type="button"
+          class="btn btnclose"
+          data-dismiss="modal"
+          >
+          X
+        </button>
+<iframe id="calendar_iframe" style="z-index:9999;height:100%;margin:4px;padding:0px;width:100%;border:none;overflow:none;background-color: black;" src="{{ url_for('calendar.index') }}"></iframe>
 
     </div>
       </div>
@@ -413,13 +420,13 @@
         </div>
         <div class="col-2">
           <center>
-            <a href="#"><i style="font-size: 300%;text-align: center;" class="fa fa-facebook-f"></i> </a>
+            <a href="#" class="product-img2"><i style="font-size: 300%;text-align: center;" class="fa fa-facebook-f"></i> </a>
           </center>
         </div>
 
         <div class="col-2">
           <center>
-            <a href="#"><i style="font-size: 300%;text-align: center;" class="fa fa-youtube"></i> </a>
+            <a href="#" class="product-img2"><i style="font-size: 300%;text-align: center;" class="fa fa-youtube"></i> </a>
           </center>
         </div>
         <div class="col-4">
@@ -436,7 +443,7 @@
       <div class="container">
 
       <!--foote_bottom_ul_amrc ends here-->
-      <p class="text-center">Copyright @2023 | Designed With by <a href="https://appdesign.sk">appdesign.sk</a></p>
+      <p style="margin-top:20px;font-size: 75%;" class="text-center">Copyright @2023 | Designed With by <a href="https://appdesign.sk">appdesign.sk</a></p>
       
         
       </footer>
