@@ -43,7 +43,7 @@ def new_product():
 
     form.category.choices = [(category.id, category.name) for category in ProductCategory.query.all()]
     if form.validate_on_submit():
-        product =  Product(title=form.title.data, content=form.content.data, link=form.link.data, saler=current_user, product_category_id=form.category.data, price=form.price.data, old_price=form.old_price.data, is_visible=form.is_visible.data)
+        product =  Product(title=form.title.data, content=form.content.data, saler=current_user, product_category_id=form.category.data, price=form.price.data, youtube_link=form.youtube_link.data, old_price=form.old_price.data, is_visible=form.is_visible.data)
         db.session.add(product)
         db.session.commit()
         path_image = os.path.join(str(current_app.root_path)+'/static/products/'+str(product.id)+'/gallery/')
@@ -121,7 +121,7 @@ def update_product(product_id):
     if form.validate_on_submit():
         product.title = form.title.data
         product.content = form.content.data
-        product.link = form.link.data
+        product.youtube_link = form.youtube_link.data
         product.product_category_id = form.category.data
 
         if form.picture.data:
@@ -145,7 +145,7 @@ def update_product(product_id):
         form.content.data = product.content
         form.category.data = product.product_category_id
         form.price.data = product.price
-        form.link.data = product.link
+        form.youtube_link.data = product.youtube_link
         form.old_price.data = product.old_price
         form.is_visible.data = product.is_visible
     return render_template('products/create_product.html', title='Update Product',
