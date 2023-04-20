@@ -48,16 +48,16 @@
                 {% endif %}
             </div>
             <div class="form-group">
-                {{ form.link.label(class="form-control-label") }}
-                {% if form.link.errors %}
-                    {{ form.link(class="form-control form-control-lg is-invalid") }}
+                {{ form.youtube_link.label(class="form-control-label") }}
+                {% if form.youtube_link.errors %}
+                    {{ form.youtube_link(class="form-control form-control-lg is-invalid") }}
                     <div class="invalid-feedback">
-                        {% for error in form.link.errors %}
+                        {% for error in form.youtube_link.errors %}
                             <span>{{ error }}</span>
                         {% endfor %}
                     </div>
                 {% else %}
-                    {{ form.link(class="form-control form-control-lg") }}
+                    {{ form.youtube_link(class="form-control form-control-lg") }}
                 {% endif %}
             </div>
             <div class="form-row">
