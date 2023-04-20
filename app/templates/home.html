@@ -25,10 +25,11 @@
             
             
             
-            <h2 style="padding-top: 10px;"><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
+            <h2 style="padding-top: 0px;"><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
             <p class="article-content">{{ post.content[:220] }}...</p>
           </div>
         </article>
+        <br>
     {% endfor %}
     {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
       {% if page_num %}
