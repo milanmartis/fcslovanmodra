@@ -62,7 +62,7 @@
         <!-- Button trigger modal -->
         <a
           href="{{ url_for('static', filename='posts/'+post.id|string+'/gallery/'+pic.image_file2|string) }}"
-          data-lightbox="example-set" data-title="Click the right half of the image to move forward."
+          data-lightbox="example-set" data-title="{{ post.title }}"
 
         >
           <img

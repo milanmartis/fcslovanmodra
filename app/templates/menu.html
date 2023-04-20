@@ -66,6 +66,7 @@
               {% if current_user.has_roles('Admin') %}
 
               <div class="dropdown-menu mb-10" aria-labelledby="navbarDropdown" >
+                <br>
                 <a class="nav-item nav-link" href="{{ url_for('posts.new_post') }}">New Post</a>
                 <a class="nav-item nav-link" href="{{ url_for('products.new_product') }}">New Product</a>
                 <a class="nav-item nav-link" href="{{ url_for('posts.list_categories') }}">Categories</a>

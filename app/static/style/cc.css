@@ -37,8 +37,7 @@ background-color: transparent;
 
 .card{
   background-color: transparent;
-  max-width: 220px;
-  padding: 10px;
+  padding: 0px;
   border: 0px;
 }
 
@@ -90,7 +89,6 @@ background-color: transparent;
 
  .sponsor-img{
   text-align: center;
-  display:block;
   border-radius: 2px;
   margin-right: 2px;
   transition: .2s ease-in-out;

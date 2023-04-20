@@ -2,40 +2,37 @@
 {% block content %}
 
 
-  <div class="container">
     
-    <div class="row col-12 d-flex justify-content-center"><h3>{{ team.name }}</h3></div>
+    <div class="col-12 d-flex justify-content-center"><h3>{{ team.name }}</h3></div>
 
 
-    <div class="row col-12 d-flex justify-content-center"><button class="btn btn-teams-position">{{'Útok'}}</button></div>
+    <div class="col-12 d-flex justify-content-center"><button class="btn btn-teams-position">{{'Útok'}}</button></div>
+
     <div class="row">
-    
-      {% for player in members %}
-      <div class="col-6 col-md-4 col-lg-4">
-
+     {% for player in members %}
       {% if player.position[0].id==4 %}
-      <a href="{{ url_for('users.member', member_id=player.id) }}">
-        <div class="card" style="width: 100%;padding:0px;margin:0px;">
-          <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
+      <a class="col-xs-4 col-sm-6 col-md-4 col-lg-4" href="{{ url_for('users.member', member_id=player.id) }}">
+        <div class="card" style="width: 95%;margin:0px;">
+          <img width="99%" class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
           <div class="card-body">
             <h3>{{ player.name }}</h3>
           </div>
         </div>
       </a>
       {% endif %}
-    </div>
       {% endfor %}
     </div>
 
 
     
-    <div class="row col-12 d-flex justify-content-center"><button class="btn btn-teams-position">{{'Záloha'}}</button></div>
+    <div class="row d-flex justify-content-center"><button class="btn btn-teams-position">{{'Záloha'}}</button></div>
     <div class="row">
     
       {% for player in members %}
+
       {% if player.position[0].id==3 %}
-      <a href="{{ url_for('users.member', member_id=player.id) }}">
-        <div class="card" style="width: 18rem;">
+      <a class="col-xs-4 col-sm-6 col-md-4 col-lg-4"  href="{{ url_for('users.member', member_id=player.id) }}">
+        <div class="card" style="width: 95%;margin:0px;">
           <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
           <div class="card-body">
             <h3>{{ player.name }}</h3>
@@ -44,6 +41,7 @@
       </a>
       {% endif %}
       {% endfor %}
+
     </div>
 
 
@@ -52,8 +50,8 @@
     
       {% for player in members %}
       {% if player.position[0].id==2 %}
-      <a href="{{ url_for('users.member', member_id=player.id) }}">
-        <div class="card" style="width: 18rem;">
+      <a class="col-xs-4 col-sm-6 col-md-4 col-lg-4"  href="{{ url_for('users.member', member_id=player.id) }}">
+        <div class="card" style="width: 95%;margin:0px;">
           <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
           <div class="card-body">
             <h3>{{ player.name }}</h3>
@@ -69,8 +67,8 @@
     
       {% for player in members %}
       {% if player.position[0].id==1 %}
-      <a href="{{ url_for('users.member', member_id=player.id) }}">
-        <div class="card" style="width: 18rem;">
+      <a class="col-xs-4 col-sm-6 col-md-4 col-lg-4"  href="{{ url_for('users.member', member_id=player.id) }}">
+        <div class="card" style="width: 95%;margin:0px;">
           <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
           <div class="card-body">
             <h3>{{ player.name }}</h3>
@@ -86,8 +84,8 @@
 
       {% for player in members %}
         {% if player.position[0].id==5 %}
-        <a href="{{ url_for('users.member', member_id=player.id) }}">
-          <div class="card" style="width: 18rem;">
+        <a class="col-xs-4 col-sm-6 col-md-4 col-lg-4"  href="{{ url_for('users.member', member_id=player.id) }}">
+          <div class="card" style="width: 95%;margin:0px;">
             <img class="sponsor-img" src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}">
             <div class="card-body">
               <h3>{{ player.name }}</h3>
@@ -99,8 +97,5 @@
       </div>
 
 
-
-      
-  </div>
 
 {% endblock content %}
