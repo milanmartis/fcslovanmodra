@@ -10,6 +10,7 @@ class ProductForm(FlaskForm):
     content = TextAreaField('Description', validators=[DataRequired()])
     category = SelectField('Product Category', choices=[], coerce=int, validators=[DataRequired()])
     is_visible = BooleanField('Visible')
+    link = StringField('Link to the product', validators=[DataRequired()])
     price = DecimalField(places=2, validators=[DataRequired()])
     old_price = DecimalField(places=2, validators=[DataRequired()])
     picture = FileField('Title Image upload')

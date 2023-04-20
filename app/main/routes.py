@@ -41,7 +41,8 @@ class RightColumn:
         return menuteam
 
     def next_match():
-        next_match = db.session.query(Event).filter(Event.event_team_id==1).first()
+        next_match = db.session.query(Event).filter(Event.event_team_id==1).order_by(Event.start_event.asc()).first()
+        print(next_match)
         return next_match
 
     def score_table():
