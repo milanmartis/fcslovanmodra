@@ -52,17 +52,21 @@ def new_post():
             os.makedirs(path_image)
         except OSError as error:
             print(error) 
+            
+        try:
+            file = form.picture.data
+            file_filename = secure_filename(file.filename)
+            form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
+            picture = PostGallery(title=form.title.data, image_file2=file_filename, orderz=0, post_id=post.id)
+            db.session.add(picture)
 
-        # for file in form.pictures.data:
-        file = form.picture.data
-        file_filename = secure_filename(file.filename)
-        form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
+        except:
+            pass
+                
         pictures = []
-        filez = 0
 
-        if form.pictures.data:
-            for file in form.pictures.data:
-                print(file.filename)
+        for file in form.pictures.data:
+            if file:
                 with open(os.path.realpath(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery/'+str(file.filename)), 'wb') as f:
                         f.write(file.read())
 
@@ -71,8 +75,6 @@ def new_post():
                 pictures = PostGallery(title=form.title.data, image_file2=file.filename, orderz=1, post_id=post.id)
                 db.session.add(pictures)
 
-        picture = PostGallery(title=form.title.data, image_file2=file_filename, orderz=0, post_id=post.id)
-        db.session.add(picture)
         db.session.commit()
         flash('Your post has been created!', 'success')
         return redirect(url_for('main.home'))
@@ -87,7 +89,11 @@ def post(post_id):
         Post.id == PostGallery.post_id).filter(PostGallery.orderz<1).filter(Post.id==post_id).first()
     galleries = PostGallery.query.filter(PostGallery.post_id==post_id).all()
     category = Category.query.all()
-    return render_template('posts/post.html', title=post.title, post=post, galleries=galleries, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    if post:
+        title = post.title
+    else:
+        title = ''
+    return render_template('posts/post.html', title=title, post=post, galleries=galleries, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/posts/category/<int:category>")
@@ -118,8 +124,8 @@ def update_post(post_id):
         post.category_id = form.category.data
 
         if form.picture.data:
-            # for file in form.pictures.data:
             file = form.picture.data
+            # for file in form.pictures.data:
             file_filename = secure_filename(file.filename)
             form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
             
@@ -127,11 +133,10 @@ def update_post(post_id):
             picture.title=form.title.data
             picture.image_file2=file_filename
         
-        if form.pictures.data:
-            pictures = []
-            filez = 0
+        pictures = []
 
-            for file in form.pictures.data:
+        for file in form.pictures.data:
+            if file:
                 print(file.filename)
                 with open(os.path.realpath(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery/'+str(file.filename)), 'wb') as f:
                         f.write(file.read())

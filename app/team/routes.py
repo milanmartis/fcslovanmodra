@@ -45,7 +45,10 @@ def new_team():
 
 @team.route("/team/<team_name>")
 def team_name(team_name):
-    members = Member.query.join(User.roles, Member.position, Member.teams).filter(Team.name.like(team_name)).all()
+    # members = Member.query.join(User.roles, Member.position, Member.teams).filter(Team.name.like(team_name)).all()
+    
+    members = Player.query.filter(Team.id == Player.team_id).filter(Team.name.like(team_name)).all()
+
     team = Team.query.filter(Team.name.like(team_name)).first()
     # team = Member.query.filter(Member.id==teams_members.c.member_id).filter(Member.id==positions_members.c.member_id).filter(teams_members.c.team_id==Team.id).filter(positions_members.c.position_id==Position.id).all()
     return render_template('teams/team.html', team=team, members=members, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
@@ -69,6 +72,7 @@ def update_team(team_id):
     form = TeamForm()
     
     score_scrap = request.form.get("score_scrap")
+    print(score_scrap)
         
     if team.score_scrap and score_scrap:
         
@@ -139,7 +143,7 @@ def update_team(team_id):
             
             records_to_insert = df[i].head(100).to_records().tolist()
             
-            # print(records_to_insert)
+            print(records_to_insert)
 
 
             for rec in records_to_insert:

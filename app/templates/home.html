@@ -1,6 +1,5 @@
 {% extends "layout.html" %}
 {% block content %}
-
     {% for post in posts %}
         <article class="media content-section">
           <div class="media-body">
@@ -26,7 +25,7 @@
             
             
             <h2 style="padding-top: 0px;"><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
-            <p class="article-content">{{ post.content[:220] }}...</p>
+            <p class="article-content">{{ post.content[:220]|safe }}...</p>
           </div>
         </article>
         <br>

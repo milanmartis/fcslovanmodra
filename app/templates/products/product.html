@@ -1,68 +1,77 @@
 {% extends "layout.html" %} {% block content %}
-<h3 class="mb-3">{{ 'live stream' }} 
+<h3 class="mb-3">{{ 'LIVE STREAM' }} 
 </h3>
 
 
 
+<div class="content">
+  <div class="container">
+  <div class="row">
 
-    <div class="row">
-      <div class="col-12">
-    {% if product.saler == current_user %}
-  
-    <div class="article-metadata-admin">
-      <a
-        class="btn btn-secondary btn-sm mt-1 mb-1"
-        href="{{ url_for('products.update_product', product_id=product.id) }}"
-      >
-        Update
-      </a>
-      <button
-        type="button"
-        class="btn btn-sm m-1"
-        data-toggle="modal"
-        data-target="#deleteModal"
-      >
-        Delete
-      </button>
-    </div>
-    {% endif %}
+  {% if product.saler == current_user %}
+
+  <div class="article-metadata-admin" style="position:relative;right:10px;display:block;float:right;z-index:99999999999999">
+    <a
+      class="btn btn-secondary btn-sm mt-1 mb-1"
+      href="{{ url_for('products.update_product', product_id=product.id) }}"
+    >
+      Update
+    </a>
+    <button
+      type="button"
+      class="btn btn-sm m-1"
+      data-toggle="modal"
+      data-target="#deleteModal{{product.id}}"
+    >
+      Delete
+    </button>
+  </div>
+  {% endif %}
+
+
+
+  <div class="col-12">
+    
+    {% if product.youtube_link %}
     <div>
       <iframe width="100%" height="515" allow="fullscreen;"
-      src="https://www.youtube.com/embed/g-GslMly3ho?autoplay=1&mute=1">
-      </iframe>    </div>
-
+      src="{{product.youtube_link}}?autoplay=1&mute=1">
+      </iframe>
     
+    </div>
+      
+      {% else %}
+      <div class="product-img">
+      {% for gall in product.product_gallery %} {% if gall.orderz == 0 %}
+      <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
+        <img
+        
+        width="100%"
+        height="100%"
+        src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}"
+        /></a>
+        {% endif %} {% endfor %}
+      </div>
+      {% endif %}
 
   </div>
-<br>
-<br>
-
-
-  
+    
   <div class="col-12">
 
-      <h2 class="article-title">{{ product.title }}</h2>
-      <p class="article-content">{{ product.content }}</p>
 
-                  <!-- <p class="article-content">{{ product.content }}</p> -->
-                  <!--<p class="article-content eshop-item-price">{{ product.price }} €</p>
-                  <p style="float:right;position:relative;top:60px; right:20px;">
-                    {% if current_user.is_authenticated %}
-                      <button id="buy-now" class="btn-demo" value="{{ product.id }}" />Buy</button>
-                      {% else %}
-                      <button id="login" class="btn" onclick="javascript:location.href='../login'" />Login</button>
-                      <button id="register" class="btn" onclick="javascript:location.href='../register'" />Register</button>
-                    {% endif %}
-                  -->
-                   
-                    </p>
+      <h2 class="article-title">{{ product.title }}</h2>
+      <p class="article-content">{{ product.content|safe }}</p>
+
   </div>
+</div>
+</div>
 </div>
 
 
 
-
-
+<div class="content">
+  <div class="container">
+    <div class="row">
       {% for pic in galleries %} {% if pic.orderz > 0 %}
 
       <div class="col-sm-6">
@@ -97,7 +106,7 @@
         <!-- Modal -->
         <div
           class="modal fade"
-          id="deleteModal"
+          id="deleteModal{{product.id}}"
           tabindex="-1"
           role="dialog"
           aria-labelledby="deleteModalLabel"
@@ -127,21 +136,14 @@
                     />
                   </form>
                 </div>
-
-          
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       {% endif %} {% endfor %}
     </div>
   </div>
 </div>
-
-
-
-</h3>
-
-<br><br><br>
-
-
 
 {% endblock content %}

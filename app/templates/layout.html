@@ -54,6 +54,8 @@
               <h3 style="padding-top:12px;">Admin links</h3>
               <p class="text-muted">
                 <ul class="list-group">
+                  <a href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
+
                   <a href="{{ url_for('posts.new_post') }}">New Post</a>
                   <a href="{{ url_for('products.new_product') }}">New Product</a>
                   <a href="{{ url_for('posts.list_categories') }}">Categories</a>
@@ -76,6 +78,7 @@
               <h3 style="padding-top:12px;">User links</h3>
               <p class="text-muted">
                 <ul class="list-group">
+                  <a href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
                   <a href="{{ url_for('users.account') }}">My Account</a>
                   <a href="{{ url_for('users.account') }}">My Team</a>
                   <a href="{{ url_for('users.logout') }}">Logout</a>

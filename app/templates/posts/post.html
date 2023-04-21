@@ -1,6 +1,5 @@
 {% extends "layout.html" %} {% block content %}
 <article class="media content-section">
-  <!-- <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/' + post.author.image_file) }}"> -->
   <div class="media-body">
 
     {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
@@ -49,7 +48,7 @@
       </small>
     </div>
     <h2 class="article-title">{{ post.title }}</h2>
-    <p class="article-content">{{ post.content }}</p>
+    <p class="article-content">{{ post.content|safe }}</p>
   </div>
 </article>
 
