@@ -14,9 +14,8 @@ calendar = Blueprint('calendar', __name__)
 
 
 
-@calendar.route('/calendar')
 @login_required
-def index():
+def calendar2():
     calendar = Event.query.all()
     form = EventForm()
     form.team.choices = [(team.id, team.name) for team in Team.query.all()]

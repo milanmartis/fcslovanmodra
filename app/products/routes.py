@@ -2,7 +2,7 @@ from flask import (render_template, url_for, flash,
                    redirect, request, abort, Blueprint, current_app)
 from flask_login import current_user, login_required
 from app import db
-from app.models import Product, ProductGallery, ProductCategory
+from app.models import Product, Event, ProductGallery, ProductCategory
 from app.products.forms import ProductForm,  ProductCategoryForm
 from flask import Blueprint
 from werkzeug.utils import secure_filename
@@ -83,6 +83,7 @@ def new_product():
 
 @products.route("/product/<int:product_id>")
 def product(product_id):
+    calendar = Event.query.all()
     page = request.args.get('page', 1, type=int)
 
     products = Product.query.join(ProductGallery, ProductCategory).filter(
@@ -96,7 +97,7 @@ def product(product_id):
     
     
     
-    return render_template('products/product.html', page=page, products=products, title=product.title, product=product, galleries=galleries, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('products/product.html', page=page, products=products, calendar=calendar, title=product.title, product=product, galleries=galleries, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @products.route("/products/category/<int:category>")

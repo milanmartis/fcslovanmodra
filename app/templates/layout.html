@@ -21,13 +21,13 @@
     {% endif %}
 </head>
 <body >
-
+    <div id="loader"></div>
     <header class="site-header" >
       {% include 'menu.html' %}
     </header>
     <br>
     
-    <main  role="main" class="container">
+    <main style="margin-top:-30px;" role="main" class="container">
       <div class="row">
         <div class="col-md-8">
           {% with messages = get_flashed_messages(with_categories=true) %}
@@ -51,21 +51,21 @@
   
           <div class="content-section mt-6">
             <div class="content-section-sidebar">
-              <h3 style="padding-top:12px;">Admin links</h3>
+              <h3 style="padding-top:12px;">Admin panel</h3>
               <p class="text-muted">
                 <ul class="list-group">
                   <a href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
 
-                  <a href="{{ url_for('posts.new_post') }}">New Post</a>
-                  <a href="{{ url_for('products.new_product') }}">New Product</a>
-                  <a href="{{ url_for('posts.list_categories') }}">Categories</a>
+                  <a href="{{ url_for('posts.new_post') }}">Nový článok</a>
+                  <a href="{{ url_for('products.new_product') }}">Nový produkt</a>
+                  <a href="{{ url_for('posts.list_categories') }}">Kategórie článkov</a>
                   <!-- <a class="nav-item nav-link" href="{{ url_for('users.register') }}">New Member</a> -->
-                  <a href="{{ url_for('users.list_members') }}">Members</a>
-                  <a href="{{ url_for('team.list_teams') }}">Teams</a>
-                  <a href="{{ url_for('users.list_roles') }}">Roles</a>
-                  <a href="{{ url_for('users.account') }}">My Account</a>
+                  <a href="{{ url_for('users.list_members') }}">Členovia</a>
+                  <a href="{{ url_for('team.list_teams') }}">Družstvá</a>
+                  <a href="{{ url_for('users.list_roles') }}">Roly na stránke</a>
+                  <a href="{{ url_for('users.account') }}">Môj účet</a>
                   {% if current_user.is_authenticated %}
-                  <a href="{{ url_for('users.logout') }}">Logout</a>
+                  <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
                   {% endif %}
 
                 </ul>
@@ -75,13 +75,13 @@
           {% elif current_user.is_authenticated  %}
           <div class="content-section mt-6">
             <div class="content-section-sidebar">
-              <h3 style="padding-top:12px;">User links</h3>
+              <h3 style="padding-top:12px;">Užívateľský prístup</h3>
               <p class="text-muted">
                 <ul class="list-group">
                   <a href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
-                  <a href="{{ url_for('users.account') }}">My Account</a>
-                  <a href="{{ url_for('users.account') }}">My Team</a>
-                  <a href="{{ url_for('users.logout') }}">Logout</a>
+                  <a href="{{ url_for('users.account') }}">Môj účet</a>
+                  <a href="{{ url_for('users.account') }}">Moje družstvo</a>
+                  <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
 
 
                 </ul>
@@ -97,7 +97,7 @@
             <div class="content-section-sidebar">
 
             <div class="dez-post-media dez-img-effect zoom-slow">
-              <h3 style="padding-top:12px;">Next Match</h3>
+              <h3 style="padding-top:12px;">Najbližší zápas</h3>
               <center>
               <button class="btn btn-live" onclick="javascript:location.href='../product/2';">LIVE</button><br>
               <img class="image-logo" style="padding:16px;" height="100" src="https://www.fcslovanmodra.sk/images/sports-logo/jakubov.png">
@@ -111,11 +111,11 @@
 
           </div>
 
-<br><br>
+<br>
           <div class="content-section mt-26">
             <div class="dez-post-media dez-img-effect zoom-slow">
-              <h3 style="padding-top:12px;">Partners</h3>
-              <center><p style="font-size:120%;margin-top:-9px;">Visit websites our donors</p></center>
+              <h3 style="padding-top:12px;">Partneri</h3>
+              <center><p style="font-size:120%;margin-top:-9px;">Navštívte stránky našich donorov</p></center>
 
 
 
@@ -162,10 +162,11 @@
           </div>
 
           
-          <br><br>
-          <br><br>
+          <br>
+          <br>
           <div class="content-section mt-26">
             <div class="dez-post-media dez-img-effect zoom-slow">
+              <h3 style="padding-top:0px;">Tabuľky</h3>
 
               <div id="tabz" class="carousel slide"  data-interval="false" data-ride="carousel">
                 <center>
@@ -364,7 +365,8 @@
           >
           X
         </button>
-<iframe id="calendar_iframe" style="z-index:9999;height:100%;margin:4px;padding:0px;width:100%;border:none;overflow:none;background-color: black;" src="{{ url_for('calendar.index') }}"></iframe>
+
+      <iframe id="calendar_iframe" style="z-index:9999;height:100%;margin:4px;padding:0px;width:100%;border:none;overflow:none;background-color: black;"></iframe>
 
     </div>
       </div>
@@ -445,6 +447,21 @@
       
         
       </footer>
+<script>
+    document.onreadystatechange = function() {
+        if (document.readyState !== "complete") {
+            //document.querySelector(
+            //"body").style.visibility = "hidden";
+            document.querySelector(
+            "#loader").style.visibility = "visible";
+        } else {
+            document.querySelector(
+            "#loader").style.display = "none";
+            //document.querySelector(
+            //"body").style.visibility = "visible";
+        }
+    };
+</script>
     
 
     <!-- Optional JavaScript -->

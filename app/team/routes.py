@@ -46,12 +46,13 @@ def new_team():
 @team.route("/team/<team_name>")
 def team_name(team_name):
     # members = Member.query.join(User.roles, Member.position, Member.teams).filter(Team.name.like(team_name)).all()
+    trener = Member.query.join(User.roles, Member.position, Member.teams).filter(Team.name.like(team_name)).all()
     
     members = Player.query.filter(Team.id == Player.team_id).filter(Team.name.like(team_name)).all()
 
     team = Team.query.filter(Team.name.like(team_name)).first()
     # team = Member.query.filter(Member.id==teams_members.c.member_id).filter(Member.id==positions_members.c.member_id).filter(teams_members.c.team_id==Team.id).filter(positions_members.c.position_id==Position.id).all()
-    return render_template('teams/team.html', team=team, members=members, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('teams/team.html', team=team, members=members, trener=trener, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -147,7 +148,7 @@ def update_team(team_id):
 
 
             for rec in records_to_insert:
-                score_team = Player(name=rec[1], position=1, team=team_id, score=int(rec[2]), yellow_card=int(rec[3]), red_card=rec[4], team_id=team_id)
+                score_team = Player(name=rec[1], position=rec[5], team=team_id, score=int(rec[2]), yellow_card=int(rec[3]), red_card=rec[4], team_id=team_id)
                 db.session.add(score_team)
                 # print(rec[1])
         db.session.commit()

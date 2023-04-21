@@ -30,7 +30,8 @@
       href="{{ url_for('static', filename='style/calendar.css') }}"
     />
 
-    
+    <div id="loader"></div>
+
     <main role="main" class="container" >
       <h3 style="padding-top:12px;">Kalendár</h3>
 
@@ -367,6 +368,22 @@
               </div>
             </div>
           </div>
+
+          <script>
+            document.onreadystatechange = function() {
+                if (document.readyState !== "complete") {
+                    document.querySelector(
+                    "body").style.visibility = "hidden";
+                    document.querySelector(
+                    "#loader").style.visibility = "visible";
+                } else {
+                    document.querySelector(
+                    "#loader").style.display = "none";
+                    document.querySelector(
+                    "body").style.visibility = "visible";
+                }
+            };
+        </script>
     <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
