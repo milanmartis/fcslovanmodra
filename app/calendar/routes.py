@@ -15,6 +15,7 @@ calendar = Blueprint('calendar', __name__)
 
 
 @login_required
+@calendar.route("/calendar",methods=["POST","GET"])
 def index():
     calendar = Event.query.all()
     form = EventForm()
