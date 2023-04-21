@@ -4,9 +4,9 @@
 
     
     <div class="col-12 d-flex justify-content-center"><h3>{{ team.name }}</h3></div>
+<br>
 
-
-    <div class="col-12 d-flex justify-content-center"><button class="btn btn-teams-position">{{'Útok'}}</button></div>
+    <div class="col-12 d-flex justify-content-center"><p class="btn-teams-position">{{'Útok'}}</p></div>
 
     <div class="row">
      {% for player in members %}
@@ -24,7 +24,7 @@
 
 
     
-    <div class="row d-flex justify-content-center"><button class="btn btn-teams-position">{{'Záloha'}}</button></div>
+    <div class="row d-flex justify-content-center"><p class="btn-teams-position">{{'Záloha'}}</p></div>
     <div class="row">
     
       {% for player in members %}
@@ -43,7 +43,7 @@
     </div>
 
 
-    <div class="row col-12 d-flex justify-content-center"><button class="btn btn-teams-position">{{'Obrana'}}</button></div>
+    <div class="row col-12 d-flex justify-content-center"><p class="btn-teams-position">{{'Obrana'}}</p></div>
     <div class="row">
     
       {% for player in members %}
@@ -59,7 +59,7 @@
       {% endfor %}
     </div>
     
-    <div class="row col-12 d-flex justify-content-center"><button class="btn btn-teams-position">{{'Brankári'}}</button></div>
+    <div class="row col-12 d-flex justify-content-center"><p class="btn-teams-position">{{'Brankári'}}</p></div>
     <div class="row">
       {% for player in members %}
       {% if player.position==1 %}
@@ -74,7 +74,7 @@
       {% endfor %}
     </div>
     
-    <div class="row col-12  d-flex justify-content-center"><button class="btn btn-teams-position">{{'Tréneri'}}</button></div>
+    <div class="row col-12  d-flex justify-content-center"><p class="btn-teams-position">{{'Tréneri'}}</p></div>
     <div class="row">
       {% for tren in trener %}
       {% if tren.position[0].id==5 %}
