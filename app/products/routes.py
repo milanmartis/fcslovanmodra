@@ -82,6 +82,7 @@ def new_product():
 
 
 @products.route("/product/<int:product_id>")
+@login_required
 def product(product_id):
     calendar = Event.query.all()
     page = request.args.get('page', 1, type=int)
@@ -94,7 +95,8 @@ def product(product_id):
     galleries = ProductGallery.query.filter(ProductGallery.product_id==product_id).all()
     category = ProductCategory.query.all()
     
-    
+    # session.permanent = True
+    #         session["name"] = form.email.data
     
     
     return render_template('products/product.html', page=page, products=products, calendar=calendar, title=product.title, product=product, galleries=galleries, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())

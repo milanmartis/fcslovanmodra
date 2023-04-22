@@ -93,7 +93,28 @@ background-color: transparent;
 
 
 /* image-logo */
+.image-logo-page {
+  margin-top: -15px;
+  margin-bottom: -25px;
+  animation: bounce-in 1s ease infinite;
+  animation-iteration-count: 1
+}
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% { transform: scale(.95); }
+  100% { transform: scale(1); }
+}
+/* image-logo */
+
 .image-logo {
+
   animation: bounce-in 1s ease infinite;
   animation-iteration-count: 1
 }
@@ -174,17 +195,19 @@ background-color: transparent;
   margin: 10px;
   overflow: hidden;    
   border-radius: 20px !important;
-  border: 0px solid #1d1d1d;
+  border: 1px solid #1d1d1d;
   color: #6d9bff;
   font-weight: 600;
   font-size: 100%;
-
+  padding: 6px;
+  cursor: pointer;
 }
 
 .eshop-item:hover{
-  border: 0px solid #6d9bff;
+  border: 1px solid #6d9bff;
   color: #6d9bff;
-  background-color: #141414;
+  background-color: transparent;
+
 }
 
 
@@ -1547,12 +1570,12 @@ header{
 .alert {
   z-index: 9999;
   position: absolute;
-  left:auto;
-  width: 90%;
-  top:-100px;
+  margin: 0 auto;
+  width: 360px;
+  top:50px;
   border-radius: 10px !important;
   background-color: #030303;
-  border: 0px solid #24e424;
+  border: 2px solid #6d9bff;
   color: #6d9bff;
   font-weight: 600;
   font-size: 120%;

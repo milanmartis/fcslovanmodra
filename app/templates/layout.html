@@ -54,7 +54,7 @@
               <h3 style="padding-top:12px;">Admin panel</h3>
               <p class="text-muted">
                 <ul class="list-group">
-                  <a href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
+                  <a id="kalendar_button" href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
 
                   <a href="{{ url_for('posts.new_post') }}">Nový článok</a>
                   <a href="{{ url_for('products.new_product') }}">Nový produkt</a>
@@ -104,12 +104,9 @@
               <img class="image-logo" style="padding:16px;" height="100" src="/static/profile_pics/68cc54d8cc2d4dd9.png">
               <br>
 
-                         {% set list1 = next_match.title.split('-') %}
-             <h3 style="text-align:center;">{{ list1[0] }} </h3>
-            <h6 style="text-align:center;">vs.</h6>
-            <h3 style="text-align:center;margin-top:-5px;">{{ list1[1] }}</h3>
-            <h6>{{ next_match.start_event.strftime('%d. %m. %Y') }} | <b>{{ next_match.start_event.strftime('%H:%M') }}</b></h6>
-          
+
+              {{next_match}}
+       
 
             </center>
 
@@ -355,7 +352,7 @@
     {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
 
     <div
-      onfocus="javascript:document.getElementById('calendar_iframe').contentWindow.location.reload();" 
+      
       class="modal fade"
       id="calenadrModal"
       tabindex="-1"
@@ -373,7 +370,7 @@
           >
           X
         </button>
-<iframe id="calendar_iframe" onClick='document.getElementById("ifr").src="add_dossier.php";' style="z-index:9999;height:100%;margin:4px;padding:0px;width:100%;border:none;overflow:none;background-color: black;" src="{{ url_for('calendar.index') }}"></iframe>
+<div id="iframeHolder"></div>
 
     </div>
       </div>
@@ -489,5 +486,14 @@
     <script>
      // $(document).ready(function(){$("img").click(function(){this.requestFullscreen()})});
     </script>
+    <script type="text/javascript">
+      $(function(){
+          $('#kalendar_button').click(function(){
+            document.querySelector(
+            "#loader").style.visibility = "visible";
+            $('#iframeHolder').html('<iframe id="calendar_iframe" style="z-index:9999;height:640px;margin:4px;padding:0px;width:100%;border:none;overflow:none;background-color: black;" src="{{ url_for('calendar.index') }}"></iframe>');
+          });   
+      });
+      </script>
   </body>
 </html>
