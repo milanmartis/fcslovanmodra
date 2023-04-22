@@ -81,8 +81,9 @@
               {% else %}
               <div class="dropdown-menu mb-10" aria-labelledby="navbarDropdown" >
                 <br>
-              <a class="nav-item nav-link" href="{{ url_for('users.account') }}">My Account</a>
-              <a class="nav-item nav-link" href="{{ url_for('users.logout') }}">Logout</a>       
+                <h6 style="font-size:70%;color:#6d9bff;opacity: 0.6;">{{current_user.email}}</h6>
+              <a class="nav-item nav-link" href="{{ url_for('users.account') }}">Môj účet</a>
+              <a class="nav-item nav-link" href="{{ url_for('users.logout') }}">Odhlásiť sa</a>       
               </div>       
               {% endif %}
             </li>

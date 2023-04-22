@@ -62,9 +62,9 @@ def register():
         db.session.add(member)
         db.session.commit()
 
-        flash('New account has been created!', 'success')
+        flash('Nový účet bol vytvorený!', 'success')
         if current_user.is_authenticated:
-            return redirect(url_for('users.list_members'))
+            return redirect(url_for('main.home'))
         else:
             return redirect(url_for('users.login'))
     
