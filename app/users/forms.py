@@ -24,40 +24,40 @@ class MultiCheckboxAtLeastOne():
             raise StopValidation(self.message)
         
 class RegistrationForm(FlaskForm):
-    username = StringField('Username',
+    username = StringField('Užívateľské meno',
                            validators=[DataRequired(), Length(min=2, max=20)])
-    email = StringField('Email',
+    email = StringField('E-mail',
                         validators=[DataRequired(), Email()])
-    password = PasswordField('Password',
+    password = PasswordField('Heslo',
                              validators=[DataRequired()])
-    confirm_password = PasswordField('Confirm Password',
+    confirm_password = PasswordField('Potvrdiť heslo',
                                      validators=[DataRequired(), EqualTo('password')])
     
-    name = StringField('Name & Surname', validators=[DataRequired()])
-    phone = StringField('Phone Number (+421...)', validators=[DataRequired()])
-    address = StringField('Street', validators=[DataRequired()])
-    psc =StringField('Post Code', validators=[DataRequired()])
-    city = StringField('City', validators=[DataRequired()])
+    name = StringField('Meno a priezvisko', validators=[DataRequired()])
+    phone = StringField('Mobilné číslo (+421...)', validators=[DataRequired()])
+    address = StringField('Ulica', validators=[DataRequired()])
+    psc =StringField('PSČ', validators=[DataRequired()])
+    city = StringField('Mesto', validators=[DataRequired()])
     # eban = StringField('EBAN', validators=[DataRequired()])
 
-    role = MultiCheckboxField('Role', choices=[], coerce=int)
+    role = MultiCheckboxField('Rola', choices=[], coerce=int)
     # team = SelectField('Team', choices=[], coerce=int, validators=[DataRequired()])
 
 
-    submit = SubmitField('Submit')
+    submit = SubmitField('Registrovať')
 
 
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError(
-                'That username is taken. Please choose a different one.')
+                'Vybrané uživateľské meno už existuje. Vyberte iné.')
 
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user:
             raise ValidationError(
-                'That email is taken. Please choose a different one.')
+                'Taký e-mail je už registrovaný. Vyberte iný.')
         
     def validate_phone(self, phone):
         try:
@@ -65,7 +65,7 @@ class RegistrationForm(FlaskForm):
             if not phonenumbers.is_valid_number(p):
                 raise ValueError()
         except (phonenumbers.phonenumberutil.NumberParseException, ValueError):
-            raise ValidationError('Invalid phone number')
+            raise ValidationError('Chybné mobilné číslo')
 
 class UpdateMemberForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -111,34 +111,34 @@ class UpdateMemberForm(FlaskForm):
             if not phonenumbers.is_valid_number(p):
                 raise ValueError()
         except (phonenumbers.phonenumberutil.NumberParseException, ValueError):
-            raise ValidationError('Invalid phone number')
+            raise ValidationError('Zlé telefónne číslo')
 
 
 class LoginForm(FlaskForm):
-    email = StringField('Email',
+    email = StringField('E-mail',
                         validators=[DataRequired(), Email()])
-    password = PasswordField('Password',
+    password = PasswordField('Heslo',
                              validators=[DataRequired()])
-    remember = BooleanField('Remember Me')
+    remember = BooleanField('Zapamätať prihlásenie')
     submit = SubmitField('Login')
 
 
 class UpdateAccountForm(FlaskForm):
-    username = StringField('Username',
+    username = StringField('Užívateľské meno',
                            validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email',
                         validators=[DataRequired(), Email()])
-    picture = FileField('Update Profile Picture', validators=[
+    picture = FileField('Zmeniť užívateľskú fotografiu', validators=[
                         FileAllowed(['jpg', 'png'])])
     
     
-    name = StringField('Name & Surname', validators=[DataRequired()])
-    phone = StringField('Phone Number (+421...)', validators=[DataRequired()])
-    address = StringField('Street', validators=[DataRequired()])
-    psc = StringField('Post Code', validators=[DataRequired()])
-    city = StringField('City', validators=[DataRequired()])
+    name = StringField('Meno a priezvisko & Surname', validators=[DataRequired()])
+    phone = StringField('Mobilné číslo (+421...)', validators=[DataRequired()])
+    address = StringField('Ulica', validators=[DataRequired()])
+    psc = StringField('PSČ', validators=[DataRequired()])
+    city = StringField('Mesto', validators=[DataRequired()])
 
-    submit = SubmitField('Update')
+    submit = SubmitField('Uložiť')
 
     def validate_username(self, username):
         print(username.data)
@@ -147,43 +147,43 @@ class UpdateAccountForm(FlaskForm):
             user = User.query.filter_by(username=username.data).first()
             if user:
                 raise ValidationError(
-                    'That username is taken. Please choose a different one.')
+                    'Vybrané uživateľské meno už existuje. Vyberte iné.')
 
     def validate_email(self, email):
         if email.data != current_user.email:
             user = User.query.filter_by(email=email.data).first()
             if user:
                 raise ValidationError(
-                    'That email is taken. Please choose a different one.')
+                    'Taký e-mail je už registrovaný. Vyberte iný.')
             
 
 
 class RequestResetForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    submit = SubmitField('Request Password Reset')
+    email = StringField('E-mail', validators=[DataRequired(), Email()])
+    submit = SubmitField('Chcem nové heslo')
 
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user is None:
             raise ValidationError(
-                'There is no account with that email. You must register first.')
+                'Účet s takým e-mailom neexistuje. Skúste iný.')
             
 
 
 class ResetPasswordForm(FlaskForm):
-    password = PasswordField('Password',
+    password = PasswordField('Heslo',
                              validators=[DataRequired()])
-    confirm_password = PasswordField('Confirm Password',
+    confirm_password = PasswordField('Potvrdiť heslo',
                                      validators=[DataRequired(), EqualTo('password')])
-    submit = SubmitField('Reset Password')
+    submit = SubmitField('Uložiť nové heslo')
 
 
 
 class RolesForm(FlaskForm):
-    name = StringField('name', validators=[DataRequired()])
-    description = TextAreaField('Description')
+    name = StringField('Názov role', validators=[DataRequired()])
+    description = TextAreaField('Popis role')
     
-    submit = SubmitField('Save Role')
+    submit = SubmitField('Uložiť')
 
 
 

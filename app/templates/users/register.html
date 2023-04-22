@@ -4,7 +4,7 @@
         <form method="POST" action="">
             {{ form.hidden_tag() }}
             <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Registration Data</legend>
+                <h3 >Registrovať</h3>
                 <div class="form-group">
                     {{ form.username.label(class="form-control-label") }}
 
@@ -61,7 +61,7 @@
 
             </fieldset>
             <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Personal Data</legend>
+                <legend class="border-bottom mb-4">Osobné údaje</legend>
                 <div class="form-row">
                     <div class="form-group col-md-6">
                     {{ form.name.label(class="form-control-label") }}
@@ -165,16 +165,16 @@
             </div>
         </form>
         {% if current_user.is_authenticated %}
-        <button onclick="javascript:location.href='{{ url_for('users.list_members') }}';" class="btn btn-sm" />Back</button>
+        <button onclick="javascript:location.href='{{ url_for('users.list_members') }}';" class="btn btn-sm" />Späť</button>
         {% endif %}
 
     </div>
     {% if not current_user.is_authenticated %}
 
-    <div class="border-top pt-3">
-        <small class="text-muted">
-            Already Have An Account? <a class="ml-2" href="{{ url_for('users.login') }}">Sign In</a>
-        </small>
+    <div class="pl-10">
+       
+           <a class="btn ml-2" href="{{ url_for('users.login') }}">Už máte účet? Prihláste sa</a>
+    
     </div>
     {% endif %}
 {% endblock content %}

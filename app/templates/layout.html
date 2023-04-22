@@ -45,7 +45,8 @@
         </div>
 
         <div class="col-md-4 sidebar-club">
-          {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+          {% if current_user.is_authenticated %}
+          {% if current_user.has_roles('Admin') %}
 
 
   
@@ -72,15 +73,14 @@
               </p>
             </div>
           </div>
-          {% elif current_user.is_authenticated  %}
+          {% else %}
           <div class="content-section mt-6">
             <div class="content-section-sidebar">
               <h3 style="padding-top:12px;">Užívateľský prístup</h3>
               <p class="text-muted">
                 <ul class="list-group">
-                  <a href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
+                  <a id="kalendar_button" href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
                   <a href="{{ url_for('users.account') }}">Môj účet</a>
-                  <a href="{{ url_for('users.account') }}">Moje družstvo</a>
                   <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
 
 
@@ -88,6 +88,11 @@
               </p>
             </div>
           </div>
+
+          {% endif %}
+          {% else %}
+          
+
           
 
           {% endif %}
@@ -356,7 +361,7 @@
       </div>
     </main>
 
-    {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+    {% if current_user.is_authenticated %}
 
     <div
       
