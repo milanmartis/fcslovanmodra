@@ -1534,9 +1534,10 @@ header{
 
 
 .alert .alert-info {
-
+  position: relative;
+  top:80px;
   height: 45px;
-  padding: 0px;
+  padding-top: 80px;
   margin: 0px;
   font-size: larger;
   text-align: center;
@@ -1548,9 +1549,10 @@ header{
 }
 
 .alert .alert-message {
-
+  position: relative;
+  top:80px;
   height: 45px;
-  padding: 0px;
+  padding-top: 80px;
   margin: 0px;
   font-size: larger;
   text-align: center;
@@ -1563,15 +1565,16 @@ header{
 }
 
 .alert .alert-success {
-
+  position: relative;
+  top:80px;
   height: 45px;
-  padding: 0px;
+  padding-top: 80px;
   margin: 0px;
   font-size: larger;
   text-align: center;
   font-weight: 700;
   margin-top: -6px;
-  color: #6d9bff;
+  color: #fff;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 
 
@@ -1579,43 +1582,45 @@ header{
 
 /* .alert .alert-danger { */
 .alert {
-  z-index: 9999;
-  position: absolute;
+  text-align: center;
+  vertical-align:bottom;
+  object-fit: cover;
+  text-align: center;
+  z-index: 9999999999999999999999999999;
+  position: fixed;
   margin: 0 auto;
-  width: 360px;
-  top:50px;
-  border-radius: 10px !important;
-  background-color: #030303;
-  border: 2px solid #6d9bff;
+  width: 100%;
+  height: 100%;
+  top:0px;
+  left: 0px;
+  background-color: #030303bb;
+  border: 0px solid #6d9bff;
   color: #6d9bff;
   font-weight: 600;
   font-size: 120%;
-  padding: 4px 30px 4px 30px;
-  text-align: center;
+  padding: 94px 30px 4px 30px;
   overflow: hidden;
-  margin-bottom: 18px;
-  margin-left: 6px;
-  margin-right: 12px;
+margin:0px;
 
   animation: signup-response 0.5s 1;
   -webkit-animation: signup-response 0.5s 1;
   animation-fill-mode: forwards;
 
-  animation-delay: 0.5s;
+  animation-delay: 0.8s;
   -webkit-animation-delay: 3.0s;
   /* Safari and Chrome */
-  -webkit-animation-fill-mode: forwards;
+   -webkit-animation-fill-mode: forwards;
 }
 
 @keyframes signup-response {
   from {
     opacity: 0.9;
-    top:-100px;
+    top:0px;
   }
 
   to {
     opacity: 0;
-    top:-150px;
+    top:-11150px;
   }
 }
 

@@ -52,6 +52,7 @@ products = Blueprint('products', __name__)
 
 
 @products.route("/products/success", methods=['POST', 'GET'])
+@login_required
 def success_products():
    sessions = stripe.checkout.Session.list()
    print(sessions.data[00]) # tree view
@@ -64,6 +65,7 @@ def success_products():
 
 
 @products.route("/products/cancel", methods=['POST', 'GET'])
+@login_required
 def cancel_products():
 
     return render_template('products/cancel.html', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
@@ -74,6 +76,7 @@ def cancel_products():
 
 
 @products.route("/products", methods=['GET'])
+@login_required
 def list_products():
     page = request.args.get('page', 1, type=int)
     products = Product.query.join(ProductGallery, ProductCategory).filter(
@@ -89,7 +92,7 @@ def list_products():
                 {
                     # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
                     
-                    'price': 'price_1MtVALKr9xveA3fnrBasXpqH',
+                    'price': 'price_1MzjHMKr9xveA3fnKJ7xBgI3',
                     'quantity': 1,
                 },
                 

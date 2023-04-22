@@ -81,6 +81,7 @@ def login():
             login_user(user, remember=form.remember.data)
             next_page = request.args.get('next')
             session.permanent = True
+            session['logged_in'] = True
             session["name"] = form.email.data
             return redirect(next_page) if next_page else redirect(url_for('main.home'))
         else:
@@ -91,6 +92,8 @@ def login():
 @users.route("/logout")
 def logout():
     session["name"] = None
+    session['logged_in'] = False
+
     logout_user()
     return redirect(url_for('main.home'))
 
