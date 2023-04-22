@@ -2,7 +2,7 @@
 <h3 class="mb-3">{{ 'LIVE STREAM' }} 
 </h3>
 
-
+{{check_user}}
 
 <div class="content">
   <div class="container">
@@ -65,7 +65,7 @@
 <div class="content">
   <div class="container">
     <div class="row">
-      {% for pic in galleries %} {% if pic.orderz > 0 %}
+      {% for pic in galleries if pic.orderz > 0 %}
       <div class="col-xs-6 col-6">
         <!-- Button trigger modal -->
         <a
@@ -134,7 +134,7 @@
           </div>
         </div>
       </div>
-      {% endif %} {% endfor %}
+      {% endfor %}
     </div>
   </div>
 </div>

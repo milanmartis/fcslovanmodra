@@ -6,6 +6,7 @@ from flask_mail import Mail
 from app.config import Config
 from flask_security import Security, SQLAlchemyUserDatastore
 from datetime import timedelta
+import stripe
 
 # load users, roles for a session
 
@@ -28,12 +29,13 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(Config)
     app.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=60)
-    
+    stripe.api_key = app.config['STRIPE_SECRET_KEY']
 
     db.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
+    
     # bootstrap.init_app(app)
 
     from app.users.routes import users

@@ -1,8 +1,8 @@
 from flask import (render_template, url_for, flash,
-                   redirect, request, abort, Blueprint, current_app)
+                   redirect, request, session, abort, Blueprint, current_app)
 from flask_login import current_user, login_required
 from app import db
-from app.models import Product, Event, ProductGallery, ProductCategory
+from app.models import Product, User, Event, Order, ProductGallery, ProductCategory
 from app.products.forms import ProductForm,  ProductCategoryForm
 from flask import Blueprint
 from werkzeug.utils import secure_filename
@@ -12,11 +12,62 @@ from app.products.utils import save_picture
 from app.main.routes import RightColumn
 
 import os
+import stripe
 
 products = Blueprint('products', __name__)
 
 
 ################  PRODUCTS  #################
+
+
+
+# @products.route('/products/checkout', methods=['GET', 'POST'])
+# def create_checkout_session():
+    
+    
+#     try:
+#         session = stripe.checkout.Session.create(
+#             payment_method_types=['card'],
+#             line_items=[
+#                 {
+#                     # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+#                     'price': 'price_1MzeHIKr9xveA3fniVgMojgb',
+#                     # 'price': 'price_1MtVALKr9xveA3fnrBasXpqH',
+#                     'quantity': 1,
+#                 },
+#             ],
+#             mode='payment',
+#             success_url=current_app.url_for('products.success_products', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+#             cancel_url=current_app.url_for('products.cancel_products', _external=True),
+#         )
+#     except Exception as e:
+#         return str(e)
+
+#     return render_template(
+#         'products/checkout.html', 
+#         checkout_session_id=session['id'],
+#         checkout_publick_key=current_app.config['STRIPE_PUBLIC_KEY']
+#         )
+
+
+
+@products.route("/products/success", methods=['POST', 'GET'])
+def success_products():
+   sessions = stripe.checkout.Session.list()
+   print(sessions.data[00]) # tree view
+   if sessions.data[00].metadata.user_id:
+       data = {'username': sessions.data[00].metadata.user_id}
+       order = Order(produc_id=sessions.data[00].metadata.product_id, quantity=32, amount=30, user_id=current_user.id)
+       db.session.add(order)
+       db.session.commit()
+   return render_template('products/success.html', data=data, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
+
+@products.route("/products/cancel", methods=['POST', 'GET'])
+def cancel_products():
+
+    return render_template('products/cancel.html', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
 
 
 
@@ -30,7 +81,45 @@ def list_products():
 
     product_category = ProductCategory.query.all()
     
-    return render_template('products/products.html', products=products, product_category=product_category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[
+                {
+                    # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+                    
+                    'price': 'price_1MtVALKr9xveA3fnrBasXpqH',
+                    'quantity': 1,
+                },
+                
+            ],
+            metadata={
+             'user_id': current_user.id,
+             'product_id': 2,
+
+            },
+            customer_email = current_user.email,
+            mode='payment',
+            success_url=current_app.url_for('products.success_products', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=current_app.url_for('products.cancel_products', _external=True),
+        )
+    except Exception as e:
+        return str(e)
+    
+    check_user = Order.query.filter(Order.user_id==current_user.id).filter(Product.id==2).first()
+    
+    return render_template(
+        'products/products.html', 
+        checkout_session_id=session['id'],
+        checkout_publick_key=current_app.config['STRIPE_PUBLIC_KEY'],
+        products=products, 
+        product_category=product_category, 
+        teamz=RightColumn.main_menu(), 
+        next_match=RightColumn.next_match(), 
+        score_table=RightColumn.score_table(),
+        check_user=check_user
+        )
 
 
 
@@ -81,9 +170,18 @@ def new_product():
                            form=form, legend='New Product', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
+
+
+
+
+
 @products.route("/product/<int:product_id>")
 @login_required
 def product(product_id):
+    
+    check_user = Order.query.filter(Order.user_id==current_user.id).filter(Order.produc_id==product_id).first()
+
+     
     calendar = Event.query.all()
     page = request.args.get('page', 1, type=int)
 
@@ -98,9 +196,10 @@ def product(product_id):
     # session.permanent = True
     #         session["name"] = form.email.data
     
-    
-    return render_template('products/product.html', page=page, products=products, calendar=calendar, title=product.title, product=product, galleries=galleries, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-
+    if check_user:
+        return render_template('products/product.html', check_user=check_user, page=page, products=products, calendar=calendar, title=product.title, product=product, galleries=galleries, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    else:
+        return redirect( url_for('products.list_products'))
 
 @products.route("/products/category/<int:category>")
 def category_products(category):
