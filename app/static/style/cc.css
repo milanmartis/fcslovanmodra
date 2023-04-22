@@ -519,8 +519,9 @@ select option{
 }
 
 .navbar {
-  padding: 4px 2px 4px 8px;
-  margin: 0px;
+  padding: 10px 6px 10px 6px;
+  margin-bottom: 0px;
+  margin-top: -10px;
 }
 
 footer {
@@ -574,6 +575,8 @@ footer {
 
 
   .navbar-toggler-icon{
+    display: block;
+padding: 10px;
     width:45px;
   }
 
@@ -1480,6 +1483,14 @@ header{
   .navbar-brand {
     float: none;
     margin-top: 8px;
+    margin-left: 16px;
+  }
+}
+
+@media (max-width: 491px) {
+  .navbar-brand {
+    float: none;
+    margin-top: 68px;
     margin-left: 16px;
   }
 }
