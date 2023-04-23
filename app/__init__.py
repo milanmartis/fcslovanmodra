@@ -7,15 +7,20 @@ from app.config import Config
 from flask_security import Security, SQLAlchemyUserDatastore
 from datetime import timedelta
 import stripe
-
+from flask_sqlalchemy import SQLAlchemy as _BaseSQLAlchemy
 # load users, roles for a session
 
 
 # from flask_bootstrap import Bootstrap
 
 # bootstrap = Bootstrap()
-
+class SQLAlchemy(_BaseSQLAlchemy):
+    def apply_pool_defaults(self, app, options):
+        super(SQLAlchemy, self).apply_pool_defaults(self, app, options)
+        options["pool_pre_ping"] = True
+        
 db = SQLAlchemy()
+
 bcrypt = Bcrypt()
 
    
