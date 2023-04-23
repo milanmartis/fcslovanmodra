@@ -66,6 +66,8 @@
 
               <div class="dropdown-menu mb-10" aria-labelledby="navbarDropdown" >
                 <br>
+                <h6 style="font-size:75%;color:#6d9bff;opacity: 0.7;">{{current_user.email}}</h6>
+
                 <a class="nav-item nav-link" href="{{ url_for('posts.new_post') }}">Nový článok</a>
                 <a class="nav-item nav-link" href="{{ url_for('products.new_product') }}">Nový produkt</a>
                 <a class="nav-item nav-link" href="{{ url_for('posts.list_categories') }}">Kategórie článkov</a>
@@ -81,7 +83,7 @@
               {% else %}
               <div class="dropdown-menu mb-10" aria-labelledby="navbarDropdown" >
                 <br>
-                <h6 style="font-size:70%;color:#6d9bff;opacity: 0.6;">{{current_user.email}}</h6>
+                <h6 style="font-size:75%;color:#6d9bff;opacity: 0.6;">{{current_user.email}}</h6>
               <a class="nav-item nav-link" href="{{ url_for('users.account') }}">Môj účet</a>
               <a class="nav-item nav-link" href="{{ url_for('users.logout') }}">Odhlásiť sa</a>       
               </div>       

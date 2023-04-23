@@ -183,12 +183,21 @@ background-color: transparent;
 }
 .eshop-item-price{
   border-radius: 20px !important;
-  border: 0px solid #1d1d1d;
+  border: 0px solid #6d9bff;
   color: #fff;
-  font-weight: 600;
-  font-size: 160%;
+  font-weight: 800;
+  font-size: 120%;
   margin-bottom: 8px;
 
+}
+
+.eshop-item-bought{
+
+  color: #6d9bff;
+  font-weight: 800;
+  font-size: 90%;
+  margin-bottom: 8px;
+  margin-right: 25px;
 }
 
 .eshop-item{
@@ -749,6 +758,40 @@ input[type="number"] {
 
 }
 
+
+
+input[type=button], input[type=submit], input[type=reset] {
+
+
+}
+
+
+
+input[type=button], input[type=submit], input[type=reset] {
+
+}
+
+input[type=button], input[type=submit], input[type=reset] ::after{
+
+  animation: fadeIn 1.5s;
+
+}
+
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+
+
+
+
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   /* display: none; <- Crashes Chrome on hover */
@@ -1173,7 +1216,6 @@ a:hover{
     padding: 4px;
     margin-left: 6px;
     font-size: medium;
-    text-transform: uppercase;
   
   
   }

@@ -1,3 +1,4 @@
+-- SELECT setval(pg_get_serial_sequence('public.score_table', 'id'), (SELECT MAX(id) FROM public.score_table)+ 1);
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS "user" (
 	"id"	SERIAL NOT NULL,

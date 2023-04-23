@@ -48,6 +48,19 @@
                 {% endif %}
             </div>
             <div class="form-group">
+                {{ form.stripe_link.label(class="form-control-label") }}
+                {% if form.stripe_link.errors %}
+                    {{ form.stripe_link(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.stripe_link.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.stripe_link(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
                 {{ form.youtube_link.label(class="form-control-label") }}
                 {% if form.youtube_link.errors %}
                     {{ form.youtube_link(class="form-control form-control-lg is-invalid") }}

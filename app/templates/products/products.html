@@ -49,7 +49,15 @@
             
             <h2><a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">{{ product.title }}</a></h2>
             <!-- <p class="article-content">{{ product.content }}</p> -->
+  
+            {% if not check_user.produc_id == product.id %}
             <p class="article-content eshop-item-price">{{ product.price }} €</p>
+            {% else %}
+            <p class="eshop-item-bought">Zaplatené
+            <i style="margin-left:3px;text-align: left;color:#6d9bff;border:#6d9bff" class="fa fa-check" aria-hidden="true"></i>
+            </p>
+            {% endif %}
+
             {% if current_user.is_authenticated %}
             <p style="float:right;position:relative;right:20px;">
    

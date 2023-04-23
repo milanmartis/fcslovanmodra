@@ -94,7 +94,10 @@ body .fc { /* extra precedence to overcome jqui */
 	text-align: center;
 	overflow: hidden;
 	font-family: "Courier New", Courier, monospace;
-
+  
+	background-color: #6d9bff;
+	border: 2px solid #6d9bff;
+	color: #030303;
 	/* don't allow browser text-selection */
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
@@ -291,6 +294,9 @@ NOTE: use percentage font sizes or else old IE chokes
 	color: #030303;
   
   }
+
+
+
 
 
 /* Buttons Groups

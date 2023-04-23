@@ -75,7 +75,7 @@ def update_team(team_id):
     score_scrap = request.form.get("score_scrap")
     print(score_scrap)
         
-    if team.score_scrap and score_scrap:
+    if request.form.get('what') and team.score_scrap and score_scrap:
         
         ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
 
@@ -113,7 +113,7 @@ def update_team(team_id):
 
     player_list_scrap = request.form.get("player_list_scrap")
         
-    if team.player_list_scrap and player_list_scrap:
+    if  request.form.get('what') and team.player_list_scrap and player_list_scrap:
         
         Player.query.filter(Player.team_id == team_id).delete()
         
@@ -159,6 +159,7 @@ def update_team(team_id):
     #     abort(403)
     if form.validate_on_submit():
         team.name = form.name.data
+        team.main_league = form.main_league.data
         team.score_scrap = form.score_scrap.data
         team.player_list_scrap = form.player_list_scrap.data
         db.session.commit()
@@ -166,6 +167,7 @@ def update_team(team_id):
         return redirect(url_for('team.list_teams', team_id=team.id))
     elif request.method == 'GET':
         form.name.data = team.name
+        form.main_league.data = team.main_league
         form.score_scrap.data = team.score_scrap
         form.player_list_scrap.data = team.player_list_scrap
     return render_template('teams/create_team.html', title='Update Team',

@@ -44,7 +44,7 @@ def new_post():
 
     form.category.choices = [(category.id, category.name) for category in Category.query.all()]
     if form.validate_on_submit():
-        post = Post(title=form.title.data, content=form.content.data, author=current_user, category_id=form.category.data)
+        post = Post(title=form.title.data, content=form.content.data, date_posted=form.date_posted.data, author=current_user, category_id=form.category.data)
         db.session.add(post)
         db.session.commit()
         path_image = os.path.join(str(current_app.root_path)+'/static/posts/'+str(post.id)+'/gallery/')
@@ -121,6 +121,7 @@ def update_post(post_id):
     if form.validate_on_submit():
         post.title = form.title.data
         post.content = form.content.data
+        post.date_posted = form.date_posted.data
         post.category_id = form.category.data
 
         if form.picture.data:
@@ -155,6 +156,8 @@ def update_post(post_id):
     elif request.method == 'GET':
         form.title.data = post.title
         form.content.data = post.content
+        # request.form['date_posted'] = post.date_posted
+        form.date_posted.data = post.date_posted
         form.category.data = post.category_id
     return render_template('posts/create_post.html', title='Update Post',
                            form=form, post_id=post_id, legend='Update Post', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())

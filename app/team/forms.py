@@ -8,8 +8,9 @@ from wtforms import MultipleFileField
 
 class TeamForm(FlaskForm):
     name = StringField('Name of The Team', validators=[DataRequired()])
+    main_league = StringField('Name of the main league')
     score_scrap = StringField('Table of Ligue (full web link)')
-    player_list_scrap = StringField('LineUp of Players (full web link)')
+    player_list_scrap = StringField('Players LineUp (full web link)')
     
     # role = SelectField('Role', choices=[], coerce=int, validators=[DataRequired()])
 
