@@ -525,6 +525,16 @@
              $(this).carousel('next');
           });
        });
+       $('btn').click(function() {
+        $(this).css({
+            'background-color': 'red',
+            'color': 'white',
+            'font-size': '44px'
+        });
+    });
+    $('#tabz').on('slide.bs.carousel', function () {
+      alert('xxx');
+    })
       </script>
   </body>
 </html>

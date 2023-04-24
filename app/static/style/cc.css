@@ -95,7 +95,7 @@ background-color: transparent;
 /* image-logo */
 .image-logo-page {
   margin-top: -15px;
-  margin-bottom: -25px;
+  margin-bottom: -20px;
   animation: bounce-in 1s ease infinite;
   animation-iteration-count: 1
 }
@@ -585,12 +585,15 @@ footer {
     margin-top: 35px;
   }
 
-
+  .navbar-toggler.navbar-toggler-custom {
+    right: 5rem;
+  }
 
   .navbar-toggler-icon{
     display: block;
 padding: 10px;
     width:45px;
+    margin:8px;
   }
 
 
@@ -1218,6 +1221,7 @@ a:hover{
     background: transparent;
     text-align: center;
     padding: 4px;
+    margin-top: 3px;
     margin-left: 6px;
     font-size: medium;
   

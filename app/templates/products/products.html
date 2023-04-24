@@ -27,7 +27,7 @@
 
           <div class="media-body products-titles">
             <div class="article-metadata">
-            {% for cat in category %}
+            {% for cat in product_category %}
             {% if cat.id == product.product_category_id %}
             <span>
               <a class="w-100" href="{{ url_for('products.category_products', category=cat.id) }}">{{ cat.name }}</a>
@@ -35,7 +35,7 @@
             {% endif %}
             {% endfor %}
 
-              <small class="text-muted">{{ product.date_posted.strftime('%Y-%m-%d') }}</small>
+              <small class="text-muted">{{ product.date_posted.strftime('%d. %m. %Y') }}</small>
           </div>
             
             
@@ -63,10 +63,10 @@
    
               {% if check_user.produc_id == product.id %}
               <input type="hidden" id="ide_product" name="ide_product" value="{{product.id}}" />
-              <button onclick="javascript:location.href='{{ url_for('products.product', product_id=product.id) }}';" class="btn btn-sm" />View</button>
+              <button onclick="javascript:location.href='{{ url_for('products.product', product_id=product.id) }}';" class="btn btn-sm" />Sledovať</button>
               {% else %}
               <input type="hidden" id="ide_product" name="ide_product" value="{{product.id}}" />
-              <button id="buy_now_btn" class="btn btn-sm" />Buy</button>
+              <button id="buy_now_btn" class="btn btn-sm" />Kúpiť</button>
               {% endif %}
             {% else %}
             <p>Ak chceš sledovať zápas, musíš byť príhlásený</p>
