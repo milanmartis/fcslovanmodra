@@ -182,6 +182,17 @@
           
           <br>
           <br>
+          <script>
+            $(document).ready(function() {
+               $(".carousel").swiperight(function() {
+                  $(this).carousel('prev');
+                });
+               $(".carousel").swipeleft(function() {
+                  $(this).carousel('next');
+               });
+            });
+            </script>
+            
           <div class="content-section mt-26">
             <div class="dez-post-media dez-img-effect zoom-slow">
               <h3 style="padding-top:0px;">Tabuľky</h3>
