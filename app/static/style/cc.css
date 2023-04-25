@@ -639,14 +639,14 @@ footer {
   }
 
   .navbar-toggler.navbar-toggler-custom {
-    right: 5rem;
+    right: 0rem;
   }
 
   .navbar-toggler-icon {
     border: 0px solid #6d9bff;
     color: #6d9bff;
     margin: 0px;
-    padding: 0px;
+    padding-right: 50px;
 
   }
 
