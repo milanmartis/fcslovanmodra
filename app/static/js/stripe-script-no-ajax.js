@@ -4,31 +4,31 @@ const button = document.querySelector('#buy_now_btn');
 
 button.addEventListener('click', event => {
 
-    amount_product = $('#amount_product').val();
-    price_product = $('#price_product').val();
-    id_product = $('#id_product').val();
-    alert(price_product);
+    // amount_product = $('#amount_product').val();
+    // price_product = $('#price_product').val();
+    // id_product = $('#id_product').val();
+    // alert(price_product);
 
-    $.ajax({
-        url:"/products",
-        type:"POST",
-        data:{price_product:price_product},
-        success:function()
-        {
+    // $.ajax({
+    //     url:"/products",
+    //     type:"POST",
+    //     data:{price_product:price_product},
+    //     success:function()
+    //     {
 
-          setTimeout(function(){
+    //       setTimeout(function(){
         
-        }, 2500);
-        }
-        });
+    //     }, 2500);
+    //     }
+    //     });
 
 
-    // stripe.redirectToCheckout({
-    //     sessionId: checkout_session_id
+    stripe.redirectToCheckout({
+        sessionId: checkout_session_id
 
-    // }).then(function (result){
+    }).then(function (result){
 
     //    var ide_product = document.querySelector('#ide_product').value;
 
-    // })
+    })
 })
