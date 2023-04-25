@@ -66,6 +66,8 @@
               <button onclick="javascript:location.href='{{ url_for('products.product', product_id=product.id) }}';" class="btn btn-sm" />Sledovať</button>
               {% else %}
               <input type="hidden" id="ide_product" name="ide_product" value="{{product.id}}" />
+              <input type="hidden" id="price_product" name="price_product" value="{{product.price}}" />
+              <input type="number" id="amount_product" name="amount_product" value="1" />
               <button id="buy_now_btn" class="btn btn-sm" />Kúpiť</button>
               {% endif %}
             {% else %}
@@ -80,6 +82,7 @@
           </div>
 
           </div>
+     
 
         </article>
     {% endfor %}

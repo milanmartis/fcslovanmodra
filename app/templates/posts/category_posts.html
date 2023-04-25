@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
-    <h3 class="mb-3"><a href="{{ url_for('posts.list_posts')}}">All category</a> / {{ category.name }} 
+    <h3 class="mb-3">{{ category.name }} | <a href="{{ url_for('posts.list_posts')}}">Všetko</a>   
         <!-- ({{ posts.total }}) -->
     </h3>
     {% for post in posts.items %}
@@ -9,7 +9,7 @@
             {% for gall in post.gallery %}
             {% if gall.orderz == 0 %}
             <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
-              <img width="100%" src="{{ url_for('static', filename='posts/'+post.id|string+'/'+gall.image_file2|string) }}">
+              <img class="post-title-image" src="{{ url_for('static', filename='posts/'+post.id|string+'/'+gall.image_file2|string) }}">
             </a>
             {% endif %}
             {% endfor %}

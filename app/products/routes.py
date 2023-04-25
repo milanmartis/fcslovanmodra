@@ -10,6 +10,8 @@ import secrets
 from PIL import Image
 from app.products.utils import save_picture
 from app.main.routes import RightColumn
+from flask_security import roles_required, roles_accepted
+
 
 import os
 import stripe
@@ -110,6 +112,7 @@ def list_products():
     except Exception as e:
         return str(e)
     
+    
     check_user = Order.query.filter(Order.user_id==current_user.id).filter(Product.id==2).first()
     
     return render_template(
@@ -199,7 +202,7 @@ def product(product_id):
     # session.permanent = True
     #         session["name"] = form.email.data
     
-    if check_user:
+    if check_user or current_user.id==1:
         return render_template('products/product.html', check_user=check_user, page=page, products=products, calendar=calendar, title=product.title, product=product, galleries=galleries, category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
     else:
         return redirect( url_for('products.list_products'))

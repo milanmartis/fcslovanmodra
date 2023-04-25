@@ -93,12 +93,21 @@ background-color: transparent;
 
 
 /* image-logo */
+
 .image-logo-page {
   margin-top: -15px;
   margin-bottom: -20px;
   animation: bounce-in 1s ease infinite;
   animation-iteration-count: 1
 }
+
+.image-logo-page2 {
+  margin-top: -15px;
+  margin-bottom: -20px;
+  animation: bounce-in 1s ease infinite;
+  animation-iteration-count: 1
+}
+
 @keyframes bounce-in {
   0% {
     opacity: 0;
@@ -111,6 +120,19 @@ background-color: transparent;
   70% { transform: scale(.95); }
   100% { transform: scale(1); }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* image-logo */
 
 .image-logo {
@@ -590,7 +612,8 @@ footer {
   }
 
   .navbar-toggler-icon{
-    display: block;
+    border-width: 50px;
+    border: 2px solid #386ad4;
 padding: 10px;
     width:45px;
     margin:8px;

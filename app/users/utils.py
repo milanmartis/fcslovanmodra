@@ -45,6 +45,18 @@ If you did not make this request then simply ignore this email and no changes wi
     mail.send(msg)
 
 
+def send_confirm_email(user):
+    token = user.get_confirm_token()
+    msg = Message('Confirm your register email',
+                  sender='noreply@demo.com',
+                  recipients=[user.email])
+    msg.body = f'''To confirm your email, click on the following link:
+{url_for('users.confirm_token', token=token, _external=True)}
+If you did not make this request then simply ignore this email.
+'''
+    mail.send(msg)
+
+
 
 def environment():
     """

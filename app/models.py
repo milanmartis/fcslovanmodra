@@ -46,6 +46,7 @@ class User(db.Model, UserMixin):
     image_file = db.Column(db.String(20), nullable=False,
                            default='default.jpg')
     password = db.Column(db.String(60), nullable=False)
+    confirm = db.Column(db.Boolean(), default=False)
     posts = db.relationship('Post', backref='author', lazy=True)
     products = db.relationship('Product', backref='saler', lazy=True)
     roles = db.relationship('Role', secondary=roles_users, lazy='subquery',
@@ -55,8 +56,21 @@ class User(db.Model, UserMixin):
         s = Serializer(current_app.config['SECRET_KEY'])
         return s.dumps({'user_id': self.id})
 
+    def get_confirm_token(self):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id})
+
     @staticmethod
     def verify_reset_token(token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token)['user_id']
+        except:
+            return None
+        return User.query.get(int(user_id))
+
+    @staticmethod
+    def verify_confirm_token(token):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
             user_id = s.loads(token)['user_id']

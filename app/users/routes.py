@@ -4,7 +4,7 @@ from app import db, bcrypt
 from app.models import User, Post, Role, Team, Member, Player, Position, roles_users, teams_members, positions_members
 from app.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,UpdateMemberForm,
                                    RequestResetForm, ResetPasswordForm, RolesForm)
-from app.users.utils import save_picture, send_reset_email, save_picture_member
+from app.users.utils import save_picture, send_reset_email, send_confirm_email, save_picture_member
 import uuid
 from app.main.routes import RightColumn
 from flask_security import roles_required
@@ -61,8 +61,9 @@ def register():
         # member.teams.append(team)
         db.session.add(member)
         db.session.commit()
-
-        flash('Nový účet bol vytvorený!', 'success')
+        send_confirm_email(user)
+        flash('Bol vám zaslaný e-mail na potvrdenie registrácie.', 'info')
+        # flash('Nový účet bol vytvorený!', 'success')
         if current_user.is_authenticated:
             return redirect(url_for('main.home'))
         else:
@@ -77,15 +78,18 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
-            next_page = request.args.get('next')
-            session.permanent = True
-            session['logged_in'] = True
-            session["name"] = form.email.data
-            return redirect(next_page) if next_page else redirect(url_for('main.home'))
+        if user.confirm==False:
+            flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
         else:
-            flash('Login Unsuccessful. Please check email and password', 'danger')
+            if user and bcrypt.check_password_hash(user.password, form.password.data):
+                login_user(user, remember=form.remember.data)
+                next_page = request.args.get('next')
+                session.permanent = True
+                session['logged_in'] = True
+                session["name"] = form.email.data
+                return redirect(next_page) if next_page else redirect(url_for('main.home'))
+            else:
+                flash('Prihlásenie bolo neúspešné. Prosím, skontrolujte si e-mail a heslo.', 'danger')
     return render_template('users/login.html', title='Login', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
@@ -118,7 +122,7 @@ def account():
         member.psc = form.psc.data
         member.city = form.city.data
         db.session.commit()
-        flash('Your account has been updated!', 'success')
+        flash('Váš účet bol aktualizovaný!', 'success')
         return redirect(url_for('users.account'))
     elif request.method == 'GET':
         form.username.data = current_user.username
@@ -154,7 +158,7 @@ def reset_request():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         send_reset_email(user)
-        flash('An email has been sent with instructions to reset your password.', 'info')
+        flash('Bol vám zaslaný e-mail s inštrukciami, ako obnoviť heslo.', 'info')
         return redirect(url_for('users.login'))
     return render_template('users/reset_request.html', title='Reset Password', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
@@ -165,16 +169,46 @@ def reset_token(token):
         return redirect(url_for('main.home'))
     user = User.verify_reset_token(token)
     if user is None:
-        flash('That is an invalid or expired token', 'warning')
+        flash('Použitý token je expirovaný.', 'warning')
         return redirect(url_for('users.reset_request'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user.password = hashed_password
         db.session.commit()
-        flash('Your password has been updated! You are now able to log in', 'success')
+        flash('Vaše heslo bolo zmenené! Môžete sa prihlásiť.', 'success')
         return redirect(url_for('users.login'))
     return render_template('users/reset_token.html', title='Reset Password', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
+
+
+# @users.route("/confirm_email", methods=['GET', 'POST'])
+# def confirm_request():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('main.home'))
+#     form = RequestResetForm()
+#     if form.validate_on_submit():
+#         user = User.query.filter_by(email=form.email.data).first()
+#         send_reset_email(user)
+#         flash('An email has been sent with instructions to reset your password.', 'info')
+#         return redirect(url_for('users.login'))
+#     return render_template('users/reset_request.html', title='Reset Password', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
+
+@users.route("/confirm_email/<token>", methods=['GET', 'POST'])
+def confirm_token(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('main.home'))
+    user = User.verify_confirm_token(token)
+    if user is None:
+        flash('Použitý token je expirovaný.', 'warning')
+        return redirect(url_for('users.register'))
+    else:
+        user.confirm = 1
+        db.session.commit()
+        flash('Váš e-mail bol úspešne potvrdený! Vitajte v klube. Môžete sa prihlásiť.', 'success')
+        return redirect(url_for('users.login'))
+    return render_template('users/confirm_email.html', title='Confirm Register Email', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
