@@ -645,7 +645,8 @@ footer {
   .navbar-toggler-icon {
     border: 0px solid #6d9bff;
     color: #6d9bff;
-    width: 45px;
+    margin: 0px;
+    padding: 0px;
 
   }
 
