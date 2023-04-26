@@ -139,25 +139,25 @@
               
               <div id="carouselExampleControls" data-bs-touch="true" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
-                  <div class="carousel-item active">
+                  <div class="carousel-item-tabz carousel-item active">
                     <a class="sponsor-img d-block w-100" href="https://www.modra.sk/" target="_blank"><img width="80%" src="https://www.fcslovanmodra.sk/images/sponzori/modra.jpg"></a>
                   </div>
-                  <div class="carousel-item">
+                  <div class="carousel-item-tabz carousel-item">
                     <a class="sponsor-img d-block w-100"  href="https://www.nadaciaspp.sk/" target="_blank"><img width="80%"  src="https://www.fcslovanmodra.sk/images/sponzori/nadacia.jpg"></a>
                   </div>
-                  <div class="carousel-item">
+                  <div class="carousel-item-tabz carousel-item">
                     <a class="sponsor-img d-block w-100"  href="https://www.hameln-rds.sk/sk/" target="_blank"><img width="80%"  src="https://www.fcslovanmodra.sk/images/sponzori/hameln-rds.jpg"></a>
                   </div>
-                  <div class="carousel-item">
+                  <div class="carousel-item-tabz carousel-item">
                     <a class="sponsor-img d-block w-100"  href="https://cafferoma.sk/" target="_blank"><img width="80%"  src="https://www.fcslovanmodra.sk/images/sponzori/caferoma.jpg"></a>
                   </div>
-                  <div class="carousel-item">
+                  <div class="carousel-item-tabz carousel-item">
                     <a class="sponsor-img d-block w-100"  href="https://www.hameln-rds.sk/sk/" target="_blank"><img width="80%"  src="https://www.fcslovanmodra.sk/images/sponzori/hameln-rds.jpg"></a>
                   </div>
-                  <div class="carousel-item">
+                  <div class="carousel-item-tabz carousel-item">
                     <a class="sponsor-img d-block w-100"  href="https://www.instagram.com/futureballer.sk/" target="_blank"><img width="80%"  src="https://www.fcslovanmodra.sk/images/sponzori/ps-ultimate.jpg"></a>
                   </div>
-                  <div class="carousel-item">
+                  <div class="carousel-item-tabz carousel-item">
                     <a class="sponsor-img d-block w-100"  href="https://appdesign.sk/" target="_blank"><img width="80%"  src="https://www.fcslovanmodra.sk/images/sponzori/appdesign.jpg"></a>
                   </div>
 
@@ -198,7 +198,7 @@
                   </div>
                     <div class="carousel-inner">
                     {% for num in range(5) %}
-                    <div class="carousel-item{% if loop.index == 1 %} active{% endif %}">
+                    <div class="carousel-item-tabz2 carousel-item{% if loop.index == 1 %} active{% endif %}">
                       {% for team in teamz %} 
                       {% if team.id == num+1 %}
                       <h3 style="opacity:0.85;padding:20px;font-size: 93%;">{{teamz[loop.index0].main_league}}</h3>
@@ -209,6 +209,7 @@
                           <tr class="table-headding">
                               <th>#</th>
                               <th>Tím</th>
+                              <th>Z</th>
                               <th>B</th>
                               <th>V</th>
                               <th>R</th>
@@ -219,12 +220,13 @@
                       {% for tteam in score_table if tteam.team_id == loop.index %}
                   
                                       <tr> 
-                                      <th scope="row">{{loop.index}}</th> 
+                                      <th style="opacity:0.6" scope="row">{{loop.index}}</th> 
                                       <td>{{tteam.club}}</td> 
+                                      <td style="opacity:0.6">{{tteam.games}}</td> 
                                       <td><b>{{tteam.points}}</b></td> 
-                                      <td>{{tteam.wins}}</td> 
-                                      <td>{{tteam.draws}}</td> 
-                                      <td>{{tteam.loses}}</td> 
+                                      <td style="opacity:0.6">{{tteam.wins}}</td> 
+                                      <td style="opacity:0.6">{{tteam.draws}}</td> 
+                                      <td style="opacity:0.6">{{tteam.loses}}</td> 
       
                                     </tr>
              

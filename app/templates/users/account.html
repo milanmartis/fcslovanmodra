@@ -1,12 +1,15 @@
 {% extends "layout.html" %}
 {% block content %}
-<h3 class="mb-4">Account Info</h3>
+<h3 class="headline">Môj účet</h3>
+<br>
     <div class="content-section">
-      <div class="media">
-        <img class="rounded-circle account-img" src="{{ image_file }}">
+    <form method="POST" action="" enctype="multipart/form-data">
+        <div class="row">
+        <div class="col d-flex justify-content-center">
 
-      </div>
-        <form method="POST" action="" enctype="multipart/form-data">
+            <img loading="lazy" class="rounded-circle account-img image-logo-page" src="{{ image_file }}">
+        </div>
+        <div class="col">
             {{ form.hidden_tag() }}
             <div class="form-group">
                 {{ form.picture.label() }}
@@ -17,6 +20,8 @@
                     {% endfor %}
                 {% endif %}
             </div>
+        </div>
+    </div>
             <fieldset class="form-group">
                 <div class="row">
 
