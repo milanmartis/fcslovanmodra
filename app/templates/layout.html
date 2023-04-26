@@ -196,9 +196,15 @@
                   <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="4" aria-label="Slide 5">U13</button>
                 </center>
                   </div>
-                <div class="carousel-inner">
+                  <br>
                   {% for num in range(5) %}
                   <div class="carousel-item{% if loop.index == 1 %} active{% endif %}">
+                    {% for team in teamz%} 
+                    {% if team.id == num+1 %}
+                    <h3 style="position:relative;top:20px;opacity:0.85;padding:20px;font-size: 93%;">{{teamz[loop.index0].main_league}}</h3>
+                    {% endif %}
+                    {% endfor %}
+                        <div class="carousel-inner">
                     <table class="table scoretable">
                       <thead>
                           <tr class="table-headding">

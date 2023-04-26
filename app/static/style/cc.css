@@ -475,7 +475,7 @@ h6 {
   background-color: transparent;
   border: 0px solid #6d9bff;
   padding: 10px;
-  margin-top: 15px;
+  margin-top:-10px;
   color:#6d9bff;
 }
 
@@ -996,7 +996,7 @@ text-align: center;
 width:max-content;
 position:absolute;
 left:-30px;
-top:-19px;
+top:-9px;
 }
 
 
@@ -1006,7 +1006,7 @@ top:-19px;
   border: 2px solid #6d9bff;
   color: #6d9bff;
   font-weight: 600;
-  font-size: 100%;
+  font-size: 95%;
   padding: 2px 9px 4px 9px;
   margin-top: 17px;
   margin-left: 3px;
