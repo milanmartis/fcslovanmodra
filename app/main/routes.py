@@ -36,7 +36,7 @@ def sponsors():
 # @main.route("/menu")
 class RightColumn:
     def main_menu():
-        menuteam = Team.query.all()
+        menuteam = db.session.query(Team).order_by(Team.id.asc()).all()
         return menuteam
 
     def next_match():

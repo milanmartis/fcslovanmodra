@@ -1,31 +1,30 @@
 {% extends "layout.html" %}
 {% block content %}
-    <h1 class="mb-3">{{ category.name }} 
-    </h1>
+    <h3 class="mb-3">{{ category.name }} | <a href="{{ url_for('products.list_products')}}">Všetko</a>   
+    </h3>
     {% for product in products.items %}
         <article class="media content-section">
           <div class="media-body">
-            <div class="article-metadata">
-              <a class="mr-2" href="{{ url_for('products.category_products', category=category.id) }}">{{ category.name }}</a>
-              <small class="text-muted">{{ product.date_posted.strftime('%Y-%m-%d') }}</small>
-            </div>
-
-
             {% for gall in product.gallery %}
             {% if gall.orderz == 0 %}
             <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
-              <img width="100%" src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}">
+              <img class="post-title-image" src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}">
             </a>
             {% endif %}
             {% endfor %}
+            <div class="article-metadata">
+              <a class="mr-2" href="{{ url_for('products.category_products', category=category.id) }}">{{ category.name }}</a>
+              <small class="text-muted">{{ product.date_posted.strftime('%d. %m. %Y') }}</small>
+            </div>
+
+
 
 
 
 
 
             <h2><a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">{{ product.title }}</a></h2>
-            <p class="article-content">{{ product.content }}</p>
-            <!-- <p class="article-content">{{ product.content[:250]+'...'}}</p> -->
+            <p class="article-content">{{ product.content[:250]+'...'}}</p>
           </div>
         </article>
     {% endfor %}

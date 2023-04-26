@@ -91,8 +91,11 @@ html {
 
 
 .article-content {
+  color: #6d9bff;
+
   white-space: pre-line;
   margin-bottom: 20px;
+  font-size: 90%;
 }
 
 
@@ -180,7 +183,7 @@ html {
   display: block;
   /* no whitespace */
   transition: .2s ease-in-out;
-  transform: scale(0.95);
+  transform: scale(0.96);
 
 }
 
@@ -214,6 +217,15 @@ html {
 
 }
 
+
+
+.picturezoom{
+  cursor: -moz-zoom-in; 
+  cursor: -webkit-zoom-in; 
+  cursor: zoom-in;
+}
+
+
 .sponsor-img:hover {
   opacity: 1;
   transform: scale(0.99);
@@ -229,8 +241,8 @@ html {
   border-radius: 20px !important;
   border: 0px solid #6d9bff;
   color: #fff;
-  font-weight: 800;
-  font-size: 120%;
+  font-weight: 700;
+  font-size: 150%;
   margin-bottom: 8px;
 
 }
@@ -347,8 +359,12 @@ label {
   color: #e2d4d4;
   padding-right: 6px;
   margin-right: 6px;
-
+  margin-top: 16px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  
 }
+
 
 
 iframe {
@@ -455,6 +471,7 @@ h6 {
   border: 0px solid #6d9bff;
   padding: 10px;
   margin-top: 15px;
+  color:#6d9bff;
 }
 
 .scoretable td {
@@ -809,10 +826,16 @@ select {
 
 input[type="number"] {
 
-  padding: 10px;
-  margin: 0px;
+  padding: 1px;
+  margin: 5px;
+  opacity: 1
 
 }
+
+input[type=number]::-webkit-inner-spin-button {
+  opacity: 1
+}
+
 
 
 
@@ -1003,7 +1026,8 @@ ol.carousel-indicators li {
   font-weight: 600;
   font-size: 100%;
   padding: 2px 12px 4px 12px;
-  margin: 2px;
+  margin-top: 22px;
+  margin-left: 6px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 
 }
@@ -1085,6 +1109,7 @@ a:hover {
 
 
 
+
 .btn-demo {
   max-width: 260px;
   border-radius: 10px !important;
@@ -1095,6 +1120,21 @@ a:hover {
   font-size: 100%;
   padding: 20px 20px 20px 20px;
   margin: 2px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  cursor: pointer;
+}
+
+.btn-demo-quantity {
+  max-width: 60px;
+  border-radius: 10px !important;
+  background-color: transparent;
+  border: 2px solid #6d9bff;
+  color: #fff;
+  font-weight: 600;
+  font-size: 100%;
+  text-align: center;
+  padding: 4px 4px 4px 4px;
+  margin-top: -12px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   cursor: pointer;
 }
@@ -1131,9 +1171,7 @@ a:hover {
   color: #030303;
   font-weight: 600;
   font-size: 100%;
-  padding: 12px 12px 12px 12px;
-  margin-top: 6px;
-  margin-left: -4px;
+  margin-left: -5px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   cursor: pointer;
 }
@@ -1200,6 +1238,7 @@ a:hover {
   cursor: pointer;
 
 }
+
 
 
 .btn-primary:visited {
@@ -1281,12 +1320,21 @@ a:hover {
   font-size: medium;
 
 
+
+}
+
+
+
+.navbar-collapse{
+  flex-grow:0;
+}
+
+.container-fluid.my-container-fluid{
+  justify-content: space-between;;
 }
 
 
 .navbar-nav {
-  margin-left: 39px;
-
   color: #6d9bff;
   background: transparent;
   text-align: center;
@@ -1634,7 +1682,7 @@ header {
 
 
 .readinglazy {
-  animation: fadeIn 1.5s;
+  animation: fadeIn 2.5s;
 
 }
 
@@ -1810,18 +1858,6 @@ header {
   opacity: 1;
 }
 
-.carousel-item {
-  width: 100%;
-  overflow-x: hidden;
-  margin: 0px;
-  padding: 0px;
-}
-
-.carousel {
-
-  margin: 0px;
-  padding: 0px;
-}
 
 ol.carousel-indicators {
   position: absolute;

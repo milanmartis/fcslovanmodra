@@ -118,7 +118,8 @@ class Product(db.Model):
     product_gallery = db.relationship('ProductGallery', backref='gallpr', lazy=True)
 
     def __repr__(self):
-        return f"Post('{self.title}', '{self.date_posted}', '{self.product_gallery.image_file2}')"
+        return f"Post('{self.title}', '{self.date_posted}', '{self.product_gallery}, '{self.product_category_id}')"
+
 
 
 class ProductCategory(db.Model):
@@ -257,6 +258,12 @@ class Order(db.Model):
     is_paid = db.Column(db.Boolean(), default=False)
     order_date = db.Column(db.DateTime, nullable=False, default=func.now())
     storno = db.Column(db.Boolean(), default=False)
+
+
+
+# class ProductVariant(db.Model):
+#     __tablename__ = 'order'
+#     id = db.Column(db.Integer, primary_key=True)
 
 
     
