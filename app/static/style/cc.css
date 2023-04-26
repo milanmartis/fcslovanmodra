@@ -992,10 +992,10 @@ input[type="password"] {
 
 
 .carousel-indicators{
-
-
-  display: block;
+text-align: center;
+width:max-content;
 position:absolute;
+left:-30px;
 top:-19px;
 }
 
