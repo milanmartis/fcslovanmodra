@@ -188,14 +188,17 @@
 
               <div id="tabz" class="carousel slide" data-bs-ride="carousel" data-bs-touch="true" data-bs-interval="7500">
                 <center>
-                  <button class="btn" aria-current="true" data-bs-target="#tabz" data-bs-slide-to="0">A</button>
-                  <button class="btn " data-bs-target="#tabz" data-bs-slide-to="1">U19</button>
-                  <button class="btn " data-bs-target="#tabz" data-bs-slide-to="2">U17</button>
-                  <button class="btn " data-bs-target="#tabz" data-bs-slide-to="3">U15</button>
-                  <button class="btn " data-bs-target="#tabz" data-bs-slide-to="4">U13</button>
+                  <div class="carousel-indicators">
+                  <button type="button" class="btn text active" data-bs-target="#tabz" data-bs-slide-to="0" aria-current="true" aria-label="Slide 1">A</button>
+                  <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="1" aria-label="Slide 2">U19</button>
+                  <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="2" aria-label="Slide 3">U17</button>
+                  <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="3" aria-label="Slide 4">U15</button>
+                  <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="4" aria-label="Slide 5">U13</button>
+                  </div>
                 </center>
                 <div class="carousel-inner">
-                  <div class="carousel-item active">
+                  {% for num in range(5) %}
+                  <div class="carousel-item{% if loop.index == 1 %} active{% endif %}">
                     <table class="table scoretable">
                       <thead>
                           <tr class="table-headding">
@@ -208,7 +211,7 @@
                           </tr>
                       </thead>
                       <tbody>
-                      {% for tteam in score_table if tteam.team_id == 1%}
+                      {% for tteam in score_table if tteam.team_id == loop.index %}
                   
                                       <tr> 
                                       <th scope="row">{{loop.index}}</th> 
@@ -220,130 +223,14 @@
       
                                     </tr>
              
-                      {% endfor %}
-                      </tbody>
-      
-                    </table>
-                  </div>
-
-                  <div class="carousel-item">
-                    <table class="table scoretable">
-                      <thead>
-                          <tr class="table-headding">
-                              <th>#</th>
-                              <th>Tím</th>
-                              <th>B</th>
-                              <th>V</th>
-                              <th>R</th>
-                              <th>P</th>
-                          </tr>
-                      </thead>
-      
-                      <tbody>
-                      {% for tteam in score_table if tteam.team_id == 2 %}
-                  
-                                      <tr> 
-                                      <th scope="row">{{loop.index}}</th> 
-                                      <td>{{tteam.club}}</td> 
-                                      <td><b>{{tteam.points}}</b></td> 
-                                      <td>{{tteam.wins}}</td> 
-                                      <td>{{tteam.draws}}</td> 
-                                      <td>{{tteam.loses}}</td> 
-      
-                                    </tr>
-             
-                      {% endfor %}
-                      </tbody>
-      
-                    </table>
-                  </div>
-                  <div class="carousel-item">
-                    <table class="table scoretable">
-                      <thead>
-                          <tr class="table-headding">
-                              <th>#</th>
-                              <th>Tím</th>
-                              <th>B</th>
-                              <th>V</th>
-                              <th>R</th>
-                              <th>P</th>
-                          </tr>
-                      </thead>
-      
-                      <tbody>
-                      {% for tteam in score_table if tteam.team_id == 3 %}
-                                      <tr> 
-                                      <th scope="row">{{loop.index}}</th> 
-                                      <td>{{tteam.club}}</td> 
-                                      <td><b>{{tteam.points}}</b></td> 
-                                      <td>{{tteam.wins}}</td> 
-                                      <td>{{tteam.draws}}</td> 
-                                      <td>{{tteam.loses}}</td> 
-      
-                                    </tr>
-                      {% endfor %}
-                      </tbody>
-      
-                    </table>
-                  </div>
-                  <div class="carousel-item">
-                    <table class="table scoretable">
-                      <thead>
-                          <tr class="table-headding">
-                              <th>#</th>
-                              <th>Tím</th>
-                              <th>B</th>
-                              <th>V</th>
-                              <th>R</th>
-                              <th>P</th>
-                          </tr>
-                      </thead>
-      
-                      <tbody>
-                      {% for tteam in score_table if tteam.team_id == 4 %}
-                        
-                                      <tr> 
-                                      <th scope="row">{{loop.index}}</th> 
-                                      <td>{{tteam.club}}</td> 
-                                      <td><b>{{tteam.points}}</b></td> 
-                                      <td>{{tteam.wins}}</td> 
-                                      <td>{{tteam.draws}}</td> 
-                                      <td>{{tteam.loses}}</td> 
-      
-                                    </tr>
-             
-                      {% endfor %}
-                      </tbody>
-      
-                    </table>
-                  </div>
-                  <div class="carousel-item">
-                    <table class="table scoretable">
-                      <thead>
-                          <tr class="table-headding">
-                              <th>#</th>
-                              <th>Tím</th>
-                              <th>B</th>
-                              <th>V</th>
-                              <th>R</th>
-                              <th>P</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                      {% for tteam in score_table if tteam.team_id == 5 %}
-                                      <tr> 
-                                      <th scope="row">{{loop.index}}</th> 
-                                      <td>{{tteam.club}}</td> 
-                                      <td><b>{{tteam.points}}</b></td> 
-                                      <td>{{tteam.wins}}</td> 
-                                      <td>{{tteam.draws}}</td> 
-                                      <td>{{tteam.loses}}</td> 
-                                    </tr>
-                      {% endfor %}
-                      </tbody>
-      
-                    </table>
-                  </div>
+                                    {% endfor %}
+                                  </tbody>
+                                  
+                                </table>
+                              </div>
+                              
+                              
+                 {% endfor %}
 
                 </div>
 
