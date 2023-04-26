@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
+<h3 class="mb-4">Account Info</h3>
     <div class="content-section">
       <div class="media">
         <img class="rounded-circle account-img" src="{{ image_file }}">
@@ -17,8 +18,7 @@
                 {% endif %}
             </div>
             <fieldset class="form-group">
-                <legend class="mb-4">Account Info</legend>
-                <div class="form-row">
+                <div class="row">
 
                 <div class="form-group col-md-6">
                     {{ form.username.label(class="form-control-label") }}
@@ -49,7 +49,7 @@
                 </div>
                 </div>
 
-                <div class="form-row">
+                <div class="row">
 
                 <div class="form-group col-md-6">
                     {{ form.name.label(class="form-control-label") }}
@@ -79,7 +79,7 @@
                 </div>
                 </div>
 
-                <div class="form-row">
+                <div class="row">
                     <div class="form-group col-md-4">
                     {{ form.address.label(class="form-control-label") }}
                     {% if form.address.errors %}

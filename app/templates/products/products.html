@@ -14,6 +14,7 @@
                 <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
                 <img
                   class="post-title-image" 
+                  onload="this.classList.remove('d-none')"
                   width="100%"
                   src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}"
                 /></a>

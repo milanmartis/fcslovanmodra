@@ -4,9 +4,9 @@
         <form method="POST" action=""  enctype="multipart/form-data">
             {{ form.hidden_tag() }}
             <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Registration Data (only by the user)</legend>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
+                <h3>Registration Data</h3>
+                    <div class="row">
+                        <div class="col">
                     {{ form.username.label(class="form-control-label") }}
 
                     {% if form.username.errors %}
@@ -21,7 +21,7 @@
                         {{ form.username(readonly=true, class="form-control form-control-lg") }}
                     {% endif %}
                 </div>
-                <div class="form-group col-md-6">
+                <div class="col">
                     {{ form.email.label(class="form-control-label") }}
                     {% if form.email.errors %}
                         {{ form.email(class="form-control form-control-lg is-invalid") }}
@@ -37,10 +37,12 @@
                 </div>
 
             </fieldset>
+            <br>
+            <br>
             <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Personal Data</legend>
-                <div class="form-row">
-                    <div class="form-group col-md-6">
+                <h3>Personal Data</h3>
+                <div class="row">
+                    <div class="col">
                     <div class="form-group">
                         {{ form.name.label(class="form-control-label") }}
                         {% if form.name.errors %}
@@ -68,40 +70,48 @@
                         {{ form.phone(class="form-control form-control-lg") }}
                         {% endif %}
                     </div>
-                    <div class="form-group">
-                    {{ form.weight.label(class="form-control-label") }}
-                    {% if form.weight.errors %}
-                        {{ form.weight(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.weight.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
+
+                    <div class="row">
+                        <div class="col">
+                            
+                            <div class="form-group">
+                                {{ form.weight.label(class="form-control-label") }}
+                                {% if form.weight.errors %}
+                                {{ form.weight(class="form-control form-control-lg is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.weight.errors %}
+                                    <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                {{ form.weight(class="form-control form-control-lg") }}
+                                {% endif %}
+                            </div>
                         </div>
-                        {% else %}
-                        {{ form.weight(class="form-control form-control-lg") }}
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                    {{ form.height.label(class="form-control-label") }}
-                    {% if form.weight.errors %}
-                        {{ form.height(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.height.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
+                        <div class="col">
+                            <div class="form-group">
+                                {{ form.height.label(class="form-control-label") }}
+                                {% if form.weight.errors %}
+                                {{ form.height(class="form-control form-control-lg is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.height.errors %}
+                                    <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                {{ form.height(class="form-control form-control-lg") }}
+                                {% endif %}
+                            </div>
                         </div>
-                        {% else %}
-                        {{ form.height(class="form-control form-control-lg") }}
-                        {% endif %}
                     </div>
 
-                    </div>
 
-                    <div class="form-group col-md-1">
 
 
                     </div>
-                    <div class="form-group col-md-5">
+
+
+                    <div class="col">
                         <div class="media d-flex justify-content-center">
                             <img width="225" src="{{ image_file }}">
                     
@@ -121,8 +131,8 @@
                 </div>
 
 
-                <div class="form-row">
-                    <div class="form-group col-md-4">
+                <div class="-row">
+                    <div class="col">
                     {{ form.address.label(class="form-control-label") }}
                     {% if form.address.errors %}
                         {{ form.address(class="form-control form-control-lg is-invalid") }}
@@ -135,7 +145,9 @@
                         {{ form.address(class="form-control form-control-lg") }}
                     {% endif %}
                     </div>
-                    <div class="form-group col-md-4">
+
+                    <div class="row">
+                    <div class="col-8">
                     {{ form.psc.label(class="form-control-label") }}
                     {% if form.psc.errors %}
                         {{ form.psc(class="form-control form-control-lg is-invalid") }}
@@ -148,7 +160,7 @@
                         {{ form.psc(class="form-control form-control-lg") }}
                     {% endif %}
                     </div>
-                    <div class="form-group col-md-4">
+                    <div class="col-4">
                     {{ form.city.label(class="form-control-label") }}
                     {% if form.city.errors %}
                         {{ form.city(class="form-control form-control-lg is-invalid") }}
@@ -161,52 +173,55 @@
                         {{ form.city(class="form-control form-control-lg") }}
                     {% endif %}
                     </div>
+                    </div>
+
                 </div>
 
             </fieldset>
+            <br><br>
             <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Club Data</legend>
-                <div class="form-row">
-                    <div class="form-group col-md-4">
+                <h3>Club Data</h3>
+                <div class="row">
+                    <div class="col-4">
                         {{ form.role.label(class="form-control-label") }}
                         {% if form.role.errors %}
-                            {{ form.role(class="form-control form-control-lg is-invalid") }}
+                            {{ form.role(class="form-control form-control-md is-invalid") }}
                             <div class="invalid-feedback">
                                 {% for error in form.role.errors %}
                                     <span>{{ error }}</span>
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.role(rows=3, multiple=True, size=40, class="form-control form-control-lg") }}
+                            {{ form.role(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
                         {% endif %}
                     </div>
 
                     
-                    <div class="form-group col-md-4">
+                    <div class="col-4">
                         {{ form.team.label(class="form-control-label") }}
                         {% if form.team.errors %}
-                            {{ form.team(class="form-control form-control-lg is-invalid") }}
+                            {{ form.team(class="form-control form-control-md is-invalid") }}
                             <div class="invalid-feedback">
                                 {% for error in form.team.errors %}
                                     <span>{{ error }}</span>
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.team(rows=3, multiple=True, size=40, class="form-control form-control-lg") }}
+                            {{ form.team(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
                         {% endif %}
                     </div>
 
-                    <div class="form-group col-md-4">
+                    <div class="col-4">
                         {{ form.position.label(class="form-control-label") }}
                         {% if form.position.errors %}
-                            {{ form.position(class="form-control form-control-lg is-invalid") }}
+                            {{ form.position(class="form-control form-control-md is-invalid") }}
                             <div class="invalid-feedback">
                                 {% for error in form.position.errors %}
                                     <span>{{ error }}</span>
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.position(class="form-control form-control-lg") }}
+                            {{ form.position(class="form-control form-control-md") }}
                         {% endif %}
                     </div>
 

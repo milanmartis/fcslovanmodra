@@ -6,9 +6,9 @@ var form = document.getElementById("form-team-id");
       var team_id=null;
       var score_scrap=null;
       var player_list_scrap=null;
-
-
-document.getElementById("update-score-table").addEventListener("click", function () {
+      const update_score_table = document.querySelector('#update-score-table');
+      
+      update_score_table.addEventListener("click", function () {
 
       $('#update-score-table').val('Loading...');
       team_id = $('#team_id').val();
@@ -38,8 +38,9 @@ document.getElementById("score_scrap").addEventListener("input", function () {
 document.getElementById("player_list_scrap").addEventListener("input", function () {
   $('#update-player-list').val('Update');
 });
-  
-document.getElementById("update-player-list").addEventListener("click", function () {
+const update_player_list = document.querySelector('#update-player-list');
+
+update_player_list.addEventListener("click", function () {
   
       $('#update-player-list').val('Loading...');
       team_id = $('#team_id').val();

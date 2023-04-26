@@ -12,25 +12,23 @@ from datetime import datetime
 
 
 
-# teams_events = db.Table('teams_events',
-#                          db.Column('team_id', db.Integer(),
-#                                    db.ForeignKey('team.id')),
-#                          db.Column('event_id', db.Integer(), db.ForeignKey('event.id')))
 
 roles_users = db.Table('roles_users',
-                         db.Column('user_id', db.Integer(),
-                                   db.ForeignKey('user.id')),
-                         db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
+                db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+                db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
 
 teams_members = db.Table('teams_members',
-                         db.Column('member_id', db.Integer(),
-                                   db.ForeignKey('member.id')),
-                         db.Column('team_id', db.Integer(), db.ForeignKey('team.id')))
+                db.Column('member_id', db.Integer(), db.ForeignKey('member.id')),
+                db.Column('team_id', db.Integer(), db.ForeignKey('team.id')))
 
 positions_members = db.Table('positions_members',
-                             db.Column('member_id', db.Integer(),
-                                       db.ForeignKey('member.id')),
-                             db.Column('position_id', db.Integer(), db.ForeignKey('position.id')))
+                db.Column('member_id', db.Integer(), db.ForeignKey('member.id')),
+                db.Column('position_id', db.Integer(), db.ForeignKey('position.id')))
+
+product_variant_product = db.Table('product_variant_product',
+                db.Column('product_variant_id', db.Integer(),db.ForeignKey('product_variant.id')),
+                db.Column('product_id', db.Integer(), db.ForeignKey('product.id')))
+
 
 
 @login_manager.user_loader
@@ -261,9 +259,21 @@ class Order(db.Model):
 
 
 
-# class ProductVariant(db.Model):
-#     __tablename__ = 'order'
-#     id = db.Column(db.Integer, primary_key=True)
+class ProductVariant(db.Model):
+    __tablename__ = 'product_variant'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(250), nullable=False)
+    type = db.Column(db.Integer, db.ForeignKey('type_product_variant.id'), nullable=False)
+    variants = db.relationship('Product', secondary=product_variant_product, lazy='subquery',
+                            backref=db.backref('varianted', lazy=True))
+
+
+
+class TypeProductVariant(db.Model):
+    __tablename__ = 'type_product_variant'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(250), nullable=False)
+    operation = db.Column(db.String(450), nullable=False)
 
 
     

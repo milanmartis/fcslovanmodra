@@ -2,31 +2,31 @@
 
 
 
-const button_add_to_basket = document.querySelector('#add_to_basket_btn');
+// const button_add_to_basket = document.querySelector('#add_to_basket_btn');
 const button_buy_now = document.querySelector('#buy_now_btn');
 
-button_add_to_basket.addEventListener('click', event => {
+// button_add_to_basket.addEventListener('click', event => {
     
-    quantity_product = $('#quantity_product').val();
-    price_product = $('#price_product').val();
-    id_product = $('#id_product').val();
+//     quantity_product = $('#quantity_product').val();
+//     price_product = $('#price_product').val();
+//     id_product = $('#id_product').val();
     
-    $.ajax({
-        url:"/products/basket",
-        type:"POST",
-        data:{
-            id_product:id_product
-        },
-        success:function()
-        {
+//     $.ajax({
+//         url:"/products/basket",
+//         type:"POST",
+//         data:{
+//             id_product:id_product
+//         },
+//         success:function()
+//         {
 
-            setTimeout(function(){
+//             setTimeout(function(){
                 
-            }, 2500);
-        }
-    });
+//             }, 2500);
+//         }
+//     });
     
-})
+// })
 
 var stripe = Stripe(checkout_publick_key);
     button_buy_now.addEventListener('click', event => {

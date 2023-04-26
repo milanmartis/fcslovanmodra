@@ -90,12 +90,15 @@ html {
 
 
 
+
 .article-content {
-  color: #6d9bff;
 
   white-space: pre-line;
   margin-bottom: 20px;
-  font-size: 90%;
+  font-size: 96%;
+  line-height: 130%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
 }
 
 
@@ -463,6 +466,8 @@ h6 {
 
 }
 
+
+
 .scoretable {
   border-spacing: 0;
   border-collapse: separate;
@@ -544,6 +549,8 @@ nav {
 
 a {
   color: #6d9bff;
+  text-decoration: none;
+
 }
 
 a:hover,
@@ -826,7 +833,7 @@ select {
 
 input[type="number"] {
 
-  padding: 1px;
+  padding: 4px;
   margin: 5px;
   opacity: 1
 
@@ -1026,7 +1033,7 @@ ol.carousel-indicators li {
   font-weight: 600;
   font-size: 100%;
   padding: 2px 12px 4px 12px;
-  margin-top: 22px;
+  margin-top: 17px;
   margin-left: 6px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 
@@ -1133,6 +1140,7 @@ a:hover {
   font-weight: 600;
   font-size: 100%;
   text-align: center;
+  height:38px;
   padding: 4px 4px 4px 4px;
   margin-top: -12px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -1171,6 +1179,7 @@ a:hover {
   color: #030303;
   font-weight: 600;
   font-size: 100%;
+  padding-top: 5px;
   margin-left: -5px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   cursor: pointer;
@@ -1832,8 +1841,7 @@ header {
 
 .carousel-control-prev-icon,
 .carousel-control-next-icon {
-  margin-top: 140px;
-  height: 240px;
+  margin-top:-40px;
   width: 100px;
   background-size: 100%, 100%;
   background-image: none;
