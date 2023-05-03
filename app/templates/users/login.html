@@ -31,22 +31,23 @@
                         {{ form.password(class="form-control form-control-lg") }}
                     {% endif %}
                 </div>
-                <div class="form-check">
+               <!-- <div class="form-check">
                     {{ form.remember(class="form-check-input") }}
                     {{ form.remember.label(class="form-check-label") }}
-                </div>
+                </div>-->
             </fieldset>
 
             <div class="row">
-            <div class="col-6">
+            <div class="col">
+                
                 {{ form.submit(class="btn btn-outline-info") }}
-                <small class="text-muted ml-1">
+  
+
+                <small class="text-muted ml-1" style="margin-top:10px;padding:22px;">
                     <a href="{{ url_for('users.reset_request') }}">Zabudli ste heslo?</a>
                 </small>
-            </div>
-            <div class="pt-1 col-6">
-                <small class="text-muted ml-1">
 
+                <small class="text-muted ml-1"style="margin-top:10px;padding:22px;">
                     Nemáte účet? <a class="ml-2" href="{{ url_for('users.register') }}">Registrovať</a>
                 </small>
 

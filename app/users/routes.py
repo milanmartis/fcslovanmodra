@@ -204,11 +204,11 @@ def confirm_token(token):
         flash('Použitý token je expirovaný.', 'warning')
         return redirect(url_for('users.register'))
     else:
-        user.confirm = 1
+        user.confirm = True
         db.session.commit()
         flash('Váš e-mail bol úspešne potvrdený! Vitajte v klube. Môžete sa prihlásiť.', 'success')
         return redirect(url_for('users.login'))
-    return render_template('users/confirm_email.html', title='Confirm Register Email', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    # return render_template('users/confirm_email.html', title='Confirm Register Email', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 

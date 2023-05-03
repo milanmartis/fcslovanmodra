@@ -82,7 +82,7 @@ def cancel_products():
 def list_products():
     page = request.args.get('page', 1, type=int)
     products = Product.query.join(ProductGallery, ProductCategory).filter(
-        Product.id == ProductGallery.product_id).filter(ProductCategory.id == Product.product_category_id).filter(ProductGallery.orderz<1).order_by(Product.date_posted.desc()).paginate(page=page, per_page=3)
+        Product.id == ProductGallery.product_id).filter(ProductCategory.id == Product.product_category_id).filter(Product.is_visible==True).filter(ProductGallery.orderz<1).order_by(Product.date_posted.desc()).paginate(page=page, per_page=3)
 
     product_category = ProductCategory.query.all()
     
@@ -195,7 +195,7 @@ def product(product_id):
         Product.id == ProductGallery.product_id).filter(ProductCategory.id == Product.product_category_id).filter(ProductGallery.orderz<1).order_by(Product.date_posted.desc()).paginate(page=page, per_page=3)
 
     product = Product.query.join(ProductGallery).filter(
-        Product.id == ProductGallery.product_id).filter(ProductGallery.orderz<1).filter(Product.id==product_id).first()
+        Product.id == ProductGallery.product_id).filter(Product.is_visible==True).filter(ProductGallery.orderz<1).filter(Product.id==product_id).first()
     galleries = ProductGallery.query.filter(ProductGallery.product_id==product_id).all()
     category = ProductCategory.query.all()
     
@@ -237,6 +237,7 @@ def update_product(product_id):
         product.youtube_link = form.youtube_link.data
         product.stripe_link = form.stripe_link.data
         product.product_category_id = form.category.data
+        product.is_visible = form.is_visible.data
 
         if form.picture.data:
             file = form.picture.data

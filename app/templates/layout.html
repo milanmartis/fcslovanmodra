@@ -186,16 +186,14 @@
             <div class="dez-post-media dez-img-effect zoom-slow">
               <h3 style="padding-top:0px;">Tabuľky</h3>
 
-              <div id="tabz" class="carousel slide" data-bs-ride="carousel" data-bs-touch="true" data-bs-interval="7500">
+              <div id="tabz" class="carousel slide" data-bs-ride="carousel" data-bs-touch="true" data-bs-interval="false">
                 <div class="carousel-indicators">
-                    <center>
                   <button type="button" class="btn text active" data-bs-target="#tabz" data-bs-slide-to="0" aria-current="true" aria-label="Slide 1">A team</button>
                   <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="1" aria-label="Slide 2">U19</button>
                   <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="2" aria-label="Slide 3">U17</button>
                   <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="3" aria-label="Slide 4">U15</button>
                   <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="4" aria-label="Slide 5">U13</button>
-                </center>
-                  </div>
+                </div>
                     <div class="carousel-inner">
                     {% for num in range(5) %}
                     <div class="carousel-item-tabz2 carousel-item{% if loop.index == 1 %} active{% endif %}">
