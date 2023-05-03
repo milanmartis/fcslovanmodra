@@ -94,7 +94,7 @@ def list_products():
                 {
                     # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
                     
-                    'price': 'price_1MzjHMKr9xveA3fnKJ7xBgI3',
+                    'price': 'price_1N3k5uKr9xveA3fnGFhkWmWg',
                     'quantity': 1,
                 },
                 
@@ -237,6 +237,7 @@ def update_product(product_id):
         product.youtube_link = form.youtube_link.data
         product.stripe_link = form.stripe_link.data
         product.product_category_id = form.category.data
+        product.price = form.price.data
         product.is_visible = form.is_visible.data
 
         if form.picture.data:

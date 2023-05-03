@@ -144,11 +144,15 @@
 
 
                <!-- <p class="article-content">{{ product.content }}</p> -->
-               <div id="change-price" name="change-price" class="article-content eshop-item-price">{{ product.price }}</div>
+               <div id="change-price" name="change-price" class="article-content eshop-item-price">{{ product.price }} €</div>
                <p style="float:right;position:relative;top:10px; right:20px;">
                  {% if current_user.is_authenticated %}
-                 <p style="font-size: 70%;margin-bottom: -2px;margin-left:11px;">Množstvo</p>
-                 <input type="number" min=1 max=10 class="btn btn-demo-quantity" id="quantity_product" step="any" name="quantity_product" onClick="this.select();"  value="1" />
+                 <!--
+
+                   <p style="font-size: 70%;margin-bottom: -2px;margin-left:11px;">Množstvo</p>
+                   <input type="number" min=1 max=10 class="btn btn-demo-quantity" id="quantity_product" step="any" name="quantity_product" onClick="this.select();"  value="1" />
+                  -->
+
                  <div style="float:right;position: relative;bottom:0px;right:0px;">
                    <button id="buy-now" class="btn-demo readinglazy" value="{{ product.id }}" />Kúpiť</button>
                  </div>
