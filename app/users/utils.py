@@ -35,24 +35,24 @@ def save_picture_member(form_picture):
 
 def send_reset_email(user):
     token = user.get_reset_token()
-    msg = Message('Password Reset Request',
-                  sender='noreply@demo.com',
+    msg = Message('Obnovenie hesla',
+                  sender=('FC Slovan Modra', 'info@fcslovanmodra.sk'),
                   recipients=[user.email])
-    msg.body = f'''To reset your password, visit the following link:
+    msg.body = f'''Pre obnovenie hesla kliknite na tento odkaz:
 {url_for('users.reset_token', token=token, _external=True)}
-If you did not make this request then simply ignore this email and no changes will be made.
+Ak ste túto žiadosť neodoslali, jednoducho ignorujte tento e-mail a nebudú vykonané žiadne zmeny.
 '''
     mail.send(msg)
 
 
 def send_confirm_email(user):
     token = user.get_confirm_token()
-    msg = Message('Confirm your register email',
-                  sender='noreply@demo.com',
+    msg = Message('Potvrd+te svoju registráciu',
+                  sender=('FC Slovan Modra', 'info@fcslovanmodra.sk'),
                   recipients=[user.email])
-    msg.body = f'''To confirm your email, click on the following link:
+    msg.body = f'''Na potvrdenie registrácie kliknite na tento odkaz:
 {url_for('users.confirm_token', token=token, _external=True)}
-If you did not make this request then simply ignore this email.
+Ak ste túto žiadosť neodoslali, jednoducho ignorujte tento e-mail a nebudú vykonané žiadne zmeny.
 '''
     mail.send(msg)
 
