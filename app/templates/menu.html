@@ -49,7 +49,7 @@
 
         </div>
         <!-- Navbar Right Side -->
-        <div class="navbar-nav" >
+        <div class="navbar-nav">
         
           {% if not current_user.is_authenticated %}
           <div class="navbar-nav mr-auto">
@@ -58,10 +58,10 @@
           </div>
           {% endif %}
           {% if current_user.is_authenticated %}
-          <ul class="navbar-nav mr-auto" >
+          <ul class="navbar-nav mr-auto"  style="margin-top: 6px;">
             <li class="nav-item dropdown">
                 
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="margin-top:5px;">
                   <img class="rounded-circle account-img2" src="/static/profile_pics/{{current_user.image_file}}">
         
               </a>

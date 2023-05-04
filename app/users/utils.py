@@ -47,7 +47,7 @@ Ak ste túto žiadosť neodoslali, jednoducho ignorujte tento e-mail a nebudú v
 
 def send_confirm_email(user):
     token = user.get_confirm_token()
-    msg = Message('Potvrd+te svoju registráciu',
+    msg = Message('Potvrďte svoju registráciu',
                   sender=('FC Slovan Modra', 'info@fcslovanmodra.sk'),
                   recipients=[user.email])
     msg.body = f'''Na potvrdenie registrácie kliknite na tento odkaz:
