@@ -78,21 +78,21 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        if user:
-            if user.confirm==False:
-                flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
+        # if user:
+        if user.confirm==False:
+            flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
+        else:
+            if user and bcrypt.check_password_hash(user.password, form.password.data):
+                login_user(user, remember=form.remember.data)
+                next_page = request.args.get('next')
+                session.permanent = True
+                session['logged_in'] = True
+                session["name"] = form.email.data
+                return redirect(next_page) if next_page else redirect(url_for('main.home'))
             else:
-                if user and bcrypt.check_password_hash(user.password, form.password.data):
-                    login_user(user, remember=form.remember.data)
-                    next_page = request.args.get('next')
-                    session.permanent = True
-                    session['logged_in'] = True
-                    session["name"] = form.email.data
-                    return redirect(next_page) if next_page else redirect(url_for('main.home'))
-                else:
-                    flash('Prihlásenie bolo neúspešné. Prosím, skontrolujte si e-mail a heslo.', 'danger')
-    else:
-        flash('Prihlásenie bolo neúspešné. Prosím, skontrolujte si e-mail.', 'danger')
+                flash('Prihlásenie bolo neúspešné. Prosím, skontrolujte si e-mail a heslo.', 'danger')
+    # else:
+    #     flash('Prihlásenie bolo neúspešné. Prosím, skontrolujte si e-mail.', 'danger')
 
     return render_template('users/login.html', title='Login', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
