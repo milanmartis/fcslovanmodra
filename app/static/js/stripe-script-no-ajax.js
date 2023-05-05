@@ -19,9 +19,9 @@ const button_buy_now = document.querySelector('#buy_now_btn');
 //         },
 //         success:function()
 //         {
-
+    
 //             setTimeout(function(){
-                
+    
 //             }, 2500);
 //         }
 //     });
