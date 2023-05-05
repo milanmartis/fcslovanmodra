@@ -18,12 +18,6 @@ import numpy as np
 
 team = Blueprint('team', __name__)
 
-@team.before_request
-def before_request():
-    if not request.is_secure:
-        url = request.url.replace('http://', 'https://', 1)
-        code = 301
-        return redirect(url, code=code)
 
 
 @team.route("/teams")

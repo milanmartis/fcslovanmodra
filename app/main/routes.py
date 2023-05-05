@@ -1,20 +1,13 @@
 
 from flask import render_template, request, Blueprint
 from app.models import Post, PostGallery, Category, Team, Event, ScoreTable
-from flask import Blueprint, redirect
+from flask import Blueprint
 from app import db
 # from app.users.roles import user_role
 
 main = Blueprint('main', __name__)
 
 
-
-@main.before_request
-def before_request():
-    if not request.is_secure:
-        url = request.url.replace('http://', 'https://', 1)
-        code = 301
-        return redirect(url, code=code)
 
 
 @main.route("/")
