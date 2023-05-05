@@ -12,7 +12,6 @@ from datetime import datetime
 
 
 
-
 roles_users = db.Table('roles_users',
                 db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
                 db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
@@ -28,6 +27,7 @@ positions_members = db.Table('positions_members',
 product_variant_product = db.Table('product_variant_product',
                 db.Column('product_variant_id', db.Integer(),db.ForeignKey('product_variant.id')),
                 db.Column('product_id', db.Integer(), db.ForeignKey('product.id')))
+
 
 
 

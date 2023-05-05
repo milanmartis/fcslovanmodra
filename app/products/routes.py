@@ -53,6 +53,14 @@ products = Blueprint('products', __name__)
 
 
 
+@products.before_request
+def before_request():
+    if not request.is_secure:
+        url = request.url.replace('http://', 'https://', 1)
+        code = 301
+        return redirect(url, code=code)
+
+
 @products.route("/products/success", methods=['POST', 'GET'])
 @login_required
 def success_products():
