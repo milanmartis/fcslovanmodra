@@ -10,7 +10,6 @@ class PostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     content = TextAreaField('Content', validators=[DataRequired()])
     category = SelectField('Category', choices=[], coerce=int, validators=[DataRequired()])
-    date_posted = DateTimeLocalField('Post Date',validators=[DataRequired()])
 
     picture = FileField('Title Image upload')
     pictures = MultipleFileField('Gallery Image(s) upload', render_kw={'multiple': True})

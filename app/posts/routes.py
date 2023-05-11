@@ -10,6 +10,7 @@ import secrets
 from PIL import Image
 # from app.posts.utils import save_picture
 from app.main.routes import RightColumn
+from datetime import datetime
 
 import os
 
@@ -44,7 +45,7 @@ def new_post():
 
     form.category.choices = [(category.id, category.name) for category in Category.query.all()]
     if form.validate_on_submit():
-        post = Post(title=form.title.data, content=form.content.data, date_posted=form.date_posted.data, author=current_user, category_id=form.category.data)
+        post = Post(title=form.title.data, content=form.content.data, author=current_user, category_id=form.category.data)
         db.session.add(post)
         db.session.commit()
         path_image = os.path.join(str(current_app.root_path)+'/static/posts/'+str(post.id)+'/gallery/')
