@@ -125,6 +125,11 @@ def update_post(post_id):
         post.content = form.content.data
         post.date_posted = form.date_posted.data
         post.category_id = form.category.data
+        path_image = os.path.join(str(current_app.root_path)+'/static/posts/'+str(post.id)+'/gallery/')
+        try:
+            os.makedirs(path_image)
+        except OSError as error:
+            print(error) 
 
         if form.picture.data:
             file = form.picture.data
