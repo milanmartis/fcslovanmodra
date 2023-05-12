@@ -129,11 +129,11 @@ def update_post(post_id):
         if form.picture.data:
             file = form.picture.data
             # for file in form.pictures.data:
-            path_image = os.path.join(str(current_app.root_path)+'/static/posts/'+str(post.id)+'/gallery/')
-            try:
-                os.makedirs(path_image)
-            except OSError as error:
-                print(error) 
+            # path_image = os.path.join(str(current_app.root_path)+'/static/posts/'+str(post.id)+'/gallery/')
+            # try:
+            #     os.makedirs(path_image)
+            # except OSError as error:
+            #     print(error) 
             file_filename = secure_filename(file.filename)
             form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
             
