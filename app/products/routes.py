@@ -245,7 +245,7 @@ def update_product(product_id):
         if form.picture.data:
             file = form.picture.data
             file_filename = secure_filename(file.filename)
-            form.picture.data.save(os.path.join(current_app.root_path+'/static/products/'+str(product_id), file_filename))
+            form.picture.data.save(os.path.join(current_app +'/static/products/'+str(product_id), file_filename))
 
        
             productgall = ProductGallery.query.filter(ProductGallery.orderz==0).filter(ProductGallery.product_id==product_id).first()
