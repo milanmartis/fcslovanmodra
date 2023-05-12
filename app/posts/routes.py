@@ -135,7 +135,7 @@ def update_post(post_id):
             # except OSError as error:
             #     print(error) 
             file_filename = secure_filename(file.filename)
-            form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
+            form.picture.data.save(os.path.join(os.path.abspath(current_app.root_path+'/static/posts/'+str(post.id)+'/'+file_filename)))
             
             picture = PostGallery.query.filter(PostGallery.orderz==0).filter(PostGallery.post_id==post_id).first()
             picture.title=form.title.data
