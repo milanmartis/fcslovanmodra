@@ -1,0 +1,69 @@
+{% extends "layout.html" %} {% block content %}
+<h3>Roles Page</h3>
+<div class="article-metadata">
+  <div class="article-metadata2">
+    <a
+      class="btn btn-secondary btn-sm mt-1 mb-1"
+      href="{{ url_for('users.new_role') }}"
+    >
+      New Role
+    </a>
+  </div>
+</div>
+<article class="media content-section">
+  <div class="media-body">
+    {% for role in roles %}
+
+
+    <div class="article-metadata2 d-flex flex-row">
+      <a
+        class="btn btn-sm-item mt-1 mb-1 w-100"
+        href="{{ url_for('users.update_role', role_id=role.id) }}"
+      >
+      {{ role.name }}
+      </a>
+
+      <button
+        type="button"
+        class="btn btn-sm m-1"
+        data-toggle="modal"
+        data-target="#deleteModal{{role.id}}"
+      >
+        Delete
+      </button>
+
+    </div>
+
+    <div
+      class="modal fade"
+      id="deleteModal{{role.id}}"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="deleteModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title" py run.py>Delete „{{role.name}}“?</h2>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm" data-dismiss="modal">
+                Close
+              </button>
+              <form
+                action="{{ url_for('users.delete_role', role_id=role.id) }}"
+                method="POST"
+              >
+                <input class="btn btn-sm" type="submit" value="Delete" />
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</article>
+<!-- Modal -->
+{% endblock content %}

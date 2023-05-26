@@ -1,0 +1,37 @@
+{% extends "layout.html" %} {% block content %}
+<h3 class="mb-3">{{ player.teams[0].name }} 
+</h3>
+
+
+
+
+<div class="row">
+    <div class="col-sm-6 col-lg-8">
+
+    <div>
+            <img
+        
+        width="100%"
+        height="100%"
+        src="{{ url_for('static', filename='members_pics/'+player.image_file+'') }}"
+        />
+    </div>
+
+  </div>
+    
+  <div class="col-sm-6 col-lg-4">
+
+      <h2 class="article-title"> {{ player.name }}</h2>
+      <p >pozícia:<p><p> {{ player.position[0].name }}</p>
+      <br>
+      <p>výška: {{ player.height }}</p>
+      <p class="article-content">váha: {{ player.weight }}</p>
+      <p class="article-content">góly: {{ player_info.score }}</p>
+      <p class="article-content">žlté karty: {{ player_info.yellow_card }}</p>
+      <p class="article-content">červené karty: {{ player_info.red_card }}</p>
+
+  </div>
+</div>
+     
+
+{% endblock content %}

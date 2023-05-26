@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block content %}
+    {% for post in posts %}
+        <article class="media content-section">
+          <div class="media-body">
+            {% for gall in post.gallery %}
+            {% if gall.orderz == 0 %}
+            <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
+              <img class="d-none post-title-image" onload="this.classList.remove('d-none')"  src="{{ url_for('static', filename='posts/'+post.id|string+'/'+gall.image_file2|string) }}">
+            </a>
+            {% endif %}
+            {% endfor %}
+            <div class="article-metadata">
+              {% for cat in category %}
+              {% if cat.id == post.category_id %}
+              <span>
+                <a class="mt-10 mr-2" href="{{ url_for('posts.category_posts', category=cat.id) }}">{{ cat.name }}</a>
+              </span>
+              {% endif %}
+              {% endfor %}
+
+                <small class="text-muted">{{ post.date_posted.strftime('%d. %m. %Y') }}</small>
+            </div>
+            
+            
+            
+            <h2><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
+            <p class="article-content">{{ post.content[:220]|safe }}...</p>
+          </div>
+        </article>
+        <br>
+    {% endfor %}
+    {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if page_num %}
+        {% if posts.page == page_num %}
+          <a class="btn btn-active mb-4" href="{{ url_for('main.home', page=page_num) }}">{{ page_num }}</a>
+        {% else %}
+          <a class="btn btn-outline-info mb-4" href="{{ url_for('main.home', page=page_num) }}">{{ page_num }}</a>
+        {% endif %}
+      {% else %}
+        <font style="color:#6d9bff; letter-spacing:2px;font-weight:800;">...</font>
+      {% endif %}
+    {% endfor %}
+{% endblock content %}

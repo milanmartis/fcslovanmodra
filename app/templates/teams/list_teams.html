@@ -1,0 +1,82 @@
+{% extends "layout.html" %} {% block content %}
+<h3>Teams Page</h3>
+<div class="article-metadata">
+  <div class="article-metadata2">
+    <a
+      class="btn btn-secondary btn-sm mt-1 mb-1"
+      href="{{ url_for('team.new_team') }}"
+    >
+      New Team
+    </a>
+  </div>
+</div>
+<article class="media content-section">
+  <div class="media-body">
+    {% if teams %}
+    {% for team in teams %}
+
+
+    <div class="article-metadata2 d-flex flex-row">
+      <a
+        class="btn btn-sm-item mt-1 mb-1 w-100"
+        href="{{ url_for('team.update_team', team_id=team.id) }}"
+      >
+      {{ team.name }}
+      </a>
+      <!-- <a
+        class="btn btn-sm mt-2 mb-2"
+        href="{{ url_for('team.update_team', team_id=team.id) }}"
+      >
+        Update
+      </a> -->
+      <button
+        type="button"
+        class="btn btn-sm m-1"
+        data-bs-toggle="modal"
+        data-bs-target="#deleteModal{{team.id}}"
+      >
+        Delete
+      </button>
+
+    </div>
+
+    <div
+      class="modal fade"
+      id="deleteModal{{team.id}}"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="deleteModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title" py run.py>Delete „{{team.name}}“?</h2>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm" data-bs-dismiss="modal">
+                Close
+              </button>
+              <form
+                action="{{ url_for('team.delete_team', team_id=team.id) }}"
+                method="POST"
+              >
+                <input class="btn btn-sm" type="submit" value="Delete" />
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <center>
+    <div class="article-metadata2 d-flex flex-row w-100">
+      <h3 class="nodata">NO DATA</h3>
+    </div>
+  </center>
+    {% endif %}
+  </div>
+</article>
+<!-- Modal -->
+{% endblock content %}

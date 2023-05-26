@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+{% block content %}
+<h3 class="headline mb-3">{{ 'LIVE STREAM' }} 
+</h3>
+
+    {% for product in products %}
+        <article class="media content-section eshop-item">
+
+          <div class="row">
+            <div class="col-sm-12 col-md-6">
+
+            <div class="product-img">
+                {% for gall in product.product_gallery %} {% if gall.orderz == 0 %}
+                <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
+                <img
+                  class="post-title-image" 
+                  onload="this.classList.remove('d-none')"
+                  width="100%"
+                  src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}"
+                /></a>
+                {% endif %} {% endfor %}
+            </div>
+
+
+          </div>
+          <div class="col-sm-12 col-md-6">
+
+
+          <div class="media-body products-titles">
+            <div class="article-metadata">
+            {% for cat in product_category %}
+            {% if cat.id == product.product_category_id %}
+            <span>
+              <a class="w-100" href="{{ url_for('products.category_products', category=cat.id) }}">{{ cat.name }}</a>
+            </span>
+            {% endif %}
+            {% endfor %}
+
+              <small class="text-muted">{{ product.date_posted.strftime('%d. %m. %Y') }}</small>
+          </div>
+            
+            
+            {% for gall in product.gallery %}
+            {% if gall.orderz == 0 %}
+            <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
+              <img width="100%" src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}">
+            </a>
+            {% endif %}
+            {% endfor %}
+            
+            <h2><a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">{{ product.title }}</a></h2>
+            <!-- <p class="article-content">{{ product.content }}</p> -->
+  
+            {% if not check_user.produc_id == product.id %}
+            <p class="article-content eshop-item-price">{{ product.price }} €</p>
+            {% else %}
+            <p class="eshop-item-bought">Zaplatené
+            <i style="margin-left:3px;text-align: left;color:#6d9bff;border:#6d9bff" class="fa fa-check" aria-hidden="true"></i>
+            </p>
+            {% endif %}
+
+            {% if current_user.is_authenticated %}
+            <p style="float:right;position:relative;right:20px;">
+   
+              {% if check_user.produc_id == product.id %}
+              <input type="hidden" id="ide_product" name="ide_product" value="{{product.id}}" />
+              <button onclick="javascript:location.href='{{ url_for('products.product', product_id=product.id) }}';" class="btn btn-sm" />Sledovať</button>
+              {% else %}
+              <input type="hidden" id="ide_product" name="ide_product" value="{{product.id}}" />
+              <input type="hidden" id="price_product" name="price_product" value="{{product.price}}" />
+              <input type="number" style="display: none;" id="amount_product" name="amount_product" value="1" />
+              <button id="buy_now_btn" class="btn btn-sm" />Kúpiť</button>
+              {% endif %}
+            {% else %}
+            <p>Ak chceš sledovať zápas, musíš byť príhlásený</p>
+            <button onclick="javascript:location.href='{{ url_for('users.login') }}';" class="btn btn-sm" />Login</button>
+            <button onclick="javascript:location.href='{{ url_for('users.register') }}';" class="btn btn-sm" />Register</button>
+            {% endif %}
+
+            </p>
+
+          </div>
+          </div>
+
+          </div>
+     
+
+        </article>
+    {% endfor %}
+
+{% endblock content %}

@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block content %}
+    <h3 class="mb-3">{{ category.name }} | <a href="{{ url_for('posts.list_posts')}}">Všetko</a>   
+        <!-- ({{ posts.total }}) -->
+    </h3>
+    {% for post in posts.items %}
+        <article class="media content-section">
+          <div class="media-body">
+            {% for gall in post.gallery %}
+            {% if gall.orderz == 0 %}
+            <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
+              <img class="post-title-image" src="{{ url_for('static', filename='posts/'+post.id|string+'/'+gall.image_file2|string) }}">
+            </a>
+            {% endif %}
+            {% endfor %}
+            <div class="article-metadata">
+              <a class="mr-2" href="{{ url_for('posts.category_posts', category=category.id) }}">{{ category.name }}</a>
+              <small class="text-muted">{{ post.date_posted.strftime('%d. %m. %Y') }}</small>
+            </div>
+
+
+
+
+
+
+
+            <h2><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
+            <p class="article-content">{{ post.content[:250]+'...'}}</p>
+          </div>
+        </article>
+    {% endfor %}
+    {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if page_num %}
+        {% if posts.page == page_num %}
+          <a class="btn btn-info mb-4" href="{{ url_for('posts.category_posts', category=category.id, page=page_num) }}">{{ page_num }}</a>
+        {% else %}
+          <a class="btn btn-outline-info mb-4" href="{{ url_for('posts.category_posts', category=category.id, page=page_num) }}">{{ page_num }}</a>
+        {% endif %}
+      {% else %}
+        ...
+      {% endif %}
+    {% endfor %}
+{% endblock content %}

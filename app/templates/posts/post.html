@@ -1,0 +1,123 @@
+{% extends "layout.html" %} {% block content %}
+<article class="media content-section">
+  <div class="media-body">
+
+    {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+
+    <div class="article-metadata">
+      {% if post.author == current_user %}
+      <div class="article-metadata-admin">
+        <a
+        class="btn btn-secondary btn-sm mt-1 mb-1"
+        href="{{ url_for('posts.update_post', post_id=post.id) }}"
+        >
+        Update
+      </a>
+      <button
+      type="button"
+      class="btn btn-sm m-1"
+      data-toggle="modal"
+      data-target="#deleteModal"
+      >
+      Delete
+        </button>
+      </div>
+      {% endif %}
+    </div>
+    
+    {% endif %}
+
+    <div>
+      {% for gall in post.gallery %} {% if gall.orderz == 0 %}
+      <img
+      width="100%"
+      src="{{ url_for('static', filename='posts/'+post.id|string+'/'+gall.image_file2|string) }}"
+      />
+      {% endif %} {% endfor %}
+      {% for cat in category %} {% if cat.id==post.category_id %}
+      <a
+        class="mr-2"
+        href="{{ url_for('posts.category_posts', category=cat.id) }}"
+      >
+        {{ cat.name }}
+      </a>
+      {% endif %} {% endfor %}
+      
+      <small class="text-muted">
+        {{ post.date_posted.strftime('%d. %m. %Y') }}
+      </small>
+    </div>
+    <h2 class="article-title">{{ post.title }}</h2>
+    <p class="article-content">{{ post.content|safe }}</p>
+  </div>
+</article>
+
+      <!-- Modal -->
+      <div
+      class="modal fade"
+      id="deleteModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="deleteModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title" id="deleteModalLabel">Delete Post?</h2>
+
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-dismiss="modal"
+              >
+                Close
+              </button>
+              <form
+                action="{{ url_for('posts.delete_post', post_id=post.id) }}"
+                method="POST"
+              >
+                <input
+                  class="btn btn-danger"
+                  type="submit"
+                  value="Delete"
+                />
+              </form>
+            </div>
+            </div>
+
+      
+    </div>
+    </div>
+    </div>
+
+<div class="content">
+  <div class="container">
+    <div class="row">
+      {% for pic in galleries %} {% if pic.orderz > 0 %}
+      
+
+       <div class="col-sm-4">
+        <!-- Button trigger modal -->
+        <a
+          href="{{ url_for('static', filename='posts/'+post.id|string+'/gallery/'+pic.image_file2|string) }}"
+          data-lightbox="example-set" data-title="{{ post.title }}"
+
+        >
+          <img
+            class="w-100"
+            src="{{ url_for('static', filename='posts/'+post.id|string+'/gallery/'+pic.image_file2|string) }}"
+          />
+        </a>
+
+        
+
+       </div>
+      
+      {% endif %} {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

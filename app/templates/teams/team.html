@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h3 class="headline">{{ team.name }}</h3>
+<br>
+
+    <div class="col-12 d-flex justify-content-center"><p class="btn-teams-position">{{'Útok'}}</p></div>
+
+    <div class="row">
+     {% for player in members %}
+      {% if player.position==4 %}
+      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4" href="{{ url_for('users.member', member_id=player.id) }}">
+        <div class="card" style="width: 95%;margin:0px;padding:0px;">
+          <div class="card-body">
+            <h6>{{ player.name }}</h6>
+          </div>
+        </div>
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+
+    
+    <div class="row d-flex justify-content-center"><p class="btn-teams-position">{{'Záloha'}}</p></div>
+    <div class="row">
+    
+      {% for player in members %}
+
+      {% if player.position==3 %}
+      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="{{ url_for('users.member', member_id=player.id) }}">
+        <div class="card" style="width: 95%;margin:0px;">
+          <div class="card-body">
+            <h6>{{ player.name }}</h6>
+          </div>
+        </div>
+      </a>
+      {% endif %}
+      {% endfor %}
+
+    </div>
+
+
+    <div class="row col-12 d-flex justify-content-center"><p class="btn-teams-position">{{'Obrana'}}</p></div>
+    <div class="row">
+    
+      {% for player in members %}
+      {% if player.position==2 %}
+      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="{{ url_for('users.member', member_id=player.id) }}">
+        <div class="card" style="width: 95%;margin:0px;">
+          <div class="card-body">
+            <h6>{{ player.name }}</h6>
+          </div>
+        </div>
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+    
+    <div class="row col-12 d-flex justify-content-center"><p class="btn-teams-position">{{'Brankári'}}</p></div>
+    <div class="row">
+      {% for player in members %}
+      {% if player.position==1 %}
+        <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="{{ url_for('users.member', member_id=player.id) }}">
+          <div class="card" style="width: 95%;margin:0px;">
+            <div class="card-body">
+              <h6>{{ player.name }}</h6>
+            </div>
+          </div>
+        </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+    
+    <div class="row col-12  d-flex justify-content-center"><p class="btn-teams-position">{{'Tréneri'}}</p></div>
+    <div class="row">
+      {% for tren in trener %}
+      {% if tren.position[0].id==5 %}
+        <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="{{ url_for('users.member', member_id=tren.id) }}">
+          <div class="card" style="width: 95%;margin:0px;">
+            <div class="card-body">
+              <h6>{{ tren.name }}</h6>
+            </div>
+          </div>
+        </a>
+        {% endif %}
+        {% endfor %}
+      </div>
+
+
+
+{% endblock content %}

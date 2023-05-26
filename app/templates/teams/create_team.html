@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+{% block content %}
+<h3>Team Page Update</h3>
+
+<div class="content-section">
+    <form method="POST" action="" id="form-team-id">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <div class="form-group">
+                {{ form.name.label(class="form-control-label") }}
+                {% if form.name.errors %}
+                    {{ form.name(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.name.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.name(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.main_league.label(class="form-control-label") }}
+                {% if form.main_league.errors %}
+                    {{ form.main_league(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.main_league.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.main_league(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+
+            <div class="row">
+
+                <div class="form-group col-9">
+                    {{ form.score_scrap.label(class="form-control-label") }}
+                    {% if form.score_scrap.errors %}
+                    {{ form.score_scrap(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.score_scrap.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    {{ form.score_scrap(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group col-3">
+                    <label class="form-control-label"  for="update-submit"></label>
+                    <input id="update-score-table" name="update-score-table" type="button" class="form-control form-control-lg btn btn-update" value="Update" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group col-9">
+                {{ form.player_list_scrap.label(class="form-control-label") }}
+                {% if form.player_list_scrap.errors %}
+                    {{ form.player_list_scrap(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.player_list_scrap.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.player_list_scrap(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group col-3">
+                <input type="hidden" id="team_id" name="team_id" value="{{team.id}}" />
+                <label class="form-control-label" for="update-player-list"></label>
+                <input id="update-player-list" name="update-player-list" type="button" class="form-control form-control-lg btn btn-update" value="Update" />
+            </div>
+        </div>
+
+
+
+        </fieldset>
+        <div class="form-group" style="float:left;">
+            {{ form.submit(class="btn btn-outline-info") }}
+        </div>
+    </form>
+    <button onclick="javascript:location.href='{{ url_for('team.list_teams') }}';" class="btn btn-sm ml-2" />Back</button>
+    
+
+
+    <div
+    id="info-updated"
+    class="modal fade bd-example-modal-lg"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="myLargeModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-sm">
+      <h1>Shedule updated successfully</h1>
+    </div>
+  </div>
+  <div
+    id="info-added"
+    class="modal fade bd-example-modal-lg"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="myLargeModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-sm">
+      <h1>Shedule added</h1>
+    </div>
+  </div>
+
+
+</div>
+{% endblock content %}
