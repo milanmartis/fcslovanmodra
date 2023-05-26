@@ -96,7 +96,7 @@ class Post(db.Model):
     gallery = db.relationship('PostGallery', backref='gallz', lazy=True)
 
     def __repr__(self):
-        return f"Post('{self.title}', '{self.date_posted}', '{self.gallery.image_file2}')"
+        return f"Post('{self.title}', '{self.date_posted}')"
 
 
 class Product(db.Model):
