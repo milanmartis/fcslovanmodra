@@ -241,6 +241,12 @@ def update_product(product_id):
         product.product_category_id = form.category.data
         product.price = form.price.data
         product.is_visible = form.is_visible.data
+        
+        path_image = os.path.join(str(current_app.root_path)+'/static/products/'+str(product.id)+'/gallery/')
+        try:
+            os.makedirs(path_image)
+        except OSError as error:
+            print(error) 
 
         if form.picture.data:
             file = form.picture.data
