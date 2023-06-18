@@ -1,7 +1,7 @@
 body {
-  background: url('/static/main/background.jpg');
+  /* background: url('/static/main/background.jpg'); */
 
-  background-color: #111111;
+  background-color: #1d1d1d;
   background-size: cover;
   overflow-x: hidden;
   color: #ffffff;
@@ -58,6 +58,8 @@ html {
     transform: rotate(360deg);
   }
 }
+
+
 
 
 
