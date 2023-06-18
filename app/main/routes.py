@@ -8,6 +8,12 @@ from app import db
 main = Blueprint('main', __name__)
 
 
+@main.route("/tabz")
+def tabz():
+    
+        return render_template('tabz.html', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
+
 
 
 @main.route("/")

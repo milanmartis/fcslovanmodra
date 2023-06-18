@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/cc.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/lightbox.css') }}">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
+
+    {% if title %}
+        <title>FC Slovan Modra - {{ title }}</title>
+    {% else %}
+        <title>FC Slovan Modra</title>
+    {% endif %}
+</head>
+<body >
+<div class="content-section mt-26">
+    <div class="dez-post-media dez-img-effect zoom-slow">
+      <h3 style="padding-top:0px;">Tabuľky</h3>
+
+      <div id="tabz" class="carousel slide" data-bs-ride="carousel" data-bs-touch="true" data-bs-interval="false">
+        <div class="carousel-indicators">
+          <button type="button" class="btn text active" data-bs-target="#tabz" data-bs-slide-to="0" aria-current="true" aria-label="Slide 1">A team</button>
+          <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="1" aria-label="Slide 2">U19</button>
+          <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="2" aria-label="Slide 3">U17</button>
+          <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="3" aria-label="Slide 4">U15</button>
+          <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="4" aria-label="Slide 5">U13</button>
+        </div>
+            <div class="carousel-inner">
+            {% for num in range(5) %}
+            <div class="carousel-item-tabz2 carousel-item{% if loop.index == 1 %} active{% endif %}">
+              {% for team in teamz %} 
+              {% if team.id == num+1 %}
+              <h3 style="opacity:0.85;padding:20px;font-size: 93%;">{{teamz[loop.index0].main_league}}</h3>
+              {% endif %}
+              {% endfor %}
+            <table class="table scoretable">
+              <thead>
+                  <tr class="table-headding">
+                      <th>#</th>
+                      <th>Tím</th>
+                      <th>Z</th>
+                      <th>B</th>
+                      <th>V</th>
+                      <th>R</th>
+                      <th>P</th>
+                  </tr>
+              </thead>
+              <tbody>
+              {% for tteam in score_table if tteam.team_id == loop.index %}
+          
+                              <tr> 
+                              <th style="opacity:0.4" scope="row">{{loop.index}}</th> 
+                              <td>{{tteam.club|replace("Devínska Nová Ves", "Devínska N.V.")|replace("Futbalová akadémia Lafranconi FTVŠ UK","FA FTVŠ UK") }}</td> 
+                              <td style="opacity:0.6">{{tteam.games}}</td> 
+                              <td><b>{{tteam.points}}</b></td> 
+                              <td style="opacity:0.6">{{tteam.wins}}</td> 
+                              <td style="opacity:0.6">{{tteam.draws}}</td> 
+                              <td style="opacity:0.6">{{tteam.loses}}</td> 
+
+                            </tr>
+     
+                            {% endfor %}
+                          </tbody>
+                          
+                        </table>
+                      </div>
+                      
+                      
+         {% endfor %}
+
+        </div>
+
+      </div>
+
+
+    </div>
+  </div>
+
+  <script>
+    document.onreadystatechange = function() {
+        if (document.readyState !== "complete") {
+            //document.querySelector(
+            //"body").style.visibility = "hidden";
+            document.querySelector(
+            "#loader").style.visibility = "visible";
+        } else {
+            document.querySelector(
+            "#loader").style.display = "none";
+            //document.querySelector(
+            //"body").style.visibility = "visible";
+        }
+    };
+</script>
+    
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="{{ url_for('static', filename='js/team.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/product.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lightbox.js') }}"></script>
+
+    <script>
+     // $(document).ready(function(){$("img").click(function(){this.requestFullscreen()})});
+    </script>
+    <script type="text/javascript">
+      $(function(){
+          $('#kalendar_button').click(function(){
+            document.querySelector(
+            "#loader").style.visibility = "visible";
+            $('#iframeHolder').html('<iframe id="calendar_iframe" style="z-index:9999;height:640px;margin:4px;padding:0px;width:100%;border:none;overflow:none;background-color: black;" src="{{ url_for('calendar.index') }}"></iframe>');
+          });   
+      });
+      </script>
+      <script src="https://js.stripe.com/v3/"></script>
+      <script>
+        const checkout_publick_key = '{{checkout_publick_key}}';
+        const checkout_session_id = '{{checkout_session_id}}';
+      </script>
+      <script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>
+
+  </body>
+</html>
