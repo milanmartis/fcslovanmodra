@@ -454,11 +454,11 @@ h2 {
 background-color: transparent;
 border: 0px;
 color:#386ad4;
-opacity: 0.99;
+opacity: 0.89;
 text-align: center;
-font-size: 220%;
-font-weight: 700;
-width: 48px;
+font-size: 170%;
+font-weight: 780;
+width: 40px;
 }
 
 .headline {
@@ -755,6 +755,9 @@ footer {
     color: #6d9bff;
     margin: 0px;
     padding:0px;
+    position: absolute;
+    right:0px;
+    bottom:14px;
 
   }
 
