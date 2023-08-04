@@ -112,37 +112,7 @@
                 <p style="padding:0px; margin:0px;" id="countdown_desc"></p>
                 <p style="padding:0px; margin:0px;" id="countdown"></p>
 
-<script>
-// Set the date we're counting down to
-var countDownDate = new Date("{{next.start_event}}").getTime();
 
-// Update the count down every 1 second
-var x = setInterval(function() {
-
-  // Get today's date and time
-  var now = new Date().getTime();
-
-  // Find the distance between now and the count down date
-  var distance = countDownDate - now;
-
-  // Time calculations for days, hours, minutes and seconds
-  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-  var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-  // Display the result in the element with id="demo"
-  document.getElementById("countdown_desc").innerHTML = "deň | hod | min | sec";
-  document.getElementById("countdown").innerHTML = "<button class=\"btn\" style=\"width:40px;font-size:124%;text-align:center;padding:0px;height:41px;\">" + days + "</button> " + "<button class=\"btn btn-live\" style=\"width:40px;height:41px;font-size:124%;padding:0px;text-align:center;\">" + hours + "</button> "
-  + "<button class=\"btn btn-live\" style=\"width:40px;font-size:124%;text-align:center;padding:0px;height:41px;\">" + minutes + "</button> " + "<button class=\"btn btn-live\" style=\"width:40px;font-size:124%;text-align:center;padding:0px;height:41px;\">" + seconds + "</button> ";
-
-  // If the count down is finished, write some text
-  if (distance < 0) {
-    clearInterval(x);
-    document.getElementById("countdown").innerHTML = "HRÁ SA";
-  }
-}, 1000);
-</script>
               <center>
                 <!--
                   <button class="btn btn-live" onclick="javascript:location.href='https://fcslovanmodra.herokuapp.com/products'">LIVE</button><br>
@@ -182,22 +152,22 @@ var x = setInterval(function() {
               <div id="carouselExampleControls" data-bs-touch="true" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
                   <div class="carousel-item-tabz carousel-item active">
-                    <a class="sponsor-img d-block w-100" href="https://www.modra.sk/" target="_blank"><img width="80%" src="static/sponsors/modra.jpg"></a>
+                    <a class="sponsor-img d-block w-100" href="https://www.modra.sk/" target="_blank"><img width="80%" src="../static/sponsors/modra.jpg"></a>
                   </div>
                   <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://www.nadaciaspp.sk/" target="_blank"><img width="80%"  src="static/sponsors/nadacia.jpg"></a>
+                    <a class="sponsor-img d-block w-100"  href="https://www.nadaciaspp.sk/" target="_blank"><img width="80%"  src="../static/sponsors/nadacia.jpg"></a>
                   </div>
                   <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://www.hameln-rds.sk/sk/" target="_blank"><img width="80%"  src="static/sponsors/hameln-rds.jpg"></a>
+                    <a class="sponsor-img d-block w-100"  href="https://www.hameln-rds.sk/sk/" target="_blank"><img width="80%"  src="../static/sponsors/hameln-rds.jpg"></a>
                   </div>
                   <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://cafferoma.sk/" target="_blank"><img width="80%"  src="static/sponsors/caferoma.jpg"></a>
+                    <a class="sponsor-img d-block w-100"  href="https://cafferoma.sk/" target="_blank"><img width="80%"  src="../static/sponsors/caferoma.jpg"></a>
                   </div>
                   <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://www.instagram.com/futureballer.sk/" target="_blank"><img width="80%"  src="static/sponsors/ps-ultimate.jpg"></a>
+                    <a class="sponsor-img d-block w-100"  href="https://www.instagram.com/futureballer.sk/" target="_blank"><img width="80%"  src="../static/sponsors/ps-ultimate.jpg"></a>
                   </div>
                   <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://appdesign.sk/" target="_blank"><img width="80%"  src="static/sponsors/appdesign.jpg"></a>
+                    <a class="sponsor-img d-block w-100"  href="https://appdesign.sk/" target="_blank"><img width="80%"  src="../static/sponsors/appdesign.jpg"></a>
                   </div>
 
                   
@@ -344,7 +314,7 @@ var x = setInterval(function() {
       
       
       <div class="mx-auto col-sm-4 col-md  col-6 col">
-        <center><img class="image-logo" style="margin-left:-20px;padding-top:20px;padding-bottom:20px;opacity:0.99;" width="169" src="https://www.fcslovanmodra.sk/images/logo-slovan-modra-biele.png"></center>
+        <center><img class="image-logo" style="margin-left:-20px;padding-top:20px;padding-bottom:20px;opacity:0.99;" width="169" src="../static/main/logo-slovan-modra-biele.png"></center>
       </div>
       
       
@@ -410,7 +380,38 @@ var x = setInterval(function() {
     };
 </script>
     
-
+<script>
+  // Set the date we're counting down to
+  var countDownDate = new Date("{{next.start_event}}").getTime();
+  
+  // Update the count down every 1 second
+  var x = setInterval(function() {
+  
+    // Get today's date and time
+    var now = new Date().getTime();
+  
+    // Find the distance between now and the count down date
+    var distance = countDownDate - now;
+  
+    // Time calculations for days, hours, minutes and seconds
+    var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+  
+    // Display the result in the element with id="demo"
+    document.getElementById("countdown_desc").innerHTML = "deň | hod | min | sec";
+    document.getElementById("countdown_desc").style.opacity = 0.3;
+    document.getElementById("countdown").innerHTML = "<button class=\"btn-live\">" + days + "</button> " + "<button class=\"btn-live\">" + hours + "</button> "
+    + "<button class=\"btn-live\">" + minutes + "</button> " + "<button class=\"btn-live\">" + seconds + "</button> ";
+  
+    // If the count down is finished, write some text
+    if (distance < 0) {
+      clearInterval(x);
+      document.getElementById("countdown").innerHTML = "HRÁ SA";
+    }
+  }, 1000);
+  </script>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>

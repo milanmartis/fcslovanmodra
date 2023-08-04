@@ -450,6 +450,15 @@ h2 {
   transition: transform 1.2s ease;
   transition: transform 1.2s ease, -webkit-transform 1.2s ease;
 }
+.btn-live{
+background-color: transparent;
+border: 0px;
+color:#386ad4;
+opacity: 0.99;
+text-align: center;
+font-size: 220%;
+font-weight: 700;
+}
 
 .headline {
   border-radius: 10px !important;

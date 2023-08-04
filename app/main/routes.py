@@ -29,12 +29,7 @@ def home():
     
     category = Category.query.all()
     
-    today = date.today()
-    next = db.session.query(Event).filter(Event.event_team_id==1).filter(Event.event_category_id==1).filter(Event.start_event>today).order_by(Event.start_event.asc()).first()
-    next_name2 = next.title
-    next_name2 = next_name2.split(" - ", 1)
-
-   
+  
     return render_template('home.html', posts=posts, next=Next.next(), category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
