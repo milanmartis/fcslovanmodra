@@ -9,9 +9,6 @@
     <div class="row">
      {% for player in members %}
       {% if player.position==4 %}
-      <!--
-        {{ url_for('users.member', member_id=player.id) }}
-      -->
       <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4" href="#">
         <div class="card" style="width: 95%;margin:0px;padding:0px;">
           <div class="card-body">
@@ -31,9 +28,7 @@
       {% for player in members %}
 
       {% if player.position==3 %}
-            <!--
-        {{ url_for('users.member', member_id=player.id) }}
-      -->
+
       <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="#">
         <div class="card" style="width: 95%;margin:0px;">
           <div class="card-body">
@@ -52,9 +47,7 @@
     
       {% for player in members %}
       {% if player.position==2 %}
-            <!--
-        {{ url_for('users.member', member_id=player.id) }}
-      -->
+
       <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="#">
         <div class="card" style="width: 95%;margin:0px;">
           <div class="card-body">
@@ -70,9 +63,6 @@
     <div class="row">
       {% for player in members %}
       {% if player.position==1 %}
-            <!--
-        {{ url_for('users.member', member_id=player.id) }}
-      -->
         <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="#">
           <div class="card" style="width: 95%;margin:0px;">
             <div class="card-body">
@@ -88,9 +78,7 @@
     <div class="row">
       {% for tren in trener %}
       {% if tren.position[0].id==5 %}
-            <!--
-        {{ url_for('users.member', member_id=player.id) }}
-      -->
+
         <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="#">
           <div class="card" style="width: 95%;margin:0px;">
             <div class="card-body">
