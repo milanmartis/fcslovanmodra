@@ -702,7 +702,7 @@ select {
 
 /* Style the arrow inside the select element: */
 .select-selected:after {
-
+background-color: #24e424;
   text-align: center;
 }
 
@@ -861,12 +861,16 @@ ol.carousel-indicators li{
 .btn:hover,
 .btn:active,
 .btn:focus {
-  background-color: #6d9bff;
+  background-color: transparent;
   border: 2px solid #6d9bff;
   color: #030303;
-
+  
 }
 
+.fc-next-button{
+  
+  background-color: red;
+}
 
 .btn-teams-position{
   text-transform: uppercase;
