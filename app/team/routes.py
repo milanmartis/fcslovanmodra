@@ -11,21 +11,23 @@ import datetime
 from dateutil import parser
 from flask_security import roles_accepted
 from app.main.routes import RightColumn
+from app.main.routes import Next
 from flask_security import roles_required
 import pandas as pd
 import numpy as np
-
 
 team = Blueprint('team', __name__)
 
 
 
 @team.route("/teams")
+@login_required
+@roles_required('Admin', 'WebAdmin')
 def list_teams():
     # page = request.args.get('page', 1, type=int)
     # teams = Team.query.order_by(Team.id.desc()).paginate(page=page, per_page=5)
     teams = Team.query.order_by(Team.id.asc()).all()
-    return render_template('teams/list_teams.html', teams=teams, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('teams/list_teams.html', teams=teams, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @team.route("/teams/new", methods=['GET', 'POST'])
@@ -40,7 +42,7 @@ def new_team():
         flash('A New Team has been created!', 'success')
         return redirect(url_for('team.list_teams'))
     return render_template('teams/create_team.html', title='New Team',
-                           form=form, legend='New Team', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='New Team', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @team.route("/team/<team_name>")
@@ -52,7 +54,7 @@ def team_name(team_name):
 
     team = Team.query.filter(Team.name.like(team_name)).first()
     # team = Member.query.filter(Member.id==teams_members.c.member_id).filter(Member.id==positions_members.c.member_id).filter(teams_members.c.team_id==Team.id).filter(positions_members.c.position_id==Position.id).all()
-    return render_template('teams/team.html', team=team, members=members, trener=trener, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('teams/team.html', next=Next.next(), team=team, members=members, trener=trener, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 

@@ -2,13 +2,14 @@ from flask import render_template, url_for, request, redirect, jsonify, Blueprin
 from app.models import Event, PostGallery, Category, Team, EventCategory
 from flask_login import current_user, login_required
 from app.calendar.forms import EventForm, UpdateEventForm
+from app.main.routes import RightColumn
+from app.main.routes import Next
 from flask import Blueprint
 from app import db
 from datetime import  timedelta
 import datetime
 from dateutil import parser
 from flask_security import roles_required
-from app.main.routes import RightColumn
 
 calendar = Blueprint('calendar', __name__)
 
@@ -25,7 +26,7 @@ def index():
     form2 = UpdateEventForm()
     form2.category2.choices = [(category.id, category.name) for category in EventCategory.query.all()]
     form2.team2.choices = [(team.id, team.name) for team in Team.query.all()]
-    return render_template('calendar/calendar.html', form=form,form2=form2, calendar=calendar, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('calendar/calendar.html', form=form,form2=form2, calendar=calendar, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @calendar.route("/calendar/insert",methods=["POST","GET"])

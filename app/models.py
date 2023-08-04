@@ -194,6 +194,7 @@ class Position(db.Model):
 
 
 class Player(db.Model):
+    __tablename__ = 'player'
     id = db.Column(db.Integer, primary_key=True)
     # member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
     name = db.Column(db.String(250), nullable=False)

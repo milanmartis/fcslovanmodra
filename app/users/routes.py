@@ -7,6 +7,7 @@ from app.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,Upda
 from app.users.utils import save_picture, send_reset_email, send_confirm_email, save_picture_member
 import uuid
 from app.main.routes import RightColumn
+from app.main.routes import Next
 from flask_security import roles_required
 
 users = Blueprint('users', __name__)
@@ -72,7 +73,7 @@ def register():
         else:
             return redirect(url_for('users.login'))
     
-    return render_template('users/register.html', title='Register', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('users/register.html', title='Register', form=form, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @users.route("/login", methods=['GET', 'POST'])
@@ -97,7 +98,7 @@ def login():
     # else:
     #     flash('Prihlásenie bolo neúspešné. Prosím, skontrolujte si e-mail.', 'danger')
 
-    return render_template('users/login.html', title='Login', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('users/login.html', title='Login', form=form, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @users.route("/logout")
@@ -141,7 +142,7 @@ def account():
         form.city.data = member.city
     image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
     return render_template('users/account.html', title='Account',
-                           image_file=image_file, form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           image_file=image_file, form=form, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -153,7 +154,7 @@ def user_posts(username):
     posts = Post.query.filter_by(author=user)\
         .order_by(Post.date_posted.desc())\
         .paginate(page=page, per_page=5)
-    return render_template('users/user_posts.html', posts=posts, user=user, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('users/user_posts.html', posts=posts, user=user, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -167,7 +168,7 @@ def reset_request():
         send_reset_email(user)
         flash('Bol vám zaslaný e-mail s inštrukciami, ako obnoviť heslo.', 'info')
         return redirect(url_for('users.login'))
-    return render_template('users/reset_request.html', title='Reset Password', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('users/reset_request.html', title='Reset Password', form=form, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @users.route("/reset_password/<token>", methods=['GET', 'POST'])
@@ -185,7 +186,7 @@ def reset_token(token):
         db.session.commit()
         flash('Vaše heslo bolo zmenené! Môžete sa prihlásiť.', 'success')
         return redirect(url_for('users.login'))
-    return render_template('users/reset_token.html', title='Reset Password', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('users/reset_token.html', title='Reset Password', form=form, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -199,7 +200,7 @@ def reset_token(token):
 #         send_reset_email(user)
 #         flash('An email has been sent with instructions to reset your password.', 'info')
 #         return redirect(url_for('users.login'))
-#     return render_template('users/reset_request.html', title='Reset Password', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+#     return render_template('users/reset_request.html', title='Reset Password', form=form, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @users.route("/confirm_email/<token>", methods=['GET', 'POST'])
@@ -215,7 +216,7 @@ def confirm_token(token):
         db.session.commit()
         flash('Váš e-mail bol úspešne potvrdený! Vitajte v klube. Môžete sa prihlásiť.', 'success')
         return redirect(url_for('users.login'))
-    # return render_template('users/confirm_email.html', title='Confirm Register Email', form=form, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    # return render_template('users/confirm_email.html', title='Confirm Register Email', form=form, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -227,7 +228,7 @@ def confirm_token(token):
 @login_required
 def list_roles():
     roles = Role.query.order_by(Role.id.desc()).all()
-    return render_template('users/list_roles.html', roles=roles, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('users/list_roles.html', roles=roles, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @users.route("/users/role/new", methods=['GET', 'POST'])
@@ -241,7 +242,7 @@ def new_role():
         flash('Your Role has been created!', 'success')
         return redirect(url_for('users.list_roles'))
     return render_template('users/create_role.html', title='New Role',
-                           form=form, legend='New Role', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='New Role', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 # @users.route("/users/role/<int:role_id>")
@@ -268,7 +269,7 @@ def update_role(role_id):
         form.name.data = role.name
         form.description.data = role.description
     return render_template('users/create_role.html', title='Update Role',
-                           form=form, legend='Update Role', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='Update Role', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @users.route("/users/role/<int:role_id>/delete", methods=['POST'])
@@ -308,20 +309,21 @@ def delete_role(role_id):
 def list_members():
     page = request.args.get('page', 1, type=int)
     members = Member.query.filter(Member.id!=1).order_by(Member.id.desc()).paginate(page=page, per_page=10)
-    return render_template('users/list_members.html', members=members, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('users/list_members.html', members=members, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
-@users.route("/player/<int:member_id>", methods=['GET'])
+@users.route("/player/<int:member_id>", methods=['POST','GET'])
 def member(member_id):
-    
-    player = Member.query.get_or_404(member_id)
+    player = Player.query.filter(Player.id == member_id).first()
+    # player = Member.query.get_or_404(member_id)
     print(player.name)
-    player_info = Player.query.filter(Player.name.like(player.name)).first()
+    search = "{}%".format(player.name)
+    player_info = Member.query.filter(Member.name.like(search)).first()
     
     
     return render_template('users/member.html', title='Player',
-                           legend='Player', player=player, player_info=player_info, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           legend='Player', player=player, player_info=player_info, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
     
 
 
@@ -427,7 +429,7 @@ def update_member(member_id):
 
     image_file = url_for('static', filename='members_pics/' + member.image_file)
     return render_template('users/create_member.html', title='Update Member',
-                           form=form, image_file=image_file, legend='Update Member', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, image_file=image_file, legend='Update Member', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @users.route("/member/<int:member_id>/delete", methods=['GET', 'POST'])

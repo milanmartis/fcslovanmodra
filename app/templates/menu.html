@@ -16,7 +16,7 @@
               <a href="{{ url_for('main.about') }}">Klub</a>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Družstvá</a>
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Tímy</a>
 
               <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                 
@@ -33,9 +33,9 @@
               <li class="nav-item" style="margin-left:-15px;">
                 <a class="nav-link" href="{{ url_for('posts.list_posts') }}">Články</a>
               </li>
-              <li class="nav-item">
+              <!-- <li class="nav-item">
                 <a class="nav-link" href="https://fcslovanmodra.herokuapp.com/products">LIVE</a>
-              </li>
+              </li> -->
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('main.sponsors') }}">Partneri</a>
               </li>
@@ -52,10 +52,15 @@
         <div class="navbar-nav">
         
           {% if not current_user.is_authenticated %}
-          <div class="navbar-nav mr-auto">
-            <a class="nav-item nav-link" href="{{ url_for('users.login') }}">Login</a>
-            <a class="nav-item nav-link" href="{{ url_for('users.register') }}">Registrovať</a>
-          </div>
+          <!--
+            <div class="navbar-nav mr-auto">
+  
+              <a class="nav-item nav-link" href="{{ url_for('users.login') }}">Login</a>
+              <a class="nav-item nav-link" href="{{ url_for('users.register') }}">Registrovať</a>
+            </div>
+
+          -->
+
           {% endif %}
           {% if current_user.is_authenticated %}
           <ul class="navbar-nav mr-auto"  style="margin-top: 6px;">
