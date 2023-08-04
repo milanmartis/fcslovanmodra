@@ -173,7 +173,7 @@ def update_team(team_id):
         form.score_scrap.data = team.score_scrap
         form.player_list_scrap.data = team.player_list_scrap
     return render_template('teams/create_team.html', title='Update Team',
-                           form=form, team=team, legend='Update Team', teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, team=team, legend='Update Team', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @team.route("/teams/<int:team_id>/delete", methods=['GET', 'POST'])
