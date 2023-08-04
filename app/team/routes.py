@@ -54,7 +54,7 @@ def team_name(team_name):
 
     team = Team.query.filter(Team.name.like(team_name)).first()
     # team = Member.query.filter(Member.id==teams_members.c.member_id).filter(Member.id==positions_members.c.member_id).filter(teams_members.c.team_id==Team.id).filter(positions_members.c.position_id==Position.id).all()
-    return render_template('teams/team.html', next=Next.next(), team=team, members=members, trener=trener, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('teams/team.html', next=Next.next(), team=team, members=members, trener=trener, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
