@@ -109,7 +109,8 @@
                 <!--{{ next }}-->
                 
 
-                <p id="countdown"></p>
+                <p style="padding:0px; margin:0px;" id="countdown_desc"></p>
+                <p style="padding:0px; margin:0px;" id="countdown"></p>
 
 <script>
 // Set the date we're counting down to
@@ -131,8 +132,9 @@ var x = setInterval(function() {
   var seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
   // Display the result in the element with id="demo"
-  document.getElementById("countdown").innerHTML = "<button class=\"btn\" style=\"width:40px;font-size:144%;text-align:center;padding:0px;height:41px;\">" + days + "</button> " + "<button class=\"btn btn-live\" style=\"width:40px;height:41px;font-size:144%;padding:0px;text-align:center;\">" + hours + "</button> "
-  + "<button class=\"btn btn-live\" style=\"width:40px;font-size:144%;text-align:center;padding:0px;height:41px;\">" + minutes + "</button> " + "<button class=\"btn btn-live\" style=\"width:40px;font-size:144%;text-align:center;padding:0px;height:41px;\">" + seconds + "</button> ";
+  document.getElementById("countdown_desc").innerHTML = "deň | hod | min | sec";
+  document.getElementById("countdown").innerHTML = "<button class=\"btn\" style=\"width:40px;font-size:124%;text-align:center;padding:0px;height:41px;\">" + days + "</button> " + "<button class=\"btn btn-live\" style=\"width:40px;height:41px;font-size:124%;padding:0px;text-align:center;\">" + hours + "</button> "
+  + "<button class=\"btn btn-live\" style=\"width:40px;font-size:124%;text-align:center;padding:0px;height:41px;\">" + minutes + "</button> " + "<button class=\"btn btn-live\" style=\"width:40px;font-size:124%;text-align:center;padding:0px;height:41px;\">" + seconds + "</button> ";
 
   // If the count down is finished, write some text
   if (distance < 0) {
