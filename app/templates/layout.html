@@ -108,15 +108,13 @@
                 <h3 style="padding-top:12px;">Najbližší zápas</h3>
                 <!--{{ next }}-->
                 
-
+              <div class="btn-live-frame">
                 <p style="padding:0px; margin:0px;" id="countdown_desc"></p>
                 <p style="padding:0px; margin:0px;" id="countdown"></p>
-
+              </div>
 
               <center>
-                <!--
-                  <button class="btn btn-live" onclick="javascript:location.href='https://fcslovanmodra.herokuapp.com/products'">LIVE</button><br>
-                -->
+              <button class="btn btn-live2" onclick="javascript:location.href='{{ url_for('products.list_products') }}'">LIVE</button><br>
               <img class="image-logo" style="padding:16px;" height="140" src="/static/clubs/fc-slovan-modra.png">
               <img class="image-logo" style="padding:16px;" height="140" src="/static/clubs/psc-pezinok.png">
               <br>

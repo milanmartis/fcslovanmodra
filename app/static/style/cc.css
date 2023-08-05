@@ -450,12 +450,24 @@ h2 {
   transition: transform 1.2s ease;
   transition: transform 1.2s ease, -webkit-transform 1.2s ease;
 }
+.btn-live-frame{
+  display: none;
+  transition: -webkit-transform 2s ease;
+  transition: transform 2s ease;
+  transition: transform 2s ease, -webkit-transform 2s ease;
+}
+.btn-live-frame::content{
+  display: block;
+}
+
+
+
 .btn-live{
 background-color: transparent;
 border: 2px solid #6d9bff;
 border-radius: 10px;
 color:#6d9bff;
-opacity: 0.59;
+opacity: 1.0;
 text-align: center;
 font-size: 160%;
 font-weight: 800;
