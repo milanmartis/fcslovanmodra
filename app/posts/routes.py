@@ -71,15 +71,15 @@ def new_post():
         try:
             file = form.picture.data
             file_filename = secure_filename(file.filename)
-            if not alowed_file(file.filename):
-                return "FILE NOT ALLOWED!"
+            # if not alowed_file(file.filename):
+            #     return "FILE NOT ALLOWED!"
             
-            new_filename = uuid.uuid4().hex + '.' + file.filename.rsplit('.', 1)[1].lower()
+            # new_filename = uuid.uuid4().hex + '.' + file.filename.rsplit('.', 1)[1].lower()
             
-            bucket_name = "fcsm-files"
-            s3 = boto3.resource("s3")
+            # bucket_name = "fcsm-files"
+            # s3 = boto3.resource("s3")
             
-            s3.Bucket(bucket_name).upload_fileobj(file, new_filename)
+            # s3.Bucket(bucket_name).upload_fileobj(file, new_filename)
             
             form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
             picture = PostGallery(title=form.title.data, image_file2=file_filename, orderz=0, post_id=post.id)
