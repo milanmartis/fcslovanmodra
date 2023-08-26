@@ -37,6 +37,7 @@ def create_app(config_class=Config):
     app.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=60)
     stripe.api_key = app.config['STRIPE_SECRET_KEY']
 
+
     db.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
