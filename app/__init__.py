@@ -32,6 +32,7 @@ mail = Mail()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
+    app._static_folder = 'static'
     app.config.from_object(Config)
     app.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=60)
     stripe.api_key = app.config['STRIPE_SECRET_KEY']

@@ -1,5 +1,8 @@
+import boto3
+import uuid
+
 from flask import (render_template, url_for, flash,
-                   redirect, request, abort, Blueprint, current_app)
+                   redirect, request, abort, Blueprint, current_app, render_template)
 from flask_login import current_user, login_required
 from app import db
 from app.models import Post, Category, PostGallery
@@ -37,13 +40,19 @@ def list_posts():
     return render_template('home.html', posts=posts, category=category, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
+ALLOWED_EXTENSIONS = {'jpg','png'}
 
+def alowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    
 
 
 @posts.route("/post/new", methods=['GET', 'POST'])
 @login_required
 def new_post():
     form = PostForm()
+
+    
 
     form.category.choices = [(category.id, category.name) for category in Category.query.all()]
     if form.validate_on_submit():
@@ -59,6 +68,16 @@ def new_post():
         try:
             file = form.picture.data
             file_filename = secure_filename(file.filename)
+            if not alowed_file(file.filename):
+                return "FILE NOT ALLOWED!"
+            
+            new_filename = uuid.uuid4().hex + '.' + file.filename.rsplit('.', 1)[1].lower()
+            
+            bucket_name = "fcsm-files"
+            s3 = boto3.resource("s3")
+            
+            s3.Bucket(bucket_name).upload_fileobj(file, new_filename)
+            
             form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
             picture = PostGallery(title=form.title.data, image_file2=file_filename, orderz=0, post_id=post.id)
             db.session.add(picture)

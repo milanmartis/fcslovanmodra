@@ -108,7 +108,7 @@ def list_products():
 
             },
             customer_email = current_user.email,
-            mode='payment',
+             mode='payment',
             success_url=current_app.url_for('products.success_products', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=current_app.url_for('products.cancel_products', _external=True),
         )
