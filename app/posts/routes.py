@@ -1,8 +1,4 @@
-import os
-import boto3
-from PIL import Image
-import io
-import uuid
+
 
 from flask import (render_template, url_for, flash,
                    redirect, request, abort, Blueprint, current_app, render_template)
@@ -43,10 +39,10 @@ def list_posts():
     return render_template('home.html', posts=posts, category=category, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
-ALLOWED_EXTENSIONS = {'jpg','png'}
+# ALLOWED_EXTENSIONS = {'jpg','png'}
 
-def alowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# def alowed_file(filename):
+#     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
     
 
 
