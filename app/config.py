@@ -14,6 +14,9 @@ class Config:
 
     STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
     STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+    
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
         
 
 

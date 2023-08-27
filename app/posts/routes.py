@@ -1,4 +1,7 @@
 
+# import boto3
+# import uuid
+# from app.config import Config
 
 from flask import (render_template, url_for, flash,
                    redirect, request, abort, Blueprint, current_app, render_template)
@@ -20,11 +23,12 @@ import os
 
 posts = Blueprint('posts', __name__)
 
+# AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+# AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+# ALLOWED_EXTENSIONS = {'jpg','png'}
+
 
 ################  POSTS  #################
-
-
-
 
 
 @posts.route("/posts", methods=['GET'])
@@ -39,7 +43,6 @@ def list_posts():
     return render_template('home.html', posts=posts, category=category, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
-# ALLOWED_EXTENSIONS = {'jpg','png'}
 
 # def alowed_file(filename):
 #     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -70,17 +73,18 @@ def new_post():
             # if not alowed_file(file.filename):
             #     return "FILE NOT ALLOWED!"
             
-            # new_filename = uuid.uuid4().hex + '.' + file.filename.rsplit('.', 1)[1].lower()
+            # # new_filename = uuid.uuid4().hex + '.' + file_filename.filename.rsplit('.', 1)[1].lower()
             
             # bucket_name = "fcsm-files"
-            # s3 = boto3.resource("s3")
+            # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
             
-            # s3.Bucket(bucket_name).upload_fileobj(file, new_filename)
+            # s3.upload_fileobj(file, bucket_name, file.filename)
             
             form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
             picture = PostGallery(title=form.title.data, image_file2=file_filename, orderz=0, post_id=post.id)
             db.session.add(picture)
 
+        
         except:
             pass
                 

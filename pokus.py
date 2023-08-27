@@ -1,14 +1,24 @@
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import numpy as np
 import boto3
-import io
+from flask import Flask, request
 
-s3 = boto3.resource('s3', region_name='eu-north-1')
-bucket = s3.Bucket('fcsm-files')
-object = bucket.Object('355244734_10219319449090479_1136688913142605109_n.jpg')
+app = Flask(__name__)
 
-file_stream = io.StringIO()
-object.download_fileobj(file_stream)
-img = mpimg.imread(file_stream)
-# whatever you need to do
+# Konfigurujte Boto3 na použitie svojich prístupových údajov S3
+s3 = boto3.client('s3',
+                  aws_access_key_id='AKIA2E7FAZMVEOBLDJVG',
+                  aws_secret_access_key='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')
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    # Získať obrázok z POST požiadavky
+    uploaded_file = request.files['file']
+
+    if uploaded_file:
+        # Nahrať obrázok do S3
+        s3.upload_fileobj(uploaded_file, 'your-s3-bucket-name', uploaded_file.filename)
+        return 'Obrázok bol úspešne nahraný do S3'
+
+    return 'Obrázok sa nepodarilo nahrať'
+
+if __name__ == '__main__':
+    app.run()
