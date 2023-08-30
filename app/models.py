@@ -2,8 +2,8 @@ from datetime import datetime
 from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 from flask import current_app
 from app import db, login_manager
-from flask_security import RoleMixin
-from flask_login import UserMixin
+from flask_security import RoleMixin, UserMixin
+from flask_login import UserMixin, login_user
 
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
@@ -84,6 +84,7 @@ class User(db.Model, UserMixin):
     def has_roles(self, *args):
         return set(args).issubset({role.name for role in self.roles})
     
+
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)

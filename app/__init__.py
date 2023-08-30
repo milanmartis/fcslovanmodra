@@ -9,6 +9,8 @@ from datetime import timedelta
 import stripe
 from flask_sqlalchemy import SQLAlchemy as _BaseSQLAlchemy
 # load users, roles for a session
+from dotenv import load_dotenv
+from flask_principal import Principal, RoleNeed, identity_loaded
 
 
 # from flask_bootstrap import Bootstrap
@@ -18,10 +20,12 @@ from flask_sqlalchemy import SQLAlchemy as _BaseSQLAlchemy
 #     def apply_pool_defaults(self, app, options):
 #         super(SQLAlchemy, self).apply_pool_defaults(self, app, options)
 #         options["pool_pre_ping"] = True
-        
+load_dotenv()
+       
 db = SQLAlchemy()
 
 bcrypt = Bcrypt()
+principal = Principal()
 
    
 login_manager = LoginManager()
@@ -37,8 +41,8 @@ def create_app(config_class=Config):
     app.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=60)
     stripe.api_key = app.config['STRIPE_SECRET_KEY']
 
-
     db.init_app(app)
+    principal.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
@@ -62,7 +66,7 @@ def create_app(config_class=Config):
 
     from app.models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    # app.security = Security(app, user_datastore)
+    app.security = Security(user_datastore)
 
     return app
 

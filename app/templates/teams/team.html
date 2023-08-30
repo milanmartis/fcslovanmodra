@@ -83,6 +83,15 @@
           <div class="card" style="width: 95%;margin:0px;">
             <div class="card-body">
               <h6>{{ tren.name }}</h6>
+              {% if tren.name == "Július Šimon" %}
+              <h6></h6>
+              {% elif tren.name == "Dávid Danko" %}
+              <h6></h6>
+              {% else %}
+              <h6>kontak: <a href="tel:{{ tren.phone }}">{{ tren.phone }}</a></h6>
+              {% endif %}
+
+              <h6>{{ tren.mail }}</h6>
             </div>
           </div>
         </a>

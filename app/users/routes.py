@@ -9,6 +9,8 @@ import uuid
 from app.main.routes import RightColumn
 from app.main.routes import Next
 from flask_security import roles_required
+from flask_principal import identity_changed, Identity
+
 
 users = Blueprint('users', __name__)
 
@@ -305,7 +307,7 @@ def delete_role(role_id):
 
 @users.route("/members")
 @login_required
-@roles_required('Admin')
+# @roles_required('Admin')
 def list_members():
     page = request.args.get('page', 1, type=int)
     members = db.session.query(Member).filter(Member.id!=1).order_by(Member.id.desc()).paginate(page=page, per_page=10)
@@ -330,7 +332,7 @@ def member(member_id):
 
 @users.route("/member/<int:member_id>/update", methods=['GET', 'POST'])
 @login_required
-@roles_required('Admin')
+# @roles_required('Admin')
 def update_member(member_id):
 
     # member = Member.query.join(Role, roles_members).filter(Role.id==roles_members.c.role_id).filter(Member.id==member_id)

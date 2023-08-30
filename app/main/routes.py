@@ -4,6 +4,7 @@ from app.models import Post, PostGallery, Category, Team, Event, ScoreTable
 from flask import Blueprint
 from app import db
 from datetime import date
+from flask_security import current_user, roles_accepted 
 
 # from app.users.roles import user_role
 
@@ -21,7 +22,6 @@ def tabz():
 @main.route("/")
 @main.route("/home")
 def home():
-    # print(user_role())
     page = request.args.get('page', 1, type=int)
     # posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
     
@@ -54,7 +54,7 @@ class Next:
         today = date.today()
         # print('kjj')
         next = Event.query.filter(Event.event_team_id==1).filter(Event.event_category_id==1).filter(Event.start_event>today).order_by(Event.start_event.asc()).first()
-        print(next)
+        # print(next)
         return next
         
 
