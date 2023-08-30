@@ -9,7 +9,6 @@ from app import db
 from datetime import  timedelta
 import datetime
 from dateutil import parser
-from flask_security import roles_accepted
 from app.main.routes import RightColumn
 from app.main.routes import Next
 from flask_security import roles_required

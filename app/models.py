@@ -47,7 +47,10 @@ class User(db.Model, UserMixin):
     confirm = db.Column(db.Boolean(), default=False)
     posts = db.relationship('Post', backref='author', lazy=True)
     products = db.relationship('Product', backref='saler', lazy=True)
-    roles = db.relationship('Role', secondary=roles_users, lazy='subquery',
+    # active = db.Column(db.Boolean, default=True)
+    # confirmed_at = db.Column(db.DateTime())  # Optional: Store confirmation timestamp
+
+    roles = db.relationship('Role', secondary='roles_users', lazy='subquery',
                             backref=db.backref('roled', lazy=True))
 
     def get_reset_token(self):
