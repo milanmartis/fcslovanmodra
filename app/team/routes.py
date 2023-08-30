@@ -21,7 +21,7 @@ team = Blueprint('team', __name__)
 
 @team.route("/teams")
 @login_required
-@roles_required('Admin', 'WebAdmin')
+# @roles_required('Admin', 'WebAdmin')
 def list_teams():
     # page = request.args.get('page', 1, type=int)
     # teams = Team.query.order_by(Team.id.desc()).paginate(page=page, per_page=5)
@@ -31,7 +31,7 @@ def list_teams():
 
 @team.route("/teams/new", methods=['GET', 'POST'])
 @login_required
-@roles_required('Admin', 'WebAdmin')
+# @roles_required('Admin', 'WebAdmin')
 def new_team():
     form = TeamForm()
     if form.validate_on_submit():
@@ -83,7 +83,7 @@ def team_name(team_name):
 
 @team.route("/teams/<int:team_id>/update", methods=['GET', 'POST'])
 @login_required
-@roles_required('Admin', 'WebAdmin')
+# @roles_required('Admin', 'WebAdmin')
 def update_team(team_id):
     team = Team.query.get_or_404(team_id)
     form = TeamForm()

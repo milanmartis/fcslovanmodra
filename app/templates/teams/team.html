@@ -3,6 +3,10 @@
 
 <h3 class="headline">{{ team.name }}</h3>
 <br>
+{% if team.name=='U11' %}
+{% elif team.name=='U9' %}
+{% elif team.name=='U7' %}
+{% else %}
 
     <div class="col-12 d-flex justify-content-center"><p class="btn-teams-position">{{'Útočníci'}}</p></div>
 
@@ -73,8 +77,10 @@
       {% endif %}
       {% endfor %}
     </div>
-    
-    <div class="row col-12  d-flex justify-content-center"><p class="btn-teams-position">{{'Tréneri'}}</p></div>
+
+  {% endif %}  
+
+    <div class="row col-12  d-flex justify-content-center"><p class="btn-teams-position">{{'Tréner'}}</p></div>
     <div class="row">
       {% for tren in trener %}
       {% if tren.position[0].id==5 %}
