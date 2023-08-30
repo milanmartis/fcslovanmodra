@@ -20,19 +20,29 @@
             
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('posts.list_posts') }}">Články</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('team.team_name', team_name='A tím') }}">A tím</a>
+            </li>
+
+
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Tímy</a>
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Mládež</a>
   
+
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                   
-                  <br>
+                  <a class="nav-item nav-link" href="{{ url_for('team.team_youth') }}">Informácie </a>
                   {% for team in teamz %}
+                  {% if not loop.first %}
                   <a class="nav-item nav-link" href="{{ url_for('team.team_name', team_name=team.name) }}">{{ team.name }} </a>
+
+                  {% endif %}
                   {% endfor %}
   
                 </div>
               </li>
-              </li>
+              
               <!-- <li class="nav-item">
                 <a class="nav-link" href="https://fcslovanmodra.herokuapp.com/products">LIVE</a>
               </li> -->

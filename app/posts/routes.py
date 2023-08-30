@@ -1,7 +1,7 @@
 
-# import boto3
-# import uuid
-# from app.config import Config
+import boto3
+import uuid
+from app.config import Config
 
 from flask import (render_template, url_for, flash,
                    redirect, request, abort, Blueprint, current_app, render_template)
@@ -23,9 +23,9 @@ import os
 
 posts = Blueprint('posts', __name__)
 
-# AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-# AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-# ALLOWED_EXTENSIONS = {'jpg','png'}
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+ALLOWED_EXTENSIONS = {'jpg','png'}
 
 
 ################  POSTS  #################
@@ -35,17 +35,16 @@ posts = Blueprint('posts', __name__)
 def list_posts():
     page = request.args.get('page', 1, type=int)
     # posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
-    posts = Post.query.join(PostGallery, Category).filter(
-        Post.id == PostGallery.post_id).filter(Category.id == Post.category_id).filter(PostGallery.orderz<1).order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
+    posts = db.session.query(Post).join(PostGallery, Post.id == PostGallery.post_id).join(Category, Category.id == Post.category_id).filter(PostGallery.orderz<1).order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
     
     category = Category.query.all()
     
-    return render_template('home.html', posts=posts, category=category, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('home.html', posts=posts, category=category, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
-# def alowed_file(filename):
-#     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def alowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
     
 
 
@@ -70,18 +69,22 @@ def new_post():
         try:
             file = form.picture.data
             file_filename = secure_filename(file.filename)
-            # if not alowed_file(file.filename):
-            #     return "FILE NOT ALLOWED!"
+            if not alowed_file(file.filename):
+                return "FILE NOT ALLOWED!"
+            bucket_name = "fcsm-files"
+            new_directory_name = 'fcs3_/posts/'+str(post.id)+'/gallery/'
+            new_directory_name2 = 'fcs3_/posts/'+str(post.id)+'/'
+            s3.put_object(Bucket=bucket_name, Key=new_directory_name)
+
             
-            # # new_filename = uuid.uuid4().hex + '.' + file_filename.filename.rsplit('.', 1)[1].lower()
+            new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
+            s3_key = new_directory_name2 + new_filename
+            s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
             
-            # bucket_name = "fcsm-files"
-            # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+            s3.upload_fileobj(file, bucket_name, s3_key)
             
-            # s3.upload_fileobj(file, bucket_name, file.filename)
-            
-            form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
-            picture = PostGallery(title=form.title.data, image_file2=file_filename, orderz=0, post_id=post.id)
+            # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
+            picture = PostGallery(title=form.title.data, image_file2=new_filename, orderz=0, post_id=post.id)
             db.session.add(picture)
 
         
@@ -104,7 +107,7 @@ def new_post():
         flash('Your post has been created!', 'success')
         return redirect(url_for('main.home'))
     return render_template('posts/create_post.html', title='New Post',
-                           form=form, legend='New Post', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='New Post', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/post/<int:post_id>")
@@ -118,7 +121,7 @@ def post(post_id):
         title = post.title
     else:
         title = ''
-    return render_template('posts/post.html', title=title, post=post, galleries=galleries, category=category, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('posts/post.html', title=title, post=post, galleries=galleries, category=category, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/posts/category/<int:category>")
@@ -130,7 +133,7 @@ def category_posts(category):
         .filter(Post.category_id==category.id)\
         .order_by(Post.date_posted.desc())\
         .paginate(page=page, per_page=5)
-    return render_template('posts/category_posts.html', posts=posts, category=category, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('posts/category_posts.html', posts=posts, category=category, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -195,7 +198,7 @@ def update_post(post_id):
         form.date_posted.data = post.date_posted
         form.category.data = post.category_id
     return render_template('posts/create_post.html', title='Update Post',
-                           form=form, post_id=post_id, legend='Update Post', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, post_id=post_id, legend='Update Post', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/post/<int:post_id>/delete", methods=['POST','GET'])
@@ -224,7 +227,7 @@ def delete_post(post_id):
 def list_categories():
     page = request.args.get('page', 1, type=int)
     categories = Category.query.order_by(Category.id.desc()).paginate(page=page, per_page=5)
-    return render_template('posts/list_categories.html', categories=categories, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('posts/list_categories.html', categories=categories, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/category/new", methods=['GET', 'POST'])
@@ -238,13 +241,13 @@ def new_category():
         flash('Your category has been created!', 'success')
         return redirect(url_for('posts.list_categories'))
     return render_template('posts/create_category.html', title='New Post Category',
-                           form=form, legend='New Post Category', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='New Post Category', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/category/<int:category_id>")
 def category(category_id):
     category = Category.query.get_or_404(category_id)
-    return render_template('posts/category.html', name=category.name, category=category, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('posts/category.html', name=category.name, category=category, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/category/<int:category_id>/update", methods=['GET', 'POST'])
@@ -262,7 +265,7 @@ def update_category(category_id):
     elif request.method == 'GET':
         form.name.data = category.name
     return render_template('posts/create_category.html', title='Update Category',
-                           form=form, legend='Update Category', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='Update Category', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/category/<int:category_id>/delete", methods=['POST'])

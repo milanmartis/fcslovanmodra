@@ -100,14 +100,18 @@
 
           {% endif %}
           
-          {% set next_name2 = next.title.split(' - ') %}
+          {% if next22.title is defined and next22.title is string %}
+              {% set next_name2 = next22.title.split(' - ') %}
+          {% else %}
+              {% set next_name2 = '---' %}
+          {% endif %}
+
           
           <div class="content-section mt-6">
             <div class="content-section-sidebar">
               
               <div class="dez-post-media dez-img-effect zoom-slow">
                 <h3 style="padding-top:12px;">Najbližší zápas</h3>
-                <!--{{ next }}-->
                 
                 <div class="btn-live-frame">
                   <p style="padding:0px; margin:0px;" id="countdown_desc"></p>
@@ -125,7 +129,7 @@
               <h3 style="text-align:center;">{{ next_name2[0] }}</h3>
               <h6 style="text-align:center;">vs.</h6>
               <h3 style="text-align:center;margin-top:-5px;">{{ next_name2[1] }}</h3>
-              <h6>{{ next.start_event.strftime('%d. %m. %Y') }} | <b>{{ next.start_event.strftime('%H:%M') }} </b></h6>
+              <h6>{{ next22.start_event.strftime('%d. %m. %Y') }} | <b>{{ next22.start_event.strftime('%H:%M') }} </b></h6>
 
 
 
@@ -400,7 +404,7 @@
     
 <script>
   // Set the date we're counting down to
-  var countDownDate = new Date("{{next.start_event}}").getTime();
+  var countDownDate = new Date("{{next22.start_event}}").getTime();
   
   // Update the count down every 1 second
   var x = setInterval(function() {

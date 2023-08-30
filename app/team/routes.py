@@ -27,7 +27,7 @@ def list_teams():
     # page = request.args.get('page', 1, type=int)
     # teams = Team.query.order_by(Team.id.desc()).paginate(page=page, per_page=5)
     teams = Team.query.order_by(Team.id.asc()).all()
-    return render_template('teams/list_teams.html', teams=teams, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('teams/list_teams.html', teams=teams, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @team.route("/teams/new", methods=['GET', 'POST'])
@@ -42,19 +42,34 @@ def new_team():
         flash('A New Team has been created!', 'success')
         return redirect(url_for('team.list_teams'))
     return render_template('teams/create_team.html', title='New Team',
-                           form=form, legend='New Team', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='New Team', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
+
+@team.route("/info")
+def team_youth():
+
+    # team = Member.query.filter(Member.id==teams_members.c.member_id).filter(Member.id==positions_members.c.member_id).filter(teams_members.c.team_id==Team.id).filter(positions_members.c.position_id==Position.id).all()
+    return render_template('teams/youth.html', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @team.route("/team/<team_name>")
 def team_name(team_name):
     # members = Member.query.join(User.roles, Member.position, Member.teams).filter(Team.name.like(team_name)).all()
-    trener = Member.query.join(User.roles, Member.position, Member.teams).filter(Team.name.like(team_name)).all()
+    # trener = Member.query.join(User.roles, Member.position, Member.teams).filter(Team.name.like(team_name)).all()
+    trener = (
+    Member.query
+    .join(User.roles)
+    .join(Member.position)
+    .join(Member.teams)
+    .filter(Team.name.like(team_name))
+    .all()
+)
     
     members = Player.query.filter(Team.id == Player.team_id).filter(Team.name.like(team_name)).all()
 
     team = Team.query.filter(Team.name.like(team_name)).first()
     # team = Member.query.filter(Member.id==teams_members.c.member_id).filter(Member.id==positions_members.c.member_id).filter(teams_members.c.team_id==Team.id).filter(positions_members.c.position_id==Position.id).all()
-    return render_template('teams/team.html', team=team, members=members, trener=trener, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('teams/team.html', team=team, members=members, trener=trener, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -173,7 +188,7 @@ def update_team(team_id):
         form.score_scrap.data = team.score_scrap
         form.player_list_scrap.data = team.player_list_scrap
     return render_template('teams/create_team.html', title='Update Team',
-                           form=form, team=team, legend='Update Team', next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, team=team, legend='Update Team', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @team.route("/teams/<int:team_id>/delete", methods=['GET', 'POST'])
