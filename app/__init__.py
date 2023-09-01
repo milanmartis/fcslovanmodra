@@ -10,7 +10,6 @@ import stripe
 from flask_sqlalchemy import SQLAlchemy as _BaseSQLAlchemy
 # load users, roles for a session
 from dotenv import load_dotenv
-# from flask_principal import Principal, RoleNeed, identity_loaded
 
 
 from flask_bootstrap import Bootstrap
@@ -20,7 +19,7 @@ from flask_bootstrap import Bootstrap
 #     def apply_pool_defaults(self, app, options):
 #         super(SQLAlchemy, self).apply_pool_defaults(self, app, options)
 #         options["pool_pre_ping"] = True
-load_dotenv()
+# load_dotenv()
        
 db = SQLAlchemy()
 
@@ -28,9 +27,6 @@ bcrypt = Bcrypt()
 # principal = Principal()
 
    
-login_manager = LoginManager()
-login_manager.login_view = 'users.login'
-login_manager.login_message_category = 'info'
 
 mail = Mail()
 
@@ -38,6 +34,9 @@ mail = Mail()
 def create_app(config_class=Config):
     app = Flask(__name__)
     
+    login_manager = LoginManager(app)
+    login_manager.login_view = 'users.login'
+    login_manager.login_message_category = 'info'
 
     # app._static_folder = 'static'
     app.config.from_object(Config)

@@ -196,6 +196,7 @@ def update_team(team_id):
 
 @team.route("/teams/<int:team_id>/delete", methods=['GET', 'POST'])
 @login_required
+@roles_required('Admin', 'WebAdmin')
 def delete_team(team_id):
     print(team_id)
     team = Team.query.get_or_404(team_id)

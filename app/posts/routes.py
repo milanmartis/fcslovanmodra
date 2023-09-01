@@ -6,6 +6,8 @@ from app.config import Config
 from flask import (render_template, url_for, flash,
                    redirect, request, abort, Blueprint, current_app, render_template)
 from flask_login import current_user, login_required
+from flask_security import roles_required
+
 from app import db
 from app.models import Post, Category, PostGallery
 from app.posts.forms import PostForm, CategoryForm
@@ -125,10 +127,12 @@ def post(post_id):
 
 
 @posts.route("/posts/category/<int:category>")
+@login_required
+@roles_required('Admin', 'WebAdmin')
 def category_posts(category):
     print(category)
     page = request.args.get('page', 1, type=int)
-    category = Category.query.filter_by(id=category).first_or_404()
+    category = Category.query.filter_by(id=category).first()
     posts = Post.query\
         .filter(Post.category_id==category.id)\
         .order_by(Post.date_posted.desc())\
@@ -140,8 +144,9 @@ def category_posts(category):
 
 @posts.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
 @login_required
+@roles_required('Admin', 'WebAdmin')
 def update_post(post_id):
-    post = Post.query.get_or_404(post_id)
+    post = Post.query.get(post_id)
     if post.author != current_user:
         abort(403)
     form = PostForm()
@@ -203,6 +208,7 @@ def update_post(post_id):
 
 @posts.route("/post/<int:post_id>/delete", methods=['POST','GET'])
 @login_required
+@roles_required('Admin', 'WebAdmin')
 def delete_post(post_id):
 
     postgall = PostGallery.query.filter_by(post_id=post_id).all()
@@ -224,6 +230,8 @@ def delete_post(post_id):
 ################  CATEGORIES  #################
 
 @posts.route("/categories")
+@login_required
+@roles_required('Admin', 'WebAdmin')
 def list_categories():
     page = request.args.get('page', 1, type=int)
     categories = Category.query.order_by(Category.id.desc()).paginate(page=page, per_page=5)
@@ -233,6 +241,7 @@ def list_categories():
 
 @posts.route("/category/new", methods=['GET', 'POST'])
 @login_required
+@roles_required('Admin', 'WebAdmin')
 def new_category():
     form = CategoryForm()
     if form.validate_on_submit():
@@ -247,12 +256,13 @@ def new_category():
 
 @posts.route("/category/<int:category_id>")
 def category(category_id):
-    category = Category.query.get_or_404(category_id)
+    category = Category.query.get(category_id)
     return render_template('posts/category.html', name=category.name, category=category, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @posts.route("/category/<int:category_id>/update", methods=['GET', 'POST'])
 @login_required
+@roles_required('Admin', 'WebAdmin')
 def update_category(category_id):
     category = Category.query.get_or_404(category_id)
     # if post.author != current_user:
@@ -271,8 +281,9 @@ def update_category(category_id):
 
 @posts.route("/category/<int:category_id>/delete", methods=['POST'])
 @login_required
+@roles_required('Admin', 'WebAdmin')
 def delete_category(category_id):
-    category = Category.query.get(id=category_id)
+    category = Category.query.get(category_id)
     # if post.author != current_user:
     #     abort(403)
     db.session.delete(category)

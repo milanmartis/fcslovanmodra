@@ -82,10 +82,10 @@ def register():
 @users.route("/login", methods=['GET', 'POST'])
 def login():
 
-    print('user')
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
+        print(user)
         # if user:
         if user.confirm==False:
             flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
