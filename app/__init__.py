@@ -10,10 +10,10 @@ import stripe
 from flask_sqlalchemy import SQLAlchemy as _BaseSQLAlchemy
 # load users, roles for a session
 from dotenv import load_dotenv
-from flask_principal import Principal, RoleNeed, identity_loaded
+# from flask_principal import Principal, RoleNeed, identity_loaded
 
 
-# from flask_bootstrap import Bootstrap
+from flask_bootstrap import Bootstrap
 
 # bootstrap = Bootstrap()
 # class SQLAlchemy(_BaseSQLAlchemy):
@@ -25,24 +25,42 @@ load_dotenv()
 db = SQLAlchemy()
 
 bcrypt = Bcrypt()
-principal = Principal()
+# principal = Principal()
 
    
 login_manager = LoginManager()
 login_manager.login_view = 'users.login'
 login_manager.login_message_category = 'info'
+
 mail = Mail()
 
 
 def create_app(config_class=Config):
     app = Flask(__name__)
+    
+
     # app._static_folder = 'static'
     app.config.from_object(Config)
     app.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=60)
+    app.config['SECRET_KEY'] =  '5791628bb0b13ce0c676dfde280ba245Dret70Nm1255Ui452eeOp125Bnryexx7895'
+    app.config['SECURITY_PASSWORD_SALT'] =  'w87tyw9e8fy8fy0wefy0a'
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+    }
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
     stripe.api_key = app.config['STRIPE_SECRET_KEY']
+    from app.models import User, Role, roles_users
+    # @login_manager.user_loader
+    # def load_user(user_id):
+    #     return User.query.get(int(user_id))
+    # security = Security()
+    # user_datastore = SQLAlchemyUserDatastore(db, User, Role, roles_users)
+    # security.init_app(app, user_datastore)
+    # app.security = Security(user_datastore)
 
     db.init_app(app)
-    principal.init_app(app)
+    # principal.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
@@ -64,9 +82,19 @@ def create_app(config_class=Config):
     app.register_blueprint(team)
     app.register_blueprint(errors)
 
-    from app.models import User, Role
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    app.security = Security(user_datastore)
 
+    # from app.models import User, Role
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+    
+    
+    # from app.models import User, Role
+    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    app.security = Security(app, user_datastore)
+    
     return app
+    # app.security = Security(user_datastore)
+    # return app
 

@@ -84,44 +84,17 @@ def cancel_products():
 @login_required
 def list_products():
     page = request.args.get('page', 1, type=int)
-    products = Product.query.join(ProductGallery, ProductCategory).filter(
-        Product.id == ProductGallery.product_id).filter(ProductCategory.id == Product.product_category_id).filter(Product.is_visible==True).filter(ProductGallery.orderz<1).order_by(Product.date_posted.desc()).paginate(page=page, per_page=3)
+    products = db.session.query(Product).join(ProductGallery, Product.id == ProductGallery.product_id).join(ProductCategory, ProductCategory.id == Product.product_category_id).filter(Product.is_visible==True).filter(ProductGallery.orderz<1).order_by(Product.date_posted.desc()).paginate(page=page, per_page=3)
 
     product_category = ProductCategory.query.all()
     
     
-    try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[
-                {
-                    # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-                    
-                    'price': 'price_1N3k5uKr9xveA3fnGFhkWmWg',
-                    'quantity': 1,
-                },
-                
-            ],
-            metadata={
-             'user_id': current_user.id,
-             'product_id': 2,
-
-            },
-            customer_email = current_user.email,
-             mode='payment',
-            success_url=current_app.url_for('products.success_products', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=current_app.url_for('products.cancel_products', _external=True),
-        )
-    except Exception as e:
-        return str(e)
     
     
     check_user = Order.query.filter(Order.user_id==current_user.id).filter(Product.id==2).first()
     
     return render_template(
         'products/products.html', 
-        checkout_session_id=session['id'],
-        checkout_publick_key=current_app.config['STRIPE_PUBLIC_KEY'],
         products=products, 
         product_category=product_category, 
         next22=Next.next(), 
@@ -191,12 +164,37 @@ def product(product_id):
     
     check_user = Order.query.filter(Order.user_id==current_user.id).filter(Order.produc_id==product_id).first()
 
+
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[
+                {
+                    # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+                    
+                    'price': 'price_1N3k5uKr9xveA3fnGFhkWmWg',
+                    'quantity': 1,
+                },
+                
+            ],
+            metadata={
+             'user_id': current_user.id,
+             'product_id': 2,
+
+            },
+            customer_email = current_user.email,
+             mode='payment',
+            success_url=current_app.url_for('products.success_products', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=current_app.url_for('products.cancel_products', _external=True),
+        )
+    except Exception as e:
+        return str(e)
+    
      
     calendar = Event.query.all()
     page = request.args.get('page', 1, type=int)
 
-    products = Product.query.join(ProductGallery, ProductCategory).filter(
-        Product.id == ProductGallery.product_id).filter(ProductCategory.id == Product.product_category_id).filter(ProductGallery.orderz<1).order_by(Product.date_posted.desc()).paginate(page=page, per_page=3)
+    products = db.session.query(Product).join(ProductGallery, Product.id == ProductGallery.product_id).join(ProductCategory, ProductCategory.id == Product.product_category_id).filter(ProductGallery.orderz<1).order_by(Product.date_posted.desc()).paginate(page=page, per_page=3)
 
     product = Product.query.join(ProductGallery).filter(
         Product.id == ProductGallery.product_id).filter(Product.is_visible==True).filter(ProductGallery.orderz<1).filter(Product.id==product_id).first()
@@ -207,7 +205,22 @@ def product(product_id):
     #         session["name"] = form.email.data
     
     if check_user or current_user.id==1:
-        return render_template('products/product.html', check_user=check_user, page=page, products=products, calendar=calendar, title=product.title, product=product, galleries=galleries, category=category, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+        return render_template('products/product.html', 
+                               checkout_session_id=session['id'], 
+                               checkout_publick_key=current_app.config['STRIPE_PUBLIC_KEY'],
+                               check_user=check_user, 
+                               page=page, 
+                               products=products, 
+                               calendar=calendar, 
+                               title=product.title, 
+                               product=product, 
+                               galleries=galleries, 
+                               category=category, 
+                               next22=Next.next(), 
+                               teamz=RightColumn.main_menu(), 
+                               next_match=RightColumn.next_match(), 
+                               score_table=RightColumn.score_table()
+                            )
     else:
         return redirect( url_for('products.list_products'))
 

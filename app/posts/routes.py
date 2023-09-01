@@ -227,6 +227,7 @@ def delete_post(post_id):
 def list_categories():
     page = request.args.get('page', 1, type=int)
     categories = Category.query.order_by(Category.id.desc()).paginate(page=page, per_page=5)
+    # print(categories)
     return render_template('posts/list_categories.html', categories=categories, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
@@ -271,7 +272,7 @@ def update_category(category_id):
 @posts.route("/category/<int:category_id>/delete", methods=['POST'])
 @login_required
 def delete_category(category_id):
-    category = Category.query.get_or_404(category_id)
+    category = Category.query.get(id=category_id)
     # if post.author != current_user:
     #     abort(403)
     db.session.delete(category)

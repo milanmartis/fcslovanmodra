@@ -1,4 +1,4 @@
-from flask import render_template, url_for, flash, redirect, request, Blueprint, session
+from flask import render_template, url_for, flash, redirect, request, Blueprint, session, current_app
 from flask_login import login_user, current_user, logout_user, login_required
 from app import db, bcrypt
 from app.models import User, Post, Role, Team, Member, Player, Position, roles_users, teams_members, positions_members
@@ -9,7 +9,7 @@ import uuid
 from app.main.routes import RightColumn
 from app.main.routes import Next
 from flask_security import roles_required
-from flask_principal import identity_changed, Identity
+# from flask_principal import identity_changed, Identity
 
 
 users = Blueprint('users', __name__)
@@ -82,6 +82,7 @@ def register():
 @users.route("/login", methods=['GET', 'POST'])
 def login():
 
+    print('user')
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
@@ -91,8 +92,13 @@ def login():
         else:
             if user and bcrypt.check_password_hash(user.password, form.password.data):
                 login_user(user, remember=form.remember.data)
+                # identity_changed.send(current_app._get_current_object(),
+                #                   identity=Identity(user.id))
                 next_page = request.args.get('next')
                 session.permanent = True
+                user.active = True
+                db.session.commit()
+
                 session['logged_in'] = True
                 session["name"] = form.email.data
                 return redirect(next_page) if next_page else redirect(url_for('main.home'))
@@ -106,8 +112,11 @@ def login():
 
 @users.route("/logout")
 def logout():
+    user = User.query.get(current_user.id)
     session["name"] = None
     session['logged_in'] = False
+    user.active = False
+    db.session.commit()
 
     logout_user()
     return redirect(url_for('main.home'))
@@ -277,7 +286,7 @@ def update_role(role_id):
 
 @users.route("/users/role/<int:role_id>/delete", methods=['POST'])
 @login_required
-@roles_required('Admin')
+# @roles_required('Admin')
 def delete_role(role_id):
     role = Role.query.get_or_404(role_id)
     ifemptyrole = db.session.query(roles_users).filter(roles_users.c.role_id==role_id).all()
@@ -308,7 +317,7 @@ def delete_role(role_id):
 
 @users.route("/members")
 @login_required
-# @roles_required('Admin')
+@roles_required('Admin')
 def list_members():
     page = request.args.get('page', 1, type=int)
     members = db.session.query(Member).filter(Member.id!=1).order_by(Member.id.desc()).paginate(page=page, per_page=10)
@@ -437,7 +446,7 @@ def update_member(member_id):
 
 @users.route("/member/<int:member_id>/delete", methods=['GET', 'POST'])
 @login_required
-@roles_required('Admin')
+# @roles_required('Admin')
 def delete_member(member_id):
     member = Member.query.get_or_404(member_id)
     user = User.query.get_or_404(member.user_id)

@@ -1,27 +1,31 @@
 from flask import (render_template, url_for, flash, jsonify,
                    redirect, request, abort, Blueprint, current_app)
 from app.models import Team, ScoreTable, User, Player, Position, Member,Post, PostGallery, Category, teams_members, positions_members
-from flask_login import current_user, login_required
+from flask_login import current_user
 from app.team.forms import TeamForm
 
 from flask import Blueprint
 from app import db
-from datetime import  timedelta
+from datetime import timedelta
 import datetime
 from dateutil import parser
 from app.main.routes import RightColumn
 from app.main.routes import Next
+from flask_login import login_required
 from flask_security import roles_required
 import pandas as pd
 import numpy as np
+# from flask_principal import Principal, Permission, RoleNeed
 
 team = Blueprint('team', __name__)
 
+# admin_permission = Permission(RoleNeed('Admin'))
 
 
 @team.route("/teams")
 @login_required
-# @roles_required('Admin', 'WebAdmin')
+@roles_required('Admin', 'WebAdmin')
+# @admin_permission.require()
 def list_teams():
     # page = request.args.get('page', 1, type=int)
     # teams = Team.query.order_by(Team.id.desc()).paginate(page=page, per_page=5)

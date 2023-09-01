@@ -2,8 +2,8 @@ from datetime import datetime
 from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 from flask import current_app
 from app import db, login_manager
-from flask_security import RoleMixin, UserMixin
-from flask_login import UserMixin, login_user
+from flask_login import UserMixin
+from flask_security import RoleMixin
 
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
@@ -31,9 +31,9 @@ product_variant_product = db.Table('product_variant_product',
 
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User.query.get(int(user_id))
 
 
 class User(db.Model, UserMixin):
@@ -47,11 +47,24 @@ class User(db.Model, UserMixin):
     confirm = db.Column(db.Boolean(), default=False)
     posts = db.relationship('Post', backref='author', lazy=True)
     products = db.relationship('Product', backref='saler', lazy=True)
-    # active = db.Column(db.Boolean, default=True)
-    # confirmed_at = db.Column(db.DateTime())  # Optional: Store confirmation timestamp
+    active = db.Column(db.Boolean, default=True)
+    confirmed_at = db.Column(db.DateTime())  # Optional: Store confirmation timestamp
+    fs_uniquifier = db.Column(db.String(64), unique=True)
 
     roles = db.relationship('Role', secondary='roles_users', lazy='subquery',
                             backref=db.backref('roled', lazy=True))
+    
+    def is_unique(self, fs_uniquifier):
+        self.fs_uniquifier = fs_uniquifier
+
+    def is_active(self):
+        return True
+    
+    def is_admin(self):
+        return self.admin
+
+    def get_id(self):
+        return self.id
 
     def get_reset_token(self):
         s = Serializer(current_app.config['SECRET_KEY'])
