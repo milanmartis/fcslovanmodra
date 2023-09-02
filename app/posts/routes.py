@@ -3,7 +3,7 @@ import boto3
 import uuid
 from app.config import Config
 
-from flask import (render_template, url_for, flash,
+from flask import (render_template, url_for, flash, jsonify,
                    redirect, request, abort, Blueprint, current_app, render_template)
 from flask_login import current_user, login_required
 from flask_security import roles_required
@@ -25,9 +25,20 @@ import os
 
 posts = Blueprint('posts', __name__)
 
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+s3 = boto3.client(
+    's3', region_name='eu-north-1',
+    aws_access_key_id=Config.AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=Config.AWS_SECRET_ACCESS_KEY
+)
+BUCKET_NAME = Config.AWS_S3_BUCKET
 ALLOWED_EXTENSIONS = {'jpg','png'}
+bucket_name = BUCKET_NAME
+
+def get_s3_image_url(bucket_name, file_name):
+    image_url = s3.generate_presigned_url('get_object',
+                                          Params={'Bucket': bucket_name, 'Key': file_name},
+                                          ExpiresIn=300)
+    return image_url
 
 
 ################  POSTS  #################
@@ -71,22 +82,22 @@ def new_post():
         try:
             file = form.picture.data
             file_filename = secure_filename(file.filename)
-            if not alowed_file(file.filename):
-                return "FILE NOT ALLOWED!"
-            bucket_name = "fcsm-files"
-            new_directory_name = 'fcs3_/posts/'+str(post.id)+'/gallery/'
-            new_directory_name2 = 'fcs3_/posts/'+str(post.id)+'/'
-            s3.put_object(Bucket=bucket_name, Key=new_directory_name)
+            # if not alowed_file(file.filename):
+                # return "FILE NOT ALLOWED!"
+            # bucket_name = "fcsm-files"
+            # new_directory_name = 'posts/'+str(post.id)+'/gallery/'
+            # new_directory_name2 = 'posts/'+str(post.id)+'/'
+            # s3.put_object(Bucket=bucket_name, Key=new_directory_name)
 
             
-            new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
-            s3_key = new_directory_name2 + new_filename
-            s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+            # new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
+            # s3_key = new_directory_name2 + new_filename
+            # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
             
-            s3.upload_fileobj(file, bucket_name, s3_key)
+            # s3.upload_fileobj(file, bucket_name, s3_key)
             
-            # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
-            picture = PostGallery(title=form.title.data, image_file2=new_filename, orderz=0, post_id=post.id)
+            form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
+            picture = PostGallery(title=form.title.data, image_file2=file_filename, orderz=0, post_id=post.id)
             db.session.add(picture)
 
         
@@ -100,8 +111,8 @@ def new_post():
                 with open(os.path.realpath(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery/'+str(file.filename)), 'wb') as f:
                         f.write(file.read())
 
-                # file_filename = secure_filename(file.filename)
-                # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
+                file_filename = secure_filename(file.filename)
+                form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
                 pictures = PostGallery(title=form.title.data, image_file2=file.filename, orderz=1, post_id=post.id)
                 db.session.add(pictures)
 
@@ -147,6 +158,12 @@ def category_posts(category):
 @roles_required('Admin', 'WebAdmin')
 def update_post(post_id):
     post = Post.query.get(post_id)
+    image = PostGallery.query.filter(PostGallery.post_id==post_id).filter(PostGallery.orderz==0).first()
+    if image:
+        image_url = get_s3_image_url(BUCKET_NAME, image.image_file2);
+    else:
+        image_url = ''
+    print(image_url)
     if post.author != current_user:
         abort(403)
     form = PostForm()
@@ -203,7 +220,63 @@ def update_post(post_id):
         form.date_posted.data = post.date_posted
         form.category.data = post.category_id
     return render_template('posts/create_post.html', title='Update Post',
-                           form=form, post_id=post_id, legend='Update Post', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           image=image, image_url=image_url, post=post, form=form, post_id=post_id, legend='Update Post', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@posts.route('/post/files/<int:post_id>/upload', methods=['POST'])
+def upload_file(post_id):
+    
+    if 'file' not in request.files:
+        flash('No file part')
+        return redirect(request.url)
+    file = request.files['file']
+    if file.filename == '':
+        flash('No selected file')
+        return redirect(request.url)
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        new_directory_name2 = 'posts/'+str(post_id)+'/'
+        new_filename = uuid.uuid4().hex + '_'+ filename.rsplit('.', 1)[0] +'.' + filename.rsplit('.', 1)[1].lower()
+        s3_key = new_directory_name2 + new_filename
+        s3.upload_fileobj(
+            file,
+            BUCKET_NAME,
+            s3_key
+        )
+
+    post = Post.query.get_or_404(post_id)
+    postgal = PostGallery.query.filter(PostGallery.post_id==post_id).first()
+    if not postgal:
+        postgal = PostGallery(title=post.title, image_file2=filename, orderz=0, post_id=post_id)
+        db.session.add(postgal)
+        db.session.commit()
+        
+    else:
+        postgal.image_file2 = filename
+        db.session.commit()
+        
+        return jsonify(message="File uploaded successfully", image_file2=filename)
+    return jsonify(message="Upload failed"), 400
+
+
+
+@posts.route('/post/files/<int:post_id>/delete_file', methods=['POST'])
+def delete_file(post_id):
+    post = PostGallery.query.filter(PostGallery.post_id==post_id).first()
+    # ... (same as before)
+    if post.image_file2:
+        s3.delete_object(Bucket=BUCKET_NAME, Key=post.image_file2)
+        post.image_file2 = None
+        db.session.commit()
+        db.session.delete(post)
+        db.session.commit()
+        return jsonify(message="File deleted successfully", file_path=None)
+    return jsonify(message="No file to delete"), 400
+
+
 
 
 @posts.route("/post/<int:post_id>/delete", methods=['POST','GET'])
