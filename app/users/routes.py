@@ -1,5 +1,5 @@
 from flask import render_template, url_for, flash, redirect, request, Blueprint, session, current_app
-from flask_login import login_user, current_user, logout_user, login_required
+# from flask_login import 
 from app import db, bcrypt
 from app.models import User, Post, Role, Team, Member, Player, Position, roles_users, teams_members, positions_members
 from app.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,UpdateMemberForm,
@@ -8,8 +8,9 @@ from app.users.utils import save_picture, send_reset_email, send_confirm_email, 
 import uuid
 from app.main.routes import RightColumn
 from app.main.routes import Next
-from flask_security import roles_required
+from flask_security import roles_required, login_user, current_user, logout_user, login_required
 # from flask_principal import identity_changed, Identity
+from flask_principal import Identity, identity_changed
 
 
 users = Blueprint('users', __name__)
@@ -81,19 +82,20 @@ def register():
 
 @users.route("/login", methods=['GET', 'POST'])
 def login():
+    
 
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        print(user)
         # if user:
         if user.confirm==False:
             flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
         else:
             if user and bcrypt.check_password_hash(user.password, form.password.data):
-                login_user(user, remember=form.remember.data)
-                # identity_changed.send(current_app._get_current_object(),
-                #                   identity=Identity(user.id))
+                # identity_changed.send(current_app._get_current_object(), identity=Identity(user.id))
+                identity_changed.send(current_app._get_current_object(),
+                                  identity=Identity(user.id))
+                login_user(user, remember=True)
                 next_page = request.args.get('next')
                 session.permanent = True
                 user.active = True
@@ -317,7 +319,7 @@ def delete_role(role_id):
 
 @users.route("/members")
 @login_required
-@roles_required('Admin')
+# @roles_required('Admin')
 def list_members():
     page = request.args.get('page', 1, type=int)
     members = db.session.query(Member).filter(Member.id!=1).order_by(Member.id.desc()).paginate(page=page, per_page=10)

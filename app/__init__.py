@@ -1,32 +1,33 @@
-from flask import Flask, session
+from flask import Flask, session, g, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
 from app.config import Config
 from flask_security import Security, SQLAlchemyUserDatastore
-from datetime import timedelta
+from flask_principal import Principal
+
 import stripe
-from flask_sqlalchemy import SQLAlchemy as _BaseSQLAlchemy
-# load users, roles for a session
-from dotenv import load_dotenv
+import base64
+import os
 
 
-from flask_bootstrap import Bootstrap
+salt = base64.b64encode(os.urandom(32)).decode('utf-8')
+
+# from flask_bootstrap import Bootstrap
 
 # bootstrap = Bootstrap()
 # class SQLAlchemy(_BaseSQLAlchemy):
 #     def apply_pool_defaults(self, app, options):
 #         super(SQLAlchemy, self).apply_pool_defaults(self, app, options)
 #         options["pool_pre_ping"] = True
-# load_dotenv()
        
 db = SQLAlchemy()
 
 bcrypt = Bcrypt()
-# principal = Principal()
-
-   
+principal = Principal()
+security = Security()
+login_manager = LoginManager()
 
 mail = Mail()
 
@@ -34,23 +35,12 @@ mail = Mail()
 def create_app(config_class=Config):
     app = Flask(__name__)
     
-    login_manager = LoginManager(app)
-    login_manager.login_view = 'users.login'
-    login_manager.login_message_category = 'info'
-
     # app._static_folder = 'static'
     app.config.from_object(Config)
-    app.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=60)
-    app.config['SECRET_KEY'] =  '5791628bb0b13ce0c676dfde280ba245Dret70Nm1255Ui452eeOp125Bnryexx7895'
-    app.config['SECURITY_PASSWORD_SALT'] =  'w87tyw9e8fy8fy0wefy0a'
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_pre_ping": True,
-    }
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    stripe.api_key = app.config['STRIPE_SECRET_KEY']
-    from app.models import User, Role, roles_users
+    from .models import User, Role, roles_users
     # @login_manager.user_loader
+    #
     # def load_user(user_id):
     #     return User.query.get(int(user_id))
     # security = Security()
@@ -58,11 +48,15 @@ def create_app(config_class=Config):
     # security.init_app(app, user_datastore)
     # app.security = Security(user_datastore)
 
+    
     db.init_app(app)
-    # principal.init_app(app)
+    principal.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
+    
+    login_manager.login_view = 'users.login'
+    login_manager.login_message_category = 'info'
     
     # bootstrap.init_app(app)
 
@@ -81,20 +75,34 @@ def create_app(config_class=Config):
     app.register_blueprint(team)
     app.register_blueprint(errors)
 
-
+    # @app.before_request
+    # def initialize_identity():
+    #     if not hasattr(g, 'identity'):
+    #         g.identity = None
     # from app.models import User, Role
+    from .models import User, Role
 
     @login_manager.user_loader
     def load_user(user_id):
+        print(user_id)
         return User.query.get(int(user_id))
     
     
-    # from app.models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    app.security = Security(user_datastore)
-    # app.security = Security(app, user_datastore)
-    
+    # app.security = Security(user_datastore)
+    security.init_app(app, user_datastore)
+
+    # app.security = Security(user_datastore)
+    # errors.errorhandler(404)
+    # def page_not_found(e):
+    #     return redirect(url_for('error.error_404'))
+        
+        # # your processing here
+        # return render_template('errors/404.html', title='Error', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+        
     return app
+
+
     # app.security = Security(user_datastore)
     # return app
 

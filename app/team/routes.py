@@ -93,13 +93,15 @@ def update_team(team_id):
     form = TeamForm()
     
     score_scrap = request.form.get("score_scrap")
-    print(score_scrap)
+    # score_scrap = "C:\\Users\\Dell\\Downloads\\pandas\\u13.html"
         
     if request.form.get('what') and team.score_scrap and score_scrap:
+        
         
         ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
 
         
+        # print(score_scrap)
         df = pd.read_html(score_scrap)
         ###########################################################################################
         # df = pd.DataFrame(df, index=labels)

@@ -1,9 +1,9 @@
 from datetime import datetime
 from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 from flask import current_app
-from app import db
-from flask_login import UserMixin
-from flask_security import RoleMixin
+from app import db, login_manager
+# from flask_login import UserMixin
+from flask_security import RoleMixin, UserMixin
 
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
@@ -33,7 +33,9 @@ product_variant_product = db.Table('product_variant_product',
 
 # @login_manager.user_loader
 # def load_user(user_id):
+#     print(user_id)
 #     return User.query.get(int(user_id))
+
 
 
 class User(db.Model, UserMixin):

@@ -4,7 +4,7 @@ from app.models import Post, PostGallery, Category, Team, Event, ScoreTable
 from flask import Blueprint
 from app import db
 from datetime import date
-from flask_security import current_user, roles_accepted 
+from flask_security import current_user, roles_required
 
 # from app.users.roles import user_role
 
@@ -21,7 +21,9 @@ def tabz():
 
 @main.route("/")
 @main.route("/home")
+# @roles_required('Admin')
 def home():
+    print(current_user.is_authenticated)
     page = request.args.get('page', 1, type=int)
     # posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
     
@@ -34,7 +36,7 @@ def home():
     return render_template('home.html', title='Main', posts=posts, next22=Next.next(), category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
-@main.route("/about")
+@main.route("/oklube")
 def about():
 
     return render_template('about.html', title='About', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())

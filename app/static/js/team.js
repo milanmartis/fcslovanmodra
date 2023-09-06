@@ -9,9 +9,9 @@ var form = document.getElementById("form-team-id");
       const update_score_table = document.querySelector('#update-score-table');
       
       update_score_table.addEventListener("click", function () {
-
-      $('#update-score-table').val('Loading...');
-      team_id = $('#team_id').val();
+        
+        $('#update-score-table').val('Loading...');
+        team_id = $('#team_id').val();
       score_scrap = $('#score_scrap').val();
 
       $.ajax({
