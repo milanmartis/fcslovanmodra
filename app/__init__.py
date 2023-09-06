@@ -88,9 +88,9 @@ def create_app(config_class=Config):
         return User.query.get(int(user_id))
     
     
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    # user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     # app.security = Security(user_datastore)
-    security.init_app(app, user_datastore)
+    # security.init_app(user_datastore)
 
     # app.security = Security(user_datastore)
     # errors.errorhandler(404)
