@@ -24,7 +24,7 @@ team = Blueprint('team', __name__)
 
 @team.route("/teams")
 @login_required
-@roles_required('Admin', 'WebAdmin')
+# @roles_required('Admin', 'WebAdmin')
 # @admin_permission.require()
 def list_teams():
     # page = request.args.get('page', 1, type=int)

@@ -33,7 +33,7 @@ def home():
     category = db.session.query(Category).all()
     
   
-    return render_template('home.html', title='Main', posts=posts, next22=Next.next(), category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('home.html', title='', posts=posts, next22=Next.next(), category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @main.route("/oklube")
