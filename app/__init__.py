@@ -93,10 +93,10 @@ def create_app(config_class=Config):
 
 # Inicializácia Flask-Security
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    security = Security(app, user_datastore)
-    # security.init_app(user_datastore)
+    # security = Security(app, user_datastore)
+    # security.init_app(app, user_datastore)
 
-    # app.security = Security(user_datastore)
+    app.security = Security(user_datastore)
     # errors.errorhandler(404)
     # def page_not_found(e):
     #     return redirect(url_for('error.error_404'))
