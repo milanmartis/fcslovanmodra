@@ -52,10 +52,11 @@ def sponsors():
 # @main.route("/menu")
 class Next:
     def next():
-        today = date.today()
+        today = datetime.today()
+        
         # print('kjj')
-        next = Event.query.filter(Event.event_team_id==1).filter(Event.event_category_id==1).filter(Event.start_event>today).order_by(Event.start_event.asc()).first()
-        # print(next)
+        next = Event.query.filter(Event.event_team_id==1).filter(Event.event_category_id==1).filter(Event.start_event>=today).order_by(Event.start_event.asc()).first()
+        print(f"{next.start_event},{today}")
         return next
         
 
