@@ -55,7 +55,9 @@ def create_app(config_class=Config):
     app.register_blueprint(calendar)
     app.register_blueprint(team)
     app.register_blueprint(errors)
+    from slugify import slugify
 
+    app.jinja_env.filters['slugify'] = slugify
 
     from .models import User, Role
 
