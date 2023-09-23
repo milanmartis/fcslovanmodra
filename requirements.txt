@@ -12,7 +12,7 @@ django-phonenumbers==1.0.1
 dnspython==2.4.2
 dominate==2.8.0
 email-validator==2.0.0.post2
-Flask==2.2.2
+Flask
 Flask-BabelEx
 Flask-Bcrypt
 Flask-Bootstrap
@@ -21,7 +21,7 @@ Flask-Mail
 Flask-Principal
 Flask-Security
 Flask-Security-Too
-Flask-SQLAlchemy==3.0.5
+Flask-SQLAlchemy
 Flask-WTF==1.1.1
 greenlet==2.0.2
 gunicorn==21.2.0
