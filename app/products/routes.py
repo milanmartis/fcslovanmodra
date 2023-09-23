@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 import secrets
 from PIL import Image
 from flask_security import roles_required, roles_accepted
+from datetime import datetime
 
 
 import os
@@ -66,14 +67,14 @@ def success_products():
        order = Order(produc_id=sessions.data[00].metadata.product_id, quantity=32, amount=30, user_id=current_user.id)
        db.session.add(order)
        db.session.commit()
-   return render_template('products/success.html', data=data, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+   return render_template('products/success.html', data=data, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @products.route("/products/cancel", methods=['POST', 'GET'])
 @login_required
 def cancel_products():
 
-    return render_template('products/cancel.html', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('products/cancel.html', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -97,7 +98,7 @@ def list_products():
         'products/products.html', 
         products=products, 
         product_category=product_category, 
-        next22=Next.next(), 
+        current_date=datetime.now(), next22=Next.next(), 
         teamz=RightColumn.main_menu(), 
         next_match=RightColumn.next_match(), 
         score_table=RightColumn.score_table(),
@@ -150,7 +151,7 @@ def new_product():
         flash('Your Product has been created!', 'success')
         return redirect(url_for('products.list_products'))
     return render_template('products/create_product.html', title='New Product',
-                           form=form, legend='New Product', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='New Product', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -216,7 +217,7 @@ def product(product_id):
                                product=product, 
                                galleries=galleries, 
                                category=category, 
-                               next22=Next.next(), 
+                               current_date=datetime.now(), next22=Next.next(), 
                                teamz=RightColumn.main_menu(), 
                                next_match=RightColumn.next_match(), 
                                score_table=RightColumn.score_table()
@@ -234,7 +235,7 @@ def category_products(category):
         .filter(ProductCategory.id==category.id)\
         .order_by(Product.date_posted.desc())\
         .paginate(page=page, per_page=5)
-    return render_template('products/category_products.html', products=products, category=category, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('products/category_products.html', products=products, category=category, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -298,7 +299,7 @@ def update_product(product_id):
         form.old_price.data = product.old_price
         form.is_visible.data = product.is_visible
     return render_template('products/create_product.html', title='Update Product',
-                           form=form, product_id=product_id, legend='Update Product', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, product_id=product_id, legend='Update Product', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @products.route("/product/<int:product_id>/delete", methods=['POST','GET'])
@@ -327,7 +328,7 @@ def delete_product(product_id):
 def list_categories():
     page = request.args.get('page', 1, type=int)
     categories = ProductCategory.query.order_by(ProductCategory.id.desc()).paginate(page=page, per_page=5)
-    return render_template('products/list_categories.html', categories=categories, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('products/list_categories.html', categories=categories, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @products.route("/product-category/new", methods=['GET', 'POST'])
@@ -341,13 +342,13 @@ def new_category():
         flash('New category has been created!', 'success')
         return redirect(url_for('products.list_categories'))
     return render_template('products/create_category.html', title='New Product Category',
-                           form=form, legend='New Product Category', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='New Product Category', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @products.route("/product-category/<int:product_category_id>")
 def category(product_category_id):
     category = Product.query.get_or_404(product_category_id)
-    return render_template('products/category.html', name=category.name, category=category, next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('products/category.html', name=category.name, category=category, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @products.route("/category/<int:product_category_id>/update", methods=['GET', 'POST'])
@@ -365,7 +366,7 @@ def update_category(product_category_id):
     elif request.method == 'GET':
         form.name.data = category.name
     return render_template('products/create_category.html', title='Update Product Category',
-                           form=form, legend='Update Product Category', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                           form=form, legend='Update Product Category', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @products.route("/product-category/<int:product_category_id>/delete", methods=['POST'])

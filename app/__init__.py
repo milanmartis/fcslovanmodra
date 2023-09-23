@@ -89,7 +89,11 @@ def create_app(config_class=Config):
     
     
     # user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    # app.security = Security(user_datastore)
+    # security = Security(app, user_datastore)
+
+# Inicializácia Flask-Security
+    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    security = Security(app, user_datastore)
     # security.init_app(user_datastore)
 
     # app.security = Security(user_datastore)

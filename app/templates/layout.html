@@ -127,7 +127,8 @@
               <h3 style="text-align:center;">{{ next_name2[0] }}</h3>
               <h6 style="text-align:center;">vs.</h6>
               <h3 style="text-align:center;margin-top:-5px;">FC Rohožník</h3>
-              <h6>{{ next22.start_event.strftime('%d. %m. %Y') }} | <b>{{ next22.start_event.strftime('%H:%M') }} </b></h6>
+              {% if current_date.strftime('%d. %m. %Y')==next22.start_event.strftime('%d. %m. %Y') %}{% set datetext = "Dnes" %} {% else %} {% set datetext = next22.start_event.strftime('%d. %m. %Y') %}{% endif %}
+              <h6>{{ datetext }} | <b>{{ next22.start_event.strftime('%H:%M') }} </b></h6>
 
 
 

@@ -7,7 +7,7 @@ from app.main.routes import Next
 from flask import Blueprint
 from app import db
 from datetime import  timedelta
-import datetime
+from datetime import datetime
 from dateutil import parser
 from flask_security import roles_required
 
@@ -31,7 +31,7 @@ def index():
 
 @calendar.route("/calendar/insert",methods=["POST","GET"])
 @login_required
-@roles_required('Admin')
+@roles_required('Admin','Trener')
 def insert():
     
     form = EventForm()
@@ -108,6 +108,7 @@ def update():
         title = request.form['title']
         start = parser.isoparse(request.form['start'])
         end = parser.isoparse(request.form['end'])
+        print(f"start-{start}")
         id = request.form['id']
         event = Event.query.get(int(id))
         event.title = title

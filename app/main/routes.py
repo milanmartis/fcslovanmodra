@@ -3,7 +3,7 @@ from flask import render_template, request, Blueprint
 from app.models import Post, PostGallery, Category, Team, Event, ScoreTable
 from flask import Blueprint
 from app import db
-from datetime import date
+from datetime import datetime, date 
 from flask_security import current_user, roles_required
 
 # from app.users.roles import user_role
@@ -14,7 +14,7 @@ main = Blueprint('main', __name__)
 @main.route("/tabz")
 def tabz():
     
-        return render_template('tabz.html', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+        return render_template('tabz.html', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
@@ -33,20 +33,20 @@ def home():
     category = db.session.query(Category).all()
     
   
-    return render_template('home.html', title='', posts=posts, next22=Next.next(), category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('home.html', title='', posts=posts, current_date=datetime.now(), next22=Next.next(), category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @main.route("/oklube")
 def about():
 
-    return render_template('about.html', title='About', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('about.html', title='About', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 
 @main.route("/sponsors")
 def sponsors():
     
-    return render_template('sponsors.html', title='Sponsors', next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('sponsors.html', title='Sponsors', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 # UPDATE your_table SET start_event = '2023-09-05 17:00:00', end_event = '2023-09-05 19:00:00'  WHERE id = 7;
 
 # @main.route("/menu")
@@ -58,7 +58,6 @@ class Next:
         # print(next)
         return next
         
-
 
 class RightColumn:
     def main_menu():
