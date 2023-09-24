@@ -67,7 +67,7 @@ def create_app(config_class=Config):
         return User.query.get(int(user_id))
     
 
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    security = Security(app, user_datastore)
+    # user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    # security = Security(app, user_datastore)
 
     return app
