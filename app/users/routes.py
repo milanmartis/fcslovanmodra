@@ -94,9 +94,9 @@ def login():
         else:
             if user and bcrypt.check_password_hash(user.password, form.password.data):
                 # identity_changed.send(current_app._get_current_object(), identity=Identity(user.id))
-                identity_changed.send(current_app._get_current_object(),
-                                  identity=Identity(user.id))
-                login_user(user, remember=True)
+                # identity_changed.send(current_app._get_current_object(),
+                #                   identity=Identity(user.id))
+                login_user(user)
                 next_page = request.args.get('next')
                 session.permanent = True
                 user.active = True
@@ -104,6 +104,7 @@ def login():
 
                 session['logged_in'] = True
                 session["name"] = form.email.data
+                print(f"-------------------------{user}---------------------")
                 return redirect(next_page) if next_page else redirect(url_for('main.home'))
             else:
                 flash('Prihlásenie bolo neúspešné. Prosím, skontrolujte si e-mail a heslo.', 'danger')
