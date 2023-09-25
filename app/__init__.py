@@ -61,13 +61,10 @@ def create_app(config_class=Config):
 
     from .models import User, Role
 
-    @login_manager.user_loader
-    def load_user(user_id):
-        print(user_id)
-        return User.query.get(int(user_id))
-    
 
-    # user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    # security = Security(app, user_datastore)
+
+    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    security = Security(app, user_datastore)
+    security.init_app(app)
 
     return app
