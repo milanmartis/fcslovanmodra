@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
-from app.config import Config
+from .config import Config
 from flask_security import Security, SQLAlchemyUserDatastore
 # from flask_principal import Principal
 
@@ -66,8 +66,8 @@ def create_app(config_class=Config):
         print(user_id)
         return User.query.get(int(user_id))
 
-    # from .models import User, Role
-    # user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    # app.security = Security(app, user_datastore)
+    from .models import User, Role
+    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    app.security = Security(app, user_datastore)
 
     return app
