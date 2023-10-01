@@ -1,4 +1,4 @@
-from flask import Flask, session, g, render_template, redirect, url_for
+from flask import Flask, session, g, render_template, redirect, url_for, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
@@ -65,6 +65,13 @@ def create_app(config_class=Config):
     def load_user(user_id):
         print(user_id)
         return User.query.get(int(user_id))
+    
+    @app.before_request
+    def before_request():
+        if not request.is_secure:
+            url = request.url.replace('http://', 'https://', 1)
+            code = 301
+            return redirect(url, code=code)
 
     from .models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
