@@ -66,13 +66,16 @@ def create_app(config_class=Config):
         print(user_id)
         return User.query.get(int(user_id))
     
-    @app.before_request
-    def before_request():
-        if not request.is_secure:
-            url = request.url.replace('http://', 'https://', 1)
-            code = 301
-            return redirect(url, code=code)
+    # @app.before_request
+    # def before_request():
+    #     if not request.is_secure:
+    #         url = request.url.replace('http://', 'https://', 1)
+    #         code = 301
+    #         return redirect(url, code=code)
 
+    @app.before_first_request
+    def your_function():
+        pass
     from .models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security = Security(app, user_datastore)
