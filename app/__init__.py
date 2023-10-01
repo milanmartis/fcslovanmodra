@@ -70,8 +70,8 @@ def create_app(config_class=Config):
             code = 301
             return redirect(url, code=code)
 
-    from .models import User, Role
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    security = Security(app, user_datastore)
+    # from .models import User, Role
+    # user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    # security = Security(app, user_datastore)
 
     return app
