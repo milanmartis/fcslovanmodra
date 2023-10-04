@@ -1,3 +1,4 @@
-static/posts/
-static/products/
+# static/posts/
+# static/products/
 .env
+set FLASK_APP
