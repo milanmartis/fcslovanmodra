@@ -82,21 +82,21 @@ def new_post():
         try:
             file = form.picture.data
             file_filename = secure_filename(file.filename)
-            # if not alowed_file(file.filename):
-                # return "FILE NOT ALLOWED!"
-            # bucket_name = "fcsm-files"
-            # new_directory_name = 'posts/'+str(post.id)+'/gallery/'
-            # new_directory_name2 = 'posts/'+str(post.id)+'/'
-            # s3.put_object(Bucket=bucket_name, Key=new_directory_name)
+            if not alowed_file(file.filename):
+                return "FILE NOT ALLOWED!"
+            bucket_name = "fcsm-files"
+            new_directory_name = 'posts/'+str(post.id)+'/gallery/'
+            new_directory_name2 = 'posts/'+str(post.id)+'/'
+            s3.put_object(Bucket=bucket_name, Key=new_directory_name)
 
             
-            # new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
-            # s3_key = new_directory_name2 + new_filename
+            new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
+            s3_key = new_directory_name2 + new_filename
             # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
             
-            # s3.upload_fileobj(file, bucket_name, s3_key)
+            s3.upload_fileobj(file, bucket_name, s3_key)
             
-            form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
+            # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
             picture = PostGallery(title=form.title.data, image_file2=file_filename, orderz=0, post_id=post.id)
             db.session.add(picture)
 
@@ -105,16 +105,26 @@ def new_post():
             pass
                 
         pictures = []
-
+        
         for file in form.pictures.data:
-            if file:
-                with open(os.path.realpath(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery/'+str(file.filename)), 'wb') as f:
-                        f.write(file.read())
+            # Get the filename
+            filename = file.filename
+            # Construct the path (e.g., if you're saving the files locally)
+            # path = os.path.realpath('posts'+str(post.id)+'/gallery/'+filename)
+            full_path = os.path.abspath('posts'+str(post.id)+'/gallery/'+filename)
+            s3.upload_file(full_path, BUCKET_NAME, filename)
+            # Save or handle the file as needed
+            # file.save(path)
+            # with open(os.path.realpath(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery/'+str(file.filename)), 'wb') as f:
+            #     f.write(file.read())
 
-                file_filename = secure_filename(file.filename)
-                form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
-                pictures = PostGallery(title=form.title.data, image_file2=file.filename, orderz=1, post_id=post.id)
-                db.session.add(pictures)
+            #     file_filename = secure_filename(file.filename)
+            #     form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
+            #     pictures = PostGallery(title=form.title.data, image_file2=file.filename, orderz=1, post_id=post.id)
+            #     db.session.add(pictures)
+
+            pictures = PostGallery(title=form.title.data, image_file2=filename, orderz=1, post_id=post.id)
+            db.session.add(pictures)
 
         db.session.commit()
         flash('Your post has been created!', 'success')

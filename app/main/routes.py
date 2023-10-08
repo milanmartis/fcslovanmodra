@@ -56,7 +56,7 @@ class Next:
         
         # print('kjj')
         next = Event.query.filter(Event.event_team_id==1).filter(Event.event_category_id==1).filter(Event.start_event>=today).order_by(Event.start_event.asc()).first()
-        print(f"{next.start_event},{today}")
+        # print(f"{next.start_event},{today}")
         return next
         
 

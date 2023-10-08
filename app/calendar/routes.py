@@ -29,28 +29,40 @@ def index():
     return render_template('calendar/calendar.html', form=form,form2=form2, calendar=calendar, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
-@calendar.route("/calendar/insert",methods=["POST","GET"])
+@calendar.route("/calendar/insert",methods=["POST"])
 @login_required
-@roles_required('Admin','Trener')
+@roles_required('Admin')
 def insert():
     
     form = EventForm()
+    data = request.get_json()
     
-    form.team.choices = [(team.id, team.name) for team in Team.query.all()]
-    form.category.choices = [(category.id, category.name) for category in EventCategory.query.all()]
 
-    if request.method == 'POST':
+    if data:
+        print(data)
+    
+        form.team.choices = [(team.id, team.name) for team in Team.query.all()]
+        form.category.choices = [(category.id, category.name) for category in EventCategory.query.all()]
+        # print(form.title.data)
         # db.session.rollback()
         # title = request.form['title']
         # start = parser.isoparse(request.form['start'])
         # end = parser.isoparse(request.form['end'])
         # id = request.form['id']
         
-        print(request.form.getlist('team'))
+        # print(request.form.getlist('team'))
 
-        teamz = Team.query.filter(Team.id.in_((request.form.getlist('team')))).all()
-        event = Event(title=form.title.data, start_event=parser.isoparse(request.form['start']),end_event=parser.isoparse(request.form['end']), 
-                      user_id=current_user.id, event_category_id=request.form['category'], event_team_id=request.form['team'])
+        # teamz = Team.query.filter(Team.id.in_(data['team'])).all()
+        event = Event(
+            title=data['title'], 
+            start_event=parser.isoparse(data['start']),
+            end_event=parser.isoparse(data['end']), 
+            user_id=current_user.id, 
+            address=data['address'], 
+            link=data['link'], 
+            event_category_id=data['category'], 
+            event_team_id=data['team']
+        )
         # for team in teamz:
         #     event.teams.append(team)
         db.session.add(event)
@@ -94,28 +106,32 @@ def insert():
 
 @calendar.route("/calendar/update", methods=["POST","GET"])
 @login_required
-@roles_required('Admin','Trener')
+@roles_required('Admin', 'Trener')
 def update():
     
     form2 = UpdateEventForm()
-    
+    data = request.get_json()
+
 
     form2.team2.choices = [(team.id, team.name) for team in Team.query.all()]
     form2.category2.choices = [(category.id, category.name) for category in EventCategory.query.all()]
     
     if request.method == 'POST':
         # team_list = db.session.query(teams_events).filter(teams_events.c.event_id==request.form['id']).all()
-        title = request.form['title']
-        start = parser.isoparse(request.form['start'])
-        end = parser.isoparse(request.form['end'])
-        print(f"start-{start}")
-        id = request.form['id']
+        title = data['title2']
+        start = parser.isoparse(data['start2'])
+        end = parser.isoparse(data['end2'])
+        id = data['id2']
+        address = data['address2']
+        link = data['link2']
         event = Event.query.get(int(id))
         event.title = title
         event.start_event = start
         event.end_event = end
-        event.event_category_id = request.form['category']
-        event.event_team_id = request.form['team']
+        event.address = address
+        event.link = link
+        event.event_category_id = data['category2']
+        event.event_team_id = data['team2']
         # print('-------------------------')
         # print(team_list)
         # print('-------------------------')
@@ -143,14 +159,18 @@ def update():
         request.form['id'] = event.id
         request.form['team'] = event.teams
         request.form['category'] = event.event_category_id
+        request.form['address'] = event.address
+        request.form['link'] = event.link
         
     return jsonify(msg)    
   
 
-@calendar.route("/calendar/ajax_delete", methods=["POST","GET"])
+@calendar.route("/calendar/ajax_delete", methods=["POST"])
 def ajax_delete():
-    if request.method == 'POST':
-        getid = request.form['id']
+    data = request.get_json()
+
+    if data:
+        getid = data['id']
         # Events.query.filter(Events.id == getid).delete()
         u = db.session.get(Event, getid)
         db.session.delete(u)

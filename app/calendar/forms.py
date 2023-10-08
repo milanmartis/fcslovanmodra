@@ -34,6 +34,8 @@ class EventForm(FlaskForm):
 
     start = DateTimeLocalField('Start', format='%Y/%m/%dT%H:%M:%s')
     end = DateTimeLocalField('End', format='%Y/%m/%dT%H:%M:%s')
+    address = StringField('Event Address', validators=[DataRequired()])
+    link = StringField('Event Link', validators=[DataRequired()])
 
     submit = SubmitField('Save')
 
@@ -45,6 +47,8 @@ class UpdateEventForm(FlaskForm):
 
     start2 = DateTimeLocalField('Start', format='%Y/%m/%dT%H:%M:%s')
     end2 = DateTimeLocalField('End', format='%Y/%m/%dT%H:%M:%s')
+    address2 = StringField('Event Address', validators=[DataRequired()])
+    link2 = StringField('Event Link', validators=[DataRequired()])
 
     submit = SubmitField('Save')
 

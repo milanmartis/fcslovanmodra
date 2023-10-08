@@ -111,8 +111,8 @@
                     <h3 class="modal-title">Add New Schedule</h3>
                     <button
                     type="button"
-                    class="btn btnclose mt-1"
-                    data-bs-dismiss="modal"
+                    class="btn btnclose"
+                    data-dismiss="modal"
                     >
                     X
                   </button>
@@ -179,6 +179,7 @@
                           {{ form.start(class="form-control form-control-lg") }}
                           {% endif %}
                         </div>
+
                         <div class="form-group col-6">
                           {{ form.end.label(class="form-control-label") }}
                           {% if form.end.errors %}
@@ -192,6 +193,33 @@
                           {{ form.end(class="form-control form-control-lg") }}
                           {% endif %}
                         </div>
+                        <div class="form-group col-6">
+                          {{ form.address.label(class="form-control-label") }}
+                          {% if form.address.errors %}
+                          {{ form.address(class="form-control form-control-lg is-invalid") }}
+                          <div class="invalid-feedback">
+                              {% for error in form.address.errors %}
+                              <span>{{ error }}</span>
+                              {% endfor %}
+                          </div>
+                          {% else %}
+                          {{ form.address(class="form-control form-control-lg") }}
+                          {% endif %}
+                        </div>
+                        <div class="form-group col-6">
+                          {{ form.link.label(class="form-control-label") }}
+                          {% if form.link.errors %}
+                          {{ form.link(class="form-control form-control-lg is-invalid") }}
+                          <div class="invalid-feedback">
+                              {% for error in form.link.errors %}
+                              <span>{{ error }}</span>
+                              {% endfor %}
+                          </div>
+                          {% else %}
+                          {{ form.link(class="form-control form-control-lg") }}
+                          {% endif %}
+                        </div>
+
                       </div>
                     </form>
                     <div class="form-group" style="float:right;">
@@ -231,7 +259,7 @@
                     <center><h3 class="modal-title">{{ form2.category2(disabled=True, class="title-calendar-h3") }} - {{ form2.team2(disabled=True, class="title-calendar-h3") }}</h3></center>
                     {% endif %}
                     
-                    <button type="button" class="btn btnclose" data-bs-dismiss="modal">
+                    <button type="button" class="btn btnclose" data-dismiss="modal">
                       X
                     </button>
                 </div>
@@ -323,8 +351,36 @@
                           class="form-control"
                           value=""
                         />
+                        <div class="row">
+
+                        <div class="form-group col-6">
+                          {{ form2.address2.label(class="form-control-label") }}
+                          {% if form2.address2.errors %}
+                          {{ form2.address2(class="form-control form-control-lg is-invalid") }}
+                          <div class="invalid-feedback">
+                              {% for error in form2.address2.errors %}
+                              <span>{{ error }}</span>
+                              {% endfor %}
+                          </div>
+                          {% else %}
+                          {{ form2.address2(class="form-control form-control-lg") }}
+                          {% endif %}
+                        </div>
+                        <div class="form-group col-6">
+                          {{ form2.link2.label(class="form-control-label") }}
+                          {% if form2.link2.errors %}
+                          {{ form2.link2(class="form-control form-control-lg is-invalid") }}
+                          <div class="invalid-feedback">
+                              {% for error in form2.link2.errors %}
+                              <span>{{ error }}</span>
+                              {% endfor %}
+                          </div>
+                          {% else %}
+                          {{ form2.link2(class="form-control form-control-lg") }}
+                          {% endif %}
+                        </div>
+                      </div>
                       </form>
-      
                   </div>
                   <!-- Modal footer -->
                   {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
@@ -409,11 +465,11 @@
                   timeFormat: 'H:mm',
                   header:{
                    right:'prev,next today',
-                   left:'title',
+                   left:'title'
                    //right:'month,agendaWeek,agendaDay'
                   },
                   firstDay: 1,
-                  events: [{% for row in calendar %}{ id : '{{row.id}}', title : '{{row.title}}', start : '{{row.start_event}}', end : '{{row.end_event}}', category : '{{row.event_category_id}}', team : '{{row.event_team_id}}'}, {% endfor %}],
+                  events: [{% for row in calendar %}{ id : '{{row.id}}', title : '{{row.title}}', start : '{{row.start_event}}', address : '{{row.address_event}}', link : '{{row.link_event}}', end : '{{row.end_event}}', category : '{{row.event_category_id}}', team : '{{row.event_team_id}}'}, {% endfor %}],
                   nextDayThreshold: "00:00:00",
                   selectable:true,
                   selectHelper:true,
@@ -425,6 +481,8 @@
                     $('#title').val('');
                     $('#start').val(start);
                     $('#end').val(end);
+                    $('#address').val(address);
+                    $('#link').val(link);
       
                   },
 
@@ -437,6 +495,8 @@
                     $('#title2').val(event.title);
                     $('#start2').val(start);
                     $('#end2').val(end);
+                    $('#address2').val(event.address);
+                    $('#link2').val(event.link);
                     $('#team2').val(event.team);
                     $('#category2').val(event.category);
                     $('#id2').val(event.id);
@@ -448,16 +508,19 @@
                   //},
       
                   eventDrop:function(event) {
-                    var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
-                    var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
-                    var title = event.title;
-                    var category = event.category;
-                    var team = event.team;
-                    var id = event.id;
+                    var start = $.fullCalendar.formatDate(event.start2, "Y-MM-DD HH:mm:ss");
+                    var end = $.fullCalendar.formatDate(event.end2, "Y-MM-DD HH:mm:ss");
+                    var title = event.title2;
+                    var address = event.address2;
+                    var link = event.link2;
+                    var category = event.category2;
+                    var team = event.team2;
+                    var id = event.id2;
                     $.ajax({
                     url:"/calendar/update",
                     type:"POST",
-                    data:{title:title, start:start, end:end, category:category, team:team, id:id},
+                    contentType: "application/json",
+                    data:JSON.stringify({'title':title, 'start':start, 'end':end, 'address':address, 'link':link, 'category':category, 'team':team, 'id':id}),
                     success:function()
                     {
                       $('#info-updated').modal('show');
@@ -494,12 +557,13 @@
                 category = $('#category').val();
                 start = $('#start').val();
                 end = $('#end').val();
-                //alert(team);
-                if (start<end){
-                  $.ajax({
+                address = $('#address').val();
+                link = $('#link').val();
+                $.ajax({
                     url:"/calendar/insert",
                     type:"POST",
-                    data:{title:title, start:start, end:end, team:team, category:category},
+                    contentType: "application/json",
+                    data: JSON.stringify({'title':title, 'start':start, 'end':end, 'address':address, 'link':link, 'team':team, 'category':category}),
                     success:function(data)
                     {
                       $('#id2').val(data)
@@ -520,16 +584,14 @@
                   title: $('#title').val(),
                   start: new Date($('#start').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
                   end: new Date($('#end').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
+                  address: $('#address').val(),
+                  link: $('#link').val(),
                   category: $('#category').val(),
                   team: $('#team').val(),
                   id: $('#id').val(),
                 },
                 true);
-                
-              }else{
-                alert('Start must be sooner');
-                return false;
-              }
+
                 
               }
               
@@ -547,13 +609,16 @@
                 category2 = $('#category2').val();
                 team2 = $('#team2 :selected').val();
                 end2 = $('#end2').val();
+                address2 = $('#address2').val();
+                link2 = $('#link2').val();
                 id2 = $('#id2').val();
                // alert(team2);
                 if (start2<end2){
                 $.ajax({
                   url:"/calendar/update",
                   type:"POST",
-                  data:{title:title2, team:team2, category:category2, start:start2, end:end2, id:id2},
+                  contentType: "application/json",
+                  data: JSON.stringify({'title2':title2, 'team2':team2, 'category2':category2, 'start2':start2, 'end2':end2, 'address2':address2, 'link2':link2, 'id2':id2}),
                   success:function(data)
                   {
                     //alert(data)
@@ -576,6 +641,8 @@
                    title: $('#title2').val(),
                    start: $('#start2').val(),
                    end: $('#end2').val(),
+                   address: $('#address2').val(),
+                   link: $('#link2').val(),
                    category: $('#category2').val(),
                    team: $('#team2').val(),
                    
@@ -612,12 +679,15 @@
                 title2 = $('#title2').val();
                 start2 = $('#start2').val();
                 end2 = $('#end2').val();
+                address2 = $('#address2').val();
+                link2 = $('#link2').val();
                 id2 = $('#id2').val();
       
                 $.ajax({
                   url:"/calendar/ajax_delete",
                   type:"POST",
-                  data:{id:id2},
+                  contentType: "application/json",
+                  data: JSON.stringify({'id':id2}),
                   success:function()
                   {
                   $('#modal').hide()

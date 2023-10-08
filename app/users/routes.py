@@ -93,15 +93,16 @@ def login():
             flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
         else:
             if user and bcrypt.check_password_hash(user.password, form.password.data):
-                # identity_changed.send(current_app._get_current_object(), identity=Identity(user.id))
-                # identity_changed.send(current_app._get_current_object(),
-                #                   identity=Identity(user.id))
+                identity_changed.send(current_app._get_current_object(), identity=Identity(user.id))
+                identity_changed.send(current_app._get_current_object(),
+                                  identity=Identity(user.id))
                 login_user(user)
                 next_page = request.args.get('next')
                 session.permanent = True
                 user.active = True
                 db.session.commit()
 
+                session['id'] = user.id
                 session['logged_in'] = True
                 session["name"] = form.email.data
                 print(f"-------------------------{user}---------------------")
@@ -116,11 +117,14 @@ def login():
 
 @users.route("/logout")
 def logout():
-    user = User.query.get(current_user.id)
-    session["name"] = None
-    session['logged_in'] = False
-    user.active = False
-    db.session.commit()
+    if hasattr(current_user, 'exists'):
+        user = User.query.get(current_user.id)
+        session["name"] = None
+        session['logged_in'] = False
+        user.active = False
+        db.session.commit()
+    else:
+        print("Prihlásenie neexistuje!")
 
     logout_user()
     return redirect(url_for('main.home'))

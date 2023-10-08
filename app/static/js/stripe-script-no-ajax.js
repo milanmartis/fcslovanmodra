@@ -28,7 +28,8 @@ const button_buy_now = document.querySelector('#buy_now_btn');
     
 // })
 
-var stripe = Stripe(checkout_publick_key);
+var stripe = Stripe(checkout_public_key);
+
     button_buy_now.addEventListener('click', event => {
 
     // quantity_product = $('#quantity_product').val();

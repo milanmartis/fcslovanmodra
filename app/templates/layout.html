@@ -79,7 +79,8 @@
                   <!--
                     <a id="kalendar_button" href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
                   -->
-                  
+                  <a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal" data-bs-backdrop="static" data-bs-keyboard="false">Kalendár</a>
+
                   <a href="{{ url_for('users.account') }}">Môj účet</a>
                   <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
                   
@@ -110,7 +111,7 @@
               <div class="dez-post-media dez-img-effect zoom-slow">
                 <h3 style="padding-top:12px;">Najbližší zápas</h3>
                 <p><i class="fa fa-map-marker" aria-hidden="true"></i>
-                  <a href="https://www.google.com/maps/dir//Futbalov%C3%BD+%C5%A1tadi%C3%B3n,+900+01+Modra/@48.3345616,17.3015936,18.03z/data=!4m8!4m7!1m0!1m5!1m1!1s0x476c97751e815761:0xcafc5f415818ad2d!2m2!1d17.3019059!2d48.3345171?entry=ttu" target="_blank">Kalinčiakova 6, 900 01 Modra</a></p>
+                  <a href="{{ next22.link }}" target="_blank">{{ next22.address }}</a></p>
                 <div class="btn-live-frame">
                   <p style="padding:0px; margin:0px;" id="countdown_desc"></p>
                   <p style="padding:0px; margin:0px;" id="countdown"></p>
@@ -459,7 +460,7 @@
       </script>
       <script src="https://js.stripe.com/v3/"></script>
       <script>
-        const checkout_publick_key = '{{checkout_publick_key}}';
+        const checkout_public_key = '{{checkout_public_key}}';
         const checkout_session_id = '{{checkout_session_id}}';
       </script>
       <script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>

@@ -1,3 +1,7 @@
+import boto3
+import uuid
+
+from app.config import Config
 from flask import (render_template, url_for, flash,
                    redirect, request, session, abort, Blueprint, current_app)
 from flask_login import current_user, login_required
@@ -20,7 +24,19 @@ import stripe
 
 products = Blueprint('products', __name__)
 
+s3 = boto3.client(
+    's3', region_name='eu-north-1',
+    aws_access_key_id=Config.AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=Config.AWS_SECRET_ACCESS_KEY
+)
+BUCKET_NAME = Config.AWS_S3_BUCKET
+ALLOWED_EXTENSIONS = {'jpg','jpeg', 'png'}
+bucket_name = BUCKET_NAME
 
+def alowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    
+    
 ################  PRODUCTS  #################
 
 
@@ -111,6 +127,7 @@ def list_products():
 
 @products.route("/product/new", methods=['GET', 'POST'])
 @login_required
+@roles_required('Admin')
 def new_product():
     form = ProductForm()
 
@@ -119,16 +136,29 @@ def new_product():
         product =  Product(title=form.title.data, content=form.content.data, saler=current_user, product_category_id=form.category.data, price=form.price.data, stripe_link=form.stripe_link.data, youtube_link=form.youtube_link.data, old_price=form.old_price.data, is_visible=form.is_visible.data)
         db.session.add(product)
         db.session.commit()
-        path_image = os.path.join(str(current_app.root_path)+'/static/products/'+str(product.id)+'/gallery/')
-        try:
-            os.makedirs(path_image)
-        except OSError as error:
-            print(error) 
+        # path_image = os.path.join(str(current_app.root_path)+'/static/products/'+str(product.id)+'/gallery/')
+        # try:
+        #     os.makedirs(path_image)
+        # except OSError as error:
+        #     print(error) 
             
         try:
             file = form.picture.data
             file_filename = secure_filename(file.filename)
-            form.picture.data.save(os.path.join(current_app.root_path+'/static/products/'+str(product.id), file_filename))
+            if not alowed_file(file.filename):
+                return "FILE NOT ALLOWED!"
+            bucket_name = "fcsm-files"
+            new_directory_name = 'products/'+str(product.id)+'/gallery/'
+            new_directory_name2 = 'products/'+str(product.id)+'/'
+            s3.put_object(Bucket=bucket_name, Key=new_directory_name)
+
+            
+            new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
+            s3_key = new_directory_name2 + new_filename
+            # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+            
+            s3.upload_fileobj(file, bucket_name, s3_key)
+            # form.picture.data.save(os.path.join(current_app.root_path+'/static/products/'+str(product.id), file_filename))
             picture = ProductGallery(title=form.title.data, image_file2=file_filename, orderz=0, product_id=product.id)
             db.session.add(picture)
 
@@ -164,6 +194,7 @@ def new_product():
 def product(product_id):
     
     check_user = Order.query.filter(Order.user_id==current_user.id).filter(Order.produc_id==product_id).first()
+    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
 
     try:
@@ -208,7 +239,7 @@ def product(product_id):
     if check_user or current_user.id==1:
         return render_template('products/product.html', 
                                checkout_session_id=session['id'], 
-                               checkout_publick_key=current_app.config['STRIPE_PUBLIC_KEY'],
+                               checkout_public_key=current_app.config['STRIPE_PUBLIC_KEY'],
                                check_user=check_user, 
                                page=page, 
                                products=products, 
