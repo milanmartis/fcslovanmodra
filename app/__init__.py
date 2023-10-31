@@ -7,6 +7,7 @@ from .config import Config
 from flask_security import Security, SQLAlchemyUserDatastore
 # from flask_principal import Principal
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from werkzeug.exceptions import NotFound
 from sqlalchemy.orm import sessionmaker
 import stripe
 import base64
@@ -61,6 +62,14 @@ def create_app(config_class=Config):
     app.jinja_env.filters['slugify'] = slugify
 
     from .models import User, Role
+    
+    @app.errorhandler(NotFound)
+    def page_not_found(e):
+        # Presmerovanie na chybovú stránku, napríklad:
+        # return render_template('error.html', error_message="Stránka nenájdená"), 404
+
+        # Alebo presmerovanie na domovskú stránku:
+        return redirect(url_for('main.home'))
     
     @app.context_processor
     def utility_processor():

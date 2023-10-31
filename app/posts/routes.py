@@ -75,12 +75,7 @@ def new_post():
         post = Post(title=form.title.data, content=form.content.data, date_posted=form.date_posted.data, author=current_user, category_id=form.category.data)
         db.session.add(post)
         db.session.commit()
-        path_image = os.path.join(str(current_app.root_path)+'/static/posts/'+str(post.id)+'/gallery/')
-        try:
-            os.makedirs(path_image)
-        except OSError as error:
-            print(error) 
-            
+
         try:
             file = form.picture.data
             file_filename = secure_filename(file.filename)

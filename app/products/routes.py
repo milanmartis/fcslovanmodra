@@ -142,6 +142,7 @@ def new_product():
         # except OSError as error:
         #     print(error) 
             
+
         try:
             file = form.picture.data
             file_filename = secure_filename(file.filename)
@@ -149,34 +150,48 @@ def new_product():
                 return "FILE NOT ALLOWED!"
             bucket_name = "fcsm-files"
             new_directory_name = 'products/'+str(product.id)+'/gallery/'
-            new_directory_name2 = 'products/'+str(product.id)+'/'
+            new_directory_name2 = 'products/'+str(product.id)+'/gallery/'
             s3.put_object(Bucket=bucket_name, Key=new_directory_name)
 
             
-            new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
+            # new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
+            file_filename = secure_filename(file.filename)
+            file_basename, file_extension = os.path.splitext(file_filename)
+            new_filename = uuid.uuid4().hex + '_' + file_basename + file_extension
             s3_key = new_directory_name2 + new_filename
             # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
             
             s3.upload_fileobj(file, bucket_name, s3_key)
-            # form.picture.data.save(os.path.join(current_app.root_path+'/static/products/'+str(product.id), file_filename))
-            picture = ProductGallery(title=form.title.data, image_file2=file_filename, orderz=0, product_id=product.id)
+            
+            # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
+            picture = ProductGallery(title=form.title.data, image_file2=new_filename, orderz=0, product_id=product.id)
             db.session.add(picture)
 
+        
         except:
             pass
-        
+                
         pictures = []
-        filez = 0
 
         for file in form.pictures.data:
-            if file:
-                with open(os.path.realpath(current_app.root_path+'/static/products/'+str(product.id)+'/gallery/'+str(file.filename)), 'wb') as f:
-                        f.write(file.read())
+            # Get the filename
+            file_filename = secure_filename(file.filename)
+            file_basename, file_extension = os.path.splitext(file_filename)
+            new_filename = uuid.uuid4().hex + '_' + file_basename + file_extension
+            s3_key = new_directory_name + new_filename
+            # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+            
+            s3.upload_fileobj(file, bucket_name, s3_key)
+            
+            
+            # Create a new PostGallery object with the unique filename
+            picture = ProductGallery(title=form.title.data, image_file2=new_filename, orderz=1, product_id=product.id)
+            db.session.add(picture)
+            
+            # Add the unique filename to the pictures list
+            pictures.append(new_filename)
 
-                pictures = ProductGallery(title=form.title.data, image_file2=file.filename, orderz=1, product_id=product.id)
-                db.session.add(pictures)
-
-        
+        # Commit the changes to the database
         db.session.commit()
         flash('Your Product has been created!', 'success')
         return redirect(url_for('products.list_products'))
