@@ -48,37 +48,37 @@ from functools import wraps
 
 @users.route("/register", methods=['GET', 'POST'])
 def register():
-    pass
+    # pass
 
-    # # if current_user.is_authenticated and not current_user.id==1:
-    # #     return redirect(url_for('main.home'))
+    # if current_user.is_authenticated and not current_user.id==1:
+    #     return redirect(url_for('main.home'))
     
-    # form = RegistrationForm()
-    # form.role.choices = [(role.id, role.name) for role in Role.query.all()]
-    # # form.team.choices = [(team.id, team.name) for team in Team.query.all()]
+    form = RegistrationForm()
+    form.role.choices = [(role.id, role.name) for role in Role.query.all()]
+    # form.team.choices = [(team.id, team.name) for team in Team.query.all()]
 
-    # if form.validate_on_submit():
-    #     hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-    #     user = User(uuid=str(uuid.uuid4()), username=form.username.data, email=form.email.data, password=hashed_password)
-    #     db.session.add(user)
-    #     db.session.commit()
-    #     role = Role.query.filter(Role.id.in_(form.role.data)).all()
-    #     # team = Team.query.filter_by(id=form.team.data).first()
-    #     member = Member(name=form.name.data, phone=form.phone.data, address=form.address.data, psc=form.psc.data, city=form.city.data,user_id=user.id)
-    #     for rol in role:
-    #         user.roles.append(rol)
-    #     # member.teams.append(team)
-    #     db.session.add(member)
-    #     db.session.commit()
-    #     send_confirm_email(user)
-    #     flash('Bol vám zaslaný e-mail na potvrdenie registrácie.', 'info')
-    #     # flash('Nový účet bol vytvorený!', 'success')
-    #     if current_user.is_authenticated:
-    #         return redirect(url_for('main.home'))
-    #     else:
-    #         return redirect(url_for('users.login'))
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        user = User(uuid=str(uuid.uuid4()), username=form.username.data, email=form.email.data, password=hashed_password)
+        db.session.add(user)
+        db.session.commit()
+        role = Role.query.filter(Role.id.in_(form.role.data)).all()
+        # team = Team.query.filter_by(id=form.team.data).first()
+        member = Member(name=form.name.data, phone=form.phone.data, address=form.address.data, psc=form.psc.data, city=form.city.data,user_id=user.id)
+        for rol in role:
+            user.roles.append(rol)
+        # member.teams.append(team)
+        db.session.add(member)
+        db.session.commit()
+        send_confirm_email(user)
+        flash('Bol vám zaslaný e-mail na potvrdenie registrácie.', 'info')
+        # flash('Nový účet bol vytvorený!', 'success')
+        if current_user.is_authenticated:
+            return redirect(url_for('main.home'))
+        else:
+            return redirect(url_for('users.login'))
     
-    # return render_template('users/register.html', title='Register', form=form, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template('users/register.html', title='Register', form=form, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @users.route("/login", methods=['GET', 'POST'])

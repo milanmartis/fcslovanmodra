@@ -6,7 +6,8 @@ from flask_mail import Mail
 from .config import Config
 from flask_security import Security, SQLAlchemyUserDatastore
 # from flask_principal import Principal
-
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 import stripe
 import base64
 import os
@@ -60,15 +61,22 @@ def create_app(config_class=Config):
     app.jinja_env.filters['slugify'] = slugify
 
     from .models import User, Role
+    
+    @app.context_processor
+    def utility_processor():
+        def aws_image_url():
+            return f'https://{Config.AWS_S3_BUCKET}.s3.amazonaws.com/'
+        return dict(aws_image_url=aws_image_url)
+
 
 
     
-    @app.before_request
-    def before_request():
-        if not request.is_secure:
-            url = request.url.replace('http://', 'https://', 1)
-            code = 301
-            return redirect(url, code=code)
+    # @app.before_request
+    # def before_request():
+    #     if not request.is_secure:
+    #         url = request.url.replace('http://', 'https://', 1)
+    #         code = 301
+    #         return redirect(url, code=code)
 
     from .models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)

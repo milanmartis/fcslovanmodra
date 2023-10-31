@@ -63,13 +63,13 @@
         
           {% if not current_user.is_authenticated %}
           <!--
+          -->
             <div class="navbar-nav mr-auto">
   
               <a class="nav-item nav-link" href="{{ url_for('users.login') }}">Login</a>
               <a class="nav-item nav-link" href="{{ url_for('users.register') }}">Registrovať</a>
             </div>
 
-          -->
 
           {% endif %}
           {% if current_user.is_authenticated %}

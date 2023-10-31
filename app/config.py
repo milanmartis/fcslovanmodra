@@ -27,6 +27,7 @@ class Config:
     AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
     AWS_S3_BUCKET = os.getenv('AWS_S3_BUCKET')
     
+    ASYNC_DATABASE_URL = os.getenv('ASYNC_DATABASE_URL')
 
 
 

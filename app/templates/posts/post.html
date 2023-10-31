@@ -28,12 +28,12 @@
     {% endif %}
 
     <div>
-      {% for gall in post.gallery %} {% if gall.orderz == 0 %}
+    
+
       <img
       width="100%"
-      src="{{ url_for('static', filename='posts/'+post.id|string+'/'+gall.image_file2|string) }}"
+      src="{{  aws_image_url()+'posts/'+post.id|string+'/gallery/'+title_image.image_file2 }}"
       />
-      {% endif %} {% endfor %}
       {% for cat in category %} {% if cat.id==post.category_id %}
       <a
         class="mr-2"
@@ -95,19 +95,19 @@
 <div class="content">
   <div class="container">
     <div class="row">
-      {% for pic in galleries %} {% if pic.orderz > 0 %}
+      {% for pic in galleries %} {% if loop.index0 > -1 %}
       
-
        <div class="col-sm-4">
         <!-- Button trigger modal -->
         <a
-          href="{{ url_for('static', filename='posts/'+post.id|string+'/gallery/'+pic.image_file2|string) }}"
+          href="{{ aws_image_url()+'posts/'+post.id|string+'/gallery/'+pic.image_file2 }}"
           data-lightbox="example-set" data-title="{{ post.title }}"
 
         >
           <img
             class="w-100"
-            src="{{ url_for('static', filename='posts/'+post.id|string+'/gallery/'+pic.image_file2|string) }}"
+            style="padding-bottom: 12px;"
+            src="{{ aws_image_url()+'posts/'+post.id|string+'/gallery/'+pic.image_file2 }}"
           />
         </a>
 

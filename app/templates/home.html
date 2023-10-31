@@ -4,9 +4,9 @@
         <article class="media content-section">
           <div class="media-body">
             {% for gall in post.gallery %}
-            {% if gall.orderz == 0 %}
+            {% if loop.index0 == 0 %}
             <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
-              <img class="d-none post-title-image" onload="this.classList.remove('d-none')"  src="{{ url_for('static', filename='posts/'+post.id|string+'/'+gall.image_file2|string) }}">
+              <img class="d-none post-title-image" onload="this.classList.remove('d-none')"  src="{{ aws_image_url()+'posts/'+post.id|string+'/gallery/'+gall.image_file2 }}">
             </a>
             {% endif %}
             {% endfor %}

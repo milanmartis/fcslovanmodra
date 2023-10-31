@@ -1,0 +1,878 @@
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000001C5576A9AB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000001C55761F490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000001C5546CAC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000001C55761F250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000002A7D3D29AB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000002A7D3CA3490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000002A7D0D1EC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000002A7D3CA3250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.103:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000002145242DAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000002145239F490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000002144F41EC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000002145239F250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:22] "GET /post/165/update HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:23] "[36mGET /static/style/lightbox.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:23] "[32mGET /static//main/logo-slovan-modra-biele.png HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:23] "[36mGET /static/js/team.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:23] "[36mGET /static/js/filemanager.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:23] "[36mGET /static/js/lightbox.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:23] "[36mGET /static/js/product.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:24] "[36mGET /static/style/cc.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:24] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:24] "[36mGET /static/profile_pics/61e48f757eda0226.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:24] "[36mGET /static/js/stripe-script-no-ajax.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:24] "[36mGET /static/clubs/sk-tomasov.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:24] "[36mGET /static/clubs/fc-slovan-modra.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:24] "[32mGET /static//sponsors/modra.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[32mGET /static//sponsors/dbstav.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[32mGET /static//sponsors/pavos.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[32mGET /static//sponsors/comaco.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[32mGET /static//sponsors/farmprofi.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[36mGET /static/sponsors/modra.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[32mGET /static//sponsors/hameln-rds.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[36mGET /static/sponsors/comaco.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[36mGET /static/sponsors/dbstav.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[36mGET /static/sponsors/pavos.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:25] "[36mGET /static/sponsors/farmprofi.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:26] "[32mGET /static//sponsors/caferoma.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:26] "[36mGET /static/sponsors/hameln-rds.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:26] "[32mGET /static//sponsors/appdesign.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:26] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:26] "[32mGET /static//sponsors/ps-ultimate.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:26] "[36mGET /static/main/prev.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:26] "[36mGET /static/sponsors/caferoma.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:26] "[36mGET /static/main/next.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:27] "[36mGET /static/sponsors/appdesign.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:27] "[36mGET /static/main/close.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:27] "[36mGET /static/sponsors/ps-ultimate.jpg HTTP/1.1[0m" 304 -
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function validate_bucket_name at 0x000002145242F520>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function remove_bucket_from_url_paths_from_model at 0x0000021452449360>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.annotate_request_context of <botocore.utils.S3RegionRedirectorv2 object at 0x0000021452FCD6C0>>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function generate_idempotent_uuid at 0x000002145242F370>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <function customize_endpoint_resolver_builtins at 0x0000021452449510>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <bound method S3RegionRedirectorv2.redirect_from_cache of <botocore.utils.S3RegionRedirectorv2 object at 0x0000021452FCD6C0>>
+DEBUG:botocore.regions:Calling endpoint provider with parameters: {'Bucket': 'fcsm-files', 'Region': 'eu-north-1', 'UseFIPS': False, 'UseDualStack': False, 'ForcePathStyle': False, 'Accelerate': False, 'UseGlobalEndpoint': False, 'DisableMultiRegionAccessPoints': False, 'UseArnRegion': True}
+DEBUG:botocore.regions:Endpoint provider result: https://fcsm-files.s3.eu-north-1.amazonaws.com
+DEBUG:botocore.regions:Selecting from endpoint provider's list of auth schemes: "sigv4". User selected auth scheme is: "None"
+DEBUG:botocore.regions:Selected auth type "v4" as "v4" with signing context params: {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_expect_header at 0x000002145242F880>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_recursion_detection_header at 0x000002145242F010>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function inject_api_version_header_if_needed at 0x0000021452448C10>
+DEBUG:botocore.endpoint:Making request for OperationModel(name=DeleteObject) with params: {'url_path': '//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg', 'query_string': {}, 'method': 'DELETE', 'headers': {'User-Agent': 'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38'}, 'body': b'', 'auth_path': '/fcsm-files//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg', 'url': 'https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg', 'context': {'client_region': 'eu-north-1', 'client_config': <botocore.config.Config object at 0x0000021452F67190>, 'has_streaming_input': False, 'auth_type': 'v4', 's3_redirect': {'redirected': False, 'bucket': 'fcsm-files', 'params': {'Bucket': 'fcsm-files', 'Key': '/posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg'}}, 'signing': {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}}}
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <bound method RequestSigner.handler of <botocore.signers.RequestSigner object at 0x0000021452BC3BE0>>
+DEBUG:botocore.hooks:Event choose-signer.s3.DeleteObject: calling handler <function set_operation_specific_signer at 0x000002145242F250>
+DEBUG:botocore.hooks:Event before-sign.s3.DeleteObject: calling handler <function remove_arn_from_signing_path at 0x0000021452449480>
+DEBUG:botocore.auth:Calculating signature using v4 auth.
+DEBUG:botocore.auth:CanonicalRequest:
+DELETE
+//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg
+
+host:fcsm-files.s3.eu-north-1.amazonaws.com
+x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+x-amz-date:20231028T172349Z
+
+host;x-amz-content-sha256;x-amz-date
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DEBUG:botocore.auth:StringToSign:
+AWS4-HMAC-SHA256
+20231028T172349Z
+20231028/eu-north-1/s3/aws4_request
+440c871a5d633bfed1b432d676ffc07353606567f1ddc5390aca00963cebfde9
+DEBUG:botocore.auth:Signature:
+d35cb8ca785d9494d1a11a97f37e4808048b6359cf37c88ce20eb0eac5db4991
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <function add_retry_headers at 0x00000214524492D0>
+DEBUG:botocore.endpoint:Sending http request: <AWSPreparedRequest stream_output=False, method=DELETE, url=https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg, headers={'User-Agent': b'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38', 'X-Amz-Date': b'20231028T172349Z', 'X-Amz-Content-SHA256': b'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'Authorization': b'AWS4-HMAC-SHA256 Credential=AKIA2E7FAZMVEOBLDJVG/20231028/eu-north-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=d35cb8ca785d9494d1a11a97f37e4808048b6359cf37c88ce20eb0eac5db4991', 'amz-sdk-invocation-id': b'c18951e1-59af-48fd-9c8d-c224bfd65ab0', 'amz-sdk-request': b'attempt=1', 'Content-Length': '0'}>
+DEBUG:botocore.httpsession:Certificate path: C:\Users\Dell\fm\env\lib\site-packages\certifi\cacert.pem
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): fcsm-files.s3.eu-north-1.amazonaws.com:443
+DEBUG:urllib3.connectionpool:https://fcsm-files.s3.eu-north-1.amazonaws.com:443 "DELETE //posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg HTTP/1.1" 403 None
+DEBUG:botocore.parsers:Response headers: {'x-amz-request-id': 'AZ2BX0JZ6N50C72X', 'x-amz-id-2': '9o4oYlqsiTQVM5DzCdEFo14lbvLoBIZgvO01NrTedNbUjrEWRR0SyRnENMFpwlIph5iU6OHR8s8=', 'Content-Type': 'application/xml', 'Transfer-Encoding': 'chunked', 'Date': 'Sat, 28 Oct 2023 17:23:50 GMT', 'Server': 'AmazonS3'}
+DEBUG:botocore.parsers:Response body:
+b'<?xml version="1.0" encoding="UTF-8"?>\n<Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>AZ2BX0JZ6N50C72X</RequestId><HostId>9o4oYlqsiTQVM5DzCdEFo14lbvLoBIZgvO01NrTedNbUjrEWRR0SyRnENMFpwlIph5iU6OHR8s8=</HostId></Error>'
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <botocore.retryhandler.RetryHandler object at 0x0000021452FCD600>
+DEBUG:botocore.retryhandler:No retry needed.
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.redirect_from_error of <botocore.utils.S3RegionRedirectorv2 object at 0x0000021452FCD6C0>>
+ERROR:root:Chyba: An error occurred (AccessDenied) when calling the DeleteObject operation: Access Denied
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:23:49] "[35m[1mDELETE /posts/165/gallery/delete HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x0000020FE205DAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x0000020FE1FCB490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x0000020FDF05EC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x0000020FE1FCB250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x00000208A549DAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x00000208A540B490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x00000208A249EC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x00000208A540B250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000002F427F89AB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000002F427EFB490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000002F424F8AC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000002F427EFB250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.103:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000001E6BC0BDAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000001E6BC02F490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000001E6B90BEC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000001E6BC02F250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:35] "GET /post/165/update HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:36] "[36mGET /static/style/cc.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:36] "[36mGET /static/js/product.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:36] "[36mGET /static/js/team.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:36] "[36mGET /static/js/lightbox.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:36] "[36mGET /static/style/lightbox.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:36] "[36mGET /static/js/filemanager.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:36] "[36mGET /static/profile_pics/61e48f757eda0226.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:37] "[32mGET /static//main/logo-slovan-modra-biele.png HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:37] "[36mGET /static/js/stripe-script-no-ajax.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:37] "[36mGET /static/clubs/fc-slovan-modra.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:37] "[36mGET /static/clubs/sk-tomasov.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:37] "[32mGET /static//sponsors/modra.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:37] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[32mGET /static//sponsors/comaco.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[32mGET /static//sponsors/pavos.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[36mGET /static/sponsors/modra.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[32mGET /static//sponsors/dbstav.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[32mGET /static//sponsors/farmprofi.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[36mGET /static/sponsors/comaco.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[36mGET /static/sponsors/pavos.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[32mGET /static//sponsors/hameln-rds.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:38] "[36mGET /static/sponsors/dbstav.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[36mGET /static/sponsors/farmprofi.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[32mGET /static//sponsors/appdesign.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[32mGET /static//sponsors/ps-ultimate.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[32mGET /static//sponsors/caferoma.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[36mGET /static/sponsors/hameln-rds.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[36mGET /static/main/prev.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[36mGET /static/main/next.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[36mGET /static/sponsors/appdesign.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[36mGET /static/sponsors/caferoma.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[36mGET /static/sponsors/ps-ultimate.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:39] "[36mGET /static/main/close.png HTTP/1.1[0m" 304 -
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function validate_bucket_name at 0x000001E6BC0BF520>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function remove_bucket_from_url_paths_from_model at 0x000001E6BC0D9360>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.annotate_request_context of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function generate_idempotent_uuid at 0x000001E6BC0BF370>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <function customize_endpoint_resolver_builtins at 0x000001E6BC0D9510>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <bound method S3RegionRedirectorv2.redirect_from_cache of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+DEBUG:botocore.regions:Calling endpoint provider with parameters: {'Bucket': 'fcsm-files', 'Region': 'eu-north-1', 'UseFIPS': False, 'UseDualStack': False, 'ForcePathStyle': False, 'Accelerate': False, 'UseGlobalEndpoint': False, 'DisableMultiRegionAccessPoints': False, 'UseArnRegion': True}
+DEBUG:botocore.regions:Endpoint provider result: https://fcsm-files.s3.eu-north-1.amazonaws.com
+DEBUG:botocore.regions:Selecting from endpoint provider's list of auth schemes: "sigv4". User selected auth scheme is: "None"
+DEBUG:botocore.regions:Selected auth type "v4" as "v4" with signing context params: {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_expect_header at 0x000001E6BC0BF880>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_recursion_detection_header at 0x000001E6BC0BF010>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function inject_api_version_header_if_needed at 0x000001E6BC0D8C10>
+DEBUG:botocore.endpoint:Making request for OperationModel(name=DeleteObject) with params: {'url_path': '//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg', 'query_string': {}, 'method': 'DELETE', 'headers': {'User-Agent': 'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38'}, 'body': b'', 'auth_path': '/fcsm-files//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg', 'url': 'https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg', 'context': {'client_region': 'eu-north-1', 'client_config': <botocore.config.Config object at 0x000001E6BCBF7190>, 'has_streaming_input': False, 'auth_type': 'v4', 's3_redirect': {'redirected': False, 'bucket': 'fcsm-files', 'params': {'Bucket': 'fcsm-files', 'Key': '/posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg'}}, 'signing': {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}}}
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <bound method RequestSigner.handler of <botocore.signers.RequestSigner object at 0x000001E6BC853BE0>>
+DEBUG:botocore.hooks:Event choose-signer.s3.DeleteObject: calling handler <function set_operation_specific_signer at 0x000001E6BC0BF250>
+DEBUG:botocore.hooks:Event before-sign.s3.DeleteObject: calling handler <function remove_arn_from_signing_path at 0x000001E6BC0D9480>
+DEBUG:botocore.auth:Calculating signature using v4 auth.
+DEBUG:botocore.auth:CanonicalRequest:
+DELETE
+//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg
+
+host:fcsm-files.s3.eu-north-1.amazonaws.com
+x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+x-amz-date:20231028T172643Z
+
+host;x-amz-content-sha256;x-amz-date
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DEBUG:botocore.auth:StringToSign:
+AWS4-HMAC-SHA256
+20231028T172643Z
+20231028/eu-north-1/s3/aws4_request
+ce8e5c3756c7531663f967f31c377e84d76755dbe8119d4fbcc6e1fa785ae513
+DEBUG:botocore.auth:Signature:
+805759963c5334f60ebf1b71149c0a5030b0692981860bd0ca806523ba2296b2
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <function add_retry_headers at 0x000001E6BC0D92D0>
+DEBUG:botocore.endpoint:Sending http request: <AWSPreparedRequest stream_output=False, method=DELETE, url=https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg, headers={'User-Agent': b'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38', 'X-Amz-Date': b'20231028T172643Z', 'X-Amz-Content-SHA256': b'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'Authorization': b'AWS4-HMAC-SHA256 Credential=AKIA2E7FAZMVEOBLDJVG/20231028/eu-north-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=805759963c5334f60ebf1b71149c0a5030b0692981860bd0ca806523ba2296b2', 'amz-sdk-invocation-id': b'31250e1d-2bff-4a1d-a406-fc8e1e55d53a', 'amz-sdk-request': b'attempt=1', 'Content-Length': '0'}>
+DEBUG:botocore.httpsession:Certificate path: C:\Users\Dell\fm\env\lib\site-packages\certifi\cacert.pem
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): fcsm-files.s3.eu-north-1.amazonaws.com:443
+DEBUG:urllib3.connectionpool:https://fcsm-files.s3.eu-north-1.amazonaws.com:443 "DELETE //posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg HTTP/1.1" 403 None
+DEBUG:botocore.parsers:Response headers: {'x-amz-request-id': 'H8HA70PX5754PSRB', 'x-amz-id-2': 'EnqTAaKnBZTzt+jSsdZSZj1Yw8OcmrQUITJTy8owA2UgKChKYGyssXW7W5UiPuxsw+C2OgGIByY=', 'Content-Type': 'application/xml', 'Transfer-Encoding': 'chunked', 'Date': 'Sat, 28 Oct 2023 17:26:44 GMT', 'Server': 'AmazonS3'}
+DEBUG:botocore.parsers:Response body:
+b'<?xml version="1.0" encoding="UTF-8"?>\n<Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>H8HA70PX5754PSRB</RequestId><HostId>EnqTAaKnBZTzt+jSsdZSZj1Yw8OcmrQUITJTy8owA2UgKChKYGyssXW7W5UiPuxsw+C2OgGIByY=</HostId></Error>'
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <botocore.retryhandler.RetryHandler object at 0x000001E6BCC5D600>
+DEBUG:botocore.retryhandler:No retry needed.
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.redirect_from_error of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+ERROR:root:Chyba: An error occurred (AccessDenied) when calling the DeleteObject operation: Access Denied
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:44] "[35m[1mDELETE /posts/165/gallery/delete HTTP/1.1[0m" 500 -
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function validate_bucket_name at 0x000001E6BC0BF520>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function remove_bucket_from_url_paths_from_model at 0x000001E6BC0D9360>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.annotate_request_context of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function generate_idempotent_uuid at 0x000001E6BC0BF370>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <function customize_endpoint_resolver_builtins at 0x000001E6BC0D9510>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <bound method S3RegionRedirectorv2.redirect_from_cache of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+DEBUG:botocore.regions:Calling endpoint provider with parameters: {'Bucket': 'fcsm-files', 'Region': 'eu-north-1', 'UseFIPS': False, 'UseDualStack': False, 'ForcePathStyle': False, 'Accelerate': False, 'UseGlobalEndpoint': False, 'DisableMultiRegionAccessPoints': False, 'UseArnRegion': True}
+DEBUG:botocore.regions:Endpoint provider result: https://fcsm-files.s3.eu-north-1.amazonaws.com
+DEBUG:botocore.regions:Selecting from endpoint provider's list of auth schemes: "sigv4". User selected auth scheme is: "None"
+DEBUG:botocore.regions:Selected auth type "v4" as "v4" with signing context params: {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_expect_header at 0x000001E6BC0BF880>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_recursion_detection_header at 0x000001E6BC0BF010>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function inject_api_version_header_if_needed at 0x000001E6BC0D8C10>
+DEBUG:botocore.endpoint:Making request for OperationModel(name=DeleteObject) with params: {'url_path': '//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg', 'query_string': {}, 'method': 'DELETE', 'headers': {'User-Agent': 'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38'}, 'body': b'', 'auth_path': '/fcsm-files//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg', 'url': 'https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg', 'context': {'client_region': 'eu-north-1', 'client_config': <botocore.config.Config object at 0x000001E6BCBF7190>, 'has_streaming_input': False, 'auth_type': 'v4', 's3_redirect': {'redirected': False, 'bucket': 'fcsm-files', 'params': {'Bucket': 'fcsm-files', 'Key': '/posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg'}}, 'signing': {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}}}
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <bound method RequestSigner.handler of <botocore.signers.RequestSigner object at 0x000001E6BC853BE0>>
+DEBUG:botocore.hooks:Event choose-signer.s3.DeleteObject: calling handler <function set_operation_specific_signer at 0x000001E6BC0BF250>
+DEBUG:botocore.hooks:Event before-sign.s3.DeleteObject: calling handler <function remove_arn_from_signing_path at 0x000001E6BC0D9480>
+DEBUG:botocore.auth:Calculating signature using v4 auth.
+DEBUG:botocore.auth:CanonicalRequest:
+DELETE
+//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg
+
+host:fcsm-files.s3.eu-north-1.amazonaws.com
+x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+x-amz-date:20231028T172654Z
+
+host;x-amz-content-sha256;x-amz-date
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DEBUG:botocore.auth:StringToSign:
+AWS4-HMAC-SHA256
+20231028T172654Z
+20231028/eu-north-1/s3/aws4_request
+2800c6c6c00573d868c9b1ee1977ffc4ed916c10b3611e7f8f70413592ec10e8
+DEBUG:botocore.auth:Signature:
+d684de7e44d2e33ad47d6f1d39380574206b1077ddacb1b748b359382db05f42
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <function add_retry_headers at 0x000001E6BC0D92D0>
+DEBUG:botocore.endpoint:Sending http request: <AWSPreparedRequest stream_output=False, method=DELETE, url=https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg, headers={'User-Agent': b'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38', 'X-Amz-Date': b'20231028T172654Z', 'X-Amz-Content-SHA256': b'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'Authorization': b'AWS4-HMAC-SHA256 Credential=AKIA2E7FAZMVEOBLDJVG/20231028/eu-north-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=d684de7e44d2e33ad47d6f1d39380574206b1077ddacb1b748b359382db05f42', 'amz-sdk-invocation-id': b'7aaf29e7-b0d8-4482-8cd4-2710a3d5a067', 'amz-sdk-request': b'attempt=1', 'Content-Length': '0'}>
+DEBUG:botocore.httpsession:Certificate path: C:\Users\Dell\fm\env\lib\site-packages\certifi\cacert.pem
+DEBUG:urllib3.connectionpool:Resetting dropped connection: fcsm-files.s3.eu-north-1.amazonaws.com
+DEBUG:urllib3.connectionpool:https://fcsm-files.s3.eu-north-1.amazonaws.com:443 "DELETE //posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg HTTP/1.1" 403 None
+DEBUG:botocore.parsers:Response headers: {'x-amz-request-id': 'BTA6B2JRBMH18B3G', 'x-amz-id-2': 'YIuNKoQi9gl1m/AOiv3ugYFMCJpZS9FSumVz6Nh/BBsfzN9jst4uOZ2Sz6KLzBQ2lndTkVqWgzo=', 'Content-Type': 'application/xml', 'Transfer-Encoding': 'chunked', 'Date': 'Sat, 28 Oct 2023 17:26:54 GMT', 'Server': 'AmazonS3'}
+DEBUG:botocore.parsers:Response body:
+b'<?xml version="1.0" encoding="UTF-8"?>\n<Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>BTA6B2JRBMH18B3G</RequestId><HostId>YIuNKoQi9gl1m/AOiv3ugYFMCJpZS9FSumVz6Nh/BBsfzN9jst4uOZ2Sz6KLzBQ2lndTkVqWgzo=</HostId></Error>'
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <botocore.retryhandler.RetryHandler object at 0x000001E6BCC5D600>
+DEBUG:botocore.retryhandler:No retry needed.
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.redirect_from_error of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+ERROR:root:Chyba: An error occurred (AccessDenied) when calling the DeleteObject operation: Access Denied
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:26:54] "[35m[1mDELETE /posts/165/gallery/delete HTTP/1.1[0m" 500 -
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function validate_bucket_name at 0x000001E6BC0BF520>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function remove_bucket_from_url_paths_from_model at 0x000001E6BC0D9360>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.annotate_request_context of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function generate_idempotent_uuid at 0x000001E6BC0BF370>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <function customize_endpoint_resolver_builtins at 0x000001E6BC0D9510>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <bound method S3RegionRedirectorv2.redirect_from_cache of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+DEBUG:botocore.regions:Calling endpoint provider with parameters: {'Bucket': 'fcsm-files', 'Region': 'eu-north-1', 'UseFIPS': False, 'UseDualStack': False, 'ForcePathStyle': False, 'Accelerate': False, 'UseGlobalEndpoint': False, 'DisableMultiRegionAccessPoints': False, 'UseArnRegion': True}
+DEBUG:botocore.regions:Endpoint provider result: https://fcsm-files.s3.eu-north-1.amazonaws.com
+DEBUG:botocore.regions:Selecting from endpoint provider's list of auth schemes: "sigv4". User selected auth scheme is: "None"
+DEBUG:botocore.regions:Selected auth type "v4" as "v4" with signing context params: {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_expect_header at 0x000001E6BC0BF880>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_recursion_detection_header at 0x000001E6BC0BF010>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function inject_api_version_header_if_needed at 0x000001E6BC0D8C10>
+DEBUG:botocore.endpoint:Making request for OperationModel(name=DeleteObject) with params: {'url_path': '//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg', 'query_string': {}, 'method': 'DELETE', 'headers': {'User-Agent': 'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38'}, 'body': b'', 'auth_path': '/fcsm-files//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg', 'url': 'https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg', 'context': {'client_region': 'eu-north-1', 'client_config': <botocore.config.Config object at 0x000001E6BCBF7190>, 'has_streaming_input': False, 'auth_type': 'v4', 's3_redirect': {'redirected': False, 'bucket': 'fcsm-files', 'params': {'Bucket': 'fcsm-files', 'Key': '/posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg'}}, 'signing': {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}}}
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <bound method RequestSigner.handler of <botocore.signers.RequestSigner object at 0x000001E6BC853BE0>>
+DEBUG:botocore.hooks:Event choose-signer.s3.DeleteObject: calling handler <function set_operation_specific_signer at 0x000001E6BC0BF250>
+DEBUG:botocore.hooks:Event before-sign.s3.DeleteObject: calling handler <function remove_arn_from_signing_path at 0x000001E6BC0D9480>
+DEBUG:botocore.auth:Calculating signature using v4 auth.
+DEBUG:botocore.auth:CanonicalRequest:
+DELETE
+//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg
+
+host:fcsm-files.s3.eu-north-1.amazonaws.com
+x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+x-amz-date:20231028T172701Z
+
+host;x-amz-content-sha256;x-amz-date
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DEBUG:botocore.auth:StringToSign:
+AWS4-HMAC-SHA256
+20231028T172701Z
+20231028/eu-north-1/s3/aws4_request
+ecfa949329943dd40dd074d706c5aa879209bb10e20824671d25a65a5f602a27
+DEBUG:botocore.auth:Signature:
+a4d6900b31e73bd3a75f46af818c30603f703e1cdded69a802bb11a7ce1a8204
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <function add_retry_headers at 0x000001E6BC0D92D0>
+DEBUG:botocore.endpoint:Sending http request: <AWSPreparedRequest stream_output=False, method=DELETE, url=https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg, headers={'User-Agent': b'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38', 'X-Amz-Date': b'20231028T172701Z', 'X-Amz-Content-SHA256': b'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'Authorization': b'AWS4-HMAC-SHA256 Credential=AKIA2E7FAZMVEOBLDJVG/20231028/eu-north-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=a4d6900b31e73bd3a75f46af818c30603f703e1cdded69a802bb11a7ce1a8204', 'amz-sdk-invocation-id': b'5ff6c4f3-b327-4085-89d4-be6a6c156f83', 'amz-sdk-request': b'attempt=1', 'Content-Length': '0'}>
+DEBUG:botocore.httpsession:Certificate path: C:\Users\Dell\fm\env\lib\site-packages\certifi\cacert.pem
+DEBUG:urllib3.connectionpool:Resetting dropped connection: fcsm-files.s3.eu-north-1.amazonaws.com
+DEBUG:urllib3.connectionpool:https://fcsm-files.s3.eu-north-1.amazonaws.com:443 "DELETE //posts/165/gallery/8ed5defe96484073b8d894273e763959_cuvee-vip.jpg HTTP/1.1" 403 None
+DEBUG:botocore.parsers:Response headers: {'x-amz-request-id': '2DCQ2TRHV1YN9W9A', 'x-amz-id-2': '2Ql4JDqElO6hozt2LAR6oqdfad6A8joKH0paG12yy9/6z4r05wfpyf+IoF2RbbuefgvmCyyD7M8=', 'Content-Type': 'application/xml', 'Transfer-Encoding': 'chunked', 'Date': 'Sat, 28 Oct 2023 17:27:02 GMT', 'Server': 'AmazonS3'}
+DEBUG:botocore.parsers:Response body:
+b'<?xml version="1.0" encoding="UTF-8"?>\n<Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>2DCQ2TRHV1YN9W9A</RequestId><HostId>2Ql4JDqElO6hozt2LAR6oqdfad6A8joKH0paG12yy9/6z4r05wfpyf+IoF2RbbuefgvmCyyD7M8=</HostId></Error>'
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <botocore.retryhandler.RetryHandler object at 0x000001E6BCC5D600>
+DEBUG:botocore.retryhandler:No retry needed.
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.redirect_from_error of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+ERROR:root:Chyba: An error occurred (AccessDenied) when calling the DeleteObject operation: Access Denied
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:27:03] "[35m[1mDELETE /posts/165/gallery/delete HTTP/1.1[0m" 500 -
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function validate_bucket_name at 0x000001E6BC0BF520>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function remove_bucket_from_url_paths_from_model at 0x000001E6BC0D9360>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.annotate_request_context of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function generate_idempotent_uuid at 0x000001E6BC0BF370>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <function customize_endpoint_resolver_builtins at 0x000001E6BC0D9510>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <bound method S3RegionRedirectorv2.redirect_from_cache of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+DEBUG:botocore.regions:Calling endpoint provider with parameters: {'Bucket': 'fcsm-files', 'Region': 'eu-north-1', 'UseFIPS': False, 'UseDualStack': False, 'ForcePathStyle': False, 'Accelerate': False, 'UseGlobalEndpoint': False, 'DisableMultiRegionAccessPoints': False, 'UseArnRegion': True}
+DEBUG:botocore.regions:Endpoint provider result: https://fcsm-files.s3.eu-north-1.amazonaws.com
+DEBUG:botocore.regions:Selecting from endpoint provider's list of auth schemes: "sigv4". User selected auth scheme is: "None"
+DEBUG:botocore.regions:Selected auth type "v4" as "v4" with signing context params: {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_expect_header at 0x000001E6BC0BF880>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_recursion_detection_header at 0x000001E6BC0BF010>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function inject_api_version_header_if_needed at 0x000001E6BC0D8C10>
+DEBUG:botocore.endpoint:Making request for OperationModel(name=DeleteObject) with params: {'url_path': '//posts/165/gallery/38872357a1d6490eab9fb0e3008bee31_slide4.jpg', 'query_string': {}, 'method': 'DELETE', 'headers': {'User-Agent': 'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38'}, 'body': b'', 'auth_path': '/fcsm-files//posts/165/gallery/38872357a1d6490eab9fb0e3008bee31_slide4.jpg', 'url': 'https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/38872357a1d6490eab9fb0e3008bee31_slide4.jpg', 'context': {'client_region': 'eu-north-1', 'client_config': <botocore.config.Config object at 0x000001E6BCBF7190>, 'has_streaming_input': False, 'auth_type': 'v4', 's3_redirect': {'redirected': False, 'bucket': 'fcsm-files', 'params': {'Bucket': 'fcsm-files', 'Key': '/posts/165/gallery/38872357a1d6490eab9fb0e3008bee31_slide4.jpg'}}, 'signing': {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}}}
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <bound method RequestSigner.handler of <botocore.signers.RequestSigner object at 0x000001E6BC853BE0>>
+DEBUG:botocore.hooks:Event choose-signer.s3.DeleteObject: calling handler <function set_operation_specific_signer at 0x000001E6BC0BF250>
+DEBUG:botocore.hooks:Event before-sign.s3.DeleteObject: calling handler <function remove_arn_from_signing_path at 0x000001E6BC0D9480>
+DEBUG:botocore.auth:Calculating signature using v4 auth.
+DEBUG:botocore.auth:CanonicalRequest:
+DELETE
+//posts/165/gallery/38872357a1d6490eab9fb0e3008bee31_slide4.jpg
+
+host:fcsm-files.s3.eu-north-1.amazonaws.com
+x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+x-amz-date:20231028T172707Z
+
+host;x-amz-content-sha256;x-amz-date
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DEBUG:botocore.auth:StringToSign:
+AWS4-HMAC-SHA256
+20231028T172707Z
+20231028/eu-north-1/s3/aws4_request
+803399b61970ca7bd62ff2eef087f241ec17a8e3d829272c59d4afe14b875ab6
+DEBUG:botocore.auth:Signature:
+66f2d27cd2f6b17d73ded3993246da54481a72c68a4c7f3b4d113177b45b1323
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <function add_retry_headers at 0x000001E6BC0D92D0>
+DEBUG:botocore.endpoint:Sending http request: <AWSPreparedRequest stream_output=False, method=DELETE, url=https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/38872357a1d6490eab9fb0e3008bee31_slide4.jpg, headers={'User-Agent': b'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38', 'X-Amz-Date': b'20231028T172707Z', 'X-Amz-Content-SHA256': b'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'Authorization': b'AWS4-HMAC-SHA256 Credential=AKIA2E7FAZMVEOBLDJVG/20231028/eu-north-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=66f2d27cd2f6b17d73ded3993246da54481a72c68a4c7f3b4d113177b45b1323', 'amz-sdk-invocation-id': b'387c91b7-97eb-4512-9ae4-e010290c5a09', 'amz-sdk-request': b'attempt=1', 'Content-Length': '0'}>
+DEBUG:botocore.httpsession:Certificate path: C:\Users\Dell\fm\env\lib\site-packages\certifi\cacert.pem
+DEBUG:urllib3.connectionpool:https://fcsm-files.s3.eu-north-1.amazonaws.com:443 "DELETE //posts/165/gallery/38872357a1d6490eab9fb0e3008bee31_slide4.jpg HTTP/1.1" 403 None
+DEBUG:botocore.parsers:Response headers: {'x-amz-request-id': '7TE985HYRKP7HZCF', 'x-amz-id-2': 'RMWtOlx+o8AscIGKhIZ2rSMKCJp+GhXTjb//hwV9LL4HaFTIQgHoTXOjf/io1j17762UxGVoxUw=', 'Content-Type': 'application/xml', 'Transfer-Encoding': 'chunked', 'Date': 'Sat, 28 Oct 2023 17:27:07 GMT', 'Server': 'AmazonS3'}
+DEBUG:botocore.parsers:Response body:
+b'<?xml version="1.0" encoding="UTF-8"?>\n<Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>7TE985HYRKP7HZCF</RequestId><HostId>RMWtOlx+o8AscIGKhIZ2rSMKCJp+GhXTjb//hwV9LL4HaFTIQgHoTXOjf/io1j17762UxGVoxUw=</HostId></Error>'
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <botocore.retryhandler.RetryHandler object at 0x000001E6BCC5D600>
+DEBUG:botocore.retryhandler:No retry needed.
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.redirect_from_error of <botocore.utils.S3RegionRedirectorv2 object at 0x000001E6BCC5D6C0>>
+ERROR:root:Chyba: An error occurred (AccessDenied) when calling the DeleteObject operation: Access Denied
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:27:07] "[35m[1mDELETE /posts/165/gallery/delete HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000001B6643EDAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000001B66435F490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000001B6613EAC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000001B66435F250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:30] "DELETE /posts/165/gallery/delete HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:33] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:36] "DELETE /posts/165/gallery/delete HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:38] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:55] "GET /post/165/update HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:56] "[36mGET /static/style/cc.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:57] "[36mGET /static/style/lightbox.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:57] "[36mGET /static/js/product.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:57] "[36mGET /static/js/filemanager.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:57] "[36mGET /static/js/lightbox.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:57] "[36mGET /static/js/team.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:57] "[32mGET /static//main/logo-slovan-modra-biele.png HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:58] "[36mGET /static/clubs/sk-tomasov.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:58] "[36mGET /static/js/stripe-script-no-ajax.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:58] "[36mGET /static/clubs/fc-slovan-modra.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:58] "[36mGET /static/profile_pics/61e48f757eda0226.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:58] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:58] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:59] "[32mGET /static//sponsors/comaco.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:59] "[32mGET /static//sponsors/farmprofi.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:59] "[32mGET /static//sponsors/dbstav.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:28:59] "[32mGET /static//sponsors/pavos.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:00] "[32mGET /static//sponsors/modra.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:00] "[32mGET /static//sponsors/hameln-rds.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:00] "[36mGET /static/sponsors/comaco.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:00] "[36mGET /static/sponsors/dbstav.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:00] "[36mGET /static/sponsors/pavos.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:00] "[36mGET /static/sponsors/farmprofi.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:00] "[36mGET /static/sponsors/modra.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:00] "[36mGET /static/sponsors/hameln-rds.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:01] "[32mGET /static//sponsors/caferoma.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:01] "[32mGET /static//sponsors/ps-ultimate.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:01] "[32mGET /static//sponsors/appdesign.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:01] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:01] "[36mGET /static/main/next.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:01] "[36mGET /static/main/prev.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:02] "[36mGET /static/sponsors/caferoma.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:02] "[36mGET /static/sponsors/ps-ultimate.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:02] "[36mGET /static/main/close.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:02] "[36mGET /static/sponsors/appdesign.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:11] "DELETE /posts/165/gallery/delete HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:13] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:25] "GET /post/165/update HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:26] "[36mGET /static/style/lightbox.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:26] "[36mGET /static/style/cc.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:26] "[36mGET /static/js/team.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:26] "[36mGET /static/js/product.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:26] "[36mGET /static/js/filemanager.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[32mGET /static//main/logo-slovan-modra-biele.png HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[36mGET /static/js/stripe-script-no-ajax.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[36mGET /static/profile_pics/61e48f757eda0226.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[36mGET /static/clubs/sk-tomasov.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[36mGET /static/js/lightbox.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[32mGET /static//sponsors/modra.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[36mGET /static/clubs/fc-slovan-modra.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[32mGET /static//sponsors/comaco.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:27] "[32mGET /static//sponsors/pavos.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[32mGET /static//sponsors/dbstav.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[32mGET /static//sponsors/farmprofi.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[32mGET /static//sponsors/hameln-rds.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[36mGET /static/sponsors/modra.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[36mGET /static/sponsors/comaco.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[36mGET /static/sponsors/pavos.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[36mGET /static/sponsors/dbstav.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[32mGET /static//sponsors/ps-ultimate.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[32mGET /static//sponsors/caferoma.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:28] "[36mGET /static/sponsors/hameln-rds.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:29] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:29] "[36mGET /static/sponsors/farmprofi.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:29] "[32mGET /static//sponsors/appdesign.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:29] "[36mGET /static/sponsors/caferoma.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:29] "[36mGET /static/sponsors/ps-ultimate.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:30] "[36mGET /static/sponsors/appdesign.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:33] "DELETE /posts/165/gallery/delete HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:33] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:37] "DELETE /posts/165/gallery/delete HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:37] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:39] "DELETE /posts/165/gallery/delete HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:29:41] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x00000246A1FFDAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x00000246A1F6F490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000002469EFFEC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x00000246A1F6F250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x0000016D4DFDDAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x0000016D4DF4B490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x0000016D4AFDEC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x0000016D4DF4B250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000001D25D25DAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000001D25D1CF490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000001D25A25EC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000001D25D1CF250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x00000207C4691AB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x00000207C45FF490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x00000207C168AC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x00000207C45FF250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x0000027507B9DAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x0000027507B0F490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x0000027504B9EC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x0000027507B0F250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000001D82545DAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000001D8253CB490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000001D82245AC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000001D8253CB250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x0000025EE2099AB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x0000025EE200B490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x0000025EDF09AC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x0000025EE200B250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.103:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000002D1A4B6DAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000002D1A4ADF490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000002D1A1B6EC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000002D1A4ADF250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:01] "GET /post/165/update HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:02] "[36mGET /static/style/cc.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:03] "[36mGET /static/style/lightbox.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:03] "[36mGET /static/js/lightbox.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:03] "[36mGET /static/js/filemanager.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:03] "[36mGET /static/js/team.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:03] "[36mGET /static/js/product.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:03] "[32mGET /static//main/logo-slovan-modra-biele.png HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:03] "[36mGET /static/js/stripe-script-no-ajax.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[36mGET /static/profile_pics/61e48f757eda0226.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[36mGET /static/clubs/sk-tomasov.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[36mGET /static/clubs/fc-slovan-modra.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "GET /posts/images/165 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[32mGET /static//sponsors/modra.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[32mGET /static//sponsors/comaco.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[32mGET /static//sponsors/pavos.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[32mGET /static//sponsors/dbstav.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[32mGET /static//sponsors/farmprofi.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:04] "[32mGET /static//sponsors/hameln-rds.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[36mGET /static/sponsors/modra.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[36mGET /static/sponsors/comaco.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[36mGET /static/sponsors/pavos.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[36mGET /static/sponsors/dbstav.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[36mGET /static/sponsors/farmprofi.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[36mGET /static/sponsors/hameln-rds.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[32mGET /static//sponsors/caferoma.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[32mGET /static//sponsors/ps-ultimate.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[32mGET /static//sponsors/appdesign.jpg HTTP/1.1[0m" 308 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:05] "[36mGET /static/main/logo-slovan-modra-biele.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:06] "[36mGET /static/sponsors/caferoma.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:06] "[36mGET /static/sponsors/ps-ultimate.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:06] "[36mGET /static/sponsors/appdesign.jpg HTTP/1.1[0m" 304 -
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function validate_bucket_name at 0x000002D1A4B6F520>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function remove_bucket_from_url_paths_from_model at 0x000002D1A4B89360>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.annotate_request_context of <botocore.utils.S3RegionRedirectorv2 object at 0x000002D1A570D6C0>>
+DEBUG:botocore.hooks:Event before-parameter-build.s3.DeleteObject: calling handler <function generate_idempotent_uuid at 0x000002D1A4B6F370>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <function customize_endpoint_resolver_builtins at 0x000002D1A4B89510>
+DEBUG:botocore.hooks:Event before-endpoint-resolution.s3: calling handler <bound method S3RegionRedirectorv2.redirect_from_cache of <botocore.utils.S3RegionRedirectorv2 object at 0x000002D1A570D6C0>>
+DEBUG:botocore.regions:Calling endpoint provider with parameters: {'Bucket': 'fcsm-files', 'Region': 'eu-north-1', 'UseFIPS': False, 'UseDualStack': False, 'ForcePathStyle': False, 'Accelerate': False, 'UseGlobalEndpoint': False, 'DisableMultiRegionAccessPoints': False, 'UseArnRegion': True}
+DEBUG:botocore.regions:Endpoint provider result: https://fcsm-files.s3.eu-north-1.amazonaws.com
+DEBUG:botocore.regions:Selecting from endpoint provider's list of auth schemes: "sigv4". User selected auth scheme is: "None"
+DEBUG:botocore.regions:Selected auth type "v4" as "v4" with signing context params: {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_expect_header at 0x000002D1A4B6F880>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function add_recursion_detection_header at 0x000002D1A4B6F010>
+DEBUG:botocore.hooks:Event before-call.s3.DeleteObject: calling handler <function inject_api_version_header_if_needed at 0x000002D1A4B88C10>
+DEBUG:botocore.endpoint:Making request for OperationModel(name=DeleteObject) with params: {'url_path': '//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg', 'query_string': {}, 'method': 'DELETE', 'headers': {'User-Agent': 'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38'}, 'body': b'', 'auth_path': '/fcsm-files//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg', 'url': 'https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg', 'context': {'client_region': 'eu-north-1', 'client_config': <botocore.config.Config object at 0x000002D1A56A7190>, 'has_streaming_input': False, 'auth_type': 'v4', 's3_redirect': {'redirected': False, 'bucket': 'fcsm-files', 'params': {'Bucket': 'fcsm-files', 'Key': '/posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg'}}, 'signing': {'region': 'eu-north-1', 'signing_name': 's3', 'disableDoubleEncoding': True}}}
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <bound method RequestSigner.handler of <botocore.signers.RequestSigner object at 0x000002D1A5303BE0>>
+DEBUG:botocore.hooks:Event choose-signer.s3.DeleteObject: calling handler <function set_operation_specific_signer at 0x000002D1A4B6F250>
+DEBUG:botocore.hooks:Event before-sign.s3.DeleteObject: calling handler <function remove_arn_from_signing_path at 0x000002D1A4B89480>
+DEBUG:botocore.auth:Calculating signature using v4 auth.
+DEBUG:botocore.auth:CanonicalRequest:
+DELETE
+//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg
+
+host:fcsm-files.s3.eu-north-1.amazonaws.com
+x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+x-amz-date:20231028T173210Z
+
+host;x-amz-content-sha256;x-amz-date
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DEBUG:botocore.auth:StringToSign:
+AWS4-HMAC-SHA256
+20231028T173210Z
+20231028/eu-north-1/s3/aws4_request
+d52ccc2ad465edeaffc7153f4cdd98e13292e1d69e29ea80dc2c22019cacfd21
+DEBUG:botocore.auth:Signature:
+7ba6f839a4674b5778cf91d144a2ff8407582afc1124246a0ac5457687208112
+DEBUG:botocore.hooks:Event request-created.s3.DeleteObject: calling handler <function add_retry_headers at 0x000002D1A4B892D0>
+DEBUG:botocore.endpoint:Sending http request: <AWSPreparedRequest stream_output=False, method=DELETE, url=https://fcsm-files.s3.eu-north-1.amazonaws.com//posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg, headers={'User-Agent': b'Boto3/1.28.38 md/Botocore#1.31.38 ua/2.0 os/windows#10 md/arch#amd64 lang/python#3.10.7 md/pyimpl#CPython cfg/retry-mode#legacy Botocore/1.31.38', 'X-Amz-Date': b'20231028T173210Z', 'X-Amz-Content-SHA256': b'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'Authorization': b'AWS4-HMAC-SHA256 Credential=AKIA2E7FAZMVEOBLDJVG/20231028/eu-north-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=7ba6f839a4674b5778cf91d144a2ff8407582afc1124246a0ac5457687208112', 'amz-sdk-invocation-id': b'6d961e24-57bd-4024-83d9-0b0a24a4934f', 'amz-sdk-request': b'attempt=1', 'Content-Length': '0'}>
+DEBUG:botocore.httpsession:Certificate path: C:\Users\Dell\fm\env\lib\site-packages\certifi\cacert.pem
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): fcsm-files.s3.eu-north-1.amazonaws.com:443
+DEBUG:urllib3.connectionpool:https://fcsm-files.s3.eu-north-1.amazonaws.com:443 "DELETE //posts/165/gallery/eec3094a2ddf4efd88d508feb96e57e0_ea79fea7a875431082de20c51e45e019_c5530657c66e4ce6b6fce0aa3e69aa0f_57fb029cbc424d73b72fd22d5bddf2a2_d06c1d2889e14060af79ccb32c7991b42.jpg HTTP/1.1" 403 None
+DEBUG:botocore.parsers:Response headers: {'x-amz-request-id': 'SYF6X4WKVA5CJZ35', 'x-amz-id-2': 'jX6VKFB044/B9HUZ3lY42/uW/bu4ohJx9oc7YK5aAyPnSSSlufnReE331H1fd6Du35HuPt1h2y8=', 'Content-Type': 'application/xml', 'Transfer-Encoding': 'chunked', 'Date': 'Sat, 28 Oct 2023 17:32:11 GMT', 'Server': 'AmazonS3'}
+DEBUG:botocore.parsers:Response body:
+b'<?xml version="1.0" encoding="UTF-8"?>\n<Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>SYF6X4WKVA5CJZ35</RequestId><HostId>jX6VKFB044/B9HUZ3lY42/uW/bu4ohJx9oc7YK5aAyPnSSSlufnReE331H1fd6Du35HuPt1h2y8=</HostId></Error>'
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <botocore.retryhandler.RetryHandler object at 0x000002D1A570D600>
+DEBUG:botocore.retryhandler:No retry needed.
+DEBUG:botocore.hooks:Event needs-retry.s3.DeleteObject: calling handler <bound method S3RegionRedirectorv2.redirect_from_error of <botocore.utils.S3RegionRedirectorv2 object at 0x000002D1A570D6C0>>
+ERROR:root:Chyba: An error occurred (AccessDenied) when calling the DeleteObject operation: Access Denied
+INFO:werkzeug:127.0.0.1 - - [28/Oct/2023 19:32:10] "[35m[1mDELETE /posts/165/gallery/delete/182 HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat
+DEBUG:botocore.hooks:Event choose-service-name: calling handler <function handle_service_name_alias at 0x000001E2DE8CDAB0>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x000001E2DE83B490>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x000001E2DB8BEC20>
+DEBUG:botocore.hooks:Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x000001E2DE83B250>
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: environment_global
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_service
+DEBUG:botocore.configprovider:Looking for endpoint for s3 via: config_global
+DEBUG:botocore.configprovider:No configured endpoint found.
+DEBUG:botocore.endpoint:Setting s3 timeout as (60, 60)
+DEBUG:botocore.client:Registering retry handlers for service: s3
+DEBUG:botocore.utils:Registering S3 region redirector handler
+DEBUG:passlib.registry:registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+DEBUG:passlib.registry:registered 'des_crypt' handler: <class 'passlib.handlers.des_crypt.des_crypt'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+DEBUG:passlib.registry:registered 'pbkdf2_sha512' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha512'>
+DEBUG:passlib.registry:registered 'sha256_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha256_crypt'>
+DEBUG:passlib.registry:registered 'sha512_crypt' handler: <class 'passlib.handlers.sha2_crypt.sha512_crypt'>
+DEBUG:passlib.registry:registered 'plaintext' handler: <class 'passlib.handlers.misc.plaintext'>
+DEBUG:passlib.registry:registered 'hex_md5' handler: <class 'passlib.handlers.digests.hex_md5'>
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-387-801
+INFO:werkzeug: * Detected change in 'C:\\Users\\Dell\\fm\\app\\posts\\routes.py', reloading
+INFO:werkzeug: * Restarting with stat

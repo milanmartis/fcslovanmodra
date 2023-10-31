@@ -31,7 +31,8 @@ def home():
     
     posts = db.session.query(Post).join(PostGallery, Post.id == PostGallery.post_id).join(Category, Category.id == Post.category_id).filter(PostGallery.orderz<1).order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
     category = db.session.query(Category).all()
-    
+    # title_image = PostGallery.query.order_by(PostGallery.orderz.asc()).first()
+
   
     return render_template('home.html', title='', posts=posts, current_date=datetime.now(), next22=Next.next(), category=category, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 

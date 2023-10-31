@@ -111,7 +111,7 @@
                     <h3 class="modal-title">Add New Schedule</h3>
                     <button
                     type="button"
-                    class="btn btnclose"
+                    class="btnclose"
                     data-dismiss="modal"
                     >
                     X
@@ -469,7 +469,7 @@
                    //right:'month,agendaWeek,agendaDay'
                   },
                   firstDay: 1,
-                  events: [{% for row in calendar %}{ id : '{{row.id}}', title : '{{row.title}}', start : '{{row.start_event}}', address : '{{row.address_event}}', link : '{{row.link_event}}', end : '{{row.end_event}}', category : '{{row.event_category_id}}', team : '{{row.event_team_id}}'}, {% endfor %}],
+                  events: [{% for row in calendar %}{ id : '{{row.id}}', title : '{{row.title}}', start : '{{row.start_event}}', address : '{{row.address}}', link : '{{row.link}}', end : '{{row.end_event}}', category : '{{row.event_category_id}}', team : '{{row.event_team_id}}'}, {% endfor %}],
                   nextDayThreshold: "00:00:00",
                   selectable:true,
                   selectHelper:true,

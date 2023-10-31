@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Include your CSS links here -->
+</head>
+<body>
+    <h1>{{ post.title }}</h1>
+    <p>{{ post.content }}</p>
+
+    <h2>Image Gallery</h2>
+    <form action="/post/{{ post.id }}/gallery" method="POST" enctype="multipart/form-data">
+        <input type="text" name="title" placeholder="Image Title">
+        <input type="file" name="photo">
+        <button type="submit">Upload</button>
+    </form>
+
+    <div>
+        <h3>Images</h3>
+        <ul id="image-gallery">
+            {% for image in images %}
+                <li data-image-id="{{ image.id }}" draggable="true">
+                    <img src="{{ aws_image_url() }}/posts/{{ post.id }}/gallery/{{ image.image_file2 }}" alt="{{ image.title }}" width="100">
+                    <button onclick="deleteImage({{ post.id }}, {{ image.id }})">Delete</button>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+        function deleteImage(postId, imageId) {
+            fetch(`/post/${postId}/gallery/delete/${imageId}`, { method: "POST" })
+                .then(response => {
+                    if (response.status === 200) {
+                        const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+                        imageElement.remove();
+                    }
+                });
+        }
+    </script>
+
+    <!-- Include your JavaScript for drag and drop functionality here -->
+</body>
+</html>

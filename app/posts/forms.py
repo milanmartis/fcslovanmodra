@@ -14,7 +14,7 @@ class PostForm(FlaskForm):
 
     picture = FileField('Title Image upload')
     pictures = MultipleFileField('Gallery Image(s) upload', render_kw={'multiple': True})
-    submit = SubmitField('Post')
+    submit = SubmitField('Submit')
 
 class CategoryForm(FlaskForm):
     name = StringField('', validators=[DataRequired()])

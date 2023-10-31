@@ -157,7 +157,7 @@ class PostGallery(db.Model):
     __tablename__ = 'post_gallery'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    image_file2 = db.Column(db.String(30), nullable=False)
+    image_file2 = db.Column(db.String(250), nullable=False)
     # image_order = db.Column(db.Integer, unique=True, nullable=False)
     orderz = db.Column(db.Integer)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
@@ -167,7 +167,7 @@ class ProductGallery(db.Model):
     __tablename__ = 'product_gallery'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    image_file2 = db.Column(db.String(30), nullable=False)
+    image_file2 = db.Column(db.String(250), nullable=False)
     # image_order = db.Column(db.Integer, unique=True, nullable=False)
     orderz = db.Column(db.Integer)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
