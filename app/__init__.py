@@ -80,12 +80,12 @@ def create_app(config_class=Config):
 
 
     
-    # @app.before_request
-    # def before_request():
-    #     if not request.is_secure:
-    #         url = request.url.replace('http://', 'https://', 1)
-    #         code = 301
-    #         return redirect(url, code=code)
+    @app.before_request
+    def before_request():
+        if not request.is_secure:
+            url = request.url.replace('http://', 'https://', 1)
+            code = 301
+            return redirect(url, code=code)
 
     from .models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
