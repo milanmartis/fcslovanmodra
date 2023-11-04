@@ -17,7 +17,8 @@ Flask-BabelEx==0.9.4
 Flask-Bcrypt
 Flask-Bootstrap==3.3.7.1
 Flask-Login==0.6.2
-Flask-Mail
+Flask-Mail==0.9.1
+Flask-Migrate==4.0.5
 # Flask-Principal==0.4.0
 Flask-Security==3.0.0
 Flask-SQLAlchemy==3.0.2
