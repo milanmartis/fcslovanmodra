@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 import stripe
 import base64
 import os
-
+from flask_migrate import Migrate
 
 salt = base64.b64encode(os.urandom(32)).decode('utf-8')
 
@@ -34,6 +34,8 @@ def create_app(config_class=Config):
 
 
     db.init_app(app)
+    migrate = Migrate(app, db)  # Inicializácia Flask-Migrate
+
     # principal.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
@@ -80,12 +82,13 @@ def create_app(config_class=Config):
 
 
     
-    @app.before_request
-    def before_request():
-        if not request.is_secure:
-            url = request.url.replace('http://', 'https://', 1)
-            code = 301
-            return redirect(url, code=code)
+    # @app.before_request
+    # def before_request():
+    #     if not request.is_secure:
+    #         url = request.url.replace('http://', 'https://', 1)
+    #         code = 301
+    #         return redirect(url, code=code)
+    
 
     from .models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)

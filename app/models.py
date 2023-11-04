@@ -9,8 +9,20 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime
+from sqlalchemy import Table, Column, Integer, String, MetaData
+
+# Preddefinovaná tabuľka
+# metadata = MetaData()
+
+metadata = MetaData()
 
 
+variant_products = db.Table('variant_products',
+                db.Column('product_id', db.Integer(), db.ForeignKey('product.id')),
+                db.Column('variant_id', db.Integer(), db.ForeignKey('product_variant.id')),
+                db.Column('variant_text', db.String(100), nullable=False),
+                db.Column('variant_image', db.Text, nullable=True))
+                # db.Column('variant_image', db.Integer(), db.ForeignKey('product_gallery.id'), nullable=True))
 
 roles_users = db.Table('roles_users',
                 db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
@@ -136,11 +148,34 @@ class Product(db.Model):
     product_category_id = db.Column(db.Integer, db.ForeignKey(
         'product_category.id'), nullable=False)
     product_gallery = db.relationship('ProductGallery', backref='gallpr', lazy=True)
+    variant = db.relationship('ProductVariant', secondary='variant_products', lazy='subquery',
+                            backref=db.backref('varianted', lazy=True))
 
     def __repr__(self):
-        return f"Post('{self.title}', '{self.date_posted}', '{self.product_gallery}, '{self.product_category_id}')"
+        return f"Product('{self.title}', '{self.date_posted}', '{self.product_gallery}, '{self.product_category_id}')"
 
 
+
+class ProductVariant(db.Model):
+    metadata
+    # Definícia modelu pre product_variant tabuľku
+    __tablename__ = 'product_variant'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    type = db.Column(db.Integer, db.ForeignKey('type_product_variant.id'), nullable=False)
+    extend_existing=True 
+    # Ďalšie stĺpce tabuľky...
+    
+    # Definícia vzťahu k triede Product
+    # products = db.relationship('Product', secondary='variant_products', back_populates='variants')
+
+
+# class ProductVariant(db.Model):
+#     metadata
+#     __tablename__ = 'product_variant'
+#     id = db.Column(db.Integer, primary_key=True)
+#     text = db.Column(db.String(200), nullable=False)
+#     extend_existing=True 
 
 class ProductCategory(db.Model):
     __tablename__ = 'product_category'
@@ -254,7 +289,10 @@ class Member(db.Model):
 
     teams = db.relationship('Team', secondary=teams_members, lazy='subquery',
                             backref=db.backref('teamed', lazy=True))
-    
+
+    def __repr__(self):
+        return f"Post('{self.name}', '{self.phone}', '{self.address}', '{self.psc}', '{self.city}')"
+
 
 
 class ScoreTable(db.Model):
@@ -280,17 +318,18 @@ class Order(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_paid = db.Column(db.Boolean(), default=False)
     order_date = db.Column(db.DateTime, nullable=False, default=func.now())
+    variants = db.Column(db.String(200), nullable=False)
     storno = db.Column(db.Boolean(), default=False)
 
 
 
-class ProductVariant(db.Model):
-    __tablename__ = 'product_variant'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(250), nullable=False)
-    type = db.Column(db.Integer, db.ForeignKey('type_product_variant.id'), nullable=False)
-    variants = db.relationship('Product', secondary=product_variant_product, lazy='subquery',
-                            backref=db.backref('varianted', lazy=True))
+# class ProductVariant(db.Model):
+#     __tablename__ = 'product_variant'
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(250), nullable=False)
+#     type = db.Column(db.Integer, db.ForeignKey('type_product_variant.id'), nullable=False)
+#     variants = db.relationship('Product', secondary=product_variant_product, lazy='subquery',
+#                             backref=db.backref('varianted', lazy=True))
 
 
 

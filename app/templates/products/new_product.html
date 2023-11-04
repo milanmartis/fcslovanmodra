@@ -1,0 +1,269 @@
+{% extends "layout.html" %}
+{% block content %}
+<style scoped>
+    .variant-title{
+
+        display: inline;
+        left: 0px;
+        padding-top: 20px;
+        padding-left: 20px;
+        padding-right: 17px;
+        text-align: left;
+        color:#6d9bff;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .btn-check:checked + .btn{
+      /*  background-color: #6d9bff;
+        color:#000;*/
+    }
+    .btn:hover{
+        background-color: #000;
+        border: 2px solid #6d9bff;
+        color:#6d9bff;
+    }
+    .btn-check::backdrop + .btn {
+        /* Tu definujte štýl pre neoznačený prvok */
+        background-color: transparent;
+        /* Ďalšie štýly */
+    }
+    .btn-delete{
+        background-color: transparent;
+        border: 0px;
+        color:#6d9bff;
+        margin-left: 14px;
+        margin-right: -7px;
+
+        font-weight: 800;
+
+    }
+    .btn-delete:hover{
+        background-color: transparent;
+        border: 0px;
+        color:#3a64c0;
+        font-weight: 800;
+
+    }
+</style>
+<div class="content-section">
+    <form action="" method="post" class="form" role="form" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <h3 class="headline">{{ title }}</h3>
+
+
+
+            <div class="form-group form-outline">
+                {{ form.category.label(class="form-control-label") }}
+                {% if form.category.errors %}
+                    {{ form.category(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.category.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.category(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.title.label(class="form-control-label") }}
+                {% if form.title.errors %}
+                    {{ form.title(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.title.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.title(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.content.label(class="form-control-label") }}
+                {% if form.content.errors %}
+                    {{ form.content(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.content.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.content(rows="7", class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.stripe_link.label(class="form-control-label") }}
+                {% if form.stripe_link.errors %}
+                    {{ form.stripe_link(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.stripe_link.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.stripe_link(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.youtube_link.label(class="form-control-label") }}
+                {% if form.youtube_link.errors %}
+                    {{ form.youtube_link(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.youtube_link.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.youtube_link(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="row">
+                <div class="form-group col-md-6">
+
+                    {{ form.price.label(class="form-number-label") }}
+                    {% if form.price.errors %}
+                        {{ form.price(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.price.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.price(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-6">
+                    {{ form.old_price.label(class="form-number-label") }}
+                    {% if form.old_price.errors %}
+                        {{ form.old_price(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.old_price.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.old_price(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+            </div>
+
+
+
+
+
+
+            <div class="row">
+                <div class="form-group col">
+
+                    {{ form.picture.label() }}
+                    {{ form.picture(class="form-control-file") }}
+                    {% if form.picture.errors %}
+                        {% for error in form.picture.errors %}
+                            <span class="text-danger">{{ error }}</span></br>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.pictures.label() }}
+                    {{ form.pictures(class="form-control-file") }}
+                    {% if form.pictures.errors %}
+                        {% for error in form.pictures.errors %}
+                            <span class="text-danger">{{ error }}</span></br>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+
+
+
+
+
+
+
+
+            <div class="row">
+
+                <div class="form-group col-md-6">
+                    <h1>Add Product Variant</h1>
+                    <input type="text" id="variant_name" placeholder="Variant Name" class="form-control">
+                    <button type="button" id="add_variant_button" class="btn btn-ok">Add +</button>
+                </div>
+                
+                <div class="form-group col-md-6">
+   
+
+
+
+                    <h1>Add Variant Product</h1>
+                    <select id="product_variant_select" class="form-control">
+                        <!-- Naplníme tento zoznam zo servera pomocou JavaScriptu -->
+                    </select>
+                    <input type="text" id="variant_text" placeholder="Variant Text" class="form-control">
+                    <input type="file" id="variant_image" style="display: none;">
+                    <label for="variant_image" id="variant_image_label">
+                        <i style="margin-left: 15px;font-size: 160%;" class="fa fa-solid fa-image"></i> 
+                    </label>
+                    <button type="button" id="add_variant_product_button" class="btn btn-ok">Add +</button>
+                
+                    <script>
+                        const variantImageInput = document.getElementById('variant_image');
+                        const variantImageLabel = document.getElementById('variant_image_label');
+
+                        variantImageLabel.addEventListener('click', () => {
+                            variantImageInput.click(); // Simulácia kliknutia na skrytý input element
+                        });
+
+                        variantImageInput.addEventListener('change', (event) => {
+                            const selectedFile = event.target.files[    0];
+                            if (selectedFile) {
+                                // Tu môžete spracovať vybraný súbor
+                                console.log('Vybraný súbor:', selectedFile);
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group">
+
+                    <h1>Product Variants</h1>
+                    <!--<div class="variant-title">Varianty</div>-->
+                    <div id="variant_list">
+                        <!-- Táto časť bude zobrazená na stránke -->
+                    </div>
+                <hr>
+                    <div id="variant-products-list">
+                        <!-- Záznamy budú zobrazené sem -->
+                    </div>
+
+
+    
+                </div>
+                <div class="form-group col">
+
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                {{ form.is_visible.label() }}
+                {{ form.is_visible() }}
+
+            </div>
+
+        </fieldset>
+        <div class="form-group" style="float:left;">
+            {{ form.submit(class="btn btn-outline-info") }}
+        </div>
+        {% set product = product_id %}
+        {% if product %}
+        <button onclick="javascript:location.href='{{ url_for('products.product', product_id=product) }}';" class="btn btn-sm" />Back</button>
+        {% else %}
+        <button onclick="javascript:location.href='{{ url_for('products.list_products') }}';" class="btn btn-sm" />Back</button>
+        {% endif %}
+        
+    </form>
+</div>
+{% endblock content %}

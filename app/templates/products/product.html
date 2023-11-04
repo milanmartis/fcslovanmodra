@@ -6,10 +6,77 @@
 {% endfor %}
 </h3>
 
+<style scoped>
+  .variant-title {
+    display: inline;
+    left: 0px;
+    padding-left: 0px;
+    padding-right: 17px;
+    margin-bottom: 20px;
+    text-align: left;
+    font-size: 80%;
+    color: #6d9bff;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 155%;
+}
+.btn-check{
+  margin: 0px;
+  padding: 0px;
 
+}
+
+.btn{
+  margin-bottom: 11px;
+  line-height: 200%;
+}
+
+/* Prirádzenie štýlu len tlačidlám, ktoré nie sú checked (neoznačené) */
+.btn-check:not(:checked) + .btn {
+  margin-top: 0px;
+    background-color: transparent;
+    color: #6d9bff;
+}
+
+/* Prirádzenie štýlu checked (označeným) tlačidlám */
+.btn-check:checked + .btn {
+  margin-top: 0px;
+
+    background-color: #6d9bff;
+    color: #000;
+}
+
+/* Štýl pre hover efekt na tlačidlá */
+.btn:hover {
+    background-color: #000;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
+}
+
+.btn-check::backdrop + .btn {
+    background-color: transparent;
+}
+
+.btn-delete {
+    background-color: transparent;
+    border: 0px;
+    color: #6d9bff;
+    margin-left: 14px;
+    margin-right: -7px;
+    font-weight: 800;
+}
+
+.btn-delete:hover {
+    background-color: transparent;
+    border: 0px;
+    color: #3a64c0;
+    font-weight: 800;
+}
+</style>
 <div class="content">
   <div class="container">
   <div class="row">
+    <form id="purchase" action="javascript:;" method="post">
 
   {% if product.saler == current_user %}
 
@@ -51,126 +118,274 @@
       <div class="product-img">
         <div class="row">
 
-      {% for gall in product.product_gallery %} {% if gall.orderz == 0 %}
-      <a data-bs-lightbox="example-set" data-bs-title="{{ product.title }}" class="article-title" href="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}">
+
+          {% for pic in galleries %}
+          {% if loop.index0 == 0 and product.product_category_id != 2 %}
+            <div class="col-12" style="padding-right: 0px; padding-left: 17px; margin-right: 0px;">
+              <!-- Button trigger modal -->
+              <a
+                href="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+pic.image_file2 }}"
+                data-lightbox="example-set"
+                data-title="{{ product.title }}"
+              >
+                <img
+                  class="product-img w-100 mt-1 mr-2"
+                  src="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+pic.image_file2 }}"
+                />
+              </a>
+            </div>
+          {% endif %}
+        {% endfor %}
+        {% for pic in galleries %}
+  {% if loop.index0 > 0 and product.product_category_id != 2 %}
+    <div class="col-12" style="padding-right: 0px; padding-left: 17px; margin-right: 0px;">
+      <a
+        href="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+pic.image_file2 }}"
+        data-lightbox="example-set"
+        data-title="{{ product.title }}"
+      >
+        <!-- Ostatné obrázky sú skryté -->
         <img
-        width="100%"
-        src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}"
-        /></a>
-        {% endif %} {% endfor %}
-        
+          class="product-img w-100 mt-1 mr-2"
+          style="display: none;"
+          src="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+pic.image_file2 }}"
+        />
+      </a>
+    </div>
+  {% endif %}
+{% endfor %}
+          <script>
+            // Inicializácia Lightboxu
+            lightbox.option({
+              'resizeDuration': 200,
+              'wrapAround': true
+            });
+          
+            // Pridanie klikateľnej udalosti na obrázok
+            const firstImage = document.querySelector('.product-img');
+            firstImage.addEventListener('click', () => {
+              // Simulácia kliknutia na prvý obrázok v Lightboxe
+              firstImage.click();
+            });
+          </script>
+          
       </div>
     </div>
 
       {% endif %}
-      <div class="row" style="margin-right:3px;">
-        {% for pic in galleries if pic.orderz > 0 and product.product_category_id != 2 %}
-        <div class="col-12" style="padding-right: 0px;padding-left: 5px;margin-right:0px;">
-          <!-- Button trigger modal -->
-          <a
-            href="{{ url_for('static', filename='products/'+product.id|string+'/gallery/'+pic.image_file2|string) }}"
-            data-bs-lightbox="example-set" data-bs-title="{{ product.title }}"
-          >
-            <img
-              class="product-img w-100 mt-1 mr-2"
-              src="{{ url_for('static', filename='products/'+product.id|string+'/gallery/'+pic.image_file2|string) }}"
-            />
-          </a>
-          <!-- Modal -->
-          <div
-            class="modal fade slide right"
-            id="exampleModalLong{{pic.id}}"
-            tabindex="-1"
-            role="dialog"
-            aria-labelledby="exampleModalLongTitle"
-            aria-hidden="true"
-          >
-            <div class="modal-dialog" role="document">
-              <div class="modal-content">
-              <img
-                  class="w-100 pt-5"
-                  src="{{ url_for('static', filename='products/'+product.id|string+'/gallery/'+pic.image_file2|string) }}"
-                />
-              </div>
-            </div>
-          </div>
-  
-          <!-- Modal -->
-          <div
-            class="modal fade"
-            id="deleteModal2"
-            tabindex="-1"
-            role="dialog"
-            aria-labelledby="deleteModalLabel"
-            aria-hidden="true"
-          >
-            <div class="modal-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h2 class="modal-title" id="deleteModalLabel">Delete Product?</h2>
-  
-                  <div class="modal-footer">
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      data-bs-dismiss="modal"
-                    >
-                      Close
-                    </button>
-                    <form
-                      action="{{ url_for('products.delete_product', product_id=product.id) }}"
-                      method="POST"
-                    >
-                      <input
-                        class="btn btn-danger"
-                        type="submit"
-                        value="Delete"
-                      />
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
+      <div class="row" style="margin-right:3px; display: none;">
+        
       </div>
   </div>
-  <div class="col-sm-6">
+  <div class="col">
     <br>
       <h2 class="article-title">{{ product.title }}</h2>
       <p class="article-content">{{ product.content|safe }}</p>
-      <p class="article-content eshop-item-price">{{ product.price }} €</p>
 
       <div class="mb-3">
-        <label for="quantity" class="form-label">Počet:</label>
-        <input style="width:100px;" type="number" id="quantity" name="quantity" class="form-control" min="1" max="100" value="1">
+        <label for="final_price" class="variant-title">Cena:</label>
+        <input type="hidden" id="unit_price" name="unit_price" value="{{ product.price }}" />
+        <input type="hidden" id="final_price" name="final_price" value="{{ product.price }}" />
+      
+        <div id="final_price2" class="article-content eshop-item-price">{{ product.price }} €</div>
+      
+        <div class="mb-3">
+          <label for="quantity" class="variant-title">Množstvo</label>
+          <input style="width:70px;font-size: 113%;padding:2px;font-weight: 800;margin-left:-5px;" type="number" id="quantity" class="btn" min="1" max="100" value="1">
+        </div>
+      
+        <script>
+          const quantity = document.getElementById('quantity');
+          const final_price2 = document.getElementById('final_price2');
+          const final_price = document.getElementById('final_price');
+          const unit_price = parseFloat(document.getElementById('unit_price').value);
+          
+          let currentTotal = unit_price;
+        
+          // Funkcia na animáciu zmeny hodnoty
+          function animateTotalChange(startValue, endValue) {
+            const duration = 500; // Dĺžka animácie v milisekundách
+            const startTime = performance.now();
+            
+            function updateValue(timestamp) {
+              const progress = Math.min(1, (timestamp - startTime) / duration);
+
+              currentTotal = startValue + progress * (endValue - startValue);
+              final_price.innerHTML=currentTotal;
+              final_price2.textContent = currentTotal.toFixed(2) + ' €';
+        
+              // Nastavenie opacity na základe priebehu animácie
+              final_price2.style.opacity = 0.99 + 0.3 * (1 - progress);
+        
+              if (progress < 1) {
+                requestAnimationFrame(updateValue);
+              }
+            }
+        
+            requestAnimationFrame(updateValue);
+          }
+        
+          // Po strate focusu inputu
+          quantity.addEventListener('blur', () => {
+            if (quantity.value === '' || quantity.value == 0 || quantity.value>100) {
+              quantity.value = '1';
+            }
+            const targetTotal = unit_price * quantity.value;
+            animateTotalChange(currentTotal, targetTotal);
+          });
+        
+          // Po zmene hodnoty inputu
+          quantity.addEventListener('input', () => {
+            const targetTotal = unit_price * quantity.value;
+            animateTotalChange(currentTotal, targetTotal);
+          });
+        
+          // Po kliknutí na iný element
+          document.addEventListener('click', (event) => {
+            if (event.target !== quantity) {
+              if (quantity.value === '') {
+                quantity.value = '1';
+              }
+              const targetTotal = unit_price * quantity.value;
+              animateTotalChange(currentTotal, targetTotal);
+            }
+          });
+        </script>
+      </div>
+      
+      
+      
+      
+      
+      
+
+
+
+
+    <div id="variant-products-list">
+      <!-- Záznamy budú zobrazené sem -->
     </div>
+
+
+
+    <script>
+      // Inicializujte objekt pre ukladanie hodnôt
+      const variantProductsList222 = {};
+    
+      async function loadVariantProducts() {
+        await fetch('/product/get_variant_products/{{product.id}}')
+          .then(response => response.json())
+          .then(data => {
+            const variantProductsList = document.getElementById('variant-products-list');
+            variantProductsList.innerHTML = '';
+    
+            // Vytvorte objekt pre uchovanie produktov podľa variant_id a variant_name
+            const productsByVariant = {};
+    
+            // Rozdelte produkty podľa variant_id a variant_name
+            data.variant_products.forEach(product => {
+              const variantKey = `${product.variant_id}-${product.variant_name}`;
+              if (!productsByVariant.hasOwnProperty(variantKey)) {
+                productsByVariant[variantKey] = {
+                  variantId: product.variant_id,
+                  variantName: product.variant_name,
+                  products: []
+                };
+              }
+    
+              productsByVariant[variantKey].products.push(product);
+            });
+    
+            const variantProductsList22 = document.getElementById('product-variant-send');
+            
+            // Pre každý variant_id a variant_name vytvorte záložku
+            for (const key in productsByVariant) {
+              if (productsByVariant.hasOwnProperty(key)) {
+                const { variantId, variantName, products } = productsByVariant[key];
+    
+                const tabContent = document.createElement('div');
+                tabContent.classList.add('tab-pane');
+                tabContent.id = `variant-${variantId}`;
+    
+                const infoVar = document.createElement('div');
+                infoVar.classList.add('variant-title');
+                infoVar.textContent = `${variantName}`;
+                tabContent.appendChild(infoVar);
+    
+                // Pre každý produkt vytvorte Bootstrap prepínacie tlačidlo
+                let x = 0;
+                const selectedValues = {};
+    
+                products.forEach(product => {
+                  x++;
+                  const radioInput = document.createElement('input');
+                  radioInput.type = 'radio';
+                  radioInput.classList.add('btn-check');
+                  radioInput.name = `variant-${variantId}-radio`;
+                  radioInput.id = `variant-${variantId}-${product.product_id}-${x}`;
+    
+                  const radioLabel = document.createElement('label');
+                  radioLabel.classList.add('btn');
+                  radioLabel.htmlFor = `variant-${variantId}-${product.product_id}-${x}`;
+                  radioLabel.textContent = product.variant_text;
+    
+                  // Pridanie click eventu na tlačidlo na označenie a zrušenie označenia
+                  radioInput.addEventListener('click', () => {
+                    if (product.variant_id == variantId) {
+                      if (radioInput.checked) {
+                        // Uložíme jednu vybranú hodnotu pre daný variantName
+                        selectedValues[variantName] = product.variant_text;
+                      } else {
+                        // Ak je tlačidlo neoznačené, odstrániť hodnotu pre daný variantName
+                        delete selectedValues[variantName];
+                      }
+    
+                      // Aktualizujte hodnotu inputu
+                      variantProductsList222[variantName] = selectedValues[variantName];
+                      variantProductsList22.value = JSON.stringify(variantProductsList222);
+                    }
+                  });
+    
+                  tabContent.appendChild(radioInput);
+                  tabContent.appendChild(radioLabel);
+                });
+    
+                variantProductsList.appendChild(tabContent);
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Chyba pri získavaní dát:', error);
+          });
+      }
+    
+      // Volanie funkcie pre zobrazenie variantových produktov
+      loadVariantProducts();
+    </script>
+
+
+
+
+
+
       <input type="hidden" id="ide_product" name="ide_product" value="{{product.id}}" />
-      <input type="hidden" id="price_product" name="price_product" value="{{product.price}}" />
+      <input type="hidden" id="name_product" name="name_product" value="{{ product.title }}" />
+      <input type="hidden" id="price_product" name="price_product" value="{{product.price}}"  />
+      <input type="hidden" id="product-variant-send" name="product-variant-send"  value="" />
+
       <input type="number" style="display: none;" id="amount_product" name="amount_product" value="1" />
-      <button id="buy_now_btn" class="btn btn-sm" />Kúpiť</button>
 
-               <!-- <p class="article-content">{{ product.content }}</p> -->
-               <p style="float:right;position:relative;top:10px; right:20px;">
-                 {% if current_user.is_authenticated %}
-                 <!--
-                   <div id="change-price" name="change-price" class="article-content eshop-item-price">{{ product.price }} €</div>
+      <input type="checkbox" id="agree_terms"> Súhlasím s podmienkami
+      <button id="custom-payment-button" class="btn btn-lg" style="margin-left: 0px; margin-top: 20px; font-size: 120%; float: right;">
+        Zaplatiť
+      </button>
+      <p id="message" style="display: none; color: red;">Musíte súhlasiť s podmienkami!</p>
+      
+     
+      <!--
+        <button id="buy_now_btn" class="btn btn-sm" />Kúpiť</button>
+      -->
 
-                   <p style="font-size: 70%;margin-bottom: -2px;margin-left:11px;">Množstvo</p>
-                   <input type="number" min=1 max=10 class="btn btn-demo-quantity" id="quantity_product" step="any" name="quantity_product" onClick="this.select();"  value="1" />
-                   <div style="float:right;position: relative;bottom:0px;right:0px;">
-                     <button id="buy-now" class="btn-demo readinglazy" value="{{ product.id }}" />Kúpiť</button>
-                    </div>
-                  -->
-
-                   {% else %}
-                   <button id="login" class="btn" onclick="javascript:location.href='../login'" />Login</button>
-                   <button id="register" class="btn" onclick="javascript:location.href='../register'" />Register</button>
-                 {% endif %}
-
-                
-                 </p>
 
 
 
@@ -178,10 +393,47 @@
 </div>
 </div>
 </div>
-<div class="content">
-  <div class="container">
 
+</form>
+<!-- Modal -->
+<div
+  class="modal fade"
+  id="deleteModal2"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="deleteModal2Label"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="deleteModal2Label">Delete Product?</h2>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+          <form
+            action="{{ url_for('products.delete_product', product_id=product.id) }}"
+            method="POST"
+          >
+            <input
+              class="btn btn-danger"
+              type="submit"
+              value="Delete"
+            />
+          </form>
+        </div>
+      </div>
+
+  
+    </div>
   </div>
 </div>
+
 
 {% endblock content %}

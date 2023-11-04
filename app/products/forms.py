@@ -15,10 +15,29 @@ class ProductForm(FlaskForm):
     price = DecimalField(places=2, validators=[DataRequired()])
     old_price = DecimalField(places=2, validators=[DataRequired()])
     picture = FileField('Title Image upload')
-    pictures = MultipleFileField('Gallery Image(s) upload', render_kw={'multiple': True})
+    pictures = FileField('Preview Picture', render_kw={'multiple': True}, validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
+    # pictures = MultipleFileField('Gallery Image(s) upload', render_kw={'multiple': True})
     submit = SubmitField('Post')
+
 
 class ProductCategoryForm(FlaskForm):
     name = StringField('', validators=[DataRequired()])
     submit = SubmitField('Save It')
+
+
+
+class ProductVariantForm(FlaskForm):
+    text = StringField('Version description', validators=[DataRequired()])
+    submit = SubmitField('Create')
+
+class ProductVersionForm2(FlaskForm):
+    text = StringField('Version description', validators=[DataRequired()])
+    proimages = SelectField('Product images', choices=[], coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Create')
+
+class PurchaseForm(FlaskForm):
+    name = StringField('', validators=[DataRequired()])
+    sizes = SelectField('Available version', choices=[], coerce=int, validators=[DataRequired()])
+
+    submit = SubmitField('Zaplatiť teraz')
 

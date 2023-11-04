@@ -29,7 +29,8 @@ def home():
     
     # query = session.query(User, Address).join(Address, User.id == Address.user_id)
     
-    posts = db.session.query(Post).join(PostGallery, Post.id == PostGallery.post_id).join(Category, Category.id == Post.category_id).filter(PostGallery.orderz<1).order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
+    posts = db.session.query(Post).join(PostGallery, Post.id == PostGallery.post_id).join(Category, Category.id == Post.category_id)\
+    .filter(PostGallery.orderz<1).order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
     category = db.session.query(Category).all()
     # title_image = PostGallery.query.order_by(PostGallery.orderz.asc()).first()
 

@@ -1,5 +1,31 @@
 {% extends 'layout.html' %} 
 {% block content %}
-<h1>Ďakujeme za nákup. Prajeme príjemné sledovanie.</h1>
+
+<center>
+
+    <h1>Ďakujeme za nákup</h1>
+    <h2><div class="alert alert-success" role="alert">
+        Prebehol úspešne
+      </div></h2>
+
+      <b>Sumár</b>
+      <h1>{{ product_name }}</h1>
+      <h1>{{ member }}</h1>
+      <h1>{{ variants }}</h1>
+      <h1><img class="d-none post-title-image" onload="this.classList.remove('d-none')"  src="{{ aws_image_url()+'products/'+produc_id|string+'/gallery/'+gall.image_file2 }}">{{ produc_id }}</h1>
+
+</center>
+
+
+
+
+<!--
+  produc_id=sessions.data[00].metadata.product_id, 
+  quantity=sessions.data[00].metadata.quantity, 
+  amount=sessions.data[00].metadata.amount,
+   user_id=current_user.id, is_paid=True, 
+   variants=sessions.data[00].metadata.product_variants
+
+-->
 
 {% endblock %}

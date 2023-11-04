@@ -1,5 +1,96 @@
 {% extends "layout.html" %}
 {% block content %}
+<style scoped>
+    .upload-btn-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+      }
+      
+      
+      .upload-btn-wrapper input[type=file] {
+        font-size: 100px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+      }
+
+        .draggable {
+    cursor: grab;
+
+  }
+        .draggable::drag {
+            cursor: grabbing;
+
+  }
+
+  .dragging {
+  }
+
+  .position{
+    position:relative;
+    margin-right:*10px;
+    margin-top:-415px;
+    padding-top: 0px;
+    padding-bottom: 4px;
+    padding-left: 4px;
+    padding-right: 4px;
+    line-height: 90%;
+    z-index: 99999999999;
+    opacity: 1;
+  }
+  .col img{
+    margin-bottom: 9px;
+    display: grid;
+    width: 390px;
+    height: 200px;
+    object-fit: cover;
+  }
+  .variant-title{
+
+    display: inline;
+    left: 0px;
+    padding-top: 20px;
+    padding-left: 20px;
+    padding-right: 17px;
+    text-align: left;
+    color:#6d9bff;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.btn-check:checked + .btn{
+  /*  background-color: #6d9bff;
+    color:#000;*/
+}
+.btn:hover{
+    background-color: #000;
+    border: 2px solid #6d9bff;
+    color:#6d9bff;
+}
+.btn-check::backdrop + .btn {
+    /* Tu definujte štýl pre neoznačený prvok */
+    background-color: transparent;
+    /* Ďalšie štýly */
+}
+.btn-delete{
+    background-color: transparent;
+    border: 0px;
+    color:#6d9bff;
+    margin-left: 14px;
+    margin-right: -7px;
+
+    font-weight: 800;
+
+}
+.btn-delete:hover{
+    background-color: transparent;
+    border: 0px;
+    color:#3a64c0;
+    font-weight: 800;
+
+}
+</style>
 <div class="content-section">
     <form action="" method="post" class="form" role="form" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
@@ -102,27 +193,732 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="row">
-                <div class="form-group col">
 
-                    {{ form.picture.label() }}
-                    {{ form.picture(class="form-control-file") }}
-                    {% if form.picture.errors %}
-                        {% for error in form.picture.errors %}
-                            <span class="text-danger">{{ error }}</span></br>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-                <div class="form-group col">
-                    {{ form.pictures.label() }}
-                    {{ form.pictures(multi="",class="form-control-file") }}
-                    {% if form.pictures.errors %}
-                    {% for error in form.pictures.errors %}
-                    <span class="text-danger">{{ error }}</span></br>
-                    {% endfor %}
-                    {% endif %}
+
+
+
+
+
+
+
+   
+            <br>
+            <center><h3>Product Image Gallery</h3></center>
+
+          
+        <center>
+            <div id="image-gallery2" class="row">
+                <!-- Galéria obrázkov sa bude aktualizovať pomocou JavaScriptu -->
+            </div>
+        </center>
+            <br><br>
+            <center>
+                <h3>New Images</h3></center>
+          
+
+            
+            
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-8">
+                        <input type="hidden" name="title" placeholder="Image Title" class="form-control">
+                    </div>
+                    <div class="col-sm-12">
+                        <center>
+                        <div class="upload-btn-wrapper">
+                                <button class="btn" >Upload a file</button>
+                                <input type="file" id="image_file2" name="image_file2"/>
+                            </div>
+                        </center>
+                    </div>
                 </div>
             </div>
+
+<br>
+<br>
+            
+        </fieldset>
+
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+    document.getElementsByName('image_file2')[0].addEventListener('change', function(e) {
+        e.preventDefault();
+        const formData = new FormData(imageForm);
+        //alert(formData);
+        addImages(formData);
+    });
+    
+
+</script>
+
+<script>
+
+
+
+
+
+
+
+    // JavaScript kód pre asynchrónne zobrazenie obrázkov, pridávanie a mazanie
+    const imageGallery = document.getElementById('image-gallery');
+    const imageForm = document.querySelector('form');
+    const uploadImageButton = document.getElementById('uploadImageButton');
+
+    // Funkcia na zobrazenie obrázkov z galérie
+    async function showImages() {
+        const response = await fetch(`/posts/images/{{product.id|string}}`);
+        const images = await response.json();
+
+        // Vyčistiť galériu pred aktualizáciou
+        imageGallery.innerHTML = '';
+        //imageGallery.classList.add('row');
+
+        // Zobraziť obrázky v galérii
+        images.forEach(image => {
+           const div = document.createElement('div');
+           div.classList.add('col-6','draggable'); // Pridaná trieda 'draggable'
+           div.setAttribute('data-image-id', image.id);
+            
+            const img = document.createElement('img');
+           // img.classList.add('draggable'); // Pridaná trieda 'draggable'
+            img.src = image.image_url;
+            img.alt = image.title;
+            img.orderz = image.orderz;
+            img.style.width = '100%';
+            img.style.height = '200px';
+            img.style.objectFit = 'cover';
+
+            img.style.margin = '5px';
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'X';
+            //deleteButton.setAttribute('data-image-id2', image.id);
+            deleteButton.classList.add('btn');
+            deleteButton.style.position = 'relative';
+            deleteButton.style.float = 'right';
+            deleteButton.style.right = '1%';
+            deleteButton.style.bottom = '82%';
+            deleteButton.type = 'button';
+            //deleteButton.style.zIndex = '9999999999999999999'; // Nastaviť z-index na 2
+
+
+            deleteButton.addEventListener('click', () => deleteImage(image.id));
+            imageGallery.appendChild(div);
+            div.appendChild(img);
+            div.appendChild(deleteButton);
+
+           // imageGallery.appendChild(div);
+        });
+
+
+        // Pripojiť poslucháčov udalostí drag-and-drop k ťahateľným obrázkom
+        const draggableElements = document.querySelectorAll('.draggable');
+        draggableElements.forEach((element) => {
+            element.addEventListener('dragstart', handleDragStart);
+            element.addEventListener('dragover', handleDragOver);
+            element.addEventListener('drop', handleDrop);
+        });
+
+        if(images.length==0){
+            imageGallery.innerHTML='<h4>NO IMAGES</h4>';
+        }
+
+    }
+
+    // Funkcia na pridanie obrázkov
+    async function addImages(formData) {
+        try {                               
+            const response = await fetch(`/products/images/{{product.id|string}}/upload`, {
+                method: 'PUT',
+                body: formData,
+            });
+
+            if (response.status === 200) {
+                // Úspešne pridané obrázky, aktualizovať galériu
+                refreshTable();
+            }
+        } catch (error) {
+            console.error('Chyba:', error);
+        }
+    }
+
+    async function removeImage(imageId) {
+        const imageToRemove = document.querySelector(`[data-image-id="${imageId}"]`);
+        const imageToRemove2 = document.querySelector(`[data-image-id2="${imageId}"]`);
+        if (imageToRemove) {
+            // Spustiť animáciu fade-out
+            imageToRemove.style.transition = 'opacity 0.5s ease-in-out';
+            imageToRemove.style.opacity = '0';
+            imageToRemove2.style.transition = 'opacity 0.5s ease-in-out';
+            imageToRemove2.style.opacity = '0';
+            await new Promise(resolve => setTimeout(resolve, 200)); // Počkajte na dokončenie animácie
+            // Odstrániť obrázok z DOM
+            imageGallery.removeChild(imageToRemove);
+            imageGallery.removeChild(imageToRemove2);
+            
+        }
+        showImages();
+    }
+
+    // Funkcia na odstránenie obrázka
+    async function deleteImage(imageId) {
+        try {                               
+            const response = await fetch(`/products/{{product.id|string}}/gallery/delete/${imageId}`, {
+                method: 'DELETE'
+            });
+    
+            if (response.status === 200) {
+               // alert('jupi');
+                // Úspešne vymazaný obrázok, odstrániť z galérie bez načítania všetkých obrázkov
+                removeImage(imageId);
+                refreshTable();
+            }
+        } catch (error) {
+            console.error('Chyba:', error);
+        }
+    }
+
+    // Ovládanie udalostí drag-and-drop
+    function handleDragStart(event) {
+        event.dataTransfer.setData('text/plain', event.target.dataset.imageId);
+        event.target.classList.add('dragging');
+        event.target.style.border = '4px solid red';
+        draggingElement = event.target;
+        const offsetX = event.clientX - event.target.getBoundingClientRect().left;
+        const offsetY = event.clientY - event.target.getBoundingClientRect().top;
+        event.dataTransfer.setDragImage(event.target, offsetX, offsetY); // Nastavenie obrázka ťahania na celý obrázok
+    }
+    
+      function handleDragOver(event) {
+        event.target.style.border = 'none';
+        event.preventDefault();
+       
+      }
+    
+      function handleDrop(event) {
+        event.preventDefault();
+        const sourceImageId = event.dataTransfer.getData('text/plain');
+        const targetImageId = event.target.dataset.imageId;
+        const imageGallery = document.getElementById('image-gallery');
+    
+        const sourceImage = document.querySelector(`[data-image-id="${sourceImageId}"]`);
+        const targetImage = document.querySelector(`[data-image-id="${targetImageId}"]`);
+    
+        if (sourceImage && targetImage && sourceImage.parentNode === imageGallery && targetImage.parentNode === imageGallery) {
+          const sourceOrder = sourceImage.dataset.orderz;
+          const targetOrder = targetImage.dataset.orderz;
+    
+          sourceImage.dataset.orderz = targetOrder;
+          targetImage.dataset.orderz = sourceOrder;
+    
+          // Reorder the images visually in the gallery
+          imageGallery.insertBefore(sourceImage, targetImage);
+        }
+    
+        // Zrušiť triedu 'dragging' po ukončení ťahania
+        if (draggingElement) {
+          draggingElement.classList.remove('dragging');
+          draggingElement = null;
+        }
+
+        saveImageOrder()
+      }
+
+
+    // Načítať obrázky pri načítaní stránky
+    showImages();
+
+
+    async function saveImageOrder() {
+    
+        try {
+          const response = await fetch(`/products/{{product.id|string}}/gallery/update_order`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ images: newOrder }),
+          });
+    
+          if (response.status === 200) {
+            // Image order successfully updated
+            refreshTable()
+          }
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      }
+
+    // Poslať obrázky na server po odoslaní formulára
+    uploadImageButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        const formData = new FormData(imageForm);
+        addImages(formData);
+    });
+
+
+
+        $('div').on('update', function () {
+          // Handle the 'update' event here
+          // This code will run when tbody.trigger('update') is called
+          var data = [];
+          $(this).find('div').each(function (index) {
+            data.push({
+              image_id: $(this).data('image-id'),
+              post_id: $(this).data('post-id'),
+              orderz: index
+            });
+          });
+          $.ajax({
+            type: 'POST',
+            url: '/products/{{product.id|string}}/gallery/update_order',
+            data: JSON.stringify(data),
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function (response) {
+              console.log(response);
+              refreshTable();
+            }
+          });
+        });
+
+</script>
+
+<script>
+
+
+    async function refreshTable() {
+        var classs='';
+        $.get('/products/images/{{product.id|string}}', function(data) {
+            //alert(data);
+            var tbody = $("#image-gallery2");
+            tbody.empty();
+            data.forEach(function(item) {
+                //alert(item.image_file2)
+                if(item.orderz % 5 === 0){classs="draggable-row";}else{classs="draggable-row";}
+                var row = `<div class="col draggable" data-image-id="${item.id}" data-post-id="${item.post_id}" ><img src="${item.image_url}"> <button type="button" onclick="deleteImage(${item.id})"class="btn btn-close position">x</button>
+                </div>`;
+                var newRow = $(row); // Konvertujte riadok na jQuery objekt
+                newRow.hide(); // Skryte nový riadok pred fadeIn()
+                tbody.append(newRow);
+                newRow.fadeIn(); // Použite fadeIn() na zobrazenie nového riadku
+            });
+            tbody.sortable({
+                update: function(event, ui) {
+                    var data = [];
+                    tbody.find("div").each(function(index) {
+                        data.push({
+                            image_id: $(this).data("image-id"),
+                            post_id: $(this).data("post-id"),
+                            orderz: index
+                        });
+                        
+                    });
+                    //alert(data);
+                    $.ajax({
+                        type: 'POST',
+                        url: '/products/{{product.id|string}}/gallery/update_order',
+                        data: JSON.stringify(data),
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function(response) {
+                            //alert(response);
+                            console.log(response);
+                            refreshTable();
+                        }
+                    });
+                }
+            }).disableSelection();
+        });
+    }
+
+    refreshTable();
+
+</script>
+
+
+
+
+
+
+
+
+            <div class="row">
+
+                <div class="form-group col-md-6">
+                    <h1>Add Product Variant</h1>
+                    <input type="text" id="variant_name" placeholder="Variant Name" class="form-control">
+                    <button type="button" id="add_variant_button" class="btn btn-ok">Add +</button>
+                </div>
+                
+                <div class="form-group col-md-6">
+   
+
+
+
+                    <h1>Add Variant Product</h1>
+                    <select id="product_variant_select" class="form-control">
+                        <!-- Naplníme tento zoznam zo servera pomocou JavaScriptu -->
+                    </select>
+                    <input type="text" id="variant_text" placeholder="Variant Text" class="form-control">
+                    <input type="file" id="variant_image" style="display: none;">
+                    <label for="variant_image" id="variant_image_label">
+                        <i style="margin-left: 15px;font-size: 160%;" class="fa fa-solid fa-image"></i> 
+                    </label>
+                    <button type="button" id="add_variant_product_button" class="btn btn-ok">Add +</button>
+                
+                    <script>
+                        const variantImageInput = document.getElementById('variant_image');
+                        const variantImageLabel = document.getElementById('variant_image_label');
+
+                        variantImageLabel.addEventListener('click', () => {
+                            variantImageInput.click(); // Simulácia kliknutia na skrytý input element
+                        });
+
+                        variantImageInput.addEventListener('change', (event) => {
+                            const selectedFile = event.target.files[    0];
+                            if (selectedFile) {
+                                // Tu môžete spracovať vybraný súbor
+                                console.log('Vybraný súbor:', selectedFile);
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group">
+
+                    <h1>Product Variants</h1>
+                    <!--<div class="variant-title">Varianty</div>-->
+                    <div id="variant_list">
+                        <!-- Táto časť bude zobrazená na stránke -->
+                    </div>
+                <hr>
+                    <div id="variant-products-list">
+                        <!-- Záznamy budú zobrazené sem -->
+                    </div>
+
+
+    <script>
+        // JavaScript kód pre získanie a zobrazenie vložených záznamov
+        async function loadVariantProducts() {
+            await fetch('/product/get_variant_products/{{product.id}}')
+                .then(response => response.json())
+                .then(data => {
+                    const variantProductsList = document.getElementById('variant-products-list');
+                    variantProductsList.innerHTML = '';
+    
+                    // Vytvorte objekt pre uchovanie produktov podľa variant_id a variant_name
+                    const productsByVariant = {};
+    
+                    // Rozdelte produkty podľa variant_id a variant_name
+                    data.variant_products.forEach(product => {
+                        const variantKey = `${product.variant_id}-${product.variant_name}`;
+                        if (!productsByVariant.hasOwnProperty(variantKey)) {
+                            productsByVariant[variantKey] = {
+                                variantId: product.variant_id,
+                                variantName: product.variant_name,
+                                products: []
+                            };
+                        }
+    
+                        productsByVariant[variantKey].products.push(product);
+                    });
+    
+                    // Pre každý variant_id a variant_name vytvorte záložku
+                    for (const key in productsByVariant) {
+                        if (productsByVariant.hasOwnProperty(key)) {
+                            const { variantId, variantName, products } = productsByVariant[key];
+    
+                            const tabContent = document.createElement('div');
+                            tabContent.classList.add('tab-pane');
+                            tabContent.id = `variant-${variantId}`;
+                            
+                            const infoVar = document.createElement('div');
+                            infoVar.classList.add('variant-title');
+                            infoVar.textContent = `${variantName}`;
+                            tabContent.appendChild(infoVar);
+    
+                            // Pre každý produkt vytvorte Bootstrap prepínacie tlačidlo
+                            products.forEach(product => {
+                                const radioInput = document.createElement('input');
+                                radioInput.type = 'radio';
+                                radioInput.classList.add('btn-check');
+                                radioInput.name = `variant-${variantId}-radio`;
+                                radioInput.id = `variant-${variantId}-${product.product_id}`;
+    
+                                const radioLabel = document.createElement('label');
+                                radioLabel.classList.add('btn');
+                                radioLabel.htmlFor = `variant-${variantId}-${product.product_id}`;
+                                radioLabel.textContent = product.variant_text;
+    
+                                const deleteButton = document.createElement('button');
+                                deleteButton.classList.add('btn-delete');
+                                deleteButton.type = 'button';
+                                deleteButton.textContent = 'x';
+    
+                                // Pridanie click eventu na tlačidlo na vymazanie
+                                deleteButton.addEventListener('click', () => {
+                                    deleteProduct(product.product_id, variantId, product.variant_text);
+                                });
+    
+                                radioLabel.appendChild(deleteButton);
+    
+                                tabContent.appendChild(radioInput);
+                                tabContent.appendChild(radioLabel);
+                            });
+    
+                            variantProductsList.appendChild(tabContent);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Chyba pri získavaní dát:', error);
+                });
+        }
+    
+        // Funkcia na vymazanie produktu
+        async function deleteProduct(product_id, variant_id, variant_text) {
+            try {
+                const response = await fetch(`/product/delete/variant/${product_id}/${variant_id}/${encodeURIComponent(variant_text)}`, {
+                    method: 'DELETE'
+                });
+    
+                if (response.ok) {
+                    // Úspešné vymazanie záznamu, môžete použiť animáciu fadeout pre element
+                    const productElement = document.getElementById(`variant-${variantId}-${product_id}`);
+                    productElement.style.opacity = '0'; // Nastavíme opacity na 0
+                    setTimeout(() => {
+                        productElement.remove(); // Odstránime element po animácii
+                    }, 500); // Príklad: animácia trvá 500 ms
+                } else {
+                    console.error('Chyba pri vymazávaní záznamu');
+                }
+            } catch (error) {
+                console.error('Chyba pri komunikácii so serverom', error);
+            }
+        }
+
+        function loadVariants() {
+            fetch('/product/get_product_variants') // Zmeniť URL na váš endpoint
+                .then(response => response.json())
+                .then(data => {
+                    
+                    //alert(data.variants);
+                    const variantList = document.getElementById('variant_list');
+                    variantList.innerHTML = ''; // Vyprázdni zoznam variantov
+                    const listItem_title = document.createElement('div');
+                    listItem_title.classList.add('variant-title');
+                    listItem_title.textContent = 'Varianty';
+                    listItem_title.id = data;
+
+                    variantList.appendChild(listItem_title);
+
+                    data.variants.forEach(variant => {
+
+
+                        const listItem = document.createElement('div');
+                        listItem.classList.add('btn');
+                        listItem.textContent = variant.name;
+                        listItem.id = `variantx-${variant.id}`;
+
+                        const deleteButton = document.createElement('button');
+                        deleteButton.classList.add('btn-delete');
+                        deleteButton.type = 'button'; // Nastaviť typ na "button"
+                        deleteButton.textContent = 'x';
+
+                        // Pridanie click eventu na tlačidlo na vymazanie
+                        deleteButton.addEventListener('click', () => {
+                            // Volanie funkcie na vymazanie prvku
+                            deleteProductVariants(variant.id);
+                        });
+
+                        variantList.appendChild(listItem);
+                        listItem.appendChild(deleteButton);
+
+                    });
+                });
+            
+            loadProductVariants();
+        }
+
+        // JavaScript kód pre pridanie nového variantu
+        document.getElementById('add_variant_button').addEventListener('click', function() {
+            const name = document.getElementById('variant_name').value;
+            fetch('/product/add_product_variant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: name }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message);
+                loadVariants(); // Znovu načítajte zoznam variantov po pridaní
+            });
+        });
+
+        // JavaScript kód pre odoslanie nového záznamu do databázy
+        document.getElementById('add-variant-product-button').addEventListener('click', function(event) {
+            event.preventDefault();
+
+            const product_id = document.getElementById('product_id').value;
+            const variant_id = document.getElementById('variant_id').value;
+            const variant_text = document.getElementById('variant_text').value;
+            const variant_image = document.getElementById('variant_image').value;
+
+            // Odoslanie dát na server
+            fetch('/product/add_variant_product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: product_id,
+                    variant_id: variant_id,
+                    variant_text: variant_text,
+                    variant_image: variant_image,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message);
+
+                // Znovu načítanie zobrazenia po úspešnom vložení
+                loadVariantProducts();
+            })
+            .catch(error => {
+                console.error('Chyba pri odosielaní dát:', error);
+            });
+        });
+
+        async function deleteProduct(product_id, variant_id, variant_text) {
+            try {
+                const response = await fetch(`/product/delete/variants/${product_id}/${variant_id}/${variant_text}`, {
+                    method: 'DELETE'
+                });
+        
+                if (response.ok) {
+                    // Úspešné vymazanie záznamu, môžete použiť animáciu fadeout pre element
+                    loadVariantProducts();
+                    const productElement = document.getElementById(`variant-${variant_id}-${product_id}`);
+                    productElement.style.opacity = '0'; // Nastavíme opacity na 0
+                    setTimeout(() => {
+                        productElement.remove(); // Odstránime element po animácii
+                    }, 500); // Príklad: animácia trvá 500 ms
+                } else {
+                    console.error('Chyba pri vymazávaní záznamu');
+                }
+            } catch (error) {
+                console.error('Chyba pri komunikácii so serverom', error);
+            }
+        }
+        async function deleteProductVariants(variant_id) {
+            try {
+                const response = await fetch(`/product/delete/variant/${variant_id}`, {
+                    method: 'DELETE'
+                });
+        
+                if (response.ok) {
+                    // Úspešné vymazanie záznamu, môžete použiť animáciu fadeout pre element
+                    loadVariants();
+                    loadVariantProducts();
+                    const productElement = document.getElementById(`variantx-${variant_id}`);
+                    productElement.style.opacity = '0'; // Nastavíme opacity na 0
+                    setTimeout(() => {
+                        productElement.remove(); // Odstránime element po animácii
+                    }, 500); // Príklad: animácia trvá 500 ms
+                } else {
+                    console.error('Chyba pri vymazávaní záznamu');
+                }
+            } catch (error) {
+                console.error('Chyba pri komunikácii so serverom', error);
+            }
+        }
+
+        // Zavolanie funkcie pre zobrazenie vložených záznamov pri načítaní stránky
+    </script>
+                
+                    <script>
+                        // Funkcia na načítanie existujúcich variantov produktu zo servera a naplnenie selectu
+                        function loadProductVariants() {
+                            fetch('/product/get_product_variants') // Zmeniť URL na váš endpoint
+                                .then(response => response.json())
+                                .then(data => {
+                                    const productVariantSelect = document.getElementById('product_variant_select');
+                                    productVariantSelect.innerHTML = ''; // Vyprázdni select
+
+                                    const option_title = document.createElement('option');;
+                                    //option_title.classList.add('variant-title');
+                                    option_title.textContent = '--Vyber variant--';
+                                    option_title.id = data;
+                                    option_title.selected = true; // Nastavenie option na neaktivné
+                                    option_title.value = 0; // Nastaviť hodnotu na ID produkt_variant
+                                    productVariantSelect.appendChild(option_title);
+
+                
+                                    data.variants.forEach(variant => {
+                                        const option = document.createElement('option');
+                                        option.value = variant.id; // Nastaviť hodnotu na ID produkt_variant
+                                        option.textContent = variant.name;
+                                        productVariantSelect.appendChild(option);
+                                    });
+                                });
+                        }
+                
+                        // Funkcia na načítanie existujúcich variantov produktu zo servera a zobrazenie v tabuľke
+
+                
+                        // JavaScript kód pre pridanie nového variantu produktu
+                        document.getElementById('add_variant_product_button').addEventListener('click', function() {
+                            const product_variant_id = document.getElementById('product_variant_select').value;
+                            const variant_text = document.getElementById('variant_text').value;
+                            const variant_image = document.getElementById('variant_image').value;
+                            const product_id = '{{product.id}}'; // Nastaviť ID produktu podľa vašich potrieb
+                
+                            fetch('/product/add_variant_product', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ product_id: product_id, product_variant_id: product_variant_id, variant_text: variant_text, variant_image: variant_image }),
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log(data.message);
+                                loadVariantProducts(); // Znovu načítajte zoznam variantov po pridaní
+                            });
+                        });
+                
+                        // JavaScript kód pre mazanie variantu produktu
+                        function deleteVariantProduct(id) {
+                            fetch(`/product/delete_variant_product/${id}`, {
+                                method: 'POST',
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log(data.message);
+                                loadVariantProducts(); // Znovu načítajte zoznam variantov po mazaní
+                            });
+                        }
+                
+                        // Načítajte existujúce varianty a variant_products pri načítaní stránky
+                        loadProductVariants();
+                        loadVariantProducts();
+                        loadVariants();
+                    </script>
+
+                </div>
+                <div class="form-group col">
+
+                </div>
+            </div>
+
 
             <div class="form-group">
                 {{ form.is_visible.label() }}

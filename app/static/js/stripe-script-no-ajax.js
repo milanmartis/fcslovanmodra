@@ -1,62 +1,45 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const customPaymentButton = document.getElementById('custom-payment-button');
+    customPaymentButton.addEventListener('click', async () => {
+      const customPrice = document.getElementById('final_price').value;
+      const ideProduct = document.getElementById('ide_product').value;
+      const productName = document.getElementById('name_product').value;
+      const quantity = document.getElementById('quantity').value;
+      const unit_price = document.getElementById('unit_price').value;
+      const variantProductsList = document.getElementById('product-variant-send');
+      const variantProductsList22 = variantProductsList.value;
 
+     // alert(customPrice);
 
+  
+      // Volanie API na server pre vytvorenie platobnej relácie s vlastnou cenou a názvom produktu
+      const response = await fetch('/product/create-custom-payment-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            customPrice,
+            productName,
+            ideProduct,
+            variantProductsList22,
+            quantity,
+            unit_price
 
-
-// const button_add_to_basket = document.querySelector('#add_to_basket_btn');
-const button_buy_now = document.querySelector('#buy_now_btn');
-
-// button_add_to_basket.addEventListener('click', event => {
-    
-//     quantity_product = $('#quantity_product').val();
-//     price_product = $('#price_product').val();
-//     id_product = $('#id_product').val();
-    
-//     $.ajax({
-//         url:"/products/basket",
-//         type:"POST",
-//         data:{
-//             id_product:id_product
-//         },
-//         success:function()
-//         {
-    
-//             setTimeout(function(){
-    
-//             }, 2500);
-//         }
-//     });
-    
-// })
-
-var stripe = Stripe(checkout_public_key);
-
-    button_buy_now.addEventListener('click', event => {
-
-    // quantity_product = $('#quantity_product').val();
-    // price_product = $('#price_product').val();
-    // id_product = $('#id_product').val();
-    // alert(price_product);
-
-    // $.ajax({
-    //     url:"/products",
-    //     type:"POST",
-    //     data:{price_product:price_product},
-    //     success:function()
-    //     {
-
-    //       setTimeout(function(){
-        
-    //     }, 2500);
-    //     }
-    //     });
-
-
-    stripe.redirectToCheckout({
-        sessionId: checkout_session_id
-
-    }).then(function (result){
-
-    //    var ide_product = document.querySelector('#ide_product').value;
-
-    })
-})
+        }),
+      });
+  
+      const session = await response.json();
+  
+      // Presmerovanie na platobnú stránku Stripe Checkout
+      const stripe = Stripe(checkout_public_key);
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: session.id,
+      });
+  
+      // Spracovanie chýb
+      if (error) {
+        console.error(error);
+      }
+    });
+  });

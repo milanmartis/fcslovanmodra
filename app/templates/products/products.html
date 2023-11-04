@@ -1,8 +1,13 @@
 {% extends "layout.html" %}
 {% block content %}
-<h3 class="headline mb-3">{{ 'LIVE STREAM' }} 
+<h3 class="headline mb-3">{{ 'CLUB STORE' }} 
 </h3>
+{% if products|length == 0 %}
 
+<center>
+  <h4>{{'Žiadne produkty'}}</h4>
+</center>
+{% endif %}
     {% for product in products %}
         <article class="media content-section eshop-item">
 
@@ -10,14 +15,11 @@
             <div class="col-sm-12 col-md-6">
 
             <div class="product-img">
-                {% for gall in product.product_gallery %} {% if gall.orderz == 0 %}
-                <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
-                <img
-                  class="post-title-image" 
-                  onload="this.classList.remove('d-none')"
-                  width="100%"
-                  src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}"
-                /></a>
+              {% for gall in product.product_gallery %}
+              {% if loop.index0 == 0 %}
+              <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
+                <img class="d-none post-title-image" onload="this.classList.remove('d-none')"  src="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+gall.image_file2 }}">
+              </a>
                 {% endif %} {% endfor %}
             </div>
 
