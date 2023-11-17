@@ -24,7 +24,10 @@ html {
 
 }
 
-
+#schedule-calendar{
+  padding: 0px;
+  margin: 0px;
+}
 
 
 #loader {
