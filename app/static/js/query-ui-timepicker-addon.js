@@ -35,16 +35,16 @@
 	var Timepicker = function () {
 		this.regional = []; // Available regional settings, indexed by language code
 		this.regional[''] = { // Default regional settings
-			currentText: 'Now',
-			closeText: 'Done',
+			currentText: 'Teraz',
+			closeText: 'Vyber',
 			amNames: ['AM', 'A'],
 			pmNames: ['PM', 'P'],
 			timeFormat: 'HH:mm',
 			timeSuffix: '',
 			timeOnlyTitle: 'Choose Time',
-			timeText: 'Time',
-			hourText: 'Hour',
-			minuteText: 'Minute',
+			timeText: 'Čas',
+			hourText: 'Hodiny',
+			minuteText: 'Minúty',
 			secondText: 'Second',
 			millisecText: 'Millisecond',
 			microsecText: 'Microsecond',
@@ -54,13 +54,13 @@
 		this._defaults = { // Global defaults for all the datetime picker instances
 			showButtonPanel: true,
 			timeOnly: false,
-			timeOnlyShowDate: false,
+			timeOnlyShowDate: true,
 			showHour: null,
 			showMinute: null,
-			showSecond: null,
-			showMillisec: null,
-			showMicrosec: null,
-			showTimezone: null,
+			showSecond: false,
+			showMillisec: false,
+			showMicrosec: false,
+			showTimezone: false,
 			showTime: true,
 			stepHour: 1,
 			stepMinute: 1,
@@ -103,7 +103,7 @@
 			pickerTimeFormat: null,
 			pickerTimeSuffix: null,
 			showTimepicker: true,
-			timezoneList: null,
+			timezoneList: false,
 			addSliderAccess: false,
 			sliderAccessArgs: null,
 			controlType: 'slider',
@@ -149,7 +149,8 @@
 		formattedTime: '',
 		formattedDateTime: '',
 		timezoneList: null,
-		units: ['hour', 'minute', 'second', 'millisec', 'microsec'],
+		// units: ['hour', 'minute', 'second', 'millisec', 'microsec'],
+		units: ['hour', 'minute'],
 		support: {},
 		control: null,
 
@@ -386,8 +387,8 @@
 			// Prevent displaying twice
 			if ($dp.find("div.ui-timepicker-div").length === 0 && o.showTimepicker) {
 				var noDisplay = ' ui_tpicker_unit_hide',
-					html = '<div class="ui-timepicker-div' + (o.isRTL ? ' ui-timepicker-rtl' : '') + (o.oneLine && o.controlType === 'select' ? ' ui-timepicker-oneLine' : '') + '"><dl>' + '<dt class="ui_tpicker_time_label' + ((o.showTime) ? '' : noDisplay) + '">' + o.timeText + '</dt>' +
-								'<dd class="ui_tpicker_time '+ ((o.showTime) ? '' : noDisplay) + '"><input class="ui_tpicker_time_input" ' + (o.timeInput ? '' : 'disabled') + '/></dd>';
+					html = '<div class="ui-timepicker-div' + (o.isRTL ? ' ui-timepicker-rtl' : '') + (o.oneLine && o.controlType === 'select' ? ' ui-timepicker-oneLine' : '') + '"><dl>' + '<dt class="ui_tpicker_time_label' + ((o.showTime) ? '' : noDisplay) + '" style="display:none;">' + o.timeText + '</dt>' +
+								'<dd class="ui_tpicker_time '+ ((o.showTime) ? '' : noDisplay) + '" style="display:none;"><input class="ui_tpicker_time_input" ' + (o.timeInput ? '' : 'disabled') + '/></dd>';
 
 				// Create the markup
 				for (i = 0, l = this.units.length; i < l; i++) {
@@ -428,8 +429,8 @@
 
 				// Timezone
 				var showTz = o.showTimezone !== null ? o.showTimezone : this.support.timezone;
-				html += '<dt class="ui_tpicker_timezone_label' + (showTz ? '' : noDisplay) + '">' + o.timezoneText + '</dt>';
-				html += '<dd class="ui_tpicker_timezone' + (showTz ? '' : noDisplay) + '"></dd>';
+				html += '<dt class="ui_tpicker_timezone_label' + (showTz ? '' : noDisplay) + '" style="display:none;">' + o.timezoneText + '</dt>';
+				html += '<dd class="ui_tpicker_timezone' + (showTz ? '' : noDisplay) + '" style="display:none;"></dd>';
 
 				// Create the elements from string
 				html += '</dl></div>';
