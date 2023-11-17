@@ -26,6 +26,7 @@ def index():
     form2 = UpdateEventForm()
     form2.category2.choices = [(category.id, category.name) for category in EventCategory.query.all()]
     form2.team2.choices = [(team.id, team.name) for team in Team.query.all()]
+    print(calendar)
     return render_template('calendar/calendar.html', form=form,form2=form2, calendar=calendar, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 

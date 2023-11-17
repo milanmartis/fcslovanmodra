@@ -14,7 +14,7 @@ dominate==2.8.0
 email-validator==2.0.0.post2
 Flask==2.2.2
 Flask-BabelEx==0.9.4
-Flask-Bcrypt
+Flask-Bcrypt==1.0.1
 Flask-Bootstrap==3.3.7.1
 Flask-Login==0.6.2
 Flask-Mail==0.9.1
@@ -43,7 +43,7 @@ Pillow==10.0.0
 psycopg2==2.9.7
 python-dateutil==2.8.2
 python-dotenv==1.0.0
-python-slugify
+python-slugify==8.0.1
 pytz==2023.3
 requests==2.31.0
 s3transfer==0.6.2

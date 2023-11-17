@@ -5,9 +5,77 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script>
+    $( function() {
+      $("#start2").datetimepicker({
+        timeFormat:'HH:mm',
+        dateFormat:'yy-mm-dd'
+      });
+      $("#end2").datetimepicker({
+        timeFormat:'HH:mm',
+        dateFormat:'yy-mm-dd'
+      });
+      $("#start").datetimepicker({
+        timeFormat:'HH:mm',
+        dateFormat:'yy-mm-dd'
+      });
+      $("#end").datetimepicker({
+        timeFormat:'HH:mm',
+        dateFormat:'yy-mm-dd'
+      });
+    });
+    </script>
 
+    <style scoped>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
+      .datelocalset{
+        background-color: aliceblue;color: #000;cursor: pointer;
+      }
+
+      .input-field{
+        height: calc(1.5em + 1rem + 2px);
+        padding: 0.5rem 1rem;
+        font-size: 1.25rem;
+        line-height: 1.5;
+        border-radius: 0.3rem;
+        display: block;
+        width: 40%;
+        font-weight: 400;
+        color: #495057;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 2px solid black;
+    
+    }
+    
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        color: rgba(0, 0, 0, 0);
+        opacity: 1;
+        display: block;
+        background-repeat:  no-repeat;
+        width: 25px;
+        height: 25px;
+        border-width: thin
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+       /* position: absolute;
+        left: 5%;*/
+        color: #000;
+        cursor: pointer;
+      }
+      input::-webkit-datetime-edit-fields-wrapper {
+      cursor: pointer;
+      
+    }
+    input::-webkit-datetime-edit {
+      cursor: pointer;
+   
+    }
+
+    </style>
 
     <meta
       name="viewport"
@@ -58,6 +126,7 @@
               role="dialog"
               aria-labelledby="myModalLabel"
               aria-hidden="true"
+              data-backdrop="static" data-keyboard="false"
             >
               <div class="modal-dialog">
                 <div class="modal-content">
@@ -83,6 +152,7 @@
               role="dialog"
               aria-labelledby="myLargeModalLabel"
               aria-hidden="true"
+
             >
               <div class="modal-dialog modal-sm">
                 <h1>Shedule updated successfully</h1>
@@ -103,7 +173,7 @@
             {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
 
             <!-- Add Modal -->
-            <div class="modal fade" id="schedule-add">
+            <div class="modal fade" id="schedule-add" data-backdrop="static" data-keyboard="false">
               <div class="modal-dialog">
                 <div class="modal-content" style="background-color: #000;border: 2px solid #6d9bff;">
                   <!-- Modal Header -->
@@ -111,7 +181,7 @@
                     <h3 class="modal-title">Add New Schedule</h3>
                     <button
                     type="button"
-                    class="btnclose"
+                    class="btn btnclose"
                     data-dismiss="modal"
                     >
                     X
@@ -121,7 +191,12 @@
                   <!-- Modal body -->
                   <div class="modal-body">
                     <form action="javascript:;">
-                      
+                      <input
+                      type="hidden"
+                      id="id"
+                      name="id"
+                      class="form-control"
+                    />
                       <div class="form-group">
                         {{ form.title.label(class="form-control-label") }}
                         {% if form.title.errors %}
@@ -166,7 +241,7 @@
       
       
                       <div class="row">
-                        <div class="form-group col-6">
+                        <div class="form-group col-6" >
                           {{ form.start.label(class="form-control-label") }}
                           {% if form.start.errors %}
                           {{ form.start(class="form-control form-control-lg is-invalid") }}
@@ -176,7 +251,7 @@
                               {% endfor %}
                           </div>
                           {% else %}
-                          {{ form.start(class="form-control form-control-lg") }}
+                          {{ form.start(class="form-control form-control-lg", type="datetime", style="background-color: aliceblue;color: #000;cursor: pointer;") }}
                           {% endif %}
                         </div>
 
@@ -190,7 +265,7 @@
                               {% endfor %}
                           </div>
                           {% else %}
-                          {{ form.end(class="form-control form-control-lg") }}
+                          {{ form.end(class="form-control form-control-lg", type="datetime", style="background-color: aliceblue;color: #000;cursor: pointer;") }}
                           {% endif %}
                         </div>
                         <div class="form-group col-6">
@@ -221,15 +296,15 @@
                         </div>
 
                       </div>
-                    </form>
-                    <div class="form-group" style="float:right;">
-                      <submit
-                      id="add-submit"
-                      type="button"
-                      class="btn btn-ok"
-                    >Save
+                      <div class="form-group" style="float:right;">
+                        <submit
+                        id="add-submit"
+                        type="button"
+                        class="btn btn-ok"
+                        >Save
                       </submit>
-                  </div>
+                    </div>
+                  </form>
                   
                         
                                     </div>
@@ -248,7 +323,7 @@
             {% endif %}
             
             <!-- Edit Modal -->
-            <div class="modal fade" id="schedule-edit">
+            <div class="modal fade" id="schedule-edit" data-backdrop="static" data-keyboard="false">
               <div class="modal-dialog">
                 <div class="modal-content" style="background-color: #000;border: 2px solid #6d9bff;">
                   <!-- Modal Header -->
@@ -322,25 +397,41 @@
       
                               <input
                               {{disable}}
-                              type="datetime-local"
+                              type="datetime"
                               id="start2"
                               name="start2"
                               class="form-control"
                               value=""
+                              style="background-color: aliceblue;color: #000;cursor: pointer;"
                               />
                             </div>
-      
+                            
                             <div class="form-group col-6">
                               <label>End:</label>
-                          <input
-                          {{disable}}
-                            type="datetime-local"
-                            id="end2"
-                            name="end2"
-                            class="form-control"
-                            value=""
+                              <input
+                              {{disable}}
+                              type="datetime"
+                              id="end2"
+                              name="end2"
+                              class="form-control"
+                              value=""
+                              style="background-color: aliceblue;color: #000;cursor: pointer;"
                         />
                         </div>
+                        <script>
+                          document.addEventListener('DOMContentLoaded', function () {
+                            var input = document.getElementById('start2');
+                            var now = new Date();
+                        
+                            var day = ("0" + now.getDate()).slice(-2);
+                            var month = ("0" + (now.getMonth() + 1)).slice(-2);
+                            var year = now.getFullYear();
+                            var hours = ("0" + now.getHours()).slice(-2);
+                            var minutes = ("0" + now.getMinutes()).slice(-2);
+                        
+                            input.value = year + "-" + month + "-" + day + "T" + hours + ":" + minutes;
+                        });
+                        </script>
       
                         </div>
       
@@ -349,7 +440,6 @@
                           id="id2"
                           name="id2"
                           class="form-control"
-                          value=""
                         />
                         <div class="row">
 
@@ -436,25 +526,7 @@
                 }
             };
         </script>
-    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/timepicker.js/latest/timepicker.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-    <script src="{{ url_for('static', filename='js/fullcalendar.js') }}"></script>
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
-      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
-      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
-      crossorigin="anonymous"
-    ></script>
           <script>
               $(document).ready(function() {
                 
@@ -464,7 +536,7 @@
                   eventOrder: 'start, end',
                   timeFormat: 'H:mm',
                   header:{
-                   right:'prev,next today',
+                   right:'prev,next, today',
                    left:'title'
                    //right:'month,agendaWeek,agendaDay'
                   },
@@ -475,19 +547,22 @@
                   selectHelper:true,
                   select: function (start, end, jsEvent, view) {
                     //new
+                    //alert(team.value);
                     var start = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
                     var end = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
                     $('#schedule-add').modal('show');
                     $('#title').val('');
                     $('#start').val(start);
                     $('#end').val(end);
-                    $('#address').val(address);
-                    $('#link').val(link);
+                    $('#address').val('');
+                    $('#link').val('');
       
                   },
 
       
                   eventClick: function(event) {
+                 //   if(event.id){
+                    $('#id2').val(event.id);
                     //update
                     //alert(event.team);
                     var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
@@ -499,8 +574,8 @@
                     $('#link2').val(event.link);
                     $('#team2').val(event.team);
                     $('#category2').val(event.category);
-                    $('#id2').val(event.id);
                     $('#schedule-edit').modal('show');
+                //  }
                   },
       
                   //dayClick: function(date, jsEvent, view) {
@@ -508,24 +583,41 @@
                   //},
       
                   eventDrop:function(event) {
-                    var start = $.fullCalendar.formatDate(event.start2, "Y-MM-DD HH:mm:ss");
-                    var end = $.fullCalendar.formatDate(event.end2, "Y-MM-DD HH:mm:ss");
-                    var title = event.title2;
-                    var address = event.address2;
-                    var link = event.link2;
-                    var category = event.category2;
-                    var team = event.team2;
-                    var id = event.id2;
+                    if(event.id){
+
+                    var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
+                    var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
+                    var title = event.title;
+                    var address = event.address;
+                    var link = event.link;
+                    var category = event.category;
+                    var team = event.team;
+                    var id = event.id;
+                  }else{
+                    var title = $('#title').val();
+                    var team = $('#team').val();
+                    var category = $('#category').val();
+                    var start = $('#start').val();
+                    var end = $('#end').val();
+                    //var start = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
+                    //var end = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
+                    var address = $('#address').val();
+                    var link = $('#link').val();
+                    var id = $('#id').val();
+                    }
                     $.ajax({
                     url:"/calendar/update",
                     type:"POST",
                     contentType: "application/json",
-                    data:JSON.stringify({'title':title, 'start':start, 'end':end, 'address':address, 'link':link, 'category':category, 'team':team, 'id':id}),
+                    data:JSON.stringify({'title2':title, 'start2':start, 'end2':end, 'address2':address, 'link2':link, 'category2':category, 'team2':team, 'id2':id}),
                     success:function()
                     {
+                      
+                      //alert(title+'+'+start+'+'+end+'+'+address+'+'+link+'+'+category+'+'+team+'+'+id);
                       $('#info-updated').modal('show');
                       setTimeout(function(){
-                        $('#info-updated').modal("hide");
+                      $('#info-updated').modal("hide");
+
                      }, 2500);
                     }
                     });
@@ -543,12 +635,13 @@
       
             $('#delete-submit').on('click', function(e){
               // We don't want this to act as a link so cancel the link action
-                e.preventDefault();
+             // alert(e);
+             //   e.preventDefault();
                 $('#confirm-delete').modal('show');
       
               });
       
-              function AddNewSchedulle(){
+              async function AddNewSchedulle(){
                 
 
 
@@ -566,7 +659,9 @@
                     data: JSON.stringify({'title':title, 'start':start, 'end':end, 'address':address, 'link':link, 'team':team, 'category':category}),
                     success:function(data)
                     {
+                    //  alert(data);
                       $('#id2').val(data)
+                      $('#id').val(data)
                       //alert("Added Successfully");
                       // window.location.replace("/calendar");
                       //window.location.replace("/calendar");
@@ -576,21 +671,21 @@
                      }, 2500);
                       // window.location.replace("/calendar");
                       
+                      $("#schedule-add").modal('hide');
+                      $("#schedule-calendar").fullCalendar('renderEvent',
+                      {
+                      title: $('#title').val(),
+                      start: new Date($('#start').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
+                      end: new Date($('#end').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
+                      address: $('#address').val(),
+                      link: $('#link').val(),
+                      category: $('#category').val(),
+                      team: $('#team').val(),
+                      id: $('#id').val(),
+                    },
+                    true);
                     }
                   })
-                  $("#schedule-add").modal('hide');
-                  $("#schedule-calendar").fullCalendar('renderEvent',
-                  {
-                  title: $('#title').val(),
-                  start: new Date($('#start').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
-                  end: new Date($('#end').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
-                  address: $('#address').val(),
-                  link: $('#link').val(),
-                  category: $('#category').val(),
-                  team: $('#team').val(),
-                  id: $('#id').val(),
-                },
-                true);
 
                 
               }
@@ -598,21 +693,34 @@
                 $('#update-submit').on('click', function(e){
                   e.preventDefault();
                  
-                   UpdateSchedulle( $('#id2').val());
+                   UpdateSchedulle();
                  });
        
                 
-              function UpdateSchedulle(){
-              
-                title2 = $('#title2').val();
-                start2 = $('#start2').val();
-                category2 = $('#category2').val();
-                team2 = $('#team2 :selected').val();
-                end2 = $('#end2').val();
-                address2 = $('#address2').val();
-                link2 = $('#link2').val();
-                id2 = $('#id2').val();
-               // alert(team2);
+                 async function UpdateSchedulle(){
+              if($('#id2').val()){
+                var title2 = $('#title2').val();
+                var start2 = $('#start2').val();
+                var category2 = $('#category2').val();
+                var team2 = $('#team2 :selected').val();
+                var end2 = $('#end2').val();
+                var address2 = $('#address2').val();
+                var link2 = $('#link2').val();
+                var id2 = $('#id2').val();
+              }else{
+                var title2 = $('#title').val();
+                var team2 = $('#team').val();
+                var category2 = $('#category').val();
+                var start2 = $('#start').val();
+                var end2 = $('#end').val();
+                var start2 = $.fullCalendar.formatDate(start2, "Y-MM-DD HH:mm:ss");
+                var end2 = $.fullCalendar.formatDate(end2, "Y-MM-DD HH:mm:ss");
+                var address2 = $('#address').val();
+                var link2 = $('#link').val();
+                var id2 = $('#id').val();
+                }
+               //alert(start2+'+'+end2);
+
                 if (start2<end2){
                 $.ajax({
                   url:"/calendar/update",
@@ -621,10 +729,29 @@
                   data: JSON.stringify({'title2':title2, 'team2':team2, 'category2':category2, 'start2':start2, 'end2':end2, 'address2':address2, 'link2':link2, 'id2':id2}),
                   success:function(data)
                   {
+                    //alert(title2+'+'+start2+'+'+end2+'+'+address2+'+'+link2+'+'+category2+'+'+team2+'+'+id2);
+
+                    $("#schedule-calendar").fullCalendar('removeEvents',id2);
+
                     //alert(data)
                     //alert("Added Successfully");
                     // window.location.replace("/calendar");
                     //window.location.replace("/calendar");
+                    
+                    $("#schedule-calendar").fullCalendar('renderEvent',
+                    {
+                      title: $('#title2').val(),
+                      start: $('#start2').val(),
+                      end: $('#end2').val(),
+                      address: $('#address2').val(),
+                      link: $('#link2').val(),
+                      category: $('#category2').val(),
+                      team: $('#team2').val(),
+                      
+                      id: $('#id2').val()
+                    },
+                      true);
+                      
                     $('#schedule-edit').modal('hide');
                     $('#info-updated').modal('show');
                     setTimeout(function(){
@@ -634,22 +761,10 @@
       
                   }
                  });
-                 $("#schedule-calendar").fullCalendar('removeEvents',id2);
+                //$("#schedule-calendar").fullCalendar('removeEvents',id2);
+/*
 
-                 $("#schedule-calendar").fullCalendar('renderEvent',
-                 {
-                   title: $('#title2').val(),
-                   start: $('#start2').val(),
-                   end: $('#end2').val(),
-                   address: $('#address2').val(),
-                   link: $('#link2').val(),
-                   category: $('#category2').val(),
-                   team: $('#team2').val(),
-                   
-                   id: $('#id2').val()
-                 },
-                   true);
-
+*/
                   }else{
                     alert('Start must be sooner');
                     return false;
@@ -667,43 +782,45 @@
       
                $('#delete-confirmed-submit').on('click', function(e){
                   e.preventDefault();
-                  DeleteSchedulle();
+                  //alert($('#id').val());
+                  let id = $('#id').val();
+                  let id2 = $('#id2').val();
+                  if(id>0){
+                  DeleteSchedulle(id);
+                }else{
+                    DeleteSchedulle(id2);
+                  }
                   $('#confirm-delete').modal('hide');
                 });
       
       
       
-              function DeleteSchedulle(){
-      
-      
-                title2 = $('#title2').val();
-                start2 = $('#start2').val();
-                end2 = $('#end2').val();
-                address2 = $('#address2').val();
-                link2 = $('#link2').val();
-                id2 = $('#id2').val();
-      
+                function DeleteSchedulle(id){
+          
                 $.ajax({
                   url:"/calendar/ajax_delete",
                   type:"POST",
                   contentType: "application/json",
-                  data: JSON.stringify({'id':id2}),
-                  success:function()
+                  data: JSON.stringify({'id':id}),
+                  success:function(data)
                   {
+                 //  alert(data);
                   $('#modal').hide()
-                  $("#schedule-calendar").fullCalendar('removeEvents',id2);
+                  $("#schedule-calendar").fullCalendar('removeEvents',id);
 
 
                   //alert("Event Removed");
                   //window.location.replace("/calendar");
-      
-                  }
+                   }
                 })
       
-               }
+                }
       
       
               });
+
+              $.datepicker.setDefaults($.datepicker.regional['sk']);
+
           </script>
 
         </div>
@@ -720,10 +837,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/timepicker.js/latest/timepicker.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
     <script src="{{ url_for('static', filename='js/fullcalendar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/query-ui-timepicker-addon.js') }}"></script>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
       integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
