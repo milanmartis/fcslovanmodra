@@ -4,6 +4,51 @@ body {
   overflow: hidden;
   color: #ffffff;
 }
+
+
+
+/*
+START CALENDAR 
+*/
+
+
+#ui-datepicker-div{
+  border-radius: 22px;
+  background-color: #10182a;
+  color: fff;
+  text-align: center;
+  border: 2px solid #386ad4;
+  padding: 8px;
+}
+
+.ui-widget-header{
+  background-color: transparent;
+  border: 0px;
+  color: #fff;
+}
+
+.ui-datepicker-next-hover{
+background-color: transparent;
+}
+.ui-datepicker-prev-hover{
+background-color: transparent;
+}
+
+.ui-datepicker-today{
+  background-color: #386ad4;
+  font-weight: 700;
+}
+
+.ui-state-highlight{
+  background: #6d9bffc1;
+}
+
+/*
+END CALENDAR 
+*/
+
+
+
 .mainblock{
     animation: fadeInAnimation ease 1s;
     animation-iteration-count: 1;
@@ -1389,6 +1434,7 @@ header{
   border: 0px;
   z-index: 99999999999999;
 }
+
 
 .teamcheck{
   float:left;

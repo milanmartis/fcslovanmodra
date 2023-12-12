@@ -14,42 +14,44 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script>
     $( function() {
-      $("#start2").datetimepicker({
-        timeFormat:'HH:mm:ss',
-        dateFormat:'yy-mm-dd',
-        controlType: 'slider'
-
-
-      });
-      $("#end2").datetimepicker({
-        timeFormat:'HH:mm:ss',
-        dateFormat:'yy-mm-dd',
-        controlType: 'slider'
-
-
-      });
-      $("#start").datetimepicker({
-        timeFormat:'HH:mm:ss',
-        dateFormat:'yy-mm-dd',
-        controlType: 'slider'
-
-
-      });
-      $("#end").datetimepicker({
-        timeFormat:'HH:mm:ss',
-        dateFormat:'yy-mm-dd',
-        controlType: 'slider'
-
-
-      });
+       $("#start2, #end2, #start, #end").datetimepicker({
+    timeFormat:'HH:mm:ss',
+    dateFormat:'yy-mm-dd',
+    controlType: 'slider'
+  });
     });
     </script>
 
     <style scoped>
 
 
+
+
+        @keyframes fadeInBounce {
+          0% { opacity: 0; transform: scale(0.5); }
+          50% { transform: scale(1.3); }
+          70% { transform: scale(0.7); }
+          100% { opacity: 1; transform: scale(1); }
+      }
+      
+      .fade-in-bounce-event {
+          animation: fadeInBounce 0.5s ease-in-out;
+      }
+
+        @keyframes fadeOutBounce {
+          0% { opacity: 1; transform: scale(1); }
+          30% { transform: scale(1.3); }
+          50% { transform: scale(0.7); }
+          100% { opacity: 0; transform: scale(0.5); }
+      }
+      
+      .fade-out-bounce-event {
+          animation: fadeOutBounce 0.6s ease-in-out;
+      }
+
+
       .datelocalset{
-        background-color: aliceblue;color: #000;cursor: pointer;
+        background-color: aliceblue;color: #000;cursor: pointer;text-align: center;
       }
 
       .input-field{
@@ -92,6 +94,9 @@
    
     }
 
+          input::placeholder {
+        color: red;
+      }
     </style>
 
     <meta
@@ -138,7 +143,7 @@
               role="dialog"
               aria-labelledby="myModalLabel"
               aria-hidden="true"
-              data-backdrop="static" data-keyboard="false"
+              data-bs-backdrop="static" data-keyboard="false"
             >
               <div class="modal-dialog">
                 <div class="modal-content">
@@ -185,7 +190,7 @@
             {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
 
             <!-- Add Modal -->
-            <div class="modal fade" id="schedule-add" data-backdrop="static" data-keyboard="false">
+            <div class="modal fade" id="schedule-add" data-bs-backdrop="static" data-keyboard="false">
               <div class="modal-dialog">
                 <div class="modal-content" style="background-color: #000;border: 2px solid #6d9bff;">
                   <!-- Modal Header -->
@@ -194,7 +199,7 @@
                     <button
                     type="button"
                     class="btn btnclose"
-                    data-dismiss="modal"
+                    data-bs-dismiss="modal"
                     >
                     X
                   </button>
@@ -263,7 +268,7 @@
                               {% endfor %}
                           </div>
                           {% else %}
-                          {{ form.start(readonly="readonly", class="form-control form-control-lg", type="datetime", style="background-color: aliceblue;color: #000;cursor: pointer;") }}
+                          {{ form.start(readonly="readonly", class="form-control", type="datetime", style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;") }}
                           {% endif %}
                         </div>
 
@@ -277,7 +282,7 @@
                               {% endfor %}
                           </div>
                           {% else %}
-                          {{ form.end(readonly="readonly", class="form-control form-control-lg", type="datetime", style="background-color: aliceblue;color: #000;cursor: pointer;") }}
+                          {{ form.end(readonly="readonly", class="form-control", type="datetime", style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;") }}
                           {% endif %}
                         </div>
                         <div class="form-group col-6">
@@ -346,7 +351,7 @@
                     <center><h3 class="modal-title">{{ form2.category2(disabled=True, class="title-calendar-h3") }} - {{ form2.team2(disabled=True, class="title-calendar-h3") }}</h3></center>
                     {% endif %}
                     
-                    <button type="button" class="btn btnclose" data-dismiss="modal">
+                    <button type="button" class="btn btnclose" data-bs-dismiss="modal">
                       X
                     </button>
                 </div>
@@ -415,7 +420,7 @@
                               name="start2"
                               class="form-control"
                               value=""
-                              style="background-color: aliceblue;color: #000;cursor: pointer;"
+                              style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;"
                               />
                             </div>
                             
@@ -429,7 +434,7 @@
                               name="end2"
                               class="form-control"
                               value=""
-                              style="background-color: aliceblue;color: #000;cursor: pointer;"
+                              style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;"
                         />
                         </div>
                         <script>
@@ -563,6 +568,23 @@
             
               });
    
+              document.addEventListener('DOMContentLoaded', function() {
+                var calendarEl = document.getElementById('schedule-calendar');
+              
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                  initialView: 'dayGridMonth',
+                  editable: true,
+                  eventDrop: function(info) {
+                    alert('Udalosť bola posunutá na: ' + info.event.start.toISOString());
+                  },
+                  dateClick: function(info) {
+                    alert('Kliknuté na dátum: ' + info.dateStr);
+                  },
+                  // Prípadné ďalšie nastavenia a udalosti
+                });
+              
+                calendar.render();
+              });
 
               $(document).ready(function() {
                 
@@ -583,6 +605,20 @@
                   nextDayThreshold: "00:00:00",
                   selectable:true,
                   selectHelper:true,
+
+                  eventRender: function(event, element) {
+                    // 'event' je objekt udalosti
+                    // 'element' je jQuery objekt reprezentujúci HTML element udalosti
+            
+                    // Príklad: Pridanie data-id atribútu
+                    element.attr('data-id', event.id);
+            
+                    // Príklad: Zmena farby pozadia udalosti
+                    //element.css('background-color', '#ff0000');
+            
+                    // Príklad: Pridanie vlastnej CSS triedy
+                   // element.addClass('moja-vlastna-trieda');
+                  },
                   select: function (start, end, jsEvent, view) {
                     //new
                     //alert(team.value);
@@ -652,17 +688,41 @@
                     {
                       
                       //alert(title+'+'+start+'+'+end+'+'+address+'+'+link+'+'+category+'+'+team+'+'+id);
-                      $('#info-updated').modal('show');
-                      setTimeout(function(){
-                      $('#info-updated').modal("hide");
+                    //  $('#info-updated').modal('show');
+                    //  setTimeout(function(){
+                    //  $('#info-updated').modal("hide");
 
-                     }, 2500);
+                    // }, 1500);
                     }
                     });
                   }
                 });
       
       
+                function addBounceEffectToEvent(eventId, inout) {
+                 // alert(inout);
+                 var eventElement=null;
+                 if(inout==1){
+                    eventElement = $(`#schedule-calendar .fc-event[data-id='${eventId}']`);
+                    eventElement.addClass('fade-in-bounce-event');
+                    eventElement.on('animationend', function() {
+                      eventElement.removeClass('fade-in-bounce-event');
+                    });
+                    
+                  }
+                  if(inout==2){
+                    //alert('kuk');
+                    eventElement2 = $(`#schedule-calendar .fc-event[data-id='${eventId}']`);
+                    eventElement2.addClass('fade-out-bounce-event');
+                    eventElement2.on('animationend', function() {
+                    eventElement2.removeClass('fade-out-bounce-event');
+                    });
+                  }
+                }
+
+
+
+
       
             $('#add-submit').on('click', function(e){
               // We don't want this to act as a link so cancel the link action
@@ -675,14 +735,12 @@
               // We don't want this to act as a link so cancel the link action
              // alert(e);
              //   e.preventDefault();
+             $("#schedule-edit").modal('hide');
                 $('#confirm-delete').modal('show');
       
               });
       
               async function AddNewSchedulle(){
-                
-
-
                 title = $('#title').val();
                 team = $('#team').val();
                 category = $('#category').val();
@@ -690,6 +748,21 @@
                 end = $('#end').val();
                 address = $('#address').val();
                 link = $('#link').val();
+                if(title==""){
+                  var inputText = document.getElementById('title');
+                  inputText.placeholder = "required field";
+                  return false;
+                }
+                
+                if(category==1 && (address=="" || link=="")){
+                  var inputAddress = document.getElementById('address');
+                  var inputLink = document.getElementById('link');
+                  //inputText.style.color = "red";
+                  inputAddress.placeholder = "required field";
+                  inputLink.placeholder = "required field";
+
+                  return false;
+                }
                 $.ajax({
                     url:"/calendar/insert",
                     type:"POST",
@@ -703,25 +776,32 @@
                       //alert("Added Successfully");
                       // window.location.replace("/calendar");
                       //window.location.replace("/calendar");
-                      $('#info-added').modal('show');
-                      setTimeout(function(){
-                        $('#info-added').modal("hide");
-                     }, 2500);
+                     // $('#info-added').modal('show');
+                     // setTimeout(function(){
+                     //   $('#info-added').modal("hide");
+                    // }, 1500);
                       // window.location.replace("/calendar");
-                      
+                     
+                    //  alert(team);
                       $("#schedule-add").modal('hide');
                       $("#schedule-calendar").fullCalendar('renderEvent',
                       {
-                      title: $('#title').val(),
-                      start: new Date($('#start').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
-                      end: new Date($('#end').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
-                      address: $('#address').val(),
-                      link: $('#link').val(),
-                      category: $('#category').val(),
-                      team: $('#team').val(),
-                      id: $('#id').val(),
-                    },
-                    true);
+                     // className: 'fade-in-bounce-event', // Pridanie vlastnej CSS triedy
+                        title: $('#title').val(),
+                        start: new Date($('#start').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
+                        end: new Date($('#end').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
+                        address: $('#address').val(),
+                        link: $('#link').val(),
+                        category: $('#category').val(),
+                        team: team,
+                        id: $('#id').val()
+                      },
+                      true);
+                   // this.className = 'fade-in-bounce-event';
+                    //$("#schedule-calendar").fullCalendar('updateEvent', this);
+                   // $(this).removeClass('fade-in-bounce-event');
+                   addBounceEffectToEvent(data,1);
+
                     }
                   })
 
@@ -769,15 +849,20 @@
                   {
                     //alert(title2+'+'+start2+'+'+end2+'+'+address2+'+'+link2+'+'+category2+'+'+team2+'+'+id2);
 
-                    $("#schedule-calendar").fullCalendar('removeEvents',id2);
-
+                    
                     //alert(data)
                     //alert("Added Successfully");
                     // window.location.replace("/calendar");
                     //window.location.replace("/calendar");
-                    
+                    $('#schedule-edit').modal('hide');
+                  //  $('#info-updated').modal('show');
+                   // setTimeout(function(){
+                   //   $('#info-updated').modal("hide");
+                  //  }, 1500);
+                    $("#schedule-calendar").fullCalendar('removeEvents',id2);
                     $("#schedule-calendar").fullCalendar('renderEvent',
                     {
+                  //    className: 'fade-in-bounce-event',
                       title: $('#title2').val(),
                       start: $('#start2').val(),
                       end: $('#end2').val(),
@@ -789,14 +874,13 @@
                       id: $('#id2').val()
                     },
                       true);
-                      
-                    $('#schedule-edit').modal('hide');
-                    $('#info-updated').modal('show');
-                    setTimeout(function(){
-                      $('#info-updated').modal("hide");
-                   }, 2500);
+                   //   this.className = 'fade-in-bounce-event';
+                   // $("#schedule-calendar").fullCalendar('updateEvent', this);
+                   // $(this).removeClass('fade-in-bounce-event');
+
                     //window.location.replace("/calendar");
-      
+                    addBounceEffectToEvent(id2,1);
+
                   }
                  });
                 //$("#schedule-calendar").fullCalendar('removeEvents',id2);
@@ -812,9 +896,9 @@
       
       
       
-               $('#confirm-delete').on('show.bs.modal', function() {
-                $("#schedule-edit").modal('hide');
-               });
+               //$('#confirm-delete').on('show.bs.modal', function() {
+               // $("#schedule-edit").modal('hide');
+               //});
       
       
       
@@ -844,9 +928,14 @@
                   {
                  //  alert(data);
                   $('#modal').hide()
+                  //addBounceEffectToEvent(id,2);
+
                   $("#schedule-calendar").fullCalendar('removeEvents',id);
 
-
+                  //setTimeout(function(){
+                 //   $("#schedule-calendar").fullCalendar('removeEvents',id);
+               //       $('#info-updated').modal("hide");
+                //  }, 1000);
                   //alert("Event Removed");
                   //window.location.replace("/calendar");
                    }
@@ -862,6 +951,10 @@
             });
 
 
+
+            document.getElementById('delete-confirmed-submit').addEventListener('click', function() {
+              $('#confirm-delete').modal('hide');
+            });
           </script>
 
         </div>
@@ -888,8 +981,4 @@
       integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
       crossorigin="anonymous"
     ></script>
-    <script
-      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
-      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
-      crossorigin="anonymous"
-    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
