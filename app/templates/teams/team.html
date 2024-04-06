@@ -13,7 +13,7 @@
     <div class="row">
      {% for player in members %}
       {% if player.position==4 %}
-      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4" href="#">
+      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  title="{{player.id}}" href="../player/{{player.id}}">
         <div class="card" style="width: 95%;margin:0px;padding:0px;">
           <div class="card-body">
             <h6>{{ player.name }}</h6>
@@ -33,7 +33,7 @@
 
       {% if player.position==3 %}
 
-      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="#">
+      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4" title="{{player.id}}" href="../player/{{player.id}}">
         <div class="card" style="width: 95%;margin:0px;">
           <div class="card-body">
             <h6>{{ player.name }}</h6>
@@ -52,7 +52,7 @@
       {% for player in members %}
       {% if player.position==2 %}
 
-      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="#">
+      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  title="{{player.id}}" href="../player/{{player.id}}">
         <div class="card" style="width: 95%;margin:0px;">
           <div class="card-body">
             <h6>{{ player.name }}</h6>
@@ -67,7 +67,7 @@
     <div class="row">
       {% for player in members %}
       {% if player.position==1 %}
-        <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  href="#">
+        <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4"  title="{{player.id}}" href="../player/{{player.id}}">
           <div class="card" style="width: 95%;margin:0px;">
             <div class="card-body">
               <h6>{{ player.name }}</h6>

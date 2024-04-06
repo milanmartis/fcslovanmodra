@@ -653,16 +653,17 @@ def update_product(product_id):
             productgall.title=form.title.data
             productgall.image_file2=file_filename
 
-        for file in form.pictures.data:
-            if file:
-                print(file.filename)
-                with open(os.path.realpath(current_app.root_path+'/static/products/'+str(product.id)+'/gallery/'+str(file.filename)), 'wb') as f:
-                        f.write(file.read())
+        if form.pictures.data:
+            for file in form.pictures.data:
+                if file:
+                    print(file.filename)
+                    with open(os.path.realpath(current_app.root_path+'/static/products/'+str(product.id)+'/gallery/'+str(file.filename)), 'wb') as f:
+                            f.write(file.read())
 
-                # file_filename = secure_filename(file.filename)
-                # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
-                pictures = ProductGallery(title=form.title.data, image_file2=file.filename, orderz=1, product_id=product.id)
-                db.session.add(pictures)
+                    # file_filename = secure_filename(file.filename)
+                    # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
+                    pictures = ProductGallery(title=form.title.data, image_file2=file.filename, orderz=1, product_id=product.id)
+                    db.session.add(pictures)
 
 
         db.session.commit()

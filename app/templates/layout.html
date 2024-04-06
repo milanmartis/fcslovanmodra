@@ -113,7 +113,7 @@
                 <p><i class="fa fa-map-marker" aria-hidden="true"></i>
                   <a href="{{ next22.link }}" target="_blank">{{ next22.address }}</a></p>
                 <div class="btn-live-frame">
-                  <p style="padding:0px; margin:0px;" id="countdown_desc"></p>
+                  <p style="padding:0px; margin:0px;opacity: 1.0;" id="countdown_desc"></p>
                   <p style="padding:0px; margin:0px;" id="countdown"></p>
                 </div>
                 
@@ -422,8 +422,8 @@
     var seconds = Math.floor((distance % (1000 * 60)) / 1000);
   
     // Display the result in the element with id="demo"
-    document.getElementById("countdown_desc").innerHTML = "deň | hod | min | sec";
-    document.getElementById("countdown_desc").style.opacity = 0.3;
+    document.getElementById("countdown_desc").innerHTML = "deň | hod | min | sek";
+    document.getElementById("countdown_desc").style.opacity = 0.75;
     document.getElementById("countdown").innerHTML = "<button class=\"btn-live\">" + days + "</button><button class=\"btn-live\">" + hours + "</button><button class=\"btn-live\">" + minutes + "</button><button class=\"btn-live\">" + seconds + "</button> ";
   
     // If the count down is finished, write some text
