@@ -18,6 +18,10 @@ from flask_security import roles_required
 import pandas as pd
 import numpy as np
 # from flask_principal import Principal, Permission, RoleNeed
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+
+from time import sleep
 
 team = Blueprint('team', __name__)
 
@@ -94,7 +98,9 @@ def update_team(team_id):
     team = Team.query.get_or_404(team_id)
     form = TeamForm()
     
+    
     score_scrap = request.form.get("score_scrap")
+
     # score_scrap = "C:\\Users\\Dell\\Downloads\\pandas\\u13.html"
         
     if request.form.get('what') and team.score_scrap and score_scrap:
@@ -103,8 +109,25 @@ def update_team(team_id):
         ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
 
         
-        # print(score_scrap)
-        df = pd.read_html(score_scrap)
+        s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
+
+        # Vytvorenie instance WebDriveru s explicitným nastavením služby
+        driver = webdriver.Chrome(service=s)
+
+        driver.get(score_scrap)
+
+        # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
+        sleep(5)
+
+        # Získanie zdrojového kódu stránky po vykonaní JavaScriptu
+        html = driver.page_source
+
+        # Zatvorenie prehliadača
+        driver.quit()
+
+        # Použitie pandas na čítanie tabuliek
+        # tables = pd.read_html(html)
+        df = pd.read_html(html)
         ###########################################################################################
         # df = pd.DataFrame(df, index=labels)
         x = int(len(df))

@@ -456,7 +456,6 @@ h2 {
   transition: transform 1.2s ease, -webkit-transform 1.2s ease;
 }
 .btn-live-frame{
-  cursor:default;
   opacity: 0.75;
   display: inline;
   transition: -webkit-transform 2s ease;
@@ -471,21 +470,20 @@ h2 {
 
 .btn-live{
 background-color: transparent;
-border: 2px solid #6d9bff;
-border-radius: 10px;
+border: 2px solid #6d9bff5d;
+border-radius: 8px;
 color:#6d9bff;
 opacity: 1.0;
 text-align: center;
-font-size: 160%;
-font-weight: 800;
-width: 46px;
-height: 40px;
+font-size: 129%;
+font-weight: 900;
+width: 38px;
+height: 34px;
 padding-top:2px;
-padding-left:2px;
-padding-right:2px;
-padding-bottom:2px;
+padding-left:1px;
+padding-right:1px;
+padding-bottom:1px;
 
-padding-bottom:5px;
 margin:3px;
 line-height:100%;
 }

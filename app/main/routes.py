@@ -5,6 +5,7 @@ from flask import Blueprint
 from app import db
 from datetime import datetime, date 
 from flask_security import current_user, roles_required
+from sqlalchemy import func, and_
 
 # from app.users.roles import user_role
 
@@ -54,21 +55,40 @@ def sponsors():
 # @main.route("/menu")
 class Next:
     def next():
-        today = datetime.today()
         
-        # print('kjj')
-        next = Event.query.filter(Event.event_team_id==1).filter(Event.event_category_id==1).filter(Event.start_event>=today).order_by(Event.start_event.asc()).first()
-        # print(f"{next.start_event},{today}")
-        return next
+        today = func.now()  # Adjust this if necessary to match your timezone handling
+
+        subquery = (db.session.query(
+                Event.event_team_id,
+                func.min(Event.start_event).label('min_start')
+            )
+            .filter(Event.start_event >= today)
+            .filter(Event.event_category_id == 1)
+            .group_by(Event.event_team_id)
+            .subquery())
+
+        # Main query to get the event details for the earliest event for each team
+        next_events = (db.session.query(Event)
+                    .join(subquery, and_(
+                        Event.event_team_id == subquery.c.event_team_id,
+                        Event.start_event == subquery.c.min_start))
+                    .order_by(Event.event_team_id.asc())
+                    .all())
+
+
+        return next_events
         
 
 class RightColumn:
+    
+
     def main_menu():
         menuteam = db.session.query(Team).order_by(Team.id.asc()).all()
         return menuteam
 
     def next_match():
-        next_match = db.session.query(Event.title, Event.start_event).filter(Event.event_team_id==1).order_by(Event.start_event.asc()).first()
+        today = datetime.today()
+        next_match = db.session.query(Event.title, Event.start_event).filter(Event.start_event>=today).filter(Event.event_category_id==1).order_by(Event.start_event.asc()).all()
         return next_match
 
     def score_table():

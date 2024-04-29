@@ -1,468 +1,505 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/cc.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style/lightbox.css') }}">
+	<head>
+		<!-- Required meta tags -->
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
+		<!-- Bootstrap CSS -->
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/cc.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='style/lightbox.css') }}">
 
-    {% if title %}
-        <title>FC Slovan Modra - {{ title }}</title>
-    {% else %}
-        <title>FC Slovan Modra</title>
-    {% endif %}
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
+
+		{% if title %}
+			<title>FC Slovan Modra - {{ title }}</title>
+		{% else %}
+			<title>FC Slovan Modra</title>
+		{% endif %}
 </head>
 <body >
-    <div id="loader"></div>
-    <header class="site-header" >
-      {% include 'menu.html' %}
-    </header>
-    <br>
-    
-    <main style="margin-top:-30px;" role="main" class="container">
-      <div class="row">
-        <div class="col-md-8">
-          {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                  {{ message }}
-                </div>
-              {% endfor %}
-            {% endif %}
-            {% endwith %}
-            {% block content %}{% endblock %}
-            
-            
-          </div>
-          <div class="col-md-4 sidebar-club">
-            {% if current_user.is_authenticated %}
-            {% if current_user.has_roles('Admin') %}
-       
-            <div class="content-section mt-6">
-              <div class="content-section-sidebar">
-                <h3 style="padding-top:12px;">Admin panel</h3>
-                <p class="text-muted">
-                  <ul class="list-group">
-                    <h6 style="font-size:75%;color:#6d9bff;opacity: 0.7;">{{current_user.email}}</h6>
-                  <a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal" data-bs-backdrop="static" data-bs-keyboard="false">Kalendár</a>
-                  <a href="{{ url_for('posts.new_post') }}">Nový článok</a>
-                  <a href="{{ url_for('products.new_product') }}">Nový produkt</a>
-                  <a href="{{ url_for('posts.list_categories') }}">Kategórie článkov</a>
-                  <!-- <a class="nav-item nav-link" href="{{ url_for('users.register') }}">New Member</a> -->
-                  <a href="{{ url_for('users.list_members') }}">Členovia</a>
-                  <a href="{{ url_for('team.list_teams') }}">Družstvá</a>
-                  <a href="{{ url_for('users.list_roles') }}">Roly na stránke</a>
-                  <a href="{{ url_for('users.account') }}">Môj účet</a>
-                  {% if current_user.is_authenticated %}
-                  <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
-                  {% endif %}
-                  
-                </ul>
-              </p>
-            </div>
-          </div>
-          {% else %}
-          <div class="content-section mt-6">
-            <div class="content-section-sidebar">
-              <h3 style="padding-top:12px;">Užívateľský prístup</h3>
-              <p class="text-muted">
-                <h6 style="font-size:70%;color:#6d9bff;opacity: 0.6;">{{current_user.email}}</h6>
-                <ul class="list-group">
-                  <!--
-                    <a id="kalendar_button" href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
-                  -->
-                  <a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal" data-bs-backdrop="static" data-bs-keyboard="false">Kalendár</a>
+	<div id="loader"></div>
+	<header class="site-header" >
+		{% include 'menu.html' %}
+	</header>
+	<br>
 
-                  <a href="{{ url_for('users.account') }}">Môj účet</a>
-                  <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
-                  
-                  
-                </ul>
-              </p>
-            </div>
-          </div>
-          
-          {% endif %}
-          {% else %}
-          
-          
-          
+	<main style="margin-top:-30px;" role="main" class="container">
+		<div class="row">
+			<div class="col-md-8">
+				{% with messages = get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+						{% for category, message in messages %}
+							<div class="alert alert-{{ category }}">
+								{{ message }}
+							</div>
+						{% endfor %}
+					{% endif %}
+					{% endwith %}
+					{% block content %}{% endblock %}
 
-          {% endif %}
-          
-          {% if next22.title is defined and next22.title is string %}
-              {% set next_name2 = next22.title.split(' - ') %}
-          {% else %}
-              {% set next_name2 = '---' %}
-          {% endif %}
 
-          
-          <div class="content-section mt-6">
-            <div class="content-section-sidebar">
-              
-              <div class="dez-post-media dez-img-effect zoom-slow">
-                <h3 style="padding-top:12px;">Najbližší zápas</h3>
-                <p><i class="fa fa-map-marker" aria-hidden="true"></i>
-                  <a href="{{ next22.link }}" target="_blank">{{ next22.address }}</a></p>
-                <div class="btn-live-frame">
-                  <p style="padding:0px; margin:0px;opacity: 1.0;" id="countdown_desc"></p>
-                  <p style="padding:0px; margin:0px;" id="countdown"></p>
-                </div>
-                
-              <center>
-                <!--
-                  <button class="btn btn-live2" onclick="javascript:location.href='{{ url_for('products.list_products') }}'">LIVE</button><br>
-                -->
-              <img class="image-logo" style="padding:16px;" height="140" src="/static/clubs/{{ next_name2[0]|slugify }}.png">
-              <img class="image-logo" style="padding:16px;" height="140" src="/static/clubs/{{ next_name2[1]|slugify }}.png"> 
-              <br>
-              
-              <h3 style="text-align:center;">{{ next_name2[0] }}</h3>
-              <h6 style="text-align:center;">vs.</h6>
-              <h3 style="text-align:center;margin-top:-5px;">{{ next_name2[1] }}</h3>
-              {% if current_date.strftime('%d. %m. %Y')==next22.start_event.strftime('%d. %m. %Y') %}{% set datetext = "Dnes" %} {% else %} {% set datetext = next22.start_event.strftime('%d. %m. %Y') %}{% endif %}
-              <h6>{{ datetext }} | <b>{{ next22.start_event.strftime('%H:%M') }} </b></h6>
+				</div>
+				<div class="col-md-4 sidebar-club">
+					{% if current_user.is_authenticated %}
+					{% if current_user.has_roles('Admin') %}
+
+					<div class="content-section mt-6">
+						<div class="content-section-sidebar">
+							<h3 style="padding-top:12px;">Admin panel</h3>
+							<p class="text-muted">
+								<ul class="list-group">
+									<h6 style="font-size:75%;color:#6d9bff;opacity: 0.7;">{{current_user.email}}</h6>
+								<a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal" data-bs-backdrop="static" data-bs-keyboard="false">Kalendár</a>
+								<a href="{{ url_for('posts.new_post') }}">Nový článok</a>
+								<a href="{{ url_for('products.new_product') }}">Nový produkt</a>
+								<a href="{{ url_for('posts.list_categories') }}">Kategórie článkov</a>
+								<!-- <a class="nav-item nav-link" href="{{ url_for('users.register') }}">New Member</a> -->
+								<a href="{{ url_for('users.list_members') }}">Členovia</a>
+								<a href="{{ url_for('team.list_teams') }}">Družstvá</a>
+								<a href="{{ url_for('users.list_roles') }}">Roly na stránke</a>
+								<a href="{{ url_for('users.account') }}">Môj účet</a>
+								{% if current_user.is_authenticated %}
+								<a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
+								{% endif %}
+
+							</ul>
+						</p>
+					</div>
+				</div>
+				{% else %}
+				<div class="content-section mt-6">
+					<div class="content-section-sidebar">
+						<h3 style="padding-top:12px;">Užívateľský prístup</h3>
+						<p class="text-muted">
+							<h6 style="font-size:70%;color:#6d9bff;opacity: 0.6;">{{current_user.email}}</h6>
+							<ul class="list-group">
+								<!--
+									<a id="kalendar_button" href="#" data-toggle="modal" data-target="#calenadrModal" data-backdrop="static" data-keyboard="false">Kalendár</a>
+								-->
+								<a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal" data-bs-backdrop="static" data-bs-keyboard="false">Kalendár</a>
+
+								<a href="{{ url_for('users.account') }}">Môj účet</a>
+								<a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
+
+
+							</ul>
+						</p>
+					</div>
+				</div>
+
+				{% endif %}
+				{% else %}
 
 
 
 
-
-            </center>
-
-   
-            </div>
-            </div>
-
-          </div>
+				{% endif %}
 
 <br>
-          <div class="content-section mt-26">
-            <div class="dez-post-media dez-img-effect zoom-slow">
-              <h3 style="padding-top:12px;">Partneri</h3>
-              <center><p style="font-size:120%;margin-top:-9px;">Navštívte stránky našich partnerov</p></center>
 
+<div id="games_plans" class="carousel slide" data-bs-ride="carousel" data-bs-touch="true" data-bs-interval="false">
+          <center>
+          <div class="carousel-indicators" style="background-color: #1d1d1d;margin-bottom: 5px;width: fit-content;">
+            {% for team in teamz[:5] %} 
+            <button class="btn text {% if loop.index == 1 %} active{% endif %}" data-bs-target="#games_plans" data-bs-slide-to="{{loop.index0}}" aria-current="true" aria-label="Slide {{loop.index}}">{{team.name}}</button>
+            {% endfor %}
 
-              
-              
-              <div id="carouselExampleControls" data-bs-touch="true" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-inner">
-                  <div class="carousel-item-tabz carousel-item active">
-                    <a class="sponsor-img d-block w-100" href="https://www.modra.sk/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/modra.jpg') }}"></a>
-                  </div>
-                  <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://www.komaco-cba.sk/" target="_blank"><img width="80%"  src="{{ url_for('static', filename='/sponsors/comaco.jpg') }}"></a>
-                  </div>
-                  <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://www.pavos.sk/" target="_blank"><img width="80%"  src="{{ url_for('static', filename='/sponsors/pavos.jpg') }}"></a>
-                  </div>
-                  <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://www.db-stav.cz/" target="_blank"><img width="80%"  src="{{ url_for('static', filename='/sponsors/dbstav.jpg') }}"></a>
-                  </div>
-                  <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://www.farmprofi.sk/" target="_blank"><img width="80%"  src="{{ url_for('static', filename='/sponsors/farmprofi.jpg') }}"></a>
-                  </div>
-                  <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://www.hameln-rds.sk/sk/" target="_blank"><img width="80%"  src="{{ url_for('static', filename='/sponsors/hameln-rds.jpg') }}"></a>
-                  </div>
-                  <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://cafferoma.sk/" target="_blank"><img width="80%"  src="{{ url_for('static', filename='/sponsors/caferoma.jpg') }}"></a>
-                  </div>
-                  <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://www.instagram.com/futureballer.sk/" target="_blank"><img width="80%"  src="{{ url_for('static', filename='/sponsors/ps-ultimate.jpg') }}"></a>
-                  </div>
-                  <div class="carousel-item-tabz carousel-item">
-                    <a class="sponsor-img d-block w-100"  href="https://appdesign.sk/" target="_blank"><img width="80%"  src="{{ url_for('static', filename='/sponsors/appdesign.jpg') }}"></a>
-                  </div>
-
-                  
-                </div>
-                <button class="carousel-control-prev" role="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
-                  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                  <span class="sr-only">Previous</span>
-                </button>
-                <button class="carousel-control-next" role="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
-                  <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                  <span class="sr-only">Next</span>
-                </button>
-              </div>
-
-              
-            </div>
-          </div>
-
-          
-          <br>
-          <br>
-
-            
-          <div class="content-section mt-26">
-            <div class="dez-post-media dez-img-effect zoom-slow">
-              <h3 style="padding-top:0px;">Tabuľky</h3>
-
-              <div id="tabz" class="carousel slide" data-bs-ride="carousel" data-bs-touch="true" data-bs-interval="false">
-                <div class="carousel-indicators">
-                  <button type="button" class="btn text active" data-bs-target="#tabz" data-bs-slide-to="0" aria-current="true" aria-label="Slide 1">A team</button>
-                  <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="1" aria-label="Slide 2">U19</button>
-                  <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="2" aria-label="Slide 3">U17</button>
-                  <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="3" aria-label="Slide 4">U15</button>
-                  <button class="btn text" data-bs-target="#tabz" data-bs-slide-to="4" aria-label="Slide 5">U13</button>
-                </div>
-                    <div class="carousel-inner">
-                    {% for num in range(5) %}
-                    <div class="carousel-item-tabz2 carousel-item{% if loop.index == 1 %} active{% endif %}">
-                      {% for team in teamz %} 
-                      {% if team.id == num+1 %}
-                      <h3 style="opacity:0.85;padding:20px;font-size: 93%;">{{teamz[loop.index0].main_league}}</h3>
-                      {% endif %}
-                      {% endfor %}
-                    <table class="table scoretable">
-                      <thead>
-                          <tr class="table-headding">
-                              <th>#</th>
-                              <th>Tím</th>
-                              <th>Z</th>
-                              <th>B</th>
-                              <th>V</th>
-                              <th>R</th>
-                              <th>P</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                      {% for tteam in score_table if tteam.team_id == loop.index %}
-                  
-                                      <tr> 
-                                      <th style="opacity:0.4" scope="row">{{loop.index}}</th> 
-                                      <td>{{tteam.club|replace("Devínska Nová Ves", "Devínska N.V.")|replace("Futbalová akadémia Lafranconi FTVŠ UK","FA FTVŠ UK") }}</td> 
-                                      <td style="opacity:0.6">{{tteam.games}}</td> 
-                                      <td><b>{{tteam.points}}</b></td> 
-                                      <td style="opacity:0.6">{{tteam.wins}}</td> 
-                                      <td style="opacity:0.6">{{tteam.draws}}</td> 
-                                      <td style="opacity:0.6">{{tteam.loses}}</td> 
-      
-                                    </tr>
-             
-                                    {% endfor %}
-                                  </tbody>
-                                  
-                                </table>
-                              </div>
-                              
-                              
-                 {% endfor %}
-
-                </div>
-
-              </div>
-
-
-            </div>
-          </div>
-          
-          
-          
-          
-          
         </div>
-      </div>
-    </main>
 
-    {% if current_user.is_authenticated %}
+				</center>
 
-    <div
-      
-      class="modal fade"
-      id="calenadrModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="calenadrModalLabel"
-      aria-hidden="true"
-      style="z-index: 999999999999999999999999999999;"
-    >
-      <div class="modal-dialog" role="document" style="overflow:none;margin:auto;padding-top: 16px;">
-        <div class="modal-content" style="height: 660px;overflow:none;">
-          <button
-          type="button"
-          class="btn btnclose"
-          data-bs-dismiss="modal"
-          >
-          X
-        </button>
+			<div class="carousel-inner" style="margin-top:-30px">
+				{% for next222 in next22 %} 
+
+				<div class="carousel-item-tabz3 carousel-item{% if loop.index == 1 %} active{% endif %}">
+
+
+
+					{% if next222.title is defined and next222.title is string %}
+						{% set next_name2 = next222.title.split(' - ') %}
+					{% else %}
+						{% set next_name2 = '---' %}
+					{% endif %}
+						<div class="content-section mt-6">
+							<div class="content-section-sidebar">
+                <br>
+
+								<div class="dez-post-media dez-img-effect zoom-slow">
+									<h3 style="padding-top:12px;">Najbližší zápas</h3>
+									<center>
+								
+										{% if current_date.strftime('%d. %m. %Y')==next222.start_event.strftime('%d. %m. %Y') %}{% set datetext = "Dnes" %} {% else %} {% set datetext = next222.start_event.strftime('%d. %m. %Y') %}{% endif %}
+										<h6>{{ datetext }} | <b>{{ next222.start_event.strftime('%H:%M') }} </b></h6>
+
+                    {% for team in teamz[:5] if team.id==loop.index %} 
+										<h6><p style="opacity:0.7;">{{ team.main_league }}</p></h6>
+                    {% endfor %}
+
+										<div class="btn-live-frame" style="display: none;">
+											<p style="padding:0px; margin:0px;opacity: 1.0;color:#fff;font-size: 70%;" id="countdown_desc"></p>
+											<p style="padding:0px; margin:0px;" id="countdown"></p>
+										</div>
+										<img class="image-logo" style="padding:6px;" height="91" src="/static/clubs/{{ next_name2[0]|slugify }}.png">
+										<img class="image-logo" style="padding:6px;" height="91" src="/static/clubs/{{ next_name2[1]|slugify }}.png"> 
+										<br>
+
+										<!--
+											<button class="btn btn-live2" onclick="javascript:location.href='{{ url_for('products.list_products') }}'">LIVE</button><br>
+										-->
+
+										<h3 style="text-align:center;">{{ next_name2[0] }}</h3>
+										<h6 style="text-align:center;">vs.</h6>
+										<h3 style="text-align:center;margin-top:-5px;">{{ next_name2[1] }}</h3>
+										<p><i class="fa fa-map-marker" aria-hidden="true"></i>
+											<a href="{{ next22.link }}" target="_blank">{{ next222.address }}</a></p>
+
+
+
+
+
+
+							</center>
+
+
+							</div>
+							</div>
+							</div>
+
+
+
+						</div>
+						{% endfor %}
+
+
+			</div>
+
+		</div>
+
+<br>
+	<div class="content-section mt-26">
+		<div class="dez-post-media dez-img-effect zoom-slow">
+			<h3 style="padding-top:12px;">Partneri</h3>
+			<center><p style="font-size:120%;margin-top:-9px;">Navštívte stránky našich partnerov</p></center>
+
+
+
+
+			<div id="carouselExampleControls" data-bs-touch="true" class="carousel slide" data-bs-ride="carousel">
+				<div class="carousel-inner">
+					<div class="carousel-item-tabz carousel-item active">
+						<a class="sponsor-img d-block w-100" href="https://www.modra.sk/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/modra.jpg') }}"></a>
+					</div>
+					<div class="carousel-item-tabz carousel-item">
+						<a class="sponsor-img d-block w-100" href="https://www.komaco-cba.sk/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/comaco.jpg') }}"></a>
+					</div>
+					<div class="carousel-item-tabz carousel-item">
+						<a class="sponsor-img d-block w-100" href="https://www.pavos.sk/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/pavos.jpg') }}"></a>
+					</div>
+					<div class="carousel-item-tabz carousel-item">
+						<a class="sponsor-img d-block w-100" href="https://www.db-stav.cz/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/dbstav.jpg') }}"></a>
+					</div>
+					<div class="carousel-item-tabz carousel-item">
+						<a class="sponsor-img d-block w-100" href="https://www.farmprofi.sk/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/farmprofi.jpg') }}"></a>
+					</div>
+					<div class="carousel-item-tabz carousel-item">
+						<a class="sponsor-img d-block w-100" href="https://www.hameln-rds.sk/sk/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/hameln-rds.jpg') }}"></a>
+					</div>
+					<div class="carousel-item-tabz carousel-item">
+						<a class="sponsor-img d-block w-100" href="https://cafferoma.sk/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/caferoma.jpg') }}"></a>
+					</div>
+					<div class="carousel-item-tabz carousel-item">
+						<a class="sponsor-img d-block w-100" href="https://www.instagram.com/futureballer.sk/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/ps-ultimate.jpg') }}"></a>
+					</div>
+					<div class="carousel-item-tabz carousel-item">
+						<a class="sponsor-img d-block w-100" href="https://appdesign.sk/" target="_blank"><img width="80%" src="{{ url_for('static', filename='/sponsors/appdesign.jpg') }}"></a>
+					</div>
+
+
+				</div>
+				<button class="carousel-control-prev" role="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+					<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+					<span class="sr-only">Previous</span>
+				</button>
+				<button class="carousel-control-next" role="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
+					<span class="carousel-control-next-icon" aria-hidden="true"></span>
+					<span class="sr-only">Next</span>
+				</button>
+			</div>
+
+
+		</div>
+	</div>
+
+
+	<br>
+	<br>
+
+
+	<div class="content-section mt-26">
+		<div class="dez-post-media dez-img-effect zoom-slow">
+			<h3 style="padding-top:0px;">Tabuľky</h3>
+
+			<div id="tabz" class="carousel slide" data-bs-ride="carousel" data-bs-touch="true" data-bs-interval="false">
+				<div class="carousel-indicators">
+					<button type="button" class="btn text active" data-bs-target="#tabz" data-bs-slide-to="0" aria-current="true" aria-label="Slide 1">A tím</button>
+					<button class="btn text" data-bs-target="#tabz" data-bs-slide-to="1" aria-label="Slide 2">U19</button>
+					<button class="btn text" data-bs-target="#tabz" data-bs-slide-to="2" aria-label="Slide 3">U17</button>
+					<button class="btn text" data-bs-target="#tabz" data-bs-slide-to="3" aria-label="Slide 4">U15</button>
+					<button class="btn text" data-bs-target="#tabz" data-bs-slide-to="4" aria-label="Slide 5">U13</button>
+				</div>
+					<div class="carousel-inner">
+					{% for num in range(5) %}
+					<div class="carousel-item-tabz2 carousel-item{% if loop.index == 1 %} active{% endif %}">
+						{% for team in teamz %} 
+						{% if team.id == num+1 %}
+						<h3 style="opacity:0.85;padding:20px;font-size: 93%;">{{teamz[loop.index0].main_league}}</h3>
+						{% endif %}
+						{% endfor %}
+					<table class="table scoretable">
+						<thead>
+							<tr class="table-headding">
+								<th>#</th>
+								<th>Tím</th>
+								<th style="text-align: center;">Z</th>
+								<th style="text-align: center;">V</th>
+								<th style="text-align: center;">R</th>
+								<th style="text-align: center;">P</th>
+								<th style="text-align: center;">S</th>
+								<th>B</th>
+							</tr>
+						</thead>
+						<tbody>
+						{% for tteam in score_table if tteam.team_id == loop.index %}
+
+							<tr> 
+							<th style="opacity:0.8" scope="row">{{loop.index}}</th> 
+							<td>{{tteam.club|replace("Devínska Nová Ves", "Devínska N.V.")|replace("Futbalová akadémia Lafranconi FTVŠ UK","FA FTVŠ UK") }}</td> 
+							<td style="opacity:0.8;text-align: center;">{{tteam.games}}</td> 
+							<td style="opacity:0.8;text-align: center;">{{tteam.wins}}</td> 
+							<td style="opacity:0.8;text-align: center;">{{tteam.draws}}</td> 
+							<td style="opacity:0.8;text-align: center;">{{tteam.loses}}</td> 
+							<td style="opacity:0.8;text-align: center;">{{tteam.score}}</td> 
+							<td style="opacity:1;text-align: center;font-weight: 600;">{{tteam.points}}</td> 
+
+							</tr>
+
+							{% endfor %}
+							</tbody>
+
+							</table>
+							</div>
+
+
+					{% endfor %}
+
+				</div>
+
+			</div>
+
+
+		</div>
+	</div>
+
+
+
+
+
+	</div>
+	</div>
+	</main>
+
+	{% if current_user.is_authenticated %}
+
+	<div
+
+		class="modal fade"
+		id="calenadrModal"
+		tabindex="-1"
+		role="dialog"
+		aria-labelledby="calenadrModalLabel"
+		aria-hidden="true"
+		style="z-index: 999999999999999999999999999999;"
+	>
+		<div class="modal-dialog" role="document" style="overflow:none;margin:auto;padding-top: 16px;">
+			<div class="modal-content" style="height: 660px;overflow:none;">
+				<button
+				type="button"
+				class="btn btnclose"
+				data-bs-dismiss="modal"
+				>
+				X
+			</button>
 <div id="iframeHolder"></div>
 
-    </div>
-      </div>
-    </div>
-  
-    {% endif %}
+	</div>
+		</div>
+	</div>
+
+	{% endif %}
 
 
 
 
-    <br><br>
-    <footer class="footer">
-      <br>
-      <div class="container bottom_border">
-      <div class="row">
-      <div class=" col-sm-4 col-md col-sm-4  col-12 col">
-      <h3>FC SLOVAN MODRA</h5>
-      <!--headin5_amrc-->
-      <p style="font-size: 90%;opacity: 0.9;">Sme najstarší športový klub v Modre, ktorý bol založený v roku 1926 staviteľom Jozefom Horákom a učiteľom Jozefom Kopom. Dnes je v klube registrovaných 115 hráčov v siedmich družstvách. </p>
-      <div style="margin-right:15px; font-size: 90%;opacity: 0.9;">
-        <i class="fa fa-location-arrow" aria-hidden="true"></i> Kalinčiakova 6, 900 01 Modra<br>
-        <i class="fa fa-phone" aria-hidden="true"></i>  +421 918 128 003<br>
-        <i class="fa fa fa-envelope" aria-hidden="true"></i> klub@fcsm.sk
-      </div>
-      
-      
-      </div>
-      
-      
-      <div class="mx-auto col-sm-4 col-md  col-6 col">
-        <center><img class="image-logo" style="margin-left:-20px;padding-top:20px;padding-bottom:20px;opacity:0.99;" width="169" src="{{ url_for('static', filename='main/logo-slovan-modra-biele.png') }}"></center>
-      </div>
-      
-      
+	<br><br>
+	<footer class="footer">
+		<br>
+		<div class="container bottom_border">
+		<div class="row">
+		<div class=" col-sm-4 col-md col-sm-4  col-12 col">
+		<h3>FC SLOVAN MODRA</h5>
+		<!--headin5_amrc-->
+		<p style="font-size: 90%;opacity: 0.9;">Sme najstarší športový klub v Modre, ktorý bol založený v roku 1926 staviteľom Jozefom Horákom a učiteľom Jozefom Kopom. Dnes je v klube registrovaných 115 hráčov v siedmich družstvách. </p>
+		<div style="margin-right:15px; font-size: 90%;opacity: 0.9;">
+			<i class="fa fa-location-arrow" aria-hidden="true"></i> Kalinčiakova 6, 900 01 Modra<br>
+			<i class="fa fa-phone" aria-hidden="true"></i> +421 918 128 003<br>
+			<i class="fa fa fa-envelope" aria-hidden="true"></i> klub@fcsm.sk
+		</div>
 
-      
-      <div class=" col-sm-4 col-md  col-12 col">
-      <h3>Follow us</h3>
-      <!--headin5_amrc ends here-->
-      <div class="row mb-10" style="margin-bottom: 10px;">
-     
-        <div class="col-12">
-          <center>
-             <div style="height:30px;display: block;"></div>
-          </center>
 
-        </div>
+		</div>
 
-        <div class="col-3">
 
-        </div>
-        <div class="col-2">
-          <center>
-            <a href="https://www.facebook.com/fcslovanmodra" target="_blank" class="product-img2"><i style="font-size: 300%;text-align: center;" class="fa fa-facebook-f"></i> </a>
-          </center>
-        </div>
-
-        <div class="col-2">
-          <center>
-            <a href="https://www.youtube.com/@fcslovanmodra6225" target="_blank" class="product-img2"><i style="font-size: 300%;text-align: center;" class="fa fa-youtube"></i> </a>
-          </center>
-        </div>
-
-        <div class="col-2">
-          <center>
-            <a href="https://www.instagram.com/fcslovanmodra" target="_blank" class="product-img2"><i style="font-size: 300%;text-align: center;" class="fa fa-instagram"></i> </a>
-          </center>
-        </div>
+		<div class="mx-auto col-sm-4 col-md  col-6 col">
+			<center><img class="image-logo" style="margin-left:-20px;padding-top:20px;padding-bottom:20px;opacity:0.99;" width="169" src="{{ url_for('static', filename='main/logo-slovan-modra-biele.png') }}"></center>
+		</div>
 
 
 
 
-        <div class="col-3">
+		<div class=" col-sm-4 col-md  col-12 col">
+		<h3>Follow us</h3>
+		<!--headin5_amrc ends here-->
+		<div class="row mb-10" style="margin-bottom: 10px;">
 
-        </div>
+			<div class="col-12">
+				<center>
+					<div style="height:30px;display: block;"></div>
+				</center>
 
-      </div>
-      <!--footer_ul2_amrc ends here-->
-      </div>
-      </div>
-      </div>
-      
-      
-      <div class="container">
+			</div>
 
-      <!--foote_bottom_ul_amrc ends here-->
-      <p style="margin-top:20px;font-size: 75%;" class="text-center">Copyright @2023 | Powered by <a target="_blank" href="https://appdesign.sk">appdesign.sk</a></p>
-      
-        
-      </footer>
+			<div class="col-3">
+
+			</div>
+			<div class="col-2">
+				<center>
+					<a href="https://www.facebook.com/fcslovanmodra" target="_blank" class="product-img2"><i style="font-size: 300%;text-align: center;" class="fa fa-facebook-f"></i> </a>
+				</center>
+			</div>
+
+			<div class="col-2">
+				<center>
+					<a href="https://www.youtube.com/@fcslovanmodra6225" target="_blank" class="product-img2"><i style="font-size: 300%;text-align: center;" class="fa fa-youtube"></i> </a>
+				</center>
+			</div>
+
+			<div class="col-2">
+				<center>
+					<a href="https://www.instagram.com/fcslovanmodra" target="_blank" class="product-img2"><i style="font-size: 300%;text-align: center;" class="fa fa-instagram"></i> </a>
+				</center>
+			</div>
+
+
+
+
+			<div class="col-3">
+
+			</div>
+
+		</div>
+		<!--footer_ul2_amrc ends here-->
+		</div>
+		</div>
+		</div>
+
+
+		<div class="container">
+
+		<!--foote_bottom_ul_amrc ends here-->
+		<p style="margin-top:20px;font-size: 75%;" class="text-center">Copyright @2023 | Powered by <a target="_blank" href="https://appdesign.sk">appdesign.sk</a></p>
+
+
+		</footer>
 <script>
-    document.onreadystatechange = function() {
-        if (document.readyState !== "complete") {
-            //document.querySelector(
-            //"body").style.visibility = "hidden";
-            document.querySelector(
-            "#loader").style.visibility = "visible";
-        } else {
-            document.querySelector(
-            "#loader").style.display = "none";
-            //document.querySelector(
-            //"body").style.visibility = "visible";
-        }
-    };
+	document.onreadystatechange = function() {
+		if (document.readyState !== "complete") {
+			//document.querySelector(
+			//"body").style.visibility = "hidden";
+			document.querySelector(
+			"#loader").style.visibility = "visible";
+		} else {
+			document.querySelector(
+			"#loader").style.display = "none";
+			//document.querySelector(
+			//"body").style.visibility = "visible";
+		}
+	};
 </script>
-    
+
 <script>
-  // Set the date we're counting down to
+	// Set the date we're counting down to
   var countDownDate = new Date("{{next22.start_event}}").getTime();
   
   // Update the count down every 1 second
   var x = setInterval(function() {
   
     // Get today's date and time
-    var now = new Date().getTime();
-  
-    // Find the distance between now and the count down date
-    var distance = countDownDate - now;
-  
-    // Time calculations for days, hours, minutes and seconds
-    var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-    var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-  
-    // Display the result in the element with id="demo"
-    document.getElementById("countdown_desc").innerHTML = "deň | hod | min | sek";
-    document.getElementById("countdown_desc").style.opacity = 0.75;
-    document.getElementById("countdown").innerHTML = "<button class=\"btn-live\">" + days + "</button><button class=\"btn-live\">" + hours + "</button><button class=\"btn-live\">" + minutes + "</button><button class=\"btn-live\">" + seconds + "</button> ";
-  
-    // If the count down is finished, write some text
-    if (distance < 0) {
-      clearInterval(x);
-      document.getElementById("countdown").innerHTML = "HRÁ SA";
-    }
-  }, 1000);
-  </script>
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+		var now = new Date().getTime();
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-    <script src="{{ url_for('static', filename='js/team.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/product.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/filemanager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/lightbox.js') }}"></script>
-    <script>
-     // $(document).ready(function(){$("img").click(function(){this.requestFullscreen()})});
-    </script>
-    <script type="text/javascript">
-      $(function(){
-          $('#kalendar_button').click(function(){
-            document.querySelector(
-            "#loader").style.visibility = "visible";
-            $('#iframeHolder').html('<iframe id="calendar_iframe" style="z-index:9999;height:640px;margin:4px;padding:0px;width:100%;border:none;overflow:none;background-color: black;" src="{{ url_for('calendar.index') }}"></iframe>');
-          });   
-      });
-      </script>
-      <script src="https://js.stripe.com/v3/"></script>
-      <script>
-        const checkout_public_key = '{{checkout_public_key}}';
-        const checkout_session_id = '{{checkout_session_id}}';
-      </script>
-      <script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>
+		// Find the distance between now and the count down date
+		var distance = countDownDate - now;
 
-  </body>
+		// Time calculations for days, hours, minutes and seconds
+		var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+		var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+		var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+		var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+		// Display the result in the element with id="demo"
+		document.getElementById("countdown_desc").innerHTML = "deň | hod | min | sek";
+		document.getElementById("countdown_desc").style.opacity = 0.95;
+		document.getElementById("countdown").innerHTML = "<button class=\"btn-live\">" + days + "</button><button class=\"btn-live\">" + hours + "</button><button class=\"btn-live\">" + minutes + "</button><button class=\"btn-live\">" + seconds + "</button> ";
+
+		// If the count down is finished, write some text
+		if (distance < 0) {
+			clearInterval(x);
+			document.getElementById("countdown").innerHTML = "HRÁ SA";
+		}
+	}, 1000);
+	</script>
+		<!-- Optional JavaScript -->
+		<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+		<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+		<script src="{{ url_for('static', filename='js/team.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/product.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/filemanager.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/lightbox.js') }}"></script>
+		<script>
+			// $(document).ready(function(){$("img").click(function(){this.requestFullscreen()})});
+		</script>
+		<script type="text/javascript">
+			$(function(){
+				$('#kalendar_button').click(function(){
+					document.querySelector(
+					"#loader").style.visibility = "visible";
+					$('#iframeHolder').html('<iframe id="calendar_iframe" style="z-index:9999;height:640px;margin:4px;padding:0px;width:100%;border:none;overflow:none;background-color: black;" src="{{ url_for('calendar.index') }}"></iframe>');
+				}); 
+			});
+			</script>
+			<script src="https://js.stripe.com/v3/"></script>
+			<script>
+				const checkout_public_key = '{{checkout_public_key}}';
+				const checkout_session_id = '{{checkout_session_id}}';
+			</script>
+			<script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>
+
+	</body>
 </html>
