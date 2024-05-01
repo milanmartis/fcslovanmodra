@@ -5,12 +5,18 @@ from flask import Blueprint
 from app import db
 from datetime import datetime, date 
 from flask_security import current_user, roles_required
-from sqlalchemy import func, and_
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
+
+from sqlalchemy.sql import func, and_
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship
+
 
 # from app.users.roles import user_role
 
 main = Blueprint('main', __name__)
 
+Base = declarative_base()
 
 @main.route("/tabz")
 def tabz():
@@ -55,26 +61,39 @@ def sponsors():
 # @main.route("/menu")
 class Next:
     def next():
+        today = func.now()  # Nastavenie aktuálneho dátumu a času
+        engine = db.get_engine()
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        # Získanie 5 tímov zoradených podľa ID
+        teams = session.query(Team.id, Team.name).order_by(Team.id.asc()).limit(5).all()
         
-        today = func.now()  # Adjust this if necessary to match your timezone handling
+        next_events = []
+        for team_id, team_name in teams:
+            # Poddotaz na nájdenie najbližšieho eventu pre každý tím
+            subquery = (session.query(
+                    Event.event_team_id,
+                    func.min(Event.start_event).label('min_start')
+                )
+                .filter(Event.start_event >= today)
+                .filter(Event.event_category_id == 1)
+                .filter(Event.event_team_id == team_id)
+                .group_by(Event.event_team_id)
+                .subquery())
 
-        subquery = (db.session.query(
-                Event.event_team_id,
-                func.min(Event.start_event).label('min_start')
-            )
-            .filter(Event.start_event >= today)
-            .filter(Event.event_category_id == 1)
-            .group_by(Event.event_team_id)
-            .subquery())
-
-        # Main query to get the event details for the earliest event for each team
-        next_events = (db.session.query(Event)
+            # Hlavný dotaz pre získanie detailov o evente
+            event = (session.query(Event)
                     .join(subquery, and_(
                         Event.event_team_id == subquery.c.event_team_id,
                         Event.start_event == subquery.c.min_start))
-                    .order_by(Event.event_team_id.asc())
-                    .all())
+                    .order_by(Event.start_event.asc())
+                    .first())
 
+            if event:
+                next_events.append(event)
+            else:
+                next_events.append(f"Bez údajov pre tím {team_name}")
 
         return next_events
         

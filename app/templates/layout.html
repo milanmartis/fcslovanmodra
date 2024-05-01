@@ -129,22 +129,29 @@
 								<div class="dez-post-media dez-img-effect zoom-slow">
 									<h3 style="padding-top:12px;">Najbližší zápas</h3>
 									<center>
+										{% for team in teamz[:5] if team.id==loop.index %} 
+															<h6><p style="opacity:0.7;">{{ team.main_league }}</p></h6>
+										{% endfor %}
 								
-										{% if current_date.strftime('%d. %m. %Y')==next222.start_event.strftime('%d. %m. %Y') %}{% set datetext = "Dnes" %} {% else %} {% set datetext = next222.start_event.strftime('%d. %m. %Y') %}{% endif %}
-										<h6>{{ datetext }} | <b>{{ next222.start_event.strftime('%H:%M') }} </b></h6>
-
-                    {% for team in teamz[:5] if team.id==loop.index %} 
-										<h6><p style="opacity:0.7;">{{ team.main_league }}</p></h6>
-                    {% endfor %}
-
-										<div class="btn-live-frame" style="display: none;">
-											<p style="padding:0px; margin:0px;opacity: 1.0;color:#fff;font-size: 70%;" id="countdown_desc"></p>
-											<p style="padding:0px; margin:0px;" id="countdown"></p>
-										</div>
+											{% if next222 is string %}
+												<h6>{{ next222 }}</h6>  <!-- Vypíše reťazec pre tímy bez udalostí -->
+											{% else %}
+												{% if current_date.strftime('%d. %m. %Y') == next222.start_event.strftime('%d. %m. %Y') %}
+													{% set datetext = "Dnes" %}
+												{% else %}
+													{% set datetext = next222.start_event.strftime('%d. %m. %Y') %}
+												{% endif %}
+												<h6>{{ datetext }} | <b>{{ next222.start_event.strftime('%H:%M') }}</b></h6>
+												
+												
+												<div class="btn-live-frame" style="display: none;">
+													<p style="padding:0px; margin:0px;opacity: 1.0;color:#fff;font-size: 70%;" id="countdown_desc"></p>
+													<p style="padding:0px; margin:0px;" id="countdown"></p>
+												</div>
 										<img class="image-logo" style="padding:6px;" height="91" src="/static/clubs/{{ next_name2[0]|slugify }}.png">
 										<img class="image-logo" style="padding:6px;" height="91" src="/static/clubs/{{ next_name2[1]|slugify }}.png"> 
 										<br>
-
+										
 										<!--
 											<button class="btn btn-live2" onclick="javascript:location.href='{{ url_for('products.list_products') }}'">LIVE</button><br>
 										-->
@@ -155,8 +162,9 @@
 										<h3 style="text-align:center;margin-top:-5px;">{{ next_name2[1] }}</h3>
 										<p style="opacity:0.7;"><i class="fa fa-map-marker" aria-hidden="true"></i>
 											<a href="{{ next222.link }}" target="_blank">{{ next222.address }}</a></p>
-
-
+											
+											
+											{% endif %}
 
 
 
