@@ -164,7 +164,23 @@ def update_team(team_id):
         
         Player.query.filter(Player.team_id == team_id).delete()
         
-        df = pd.read_html(player_list_scrap)
+        s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
+
+        # Vytvorenie instance WebDriveru s explicitným nastavením služby
+        driver2 = webdriver.Chrome(service=s)
+
+        driver2.get(player_list_scrap)
+
+        # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
+        sleep(5)
+
+        # Získanie zdrojového kódu stránky po vykonaní JavaScriptu
+        html_list_scrap = driver2.page_source
+
+        # Zatvorenie prehliadača
+        driver2.quit()
+        
+        df = pd.read_html(html_list_scrap)
 
         x = int(len(df))
 

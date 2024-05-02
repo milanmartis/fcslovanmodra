@@ -13,10 +13,19 @@ import stripe
 import base64
 import os
 from flask_migrate import Migrate
+from sqlalchemy.pool import QueuePool
+
 
 salt = base64.b64encode(os.urandom(32)).decode('utf-8')
 
-db = SQLAlchemy()
+# db = SQLAlchemy()
+db = SQLAlchemy(engine_options={
+    'poolclass': QueuePool,
+    'pool_size': Config.SQLALCHEMY_POOL_SIZE,
+    'max_overflow': Config.SQLALCHEMY_MAX_OVERFLOW,
+    'pool_timeout': Config.SQLALCHEMY_POOL_TIMEOUT,
+    'pool_recycle': Config.SQLALCHEMY_POOL_RECYCLE,
+})
 
 bcrypt = Bcrypt()
 # principal = Principal()

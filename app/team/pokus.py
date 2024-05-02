@@ -11,7 +11,7 @@ s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chro
 # Vytvorenie instance WebDriveru s explicitným nastavením služby
 driver = webdriver.Chrome(service=s)
 
-driver.get("https://sportnet.sme.sk/futbalnet/z/obfz-bratislava-vidiek/s/4638/tabulky/")
+driver.get("https://sportnet.sme.sk/futbalnet/k/fc-slovan-modra/tim/55102/hraci/")
 
 # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
 sleep(5)
