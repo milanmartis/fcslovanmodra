@@ -19,13 +19,7 @@ from sqlalchemy.pool import QueuePool
 salt = base64.b64encode(os.urandom(32)).decode('utf-8')
 
 # db = SQLAlchemy()
-db = SQLAlchemy(engine_options={
-    'poolclass': QueuePool,
-    'pool_size': Config.SQLALCHEMY_POOL_SIZE,
-    'max_overflow': Config.SQLALCHEMY_MAX_OVERFLOW,
-    'pool_timeout': Config.SQLALCHEMY_POOL_TIMEOUT,
-    'pool_recycle': Config.SQLALCHEMY_POOL_RECYCLE,
-})
+db = SQLAlchemy()
 
 bcrypt = Bcrypt()
 # principal = Principal()
@@ -82,6 +76,15 @@ def create_app(config_class=Config):
         # Alebo presmerovanie na domovskú stránku:
         return redirect(url_for('main.home'))
     
+    if app.debug:
+        import logging
+        logging.basicConfig()
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+    
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        db.session.remove()
+        
     @app.context_processor
     def utility_processor():
         def aws_image_url():

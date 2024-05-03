@@ -12,10 +12,10 @@ class Config:
     PERMANENT_SESSION_LIFETIME =  timedelta(minutes=1440)
     # SQLALCHEMY_DATABASE_URI = 'sqlite:///fcsm.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = 'postgresql://vypfiejfuysuke:580ddb096d4eef247d96a7196410d02e15aeaa7be20c4e4e3eaf80dede605b7d@ec2-52-72-27-184.compute-1.amazonaws.com:5432/df7d87lrmqiu2p'
+    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
     SQLALCHEMY_POOL_SIZE = 10  # Maximálny počet stálych pripojení
     SQLALCHEMY_MAX_OVERFLOW = 20  # Maximálny počet prekročených pripojení nad rámec pool_size
-    SQLALCHEMY_POOL_TIMEOUT = 300  # Maximálna doba čakania na pripojenie, v sekundách
+    SQLALCHEMY_POOL_TIMEOUT = 30  # Maximálna doba čakania na pripojenie, v sekundách
     SQLALCHEMY_POOL_RECYCLE = 1800  # Interval v sekundách, po ktorom sa pripojenie obnoví
     # SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
     MAIL_SERVER = 'smtp.m1.websupport.sk'
