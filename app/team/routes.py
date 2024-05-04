@@ -19,7 +19,23 @@ import pandas as pd
 import numpy as np
 # from flask_principal import Principal, Permission, RoleNeed
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+# from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+def get_driver():
+    chrome_options = Options()
+    chrome_options.binary_location = os.environ.get("CHROME_BIN")
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+
+    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=chrome_options)
+    return driver
+
 
 from time import sleep
 
@@ -109,10 +125,11 @@ def update_team(team_id):
         ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
 
         
-        s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
+        # s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
 
         # Vytvorenie instance WebDriveru s explicitným nastavením služby
-        driver = webdriver.Chrome(service=s)
+        # driver = webdriver.Chrome(service=s)
+        driver = get_driver()
 
         driver.get(score_scrap)
 
@@ -164,11 +181,11 @@ def update_team(team_id):
         
         Player.query.filter(Player.team_id == team_id).delete()
         
-        s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
+        # s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
 
         # Vytvorenie instance WebDriveru s explicitným nastavením služby
-        driver2 = webdriver.Chrome(service=s)
-
+        # driver2 = webdriver.Chrome(service=s)
+        driver2 = get_driver()
         driver2.get(player_list_scrap)
 
         # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
