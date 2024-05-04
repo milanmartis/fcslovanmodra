@@ -337,6 +337,11 @@ def list_members():
 def member(member_id):
     player = Player.query.filter(Player.id == member_id).first()
     # player = Member.query.get_or_404(member_id)
+    # player = Player.query.get(player_id)
+    if player is None:
+        # Správne ošetrite prípad, keď hráč neexistuje
+        return "Hráč neexistuje", 404
+    # print(player.name)
     print(player.name)
     search = "{}%".format(player.name)
     player_info = Member.query.filter(Member.name.like(search)).first()
