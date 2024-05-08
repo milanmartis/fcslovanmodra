@@ -1,7 +1,7 @@
 *.pyc
 *.pyo
 *.log
-venv
+env
 tests
 docs
 .git
