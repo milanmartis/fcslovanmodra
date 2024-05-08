@@ -7,3 +7,4 @@ docs
 .git
 __pycache__
 node_modules
+app/static/posts
