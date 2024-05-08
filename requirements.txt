@@ -47,7 +47,7 @@ python-slugify==8.0.1
 pytz==2023.3
 requests==2.31.0
 s3transfer==0.6.2
-selenium==4.20.0
+# selenium==4.20.0
 six==1.16.0
 soupsieve==2.5
 speaklater==1.3
