@@ -18,8 +18,8 @@ from flask_security import roles_required
 import pandas as pd
 import numpy as np
 # from flask_principal import Principal, Permission, RoleNeed
-# from selenium import webdriver
-# from selenium.webdriver.chrome.service import Service
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 # from selenium.webdriver.chrome.options import Options
 import os
 from dotenv import load_dotenv
@@ -107,151 +107,151 @@ def team_name(team_name):
 
 
 
-# @team.route("/teams/<int:team_id>/update", methods=['GET', 'POST'])
-# @login_required
-# # @roles_required('Admin', 'WebAdmin')
-# def update_team(team_id):
-#     team = Team.query.get_or_404(team_id)
-#     form = TeamForm()
+@team.route("/teams/<int:team_id>/update", methods=['GET', 'POST'])
+@login_required
+# @roles_required('Admin', 'WebAdmin')
+def update_team(team_id):
+    team = Team.query.get_or_404(team_id)
+    form = TeamForm()
     
     
-#     score_scrap = request.form.get("score_scrap")
+    score_scrap = request.form.get("score_scrap")
 
-#     # score_scrap = "C:\\Users\\Dell\\Downloads\\pandas\\u13.html"
+    # score_scrap = "C:\\Users\\Dell\\Downloads\\pandas\\u13.html"
         
-#     if request.form.get('what') and team.score_scrap and score_scrap:
+    if request.form.get('what') and team.score_scrap and score_scrap:
         
         
-#         ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
+        ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
 
         
-#         # s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
+        s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
 
-#         # Vytvorenie instance WebDriveru s explicitným nastavením služby
-#         # driver = webdriver.Chrome(service=s)
-#         driver = get_driver()
+        # Vytvorenie instance WebDriveru s explicitným nastavením služby
+        driver = webdriver.Chrome(service=s)
+        # driver = get_driver()
 
-#         driver.get(score_scrap)
+        driver.get(score_scrap)
 
-#         # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
-#         sleep(5)
+        # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
+        sleep(5)
 
-#         # Získanie zdrojového kódu stránky po vykonaní JavaScriptu
-#         html = driver.page_source
+        # Získanie zdrojového kódu stránky po vykonaní JavaScriptu
+        html = driver.page_source
 
-#         # Zatvorenie prehliadača
-#         driver.quit()
+        # Zatvorenie prehliadača
+        driver.quit()
 
-#         # Použitie pandas na čítanie tabuliek
-#         # tables = pd.read_html(html)
-#         df = pd.read_html(html)
-#         ###########################################################################################
-#         # df = pd.DataFrame(df, index=labels)
-#         x = int(len(df))
+        # Použitie pandas na čítanie tabuliek
+        # tables = pd.read_html(html)
+        df = pd.read_html(html)
+        ###########################################################################################
+        # df = pd.DataFrame(df, index=labels)
+        x = int(len(df))
 
-#         for i in range(0, x):
-#             df[i] = df[i][['Klub', 'Z', 'V', 'R', 'P', 'Skóre', 'B']]
-#             # df[i] = pd.DataFrame(df[i], index=range(1, 16)+1)
-#             # df[i] = df[i].dropna(subset = ['Klub'])
-#             # df['Klub'] = df['Klub'].replace(np.nan, 'Inter')
-#             df[i] = df[i].replace(np.nan, '', regex=True)
-#             df[i].index = df[i].index + 1
-#             df[i]['team_id'] = team_id
-#             # rec = df[i].head(100).to_records().tolist()
-#             # score_team[i] = ScoreTable(club=rec[i][1],games=rec[i][2],wins=rec[i][3],draws=rec[i][4],loses=rec[i][5], score=rec[i][6], points=rec[i][7], team_id=team_id)
-#             # db.session.add(score_team[i])
+        for i in range(0, x):
+            df[i] = df[i][['Klub', 'Z', 'V', 'R', 'P', 'Skóre', 'B']]
+            # df[i] = pd.DataFrame(df[i], index=range(1, 16)+1)
+            # df[i] = df[i].dropna(subset = ['Klub'])
+            # df['Klub'] = df['Klub'].replace(np.nan, 'Inter')
+            df[i] = df[i].replace(np.nan, '', regex=True)
+            df[i].index = df[i].index + 1
+            df[i]['team_id'] = team_id
+            # rec = df[i].head(100).to_records().tolist()
+            # score_team[i] = ScoreTable(club=rec[i][1],games=rec[i][2],wins=rec[i][3],draws=rec[i][4],loses=rec[i][5], score=rec[i][6], points=rec[i][7], team_id=team_id)
+            # db.session.add(score_team[i])
 
-#             records_to_insert = df[i].head(100).to_records()
+            records_to_insert = df[i].head(100).to_records()
 
-#         # cursor = connection.cursor()
-#         # cursor.executemany(mySql_insert_query, records_to_insert)
-#         # connection.commit()
-#         # print(records_to_insert)
-#         for rec in records_to_insert:
-#             score_team = ScoreTable(club=rec[1],games=int(rec[2]),wins=int(rec[3]),draws=int(rec[4]),loses=int(rec[5]), score=rec[6], points=int(rec[7]), team_id=team_id)
-#             db.session.add(score_team)
-#             # print(rec[1])
-#         db.session.commit()
+        # cursor = connection.cursor()
+        # cursor.executemany(mySql_insert_query, records_to_insert)
+        # connection.commit()
+        # print(records_to_insert)
+        for rec in records_to_insert:
+            score_team = ScoreTable(club=rec[1],games=int(rec[2]),wins=int(rec[3]),draws=int(rec[4]),loses=int(rec[5]), score=rec[6], points=int(rec[7]), team_id=team_id)
+            db.session.add(score_team)
+            # print(rec[1])
+        db.session.commit()
 
 
 
-#     player_list_scrap = request.form.get("player_list_scrap")
+    player_list_scrap = request.form.get("player_list_scrap")
         
-#     if  request.form.get('what') and team.player_list_scrap and player_list_scrap:
+    if  request.form.get('what') and team.player_list_scrap and player_list_scrap:
         
-#         Player.query.filter(Player.team_id == team_id).delete()
+        Player.query.filter(Player.team_id == team_id).delete()
         
-#         # s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
+        s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
 
-#         # Vytvorenie instance WebDriveru s explicitným nastavením služby
-#         # driver2 = webdriver.Chrome(service=s)
-#         driver2 = get_driver()
-#         driver2.get(player_list_scrap)
+        # Vytvorenie instance WebDriveru s explicitným nastavením služby
+        driver2 = webdriver.Chrome(service=s)
+        # driver2 = get_driver()
+        driver2.get(player_list_scrap)
 
-#         # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
-#         sleep(5)
+        # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
+        sleep(5)
 
-#         # Získanie zdrojového kódu stránky po vykonaní JavaScriptu
-#         html_list_scrap = driver2.page_source
+        # Získanie zdrojového kódu stránky po vykonaní JavaScriptu
+        html_list_scrap = driver2.page_source
 
-#         # Zatvorenie prehliadača
-#         driver2.quit()
+        # Zatvorenie prehliadača
+        driver2.quit()
         
-#         df = pd.read_html(html_list_scrap)
+        df = pd.read_html(html_list_scrap)
 
-#         x = int(len(df))
+        x = int(len(df))
 
-#         for i in range(0, x):
+        for i in range(0, x):
             
-#             if i == 0:
-#                 pozicia = 1
-#                 # df[i] = df[i].set_index(pozicia)
+            if i == 0:
+                pozicia = 1
+                # df[i] = df[i].set_index(pozicia)
 
-#             if i == 1:
-#                 pozicia = 2
-#                 # df[i] = df[i].set_index(pozicia)
+            if i == 1:
+                pozicia = 2
+                # df[i] = df[i].set_index(pozicia)
 
-#             if i == 2:
-#                 pozicia = 3
-#                 # df[i] = df[i].set_index(pozicia)
+            if i == 2:
+                pozicia = 3
+                # df[i] = df[i].set_index(pozicia)
 
-#             if i == 3:
-#                 pozicia = 4
-#                 # df[i] = df[i].set_index(pozicia)
+            if i == 3:
+                pozicia = 4
+                # df[i] = df[i].set_index(pozicia)
 
-#             df[i]['pozicia'] = pozicia
-#             df[i]['team'] = team_id
+            df[i]['pozicia'] = pozicia
+            df[i]['team'] = team_id
             
-#             records_to_insert = df[i].head(100).to_records().tolist()
+            records_to_insert = df[i].head(100).to_records().tolist()
             
-#             print(records_to_insert)
+            print(records_to_insert)
 
 
-#             for rec in records_to_insert:
-#                 score_team = Player(name=rec[1], position=rec[5], team=team_id, score=int(rec[2]), yellow_card=int(rec[3]), red_card=rec[4], team_id=team_id)
-#                 db.session.add(score_team)
-#                 # print(rec[1])
-#         db.session.commit()
+            for rec in records_to_insert:
+                score_team = Player(name=rec[1], position=rec[5], team=team_id, score=int(rec[2]), yellow_card=int(rec[3]), red_card=rec[4], team_id=team_id)
+                db.session.add(score_team)
+                # print(rec[1])
+        db.session.commit()
         
          
     
-#     # if post.author != current_user:
-#     #     abort(403)
-#     if form.validate_on_submit():
-#         team.name = form.name.data
-#         team.main_league = form.main_league.data
-#         team.score_scrap = form.score_scrap.data
-#         team.player_list_scrap = form.player_list_scrap.data
-#         db.session.commit()
-#         flash('A Team has been updated!', 'success')
-#         return redirect(url_for('team.list_teams', team_id=team.id))
-#     elif request.method == 'GET':
-#         form.name.data = team.name
-#         form.main_league.data = team.main_league
-#         form.score_scrap.data = team.score_scrap
-#         form.player_list_scrap.data = team.player_list_scrap
-#     return render_template('teams/create_team.html', title='Update Team',
-#                            form=form, team=team, legend='Update Team', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    # if post.author != current_user:
+    #     abort(403)
+    if form.validate_on_submit():
+        team.name = form.name.data
+        team.main_league = form.main_league.data
+        team.score_scrap = form.score_scrap.data
+        team.player_list_scrap = form.player_list_scrap.data
+        db.session.commit()
+        flash('A Team has been updated!', 'success')
+        return redirect(url_for('team.list_teams', team_id=team.id))
+    elif request.method == 'GET':
+        form.name.data = team.name
+        form.main_league.data = team.main_league
+        form.score_scrap.data = team.score_scrap
+        form.player_list_scrap.data = team.player_list_scrap
+    return render_template('teams/create_team.html', title='Update Team',
+                           form=form, team=team, legend='Update Team', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @team.route("/teams/<int:team_id>/delete", methods=['GET', 'POST'])
