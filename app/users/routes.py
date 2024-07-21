@@ -83,15 +83,23 @@ def register():
 
 @users.route("/login", methods=['GET', 'POST'])
 def login():
-    
-
+        
+    if current_user.is_authenticated:
+            return redirect(url_for('main.home'))
+        
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         # if user:
-        if user.confirm==False:
-            flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
+        print("---------------------------------")
+        print(form.email.data)
+        print(user)
+        if user is None:
+            flash('Zadaný účet neexistuje. Registrujte sa!', 'danger')
         else:
+            if user.confirm == False:
+               flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
+
             if user and bcrypt.check_password_hash(user.password, form.password.data):
                 identity_changed.send(current_app._get_current_object(), identity=Identity(user.id))
                 identity_changed.send(current_app._get_current_object(),
