@@ -50,6 +50,11 @@ def about():
 
     return render_template('about.html', title='About', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
+@main.route("/dokumenty")
+def dokumenty():
+
+    return render_template('dokumenty.html', title='Dokumenty', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
 
 
 @main.route("/sponsors")

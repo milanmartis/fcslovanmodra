@@ -13,14 +13,27 @@
           <div class="navbar-nav mr-auto">
             <ul class="navbar-nav mr-auto text-center">
 
-            <li class="nav-item nav-link ">
-              <a href="{{ url_for('main.about') }}">Klub</a>
+            
+              <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Klub</a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                  
+                <a class="nav-item nav-link" href="{{ url_for('main.about') }}">O klube </a>
+
+                <a class="nav-item nav-link" href="{{ url_for('main.dokumenty') }}">Dokumenty</a>
+
+
+              </div>
             </li>
+
+
             
             
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('posts.list_posts') }}">Články</a>
             </li>
+
+
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('team.team_name', team_name='A tím') }}">A tím</a>
             </li>
