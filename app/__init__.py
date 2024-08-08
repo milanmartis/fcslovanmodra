@@ -81,9 +81,9 @@ def create_app(config_class=Config):
         logging.basicConfig()
         logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
     
-    @app.teardown_appcontext
-    def shutdown_session(exception=None):
-        db.session.remove()
+    # @app.teardown_appcontext
+    # def shutdown_session(exception=None):
+    #     db.session.remove()
         
     @app.context_processor
     def utility_processor():
