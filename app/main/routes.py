@@ -72,7 +72,7 @@ class Next:
         session = Session()
 
         # Získanie 5 tímov zoradených podľa ID
-        teams = session.query(Team.id, Team.name).order_by(Team.id.asc()).limit(5).all()
+        teams = session.query(Team.id, Team.name).order_by(Team.id.asc()).limit(6).all()
         
         next_events = []
         for team_id, team_name in teams:
@@ -82,6 +82,7 @@ class Next:
                     func.min(Event.start_event).label('min_start')
                 )
                 .filter(Event.start_event >= today)
+                .filter(Event.event_team_id != 4) \
                 .filter(Event.event_category_id == 1)
                 .filter(Event.event_team_id == team_id)
                 .group_by(Event.event_team_id)
