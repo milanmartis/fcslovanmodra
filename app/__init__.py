@@ -14,7 +14,7 @@ import base64
 import os
 from flask_migrate import Migrate
 from sqlalchemy.pool import QueuePool
-from datetime import datetime
+
 
 salt = base64.b64encode(os.urandom(32)).decode('utf-8')
 
@@ -27,19 +27,14 @@ login_manager = LoginManager()
 
 mail = Mail()
 
+
 def create_app(config_class=Config):
     app = Flask(__name__)
 
     app.config.from_object(Config)
 
-    # Pridanie nastavení pre SQLAlchemy pool
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': 10,  # Zvýšenie veľkosti poolu
-        'max_overflow': 20,  # Zvýšenie pretečenia
-        'pool_timeout': 30  # Zvýšenie timeoutu
-    }
-
     from .models import User, Role, roles_users
+
 
     db.init_app(app)
     migrate = Migrate(app, db)  # Inicializácia Flask-Migrate
@@ -51,6 +46,7 @@ def create_app(config_class=Config):
 
     login_manager.login_view = 'users.login'
     login_manager.login_message_category = 'info'
+
 
     from app.users.routes import users
     from app.posts.routes import posts
@@ -94,11 +90,11 @@ def create_app(config_class=Config):
         def aws_image_url():
             return f'https://{Config.AWS_S3_BUCKET}.s3.amazonaws.com/'
         return dict(aws_image_url=aws_image_url)
-    
-    @app.context_processor
-    def inject_current_year():
-        return {'current_year': datetime.now().year}
 
+
+
+
+    
     @app.before_request
     def before_request():
         if not request.is_secure:
@@ -106,6 +102,7 @@ def create_app(config_class=Config):
             code = 301
             return redirect(url, code=code)   
     
+
     from .models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security = Security(app, user_datastore)
