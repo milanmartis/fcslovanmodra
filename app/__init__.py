@@ -91,7 +91,9 @@ def create_app(config_class=Config):
             return f'https://{Config.AWS_S3_BUCKET}.s3.amazonaws.com/'
         return dict(aws_image_url=aws_image_url)
 
-
+    @app.teardown_appcontext
+    def remove_session(*args, **kwargs):
+        db.session.remove()
 
 
     
