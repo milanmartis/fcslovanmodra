@@ -20,11 +20,9 @@ import numpy as np
 # from flask_principal import Principal, Permission, RoleNeed
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from .webdriver_setup import get_webdriver
 # from selenium.webdriver.chrome.options import Options
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
 
 # def get_driver():
@@ -121,14 +119,27 @@ def update_team(team_id):
 
     # score_scrap = "C:\\Users\\Dell\\Downloads\\pandas\\u13.html"
         
-    if request.method == 'POST' and form.validate_on_submit() and score_scrap:
-        ScoreTable.query.filter_by(team_id=team_id).delete()
+    if request.form.get('what') and team.score_scrap and score_scrap:
         
-        # Použití WebDriveru
-        driver = get_webdriver()
+        
+        ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
+
+        
+        s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
+
+        # Vytvorenie instance WebDriveru s explicitným nastavením služby
+        driver = webdriver.Chrome(service=s)
+        # driver = get_driver()
+
         driver.get(score_scrap)
-        sleep(5)  # Čekání na načítání stránky
+
+        # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
+        sleep(5)
+
+        # Získanie zdrojového kódu stránky po vykonaní JavaScriptu
         html = driver.page_source
+
+        # Zatvorenie prehliadača
         driver.quit()
 
         # Použitie pandas na čítanie tabuliek
