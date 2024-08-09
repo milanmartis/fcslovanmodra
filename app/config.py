@@ -16,7 +16,7 @@ class Config:
     SQLALCHEMY_POOL_SIZE = 10  # Maximálny počet stálych pripojení
     SQLALCHEMY_MAX_OVERFLOW = 20  # Maximálny počet prekročených pripojení nad rámec pool_size
     SQLALCHEMY_POOL_TIMEOUT = 30  # Maximálna doba čakania na pripojenie, v sekundách
-    SQLALCHEMY_POOL_RECYCLE = 1800  # Interval v sekundách, po ktorom sa pripojenie obnoví
+    SQLALCHEMY_POOL_RECYCLE = 300  # Interval v sekundách, po ktorom sa pripojenie obnoví
     # SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
     MAIL_SERVER = 'smtp.m1.websupport.sk'
     MAIL_PORT = 587

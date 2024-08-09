@@ -8,12 +8,15 @@ from flask_security import Security, SQLAlchemyUserDatastore
 # from flask_principal import Principal
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from werkzeug.exceptions import NotFound
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 import stripe
 import base64
 import os
 from flask_migrate import Migrate
 from sqlalchemy.pool import QueuePool
+from sqlalchemy import create_engine
+
+
 
 
 salt = base64.b64encode(os.urandom(32)).decode('utf-8')
@@ -35,6 +38,8 @@ def create_app(config_class=Config):
 
     from .models import User, Role, roles_users
 
+
+    # db.session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
     db.init_app(app)
     migrate = Migrate(app, db)  # Inicializácia Flask-Migrate
@@ -81,9 +86,9 @@ def create_app(config_class=Config):
         logging.basicConfig()
         logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
     
-    # @app.teardown_appcontext
-    # def shutdown_session(exception=None):
-    #     db.session.remove()
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        db.session.remove()
         
     @app.context_processor
     def utility_processor():
@@ -91,9 +96,9 @@ def create_app(config_class=Config):
             return f'https://{Config.AWS_S3_BUCKET}.s3.amazonaws.com/'
         return dict(aws_image_url=aws_image_url)
 
-    @app.teardown_appcontext
-    def remove_session(*args, **kwargs):
-        db.session.remove()
+    # @app.teardown_appcontext
+    # def remove_session(*args, **kwargs):
+    #     db.session.remove()
 
 
     
