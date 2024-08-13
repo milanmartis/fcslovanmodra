@@ -1233,7 +1233,39 @@ ol.carousel-indicators li {
 
 
 
+.score-display {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+}
 
+.icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-size: cover;
+    margin-right: 5px;
+}
+
+.football {
+    background-image: url('icons/football.png'); /* Pridajte cestu k obrázku futbalovej lopty */
+}
+
+.yellow-card {
+    background-image: url('icons/yellow-card.png'); /* Pridajte cestu k obrázku žltej karty */
+}
+
+.red-card {
+    background-image: url('icons/red-card.png'); /* Pridajte cestu k obrázku červenej karty */
+}
+
+.separator {
+    margin: 0 5px;
+}
+
+.value {
+    margin-right: 10px;
+}
 
 
 
