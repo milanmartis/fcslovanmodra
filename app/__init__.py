@@ -16,8 +16,22 @@ from flask_migrate import Migrate
 from sqlalchemy.pool import QueuePool
 from sqlalchemy import create_engine
 
+# Váš engine
+# engine = create_engine('postgresql://u3b5kp77o2leqp:pf33aba0e26883358e18298819114f5aaed1969879453eb9d9cd9b44c8ba2bf6b@ec2-52-203-177-39.compute-1.amazonaws.com:5432/dbedruk4eeusmo')
 
+# Zobrazenie nastavení poolu
 
+engine = create_engine(
+    os.getenv('SQLALCHEMY_DATABASE_URI'),
+    pool_size=100,          # Nastavte veľkosť poolu
+    max_overflow=20,       # Nastavte maximálny počet pripojení nad rámec poolu
+    pool_timeout=30,       # Nastavte čas čakania na voľné pripojenie
+    pool_recycle=3600      # Nastavte čas po ktorom sa pripojenie recykluje (v sekundách)
+)
+
+print("Pool size:", engine.pool.size())
+print("Max overflow:", engine.pool._max_overflow)
+print("Timeout:", engine.pool.timeout())
 
 salt = base64.b64encode(os.urandom(32)).decode('utf-8')
 
