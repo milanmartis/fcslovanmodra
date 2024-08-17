@@ -107,7 +107,7 @@ def create_app(config_class=Config):
     @app.context_processor
     def utility_processor():
         def aws_image_url():
-            return f'https://{Config.AWS_S3_BUCKET}.s3.amazonaws.com/'
+            return f'https://fcsm-files.s3.amazonaws.com/'
         return dict(aws_image_url=aws_image_url)
 
     # @app.teardown_appcontext
