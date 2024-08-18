@@ -22,7 +22,7 @@ from sqlalchemy import create_engine
 # Zobrazenie nastavení poolu
 
 engine = create_engine(
-    Config.SQLALCHEMY_DATABASE_URI,
+    os.getenv('HEROKU_POSTGRESQL_PINK_URL'),
     pool_size=100,          # Nastavte veľkosť poolu
     max_overflow=20,       # Nastavte maximálny počet pripojení nad rámec poolu
     pool_timeout=30,       # Nastavte čas čakania na voľné pripojenie
