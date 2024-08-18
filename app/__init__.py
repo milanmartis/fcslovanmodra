@@ -24,17 +24,6 @@ from dotenv import load_dotenv
 load_dotenv()
 # Zobrazenie nastavení poolu
 
-engine = create_engine(
-    os.getenv('HEROKU_POSTGRESQL_PINK_URL'),
-    pool_size=100,          # Nastavte veľkosť poolu
-    max_overflow=20,       # Nastavte maximálny počet pripojení nad rámec poolu
-    pool_timeout=30,       # Nastavte čas čakania na voľné pripojenie
-    pool_recycle=3600      # Nastavte čas po ktorom sa pripojenie recykluje (v sekundách)
-)
-
-print("Pool size:", engine.pool.size())
-print("Max overflow:", engine.pool._max_overflow)
-print("Timeout:", engine.pool.timeout())
 
 salt = base64.b64encode(os.urandom(32)).decode('utf-8')
 

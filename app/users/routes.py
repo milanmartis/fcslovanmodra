@@ -58,21 +58,30 @@ def register():
     # form.team.choices = [(team.id, team.name) for team in Team.query.all()]
 
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user = User(uuid=str(uuid.uuid4()), username=form.username.data, email=form.email.data, password=hashed_password)
-        db.session.add(user)
-        db.session.commit()
-        role = Role.query.filter(Role.id.in_(form.role.data)).all()
-        # team = Team.query.filter_by(id=form.team.data).first()
-        member = Member(name=form.name.data, phone=form.phone.data, address=form.address.data, psc=form.psc.data, city=form.city.data,user_id=user.id)
-        for rol in role:
-            user.roles.append(rol)
-        # member.teams.append(team)
-        db.session.add(member)
-        db.session.commit()
-        send_confirm_email(user)
-        flash('Bol vám zaslaný e-mail na potvrdenie registrácie.', 'info')
+        try:
+            hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+            user = User(uuid=str(uuid.uuid4()), username=form.username.data, email=form.email.data, password=hashed_password)
+            db.session.add(user)
+            db.session.commit()
+            role = Role.query.filter(Role.id.in_(form.role.data)).all()
+            # team = Team.query.filter_by(id=form.team.data).first()
+            member = Member(name=form.name.data, phone=form.phone.data, address=form.address.data, psc=form.psc.data, city=form.city.data,user_id=user.id)
+            for rol in role:
+                user.roles.append(rol)
+            # member.teams.append(team)
+            db.session.add(member)
+            db.session.commit()
+            send_confirm_email(user)
+            flash('Bol vám zaslaný e-mail na potvrdenie registrácie.', 'info')
+        except Exception as e:
+            db.session.rollback()
+            flash('Chyba pri vytváraní účtu. Skúste to znova.', 'danger')
+        finally:
+            db.session.remove()
+            
         # flash('Nový účet bol vytvorený!', 'success')
+        
+        
         if current_user.is_authenticated:
             return redirect(url_for('main.home'))
         else:
@@ -89,21 +98,18 @@ def login():
         
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        # if user:
-        print("---------------------------------")
-        print(form.email.data)
-        print(user)
-        if user is None:
-            flash('Zadaný účet neexistuje. Registrujte sa!', 'danger')
-        else:
-            if user.confirm == False:
-               flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
+        try:
+            user = User.query.filter_by(email=form.email.data).first()
 
-            if user and bcrypt.check_password_hash(user.password, form.password.data):
+            if user is None:
+                flash('Zadaný účet neexistuje. Registrujte sa!', 'danger')
+            elif not user.confirm:
+                flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
+
+            elif user and bcrypt.check_password_hash(user.password, form.password.data):
                 identity_changed.send(current_app._get_current_object(), identity=Identity(user.id))
                 identity_changed.send(current_app._get_current_object(),
-                                  identity=Identity(user.id))
+                                identity=Identity(user.id))
                 login_user(user)
                 next_page = request.args.get('next')
                 session.permanent = True
@@ -113,12 +119,17 @@ def login():
                 session['id'] = user.id
                 session['logged_in'] = True
                 session["name"] = form.email.data
-                print(f"-------------------------{user}---------------------")
+                
                 return redirect(next_page) if next_page else redirect(url_for('main.home'))
             else:
-                flash('Prihlásenie bolo neúspešné. Prosím, skontrolujte si e-mail a heslo.', 'danger')
+                flash('Prihlásenie nebolo úspešné. Prosím, skontrolujte si e-mail alebo heslo.', 'danger')
+        except Exception as e:
+            db.session.rollback()     
+            flash('Chyba pri prihlásení. Skúste to znova.', 'danger')
+        finally:
+            db.session.remove()
     # else:
-    #     flash('Prihlásenie bolo neúspešné. Prosím, skontrolujte si e-mail.', 'danger')
+    #     flash('Prihlásenie nebolo úspešné. Prosím, skontrolujte si e-mail.', 'danger')
 
     return render_template('users/login.html', title='Login', form=form, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 

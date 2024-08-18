@@ -1,8 +1,21 @@
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
+
 
 load_dotenv()
+engine = create_engine(
+    os.getenv('SQLALCHEMY_DATABASE_URI'),
+    pool_size=100,          # Nastavte veľkosť poolu
+    max_overflow=20,       # Nastavte maximálny počet pripojení nad rámec poolu
+    pool_timeout=30,       # Nastavte čas čakania na voľné pripojenie
+    pool_recycle=3600      # Nastavte čas po ktorom sa pripojenie recykluje (v sekundách)
+)
+
+print("Pool size:", engine.pool.size())
+print("Max overflow:", engine.pool._max_overflow)
+print("Timeout:", engine.pool.timeout())
 
 
 class Config:
