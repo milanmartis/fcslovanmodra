@@ -104,7 +104,7 @@
           <center>
           <div class="carousel-indicators" style="background-color: #1d1d1d;margin-bottom: 5px;width: fit-content;">
             {% for team in teamz[:6] if team.id!=4 %} 
-            <button class="btn text {% if loop.index == 1 %} active{% endif %}" data-bs-target="#games_plans" data-bs-slide-to="{{team.id - 1}}" aria-current="true" aria-label="Slide {{team.id}}">{{team.name}}</button>
+            <button class="btn text {% if team.id == 1 %} active{% endif %}" data-bs-target="#games_plans" data-bs-slide-to="{{team.id - 1}}" aria-current="true" aria-label="Slide {{team.id}}">{{team.name}}</button>
             {% endfor %}
 
         </div>
@@ -131,7 +131,7 @@
 									<h3 style="padding-top:12px;">Najbližší zápas</h3>
 									<center>
 
-										{% for team in teamz[:6] if team.id==loop.index and team.id!=4 %} 
+										{% for team in teamz[:6] if team.id==next222.event_team_id and team.id!=4 %} 
 										<h6><p style="opacity:0.7;">{{ team.main_league }}</p></h6>
 										{% endfor %}
 								
