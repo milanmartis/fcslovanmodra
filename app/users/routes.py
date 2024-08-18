@@ -136,16 +136,22 @@ def login():
 
 @users.route("/logout")
 def logout():
-    if hasattr(current_user, 'exists'):
-        user = User.query.get(current_user.id)
-        session["name"] = None
-        session['logged_in'] = False
-        user.active = False
-        db.session.commit()
-    else:
-        print("Prihlásenie neexistuje!")
+    try:
+        if hasattr(current_user, 'exists'):
+            user = User.query.get(current_user.id)
+            session["name"] = None
+            session['logged_in'] = False
+            user.active = False
+            db.session.commit()
+        else:
+            print("Prihlásenie neexistuje!")
 
-    logout_user()
+        logout_user()
+    except Exception as e:
+        db.session.rollback()
+        flash('Chyba pri odhlásení. Skúste to znova.', 'danger')
+    finally:
+        db.session.remove()
     return redirect(url_for('main.home'))
 
 
@@ -158,19 +164,25 @@ def account():
 
     form = UpdateAccountForm()
     if form.validate_on_submit():
-        if form.picture.data:
-            picture_file = save_picture(form.picture.data)
-            current_user.image_file = picture_file
-        current_user.username = form.username.data
-        current_user.email = form.email.data
-        member.name = form.name.data
-        member.phone = form.phone.data
-        member.address = form.address.data
-        member.psc = form.psc.data
-        member.city = form.city.data
-        db.session.commit()
-        flash('Váš účet bol aktualizovaný!', 'success')
-        return redirect(url_for('users.account'))
+        try:
+            if form.picture.data:
+                picture_file = save_picture(form.picture.data)
+                current_user.image_file = picture_file
+            current_user.username = form.username.data
+            current_user.email = form.email.data
+            member.name = form.name.data
+            member.phone = form.phone.data
+            member.address = form.address.data
+            member.psc = form.psc.data
+            member.city = form.city.data
+            db.session.commit()
+            flash('Váš účet bol aktualizovaný!', 'success')
+            return redirect(url_for('users.account'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Chyba pri aktualizácii účtu. Skúste to znova.', 'danger')
+        finally:
+            db.session.remove()
     elif request.method == 'GET':
         form.username.data = current_user.username
         form.email.data = current_user.email
@@ -393,57 +405,62 @@ def update_member(member_id):
     form.position.choices = [(position.id, position.name) for position in Position.query.all()]
 
     if form.validate_on_submit():
-        if form.picturemember.data:
-            picture_file = save_picture_member(form.picturemember.data)
-            member.image_file = picture_file
-        member.name = form.name.data
-        member.phone = form.phone.data
-        member.address = form.address.data
-        member.psc = form.psc.data
-        member.city = form.city.data
-        member.weight = form.weight.data
-        member.height = form.height.data
-        # member.position = form.position.data
-        db.session.commit()
-
-############ ROLE
-        for data in role_list:
-            role = Role.query.filter_by(id=data[1]).first()
-            role.roled.remove(user)
+        try:
+            if form.picturemember.data:
+                picture_file = save_picture_member(form.picturemember.data)
+                member.image_file = picture_file
+            member.name = form.name.data
+            member.phone = form.phone.data
+            member.address = form.address.data
+            member.psc = form.psc.data
+            member.city = form.city.data
+            member.weight = form.weight.data
+            member.height = form.height.data
+            # member.position = form.position.data
             db.session.commit()
 
-        for data in form.role.data:
-            role = Role.query.filter_by(id=data).first()
-            role.roled.append(user)
-            db.session.commit()
+    ############ ROLE
+            for data in role_list:
+                role = Role.query.filter_by(id=data[1]).first()
+                role.roled.remove(user)
+                db.session.commit()
 
-############ TEAM
-        for data2 in team_list:
-            team = Team.query.filter_by(id=data2[1]).first()
-            team.teamed.remove(member)
-            db.session.commit()
+            for data in form.role.data:
+                role = Role.query.filter_by(id=data).first()
+                role.roled.append(user)
+                db.session.commit()
 
-        for data2 in form.team.data:
-            team = Team.query.filter_by(id=data2).first()
-            team.teamed.append(member)
-            db.session.commit()
-        
-############ POSITION
-        for data3 in position_list:
-            position = Position.query.filter_by(id=data3[1]).first()
-            position.positioned.remove(member)
-            db.session.commit()
+    ############ TEAM
+            for data2 in team_list:
+                team = Team.query.filter_by(id=data2[1]).first()
+                team.teamed.remove(member)
+                db.session.commit()
 
-        print(form.position.data)
+            for data2 in form.team.data:
+                team = Team.query.filter_by(id=data2).first()
+                team.teamed.append(member)
+                db.session.commit()
+            
+    ############ POSITION
+            for data3 in position_list:
+                position = Position.query.filter_by(id=data3[1]).first()
+                position.positioned.remove(member)
+                db.session.commit()
 
-        for data3 in form.position.data:
-            position = Position.query.filter_by(id=data3).first()
-            position.positioned.append(member)
-            db.session.commit()
-        
-        flash('A Member has been updated!', 'success')
-        return redirect(url_for('users.list_members', member_id=member.id))
-    
+            print(form.position.data)
+
+            for data3 in form.position.data:
+                position = Position.query.filter_by(id=data3).first()
+                position.positioned.append(member)
+                db.session.commit()
+            
+            flash('A Member has been updated!', 'success')
+            return redirect(url_for('users.list_members', member_id=member.id))
+        except Exception as e:
+            db.session.rollback()
+            flash('Chyba pri aktualizácii člena. Skúste to znova.', 'danger')
+        finally:
+            db.session.remove()
     elif request.method == 'GET':
         form.username.data = user.username
         form.email.data = user.email

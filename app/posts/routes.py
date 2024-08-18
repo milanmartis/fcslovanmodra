@@ -67,69 +67,46 @@ def alowed_file(filename):
 @login_required
 def new_post():
     form = PostForm()
-
-    
-
     form.category.choices = [(category.id, category.name) for category in Category.query.all()]
     if form.validate_on_submit():
-        post = Post(title=form.title.data, content=form.content.data, date_posted=form.date_posted.data, author=current_user, category_id=form.category.data)
-        db.session.add(post)
-        db.session.commit()
-
         try:
+            post = Post(title=form.title.data, content=form.content.data, date_posted=form.date_posted.data, author=current_user, category_id=form.category.data)
+            db.session.add(post)
+            db.session.commit()
+
             file = form.picture.data
-            file_filename = secure_filename(file.filename)
-            if not alowed_file(file.filename):
-                return "FILE NOT ALLOWED!"
-            bucket_name = "fcsm-files"
-            new_directory_name = 'posts/'+str(post.id)+'/gallery/'
-            new_directory_name2 = 'posts/'+str(post.id)+'/gallery/'
-            s3.put_object(Bucket=bucket_name, Key=new_directory_name)
+            if file and allowed_file(file.filename):
+                file_filename = secure_filename(file.filename)
+                bucket_name = "fcsm-files"
+                new_directory_name = 'posts/' + str(post.id) + '/gallery/'
+                new_filename = uuid.uuid4().hex + '_' + file_filename
+                s3_key = new_directory_name + new_filename
+                s3.upload_fileobj(file, bucket_name, s3_key)
+                picture = PostGallery(title=form.title.data, image_file2=new_filename, orderz=0, post_id=post.id)
+                db.session.add(picture)
+                db.session.commit()
 
-            
-            # new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
-            file_filename = secure_filename(file.filename)
-            file_basename, file_extension = os.path.splitext(file_filename)
-            new_filename = uuid.uuid4().hex + '_' + file_basename + file_extension
-            s3_key = new_directory_name2 + new_filename
-            # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-            
-            s3.upload_fileobj(file, bucket_name, s3_key)
-            
-            # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
-            picture = PostGallery(title=form.title.data, image_file2=new_filename, orderz=0, post_id=post.id)
-            db.session.add(picture)
+            pictures = []
+            for file in form.pictures.data:
+                file_filename = secure_filename(file.filename)
+                new_filename = uuid.uuid4().hex + '_' + file_filename
+                s3_key = new_directory_name + new_filename
+                s3.upload_fileobj(file, bucket_name, s3_key)
+                picture = PostGallery(title=form.title.data, image_file2=new_filename, orderz=1, post_id=post.id)
+                db.session.add(picture)
+                pictures.append(new_filename)
 
-        
-        except:
-            pass
-                
-        pictures = []
-
-        for file in form.pictures.data:
-            # Get the filename
-            file_filename = secure_filename(file.filename)
-            file_basename, file_extension = os.path.splitext(file_filename)
-            new_filename = uuid.uuid4().hex + '_' + file_basename + file_extension
-            s3_key = new_directory_name + new_filename
-            # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-            
-            s3.upload_fileobj(file, bucket_name, s3_key)
-            
-            
-            # Create a new PostGallery object with the unique filename
-            picture = PostGallery(title=form.title.data, image_file2=new_filename, orderz=1, post_id=post.id)
-            db.session.add(picture)
-            
-            # Add the unique filename to the pictures list
-            pictures.append(new_filename)
-
-        # Commit the changes to the database
-        db.session.commit()
-        flash('Your post has been created!', 'success')
-        return redirect(url_for('main.home'))
+            db.session.commit()
+            flash('Your post has been created!', 'success')
+            return redirect(url_for('main.home'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Chyba pri vytváraní príspevku. Skúste to znova.', 'danger')
+        finally:
+            db.session.remove()
     return render_template('posts/create_post.html', title='New Post',
                            form=form, legend='New Post', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
 
 
 @posts.route("/post/<int:post_id>")
@@ -298,36 +275,42 @@ def update_image_order(post_id):
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def update_post(post_id):
-    post = Post.query.get(post_id)
-    image = PostGallery.query.filter(PostGallery.post_id==post_id).filter(PostGallery.orderz==0).first()
-    if image:
-        image_url = get_s3_image_url('',post_id,image.image_file2)
-    else:
-        image_url = ''
-    print(image_url)
-    if post.author != current_user:
-        abort(403)
-    form = PostForm()
-    form.category.choices = [(category.id, category.name) for category in Category.query.all()]
-    if form.validate_on_submit():
-        post.title = form.title.data
-        post.content = form.content.data
-        post.date_posted = form.date_posted.data
-        post.category_id = form.category.data
-        db.session.commit()
+    try:
+        post = Post.query.get(post_id)
+        image = PostGallery.query.filter(PostGallery.post_id==post_id).filter(PostGallery.orderz==0).first()
+        if image:
+            image_url = get_s3_image_url('',post_id,image.image_file2)
+        else:
+            image_url = ''
+        print(image_url)
+        if post.author != current_user:
+            abort(403)
+        form = PostForm()
+        form.category.choices = [(category.id, category.name) for category in Category.query.all()]
+        if form.validate_on_submit():
+            post.title = form.title.data
+            post.content = form.content.data
+            post.date_posted = form.date_posted.data
+            post.category_id = form.category.data
+            db.session.commit()
+            
+            flash('Your post has been updated!', 'success')
+            return redirect(url_for('posts.post', post_id=post.id))
         
-        flash('Your post has been updated!', 'success')
-        return redirect(url_for('posts.post', post_id=post.id))
-    
-    elif request.method == 'GET':
-        form.title.data = post.title
-        form.content.data = post.content
-        # request.form['date_posted'] = post.date_posted
-        form.date_posted.data = post.date_posted
-        form.category.data = post.category_id
-    return render_template('posts/update_post.html', title='Update Post',
-                           image=image, image_url=image_url, post=post, form=form, post_id=post_id, legend='Update Post', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-
+        elif request.method == 'GET':
+            form.title.data = post.title
+            form.content.data = post.content
+            # request.form['date_posted'] = post.date_posted
+            form.date_posted.data = post.date_posted
+            form.category.data = post.category_id
+        return render_template('posts/update_post.html', title='Update Post',
+                            image=image, image_url=image_url, post=post, form=form, post_id=post_id, legend='Update Post', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    except Exception as e:
+        db.session.rollback()
+        flash('Chyba pri aktualizácii príspevku. Skúste to znova.', 'danger')
+    finally:
+        db.session.remove()
+        
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -388,20 +371,25 @@ def delete_file(post_id):
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def delete_post(post_id):
+    try:
 
-    postgall = PostGallery.query.filter_by(post_id=post_id).all()
-    for gal in postgall:
-        pg = PostGallery.query.get(gal.id)
-        db.session.delete(pg)
+        postgall = PostGallery.query.filter_by(post_id=post_id).all()
+        for gal in postgall:
+            pg = PostGallery.query.get(gal.id)
+            db.session.delete(pg)
 
-    post = Post.query.get_or_404(post_id)
-    if post.author != current_user:
-        abort(403)
-    db.session.delete(post)
-    db.session.commit()
-    flash('Your post has been deleted!', 'success')
-    return redirect(url_for('main.home'))
-
+        post = Post.query.get_or_404(post_id)
+        if post.author != current_user:
+            abort(403)
+        db.session.delete(post)
+        db.session.commit()
+        flash('Your post has been deleted!', 'success')
+        return redirect(url_for('main.home'))
+    except Exception as e:
+        db.session.rollback()
+        flash('Chyba pri mazaní príspevku. Skúste to znova.', 'danger')
+    finally:
+        db.session.remove()
 
 
 
@@ -423,11 +411,17 @@ def list_categories():
 def new_category():
     form = CategoryForm()
     if form.validate_on_submit():
-        category = Category(name=form.name.data)
-        db.session.add(category)
-        db.session.commit()
-        flash('Your category has been created!', 'success')
-        return redirect(url_for('posts.list_categories'))
+        try:
+            category = Category(name=form.name.data)
+            db.session.add(category)
+            db.session.commit()
+            flash('Your category has been created!', 'success')
+            return redirect(url_for('posts.list_categories'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Chyba pri vytváraní kategórie. Skúste to znova.', 'danger')
+        finally:
+            db.session.remove()
     return render_template('posts/create_category.html', title='New Post Category',
                            form=form, legend='New Post Category', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
@@ -442,29 +436,41 @@ def category(category_id):
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def update_category(category_id):
-    category = Category.query.get_or_404(category_id)
-    # if post.author != current_user:
-    #     abort(403)
-    form = CategoryForm()
-    if form.validate_on_submit():
-        category.name = form.name.data
-        db.session.commit()
-        flash('A category has been updated!', 'success')
-        return redirect(url_for('posts.list_categories', category_id=category.id))
-    elif request.method == 'GET':
-        form.name.data = category.name
-    return render_template('posts/create_category.html', title='Update Category',
-                           form=form, legend='Update Category', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-
+    try:
+        category = Category.query.get_or_404(category_id)
+        # if post.author != current_user:
+        #     abort(403)
+        form = CategoryForm()
+        if form.validate_on_submit():
+            category.name = form.name.data
+            db.session.commit()
+            flash('A category has been updated!', 'success')
+            return redirect(url_for('posts.list_categories', category_id=category.id))
+        elif request.method == 'GET':
+            form.name.data = category.name
+        return render_template('posts/create_category.html', title='Update Category',
+                            form=form, legend='Update Category', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    except Exception as e:
+        db.session.rollback()
+        flash('Chyba pri aktualizácii kategórie. Skúste to znova.', 'danger')
+    finally:
+        db.session.remove()
+        
 
 @posts.route("/category/<int:category_id>/delete", methods=['POST'])
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def delete_category(category_id):
-    category = Category.query.get(category_id)
-    # if post.author != current_user:
-    #     abort(403)
-    db.session.delete(category)
-    db.session.commit()
-    flash('A category has been deleted!', 'success')
-    return redirect(url_for('posts.list_categories'))
+    try:
+        category = Category.query.get(category_id)
+        # if post.author != current_user:
+        #     abort(403)
+        db.session.delete(category)
+        db.session.commit()
+        flash('A category has been deleted!', 'success')
+        return redirect(url_for('posts.list_categories'))
+    except Exception as e:
+        db.session.rollback()
+        flash('Chyba pri mazaní kategórie. Skúste to znova.', 'danger')
+    finally:
+        db.session.remove()
