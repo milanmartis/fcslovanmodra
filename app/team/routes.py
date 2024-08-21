@@ -1,64 +1,39 @@
-from flask import (render_template, url_for, flash, jsonify,
-                   redirect, request, abort, Blueprint, current_app)
-from app.models import Team, ScoreTable, User, Player, Position, Member,Post, PostGallery, Category, teams_members, positions_members
+from flask import render_template, url_for, flash, jsonify, redirect, request, abort, Blueprint, current_app
+from app.models import Team, ScoreTable, User, Player, Position, Member, Post, PostGallery, Category, teams_members, positions_members
 from flask_login import current_user
 from app.team.forms import TeamForm
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm import joinedload
-
 from flask import Blueprint
 from app import db
-from datetime import timedelta
-from datetime import datetime
-
-# import datetime
+from datetime import timedelta, datetime
 from dateutil import parser
-from app.main.routes import RightColumn
-from app.main.routes import Next
+from app.main.routes import RightColumn, Next
 from flask_login import login_required
 from flask_security import roles_required
 import pandas as pd
 import numpy as np
-# from flask_principal import Principal, Permission, RoleNeed
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-# from selenium.webdriver.chrome.options import Options
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
-
-# def get_driver():
-#     chrome_options = Options()
-#     chrome_options.binary_location = os.environ.get("CHROME_BINARY_PATH")
-#     chrome_options.add_argument("--headless")
-#     chrome_options.add_argument("--disable-gpu")
-#     chrome_options.add_argument("--no-sandbox")
-#     chrome_options.add_argument("--disable-dev-shm-usage")
-
-#     driver = webdriver.Chrome(executable_path=os.environ.get("CHROME_DRIVER_PATH"), options=chrome_options)
-#     return driver
-
-
 from time import sleep
 
+
 team = Blueprint('team', __name__)
-
-# admin_permission = Permission(RoleNeed('Admin'))
-
 
 @team.route("/teams")
 @login_required
 @roles_required('Admin', 'WebAdmin')
-# @admin_permission.require()
 def list_teams():
-    # page = request.args.get('page', 1, type=int)
-    # teams = Team.query.order_by(Team.id.desc()).paginate(page=page, per_page=5)
     teams = Team.query.order_by(Team.id.asc()).all()
     return render_template('teams/list_teams.html', teams=teams, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @team.route("/teams/new", methods=['GET', 'POST'])
 @login_required
-# @roles_required('Admin', 'WebAdmin')
 def new_team():
     form = TeamForm()
     if form.validate_on_submit():
@@ -79,29 +54,24 @@ def new_team():
 
 @team.route("/info")
 def team_youth():
-
-    # team = Member.query.filter(Member.id==teams_members.c.member_id).filter(Member.id==positions_members.c.member_id).filter(teams_members.c.team_id==Team.id).filter(positions_members.c.position_id==Position.id).all()
     return render_template('teams/youth.html', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
 @team.route("/team/<team_name>")
 def team_name(team_name):
-    # members = Member.query.join(User.roles, Member.position, Member.teams).filter(Team.name.like(team_name)).all()
-    # trener = Member.query.join(User.roles, Member.position, Member.teams).filter(Team.name.like(team_name)).all()
     try:
         trener = (
-        Member.query
-        .join(User.roles)
-        .join(Member.position)
-        .join(Member.teams)
-        .filter(Team.name.like(team_name))
-        .all()
+            Member.query
+            .join(User.roles)
+            .join(Member.position)
+            .join(Member.teams)
+            .filter(Team.name.like(team_name))
+            .all()
         )
         
         members = Player.query.filter(Team.id == Player.team_id).filter(Team.name.like(team_name)).all()
 
         team = Team.query.filter(Team.name.like(team_name)).first()
-        # team = Member.query.filter(Member.id==teams_members.c.member_id).filter(Member.id==positions_members.c.member_id).filter(teams_members.c.team_id==Team.id).filter(positions_members.c.position_id==Position.id).all()
         return render_template('teams/team.html', team=team, members=members, trener=trener, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
     except Exception as e:
         flash('Chyba pri načítavaní tímu. Skúste to znova.', 'danger')
@@ -109,146 +79,85 @@ def team_name(team_name):
         db.session.remove()
 
 
-# @team.route("/team/<team_name>/table")
-# def team_name(team_name):
-#     team = Team.query.filter(Team.name.like(team_name)).first()
-#     return render_template('teams/team_table.html', team=team, teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-
-
-
-
-
 @team.route("/teams/<int:team_id>/update", methods=['GET', 'POST'])
 @login_required
-# @roles_required('Admin', 'WebAdmin')
 def update_team(team_id):
     try:
+
+
         team = Team.query.get_or_404(team_id)
         form = TeamForm()
-        
-        
+
         score_scrap = request.form.get("score_scrap")
 
-        # score_scrap = "C:\\Users\\Dell\\Downloads\\pandas\\u13.html"
-            
         if request.form.get('what') and team.score_scrap and score_scrap:
-            
-            
             ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
 
-            
             s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
-
-            # Vytvorenie instance WebDriveru s explicitným nastavením služby
             driver = webdriver.Chrome(service=s)
-            # driver = get_driver()
-
             driver.get(score_scrap)
-
-            # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
             sleep(5)
-
-            # Získanie zdrojového kódu stránky po vykonaní JavaScriptu
             html = driver.page_source
-
-            # Zatvorenie prehliadača
             driver.quit()
 
-            # Použitie pandas na čítanie tabuliek
-            # tables = pd.read_html(html)
             df = pd.read_html(html)
-            ###########################################################################################
-            # df = pd.DataFrame(df, index=labels)
             x = int(len(df))
 
             for i in range(0, x):
                 df[i] = df[i][['Klub', 'Z', 'V', 'R', 'P', 'Skóre', 'B']]
-                # df[i] = pd.DataFrame(df[i], index=range(1, 16)+1)
-                # df[i] = df[i].dropna(subset = ['Klub'])
-                # df['Klub'] = df['Klub'].replace(np.nan, 'Inter')
                 df[i] = df[i].replace(np.nan, '', regex=True)
                 df[i].index = df[i].index + 1
                 df[i]['team_id'] = team_id
-                # rec = df[i].head(100).to_records().tolist()
-                # score_team[i] = ScoreTable(club=rec[i][1],games=rec[i][2],wins=rec[i][3],draws=rec[i][4],loses=rec[i][5], score=rec[i][6], points=rec[i][7], team_id=team_id)
-                # db.session.add(score_team[i])
-
                 records_to_insert = df[i].head(100).to_records()
 
-            # cursor = connection.cursor()
-            # cursor.executemany(mySql_insert_query, records_to_insert)
-            # connection.commit()
-            # print(records_to_insert)
             for rec in records_to_insert:
-                score_team = ScoreTable(club=rec[1],games=int(rec[2]),wins=int(rec[3]),draws=int(rec[4]),loses=int(rec[5]), score=rec[6], points=int(rec[7]), team_id=team_id)
+                score_team = ScoreTable(
+                    club=rec[1],
+                    games=int(rec[2]),
+                    wins=int(rec[3]),
+                    draws=int(rec[4]),
+                    loses=int(rec[5]),
+                    score=rec[6],
+                    points=int(rec[7]),
+                    team_id=team_id
+                )
                 db.session.add(score_team)
-                # print(rec[1])
             db.session.commit()
 
-
-
         player_list_scrap = request.form.get("player_list_scrap")
-            
-        if  request.form.get('what') and team.player_list_scrap and player_list_scrap:
-            
+        
+        if request.form.get('what') and team.player_list_scrap and player_list_scrap:
             Player.query.filter(Player.team_id == team_id).delete()
-            
+
             s = Service(r'C:\Users\Dell\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe')
-
-            # Vytvorenie instance WebDriveru s explicitným nastavením služby
             driver2 = webdriver.Chrome(service=s)
-            # driver2 = get_driver()
             driver2.get(player_list_scrap)
-
-            # Čakanie na načítanie stránky (môže byť potrebné nastaviť dlhšie, závisí od rýchlosti načítania)
             sleep(5)
-
-            # Získanie zdrojového kódu stránky po vykonaní JavaScriptu
             html_list_scrap = driver2.page_source
-
-            # Zatvorenie prehliadača
             driver2.quit()
-            
-            df = pd.read_html(html_list_scrap)
 
+            df = pd.read_html(html_list_scrap)
             x = int(len(df))
 
             for i in range(0, x):
-                
-                if i == 0:
-                    pozicia = 1
-                    # df[i] = df[i].set_index(pozicia)
-
-                if i == 1:
-                    pozicia = 2
-                    # df[i] = df[i].set_index(pozicia)
-
-                if i == 2:
-                    pozicia = 3
-                    # df[i] = df[i].set_index(pozicia)
-
-                if i == 3:
-                    pozicia = 4
-                    # df[i] = df[i].set_index(pozicia)
-
+                pozicia = i + 1
                 df[i]['pozicia'] = pozicia
                 df[i]['team'] = team_id
-                
                 records_to_insert = df[i].head(100).to_records().tolist()
-                
-                print(records_to_insert)
-
 
                 for rec in records_to_insert:
-                    score_team = Player(name=rec[1], position=rec[5], team=team_id, score=int(rec[2]), yellow_card=int(rec[3]), red_card=rec[4], team_id=team_id)
+                    score_team = Player(
+                        name=rec[1],
+                        position=rec[5],
+                        team=team_id,
+                        score=int(rec[2]),
+                        yellow_card=int(rec[3]),
+                        red_card=rec[4],
+                        team_id=team_id
+                    )
                     db.session.add(score_team)
-                    # print(rec[1])
             db.session.commit()
-            
-            
-        
-        # if post.author != current_user:
-        #     abort(403)
+
         if form.validate_on_submit():
             team.name = form.name.data
             team.main_league = form.main_league.data
@@ -277,7 +186,7 @@ def update_team(team_id):
 def delete_team(team_id):
     try:
         team = Team.query.get_or_404(team_id)
-        ifemptyteam = db.session.query(teams_members).filter(teams_members.c.team_id==team_id).all()
+        ifemptyteam = db.session.query(teams_members).filter(teams_members.c.team_id == team_id).all()
 
         if ifemptyteam:
             flash('A Team is not empty!', 'danger')
@@ -291,4 +200,3 @@ def delete_team(team_id):
     finally:
         db.session.remove()
     return redirect(url_for('team.list_teams'))
-
