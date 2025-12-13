@@ -1,4 +1,9 @@
 # static/posts/
 # static/products/
 .env
+env/
+venv/
+__pycache__/
+*.pyc
+node_modules/
 set FLASK_APP

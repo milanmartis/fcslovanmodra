@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    container_name: fm-web
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db          # názov služby z compose (nie container_name)
+      DB_PORT: 5432
+      DB_USER: fuma_user
+      DB_PASSWORD: SilneHeslo
+      DB_NAME: fuma
+      AWS_REGION: eu-central-1  # môže zostať, lokálne sa Secrets Manager nepoužije
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    volumes:
+      - .:/app  # dev; v produkcii vypnúť
+
+  db:
+    image: postgres:16
+    container_name: fm-db
+    environment:
+      POSTGRES_DB: fuma
+      POSTGRES_USER: fuma_user
+      POSTGRES_PASSWORD: SilneHeslo
+    volumes:
+      - fm-db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  fm-db-data:

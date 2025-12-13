@@ -1,0 +1,39 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+<center>
+  <div class="content-section mt-6">
+
+    <div class="row col-12  d-flex justify-content-center">
+      <p class="btn-teams-position">Hlavní partneri</p>
+    </div>
+
+    {% for s in main_sponsors %}
+      <a class="sponsor-img d-block w-100"
+         href="{{ s.url or '#' }}"
+         target="_blank">
+        <img width="80%" src="{{ s.image_url }}" alt="{{ s.name or 'Sponsor' }}">
+      </a>
+      <br>
+    {% endfor %}
+
+    <br>
+
+    <div class="row col-12 d-flex justify-content-center">
+      <p class="btn-teams-position">Partneri</p>
+    </div>
+    
+    <div class="row">
+      {% for s in partners %}
+        <div class="col-6 col-md-6 text-center mb-3">
+          <a class="sponsor-img d-block w-100"
+             href="{{ s.url or '#' }}"
+             target="_blank">
+            <img class="img-fluid" src="{{ s.image_url }}" alt="{{ s.name or 'Sponsor' }}">
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+</center>
+
+{% endblock %}

@@ -1,4 +1,4 @@
-from flask import render_template, url_for, flash, redirect, request, Blueprint, session, current_app
+from flask import render_template, url_for, flash, redirect, request, Blueprint, session, current_app, jsonify
 # from flask_login import 
 from app import db, bcrypt
 from app.models import User, Post, Role, Team, Member, Player, Position, roles_users, teams_members, positions_members
@@ -12,6 +12,8 @@ from flask_security import roles_required, login_user, current_user, logout_user
 # from flask_principal import identity_changed, Identity
 from flask_principal import Identity, identity_changed
 from datetime import datetime
+from werkzeug.utils import secure_filename
+from app import csrf
 
 
 users = Blueprint('users', __name__)
@@ -367,22 +369,25 @@ def list_members():
 @users.route("/player/<int:member_id>", methods=['POST','GET'])
 def member(member_id):
     player = Player.query.filter(Player.id == member_id).first()
-    # player = Member.query.get_or_404(member_id)
-    # player = Player.query.get(player_id)
     if player is None:
-        # Správne ošetrite prípad, keď hráč neexistuje
         return "Hráč neexistuje", 404
-    # print(player.name)
-    print(player.name)
+
     search = "{}%".format(player.name)
-    player_info = Member.query.filter(Member.name.like(search)).first()
-    
-    
-    return render_template('users/member.html', title='Player',
-                           legend='Player', player=player, player_info=player_info, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-    
+    member_obj = Member.query.filter(Member.name.like(search)).first_or_404()
 
-
+    return render_template(
+        'users/member.html',
+        title='Player',
+        legend='Player',
+        player=player,
+        player_info=member_obj,   # <-- OK, ale lepšie je dať aj member_id explicitne
+        member_db_id=member_obj.id,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
 
 @users.route("/member/<int:member_id>/update", methods=['GET', 'POST'])
 @login_required
@@ -489,9 +494,19 @@ def update_member(member_id):
 
 
     image_file = url_for('static', filename='members_pics/' + member.image_file)
-    return render_template('users/create_member.html', title='Update Member',
-                           form=form, image_file=image_file, legend='Update Member', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-
+    return render_template(
+        'users/create_member.html',
+        title='Update Member',
+        form=form,
+        image_file=image_file,
+        member_id=member.id,
+        legend='Update Member',
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
 
 @users.route("/member/<int:member_id>/delete", methods=['GET', 'POST'])
 @login_required
@@ -508,3 +523,76 @@ def delete_member(member_id):
 
 
 
+@users.route("/member/<int:member_id>/photo", methods=["POST"])
+@login_required
+@csrf.exempt
+def upload_member_photo(member_id):
+    member = Member.query.get_or_404(member_id)
+
+    # povolenie: admin alebo vlastný profil
+    is_admin = False
+    try:
+        is_admin = current_user.has_role("Admin") or current_user.has_role("WebAdmin")
+    except Exception:
+        pass
+
+    if not is_admin and member.user_id != current_user.id:
+        return {"error": "Forbidden"}, 403
+
+    file = request.files.get("photo")
+    if not file or not getattr(file, "filename", ""):
+        return {"error": "Missing file"}, 400
+
+    # voliteľne: jednoduchá kontrola prípony
+    filename = secure_filename(file.filename).lower()
+    if not (filename.endswith(".jpg") or filename.endswith(".jpeg") or filename.endswith(".png")):
+        return {"error": "Only jpg/jpeg/png allowed"}, 400
+
+    try:
+        # použijeme tvoju utilitu (už to máš v imports)
+        new_filename = save_picture_member(file)
+
+        # (voliteľné) zmaž starú fotku z disku, ak chceš – nechávam bez delete
+        member.image_file = new_filename
+        db.session.commit()
+
+        # vrátime URL aj s cache-bust parametrom
+        img_url = url_for("static", filename=f"members_pics/{new_filename}", _external=False)
+        return {"ok": True, "image_url": img_url + f"?v={uuid.uuid4().hex}"}
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("upload_member_photo error: %s", e)
+        return {"error": "Upload failed"}, 500
+    finally:
+        db.session.remove()
+        
+        
+        
+
+        
+@users.route("/account/photo", methods=["POST"])
+@login_required
+@csrf.exempt
+def upload_account_photo():
+    file = request.files.get("photo")
+    if not file or not getattr(file, "filename", ""):
+        return jsonify({"error": "Missing file"}), 400
+
+    filename = secure_filename(file.filename).lower()
+    if not (filename.endswith(".jpg") or filename.endswith(".jpeg") or filename.endswith(".png")):
+        return jsonify({"error": "Only jpg/jpeg/png allowed"}), 400
+
+    try:
+        picture_file = save_picture(file)
+        current_user.image_file = picture_file
+        db.session.commit()
+
+        img_url = url_for("static", filename=f"profile_pics/{picture_file}", _external=False)
+        return jsonify({"ok": True, "image_url": img_url + f"?v={uuid.uuid4().hex}"})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("upload_account_photo error: %s", e)
+        return jsonify({"error": "Upload failed"}), 500
+    finally:
+        db.session.remove()

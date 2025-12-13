@@ -1,34 +1,52 @@
 {% extends "layout.html" %}
 {% block content %}
-    <h3 class="mb-3">{{ category.name }} | <a href="{{ url_for('posts.list_posts')}}">Všetko</a>   
-        <!-- ({{ posts.total }}) -->
+    <h3 class="mb-3">
+      {{ category.name }} |
+      <a href="{{ url_for('posts.list_posts')}}">Všetko</a>
     </h3>
+
     {% for post in posts.items %}
-        <article class="media content-section">
-          <div class="media-body">
-            {% for gall in post.gallery %}
-            {% if gall.orderz == 0 %}
+      <article class="media content-section">
+        <div class="media-body">
+
+          {# --- rovnaká logika ako na home --- #}
+          {% set pics = (post.galleries | default(post.gallery) | default([])) %}
+          {% set cover = (pics | selectattr('orderz', 'equalto', 0) | list | first) %}
+          {% if not cover %}
+            {% set cover = (pics | selectattr('orderz', 'equalto', '0') | list | first) %}
+          {% endif %}
+          {% if not cover and pics %}
+            {% set cover = pics[0] %}
+          {% endif %}
+
+          {% if cover %}
+            {% set cover_url = s3_presign('posts/' ~ post.id ~ '/gallery/' ~ cover.image_file2) %}
             <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
-              <img class="post-title-image" src="{{ aws_image_url()+'posts/'+post.id|string+'/gallery/'+gall.image_file2 }}">
+              <img class="post-title-image" loading="lazy" src="{{ cover_url }}" alt="{{ post.title }}">
             </a>
-            {% endif %}
-            {% endfor %}
-            <div class="article-metadata">
-              <a class="mr-2" href="{{ url_for('posts.category_posts', category=category.id) }}">{{ category.name }}</a>
-              <small class="text-muted">{{ post.date_posted.strftime('%d. %m. %Y') }}</small>
-            </div>
+          {% endif %}
 
-
-
-
-
-
-
-            <h2><a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a></h2>
-            <p class="article-content">{{ post.content[:250]+'...'}}</p>
+          <div class="article-metadata">
+            <a class="mr-2" href="{{ url_for('posts.category_posts', category=category.id) }}">
+              {{ category.name }}
+            </a>
+            <small class="text-muted">{{ post.date_posted.strftime('%d. %m. %Y') }}</small>
           </div>
-        </article>
+
+          <h2>
+            <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
+              {{ post.title }}
+            </a>
+          </h2>
+
+          <p class="article-content">
+            {{ (post.content | default('') | striptags)[:250] }}{% if (post.content | default('') | striptags)|length > 250 %}…{% endif %}
+          </p>
+        </div>
+      </article>
     {% endfor %}
+
+    {# stránkovanie nechaj ako máš #}
     {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
       {% if page_num %}
         {% if posts.page == page_num %}

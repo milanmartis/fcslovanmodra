@@ -1,292 +1,531 @@
-import boto3
+import os
+import re
 import uuid
-from app.config import Config
-from botocore.exceptions import NoCredentialsError
-import logging
+from datetime import datetime
+import mimetypes
+from sqlalchemy.orm import subqueryload
 
-from flask import (render_template, url_for, flash, jsonify,
-                   redirect, request, abort, Blueprint, current_app, render_template)
+import boto3
+from botocore.config import Config as BotoConfig
+from botocore.exceptions import NoCredentialsError
+from flask import (
+    Blueprint, abort, current_app, flash, jsonify,
+    redirect, render_template, request, url_for
+)
 from flask_login import current_user, login_required
 from flask_security import roles_required
+from sqlalchemy.orm import joinedload
+from werkzeug.utils import secure_filename
 
 from app import db
-from app.models import Post, Category, PostGallery
+from app.config import Config
+from app.main.routes import Next, RightColumn
+from app.models import Category, Post, PostGallery
 from app.posts.forms import PostForm, CategoryForm
-from app.main.routes import RightColumn
-from app.main.routes import Next
-from flask import Blueprint
-from werkzeug.utils import secure_filename
-import secrets
-from PIL import Image
-from datetime import datetime
-from dateutil import parser
-
-import os
-from sqlalchemy.orm import joinedload
 
 
 posts = Blueprint('posts', __name__)
 
-s3 = boto3.client(
-    's3', region_name='eu-north-1',
-    aws_access_key_id=Config.AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=Config.AWS_SECRET_ACCESS_KEY
-)
-BUCKET_NAME = Config.AWS_S3_BUCKET
-ALLOWED_EXTENSIONS = {'jpg', 'png'}
-bucket_name = BUCKET_NAME
+# ---------- AWS S3 klient (autodetekcia regiónu + s3v4 podpis) ----------
 
-################  POSTS  #################
+AWS_ACCESS_KEY_ID     = (Config.AWS_ACCESS_KEY_ID or "").strip()
+AWS_SECRET_ACCESS_KEY = (Config.AWS_SECRET_ACCESS_KEY or "").strip()
+BUCKET_NAME           = (Config.AWS_S3_BUCKET or "").strip()
+
+_BUCKET_RE = re.compile(r'^[a-zA-Z0-9.\-_]{1,255}$')
+if not _BUCKET_RE.match(BUCKET_NAME):
+    raise RuntimeError(f"Invalid S3 bucket name: {repr(BUCKET_NAME)}")
+
+_S3 = None
+_S3_REGION = None
+
+def s3_extra_args(file) -> dict:
+    """
+    Nastaví správny ContentType podľa súboru (jpg/png/webp/...)
+    + dlhú cache.
+    """
+    content_type = getattr(file, "mimetype", None)
+
+    # ak Flask nedal rozumný mimetype, skúsime podľa názvu súboru
+    if not content_type or content_type == "application/octet-stream":
+        content_type, _ = mimetypes.guess_type(getattr(file, "filename", ""))
+
+    # fallback – keby sa nič neuhádlo
+    if not content_type:
+        content_type = "image/jpeg"
+
+    return {
+        "CacheControl": "public, max-age=31536000",
+        "ContentType": content_type,
+    }
+    
+def s3_client():
+    """Vráti inicializovaný boto3 s3 client v reálnom regióne bucketu."""
+    global _S3, _S3_REGION
+    if _S3:
+        return _S3
+    probe = boto3.client(
+        "s3",
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    )
+    loc = probe.get_bucket_location(Bucket=BUCKET_NAME)
+    _S3_REGION = loc.get("LocationConstraint") or "us-east-1"
+    _S3 = boto3.client(
+        "s3",
+        region_name=_S3_REGION,
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        config=BotoConfig(signature_version="s3v4"),
+    )
+    return _S3
+
+
+def s3_presign(key: str, expires: int = 3600) -> str:
+    """Vygeneruje pre-signed URL na čítanie objektu."""
+    return s3_client().generate_presigned_url(
+        "get_object",
+        Params={"Bucket": BUCKET_NAME, "Key": key},
+        ExpiresIn=expires,
+    )
+
+
+# ---------- Helpers ----------
+
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+
+def allowed_file(filename: str) -> bool:
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def make_gallery_key(post_id: int, filename: str) -> str:
+    return f'posts/{post_id}/gallery/{filename}'
+
+
+# ---------- POSTS ----------
 
 @posts.route("/posts", methods=['GET'])
 def list_posts():
     page = request.args.get('page', 1, type=int)
-    
-    posts = db.session.query(Post).options(joinedload(Post.gallery)).join(PostGallery, Post.id == PostGallery.post_id).join(Category, Category.id == Post.category_id).filter(PostGallery.orderz < 1).order_by(Post.date_posted.desc()).paginate(page=page, per_page=3)
-    
-    category = Category.query.all()
-    
-    return render_template('home.html', posts=posts, category=category, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    posts_paginated = (
+        db.session.query(Post)
+        .options(joinedload(Post.gallery))
+        .join(PostGallery, Post.id == PostGallery.post_id)
+        .join(Category, Category.id == Post.category_id)
+        .filter(PostGallery.orderz < 1)           # len titulné
+        .order_by(Post.date_posted.desc())
+        .paginate(page=page, per_page=3)
+    )
+
+    category = Category.query.all()
+
+    return render_template(
+        'home.html',
+        posts=posts_paginated,
+        category=category,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
+
 
 @posts.route("/post/new", methods=['GET', 'POST'])
 @login_required
 def new_post():
     form = PostForm()
-    form.category.choices = [(category.id, category.name) for category in Category.query.all()]
+    form.category.choices = [(c.id, c.name) for c in Category.query.all()]
+
     if form.validate_on_submit():
         try:
-            post = Post(title=form.title.data, content=form.content.data, date_posted=form.date_posted.data, author=current_user, category_id=form.category.data)
+            # 1) vytvor Post (napojenie cez relationship 'author', nie author_id)
+            post = Post(
+                title=form.title.data,
+                content=form.content.data,
+                date_posted=form.date_posted.data,
+                author=current_user,
+                category_id=form.category.data
+            )
             db.session.add(post)
-            db.session.commit()
+            db.session.flush()   # potrebujeme post.id pred uploadom
 
-            file = form.picture.data
-            if file and allowed_file(file.filename):
-                file_filename = secure_filename(file.filename)
-                bucket_name = "fcsm-files"
-                new_directory_name = 'posts/' + str(post.id) + '/gallery/'
-                new_filename = uuid.uuid4().hex + '_' + file_filename
-                s3_key = new_directory_name + new_filename
-                s3.upload_fileobj(file, bucket_name, s3_key)
-                picture = PostGallery(title=form.title.data, image_file2=new_filename, orderz=0, post_id=post.id)
-                db.session.add(picture)
-                db.session.commit()
+            # 2) titulná fotka (orderz=0)
+            file = getattr(form, 'picture', None).data if hasattr(form, 'picture') else None
+            if file and getattr(file, 'filename', '') and allowed_file(file.filename):
+                original = secure_filename(file.filename)
+                base, ext = os.path.splitext(original)
+                new_filename = f'{uuid.uuid4().hex}_{base}{ext.lower()}'
+                s3_key = make_gallery_key(post.id, new_filename)
+                s3_client().upload_fileobj(
+                    file,
+                    BUCKET_NAME,
+                    s3_key,
+                    ExtraArgs=s3_extra_args(file),
 
-            pictures = []
-            for file in form.pictures.data:
-                file_filename = secure_filename(file.filename)
-                new_filename = uuid.uuid4().hex + '_' + file_filename
-                s3_key = new_directory_name + new_filename
-                s3.upload_fileobj(file, bucket_name, s3_key)
-                picture = PostGallery(title=form.title.data, image_file2=new_filename, orderz=1, post_id=post.id)
-                db.session.add(picture)
-                pictures.append(new_filename)
+                )
+
+                db.session.add(PostGallery(
+                    title=form.title.data or '',
+                    image_file2=new_filename,
+                    orderz=0,
+                    post_id=post.id
+                ))
+
+            # 3) ďalšie fotky (orderz 1,2,3…)
+            pictures_field = getattr(form, 'pictures', None)
+            if pictures_field and pictures_field.data:
+                existing = PostGallery.query.filter_by(post_id=post.id).count()
+                order_counter = existing if existing > 0 else 1  # ak titulka existuje, ďalšie od 1
+                for f in pictures_field.data:
+                    if not f or not getattr(f, 'filename', '') or not allowed_file(f.filename):
+                        continue
+                    original = secure_filename(f.filename)
+                    base, ext = os.path.splitext(original)
+                    new_filename = f'{uuid.uuid4().hex}_{base}{ext.lower()}'
+                    s3_key = make_gallery_key(post.id, new_filename)
+                    s3_client().upload_fileobj(
+                        f,
+                        BUCKET_NAME,
+                        s3_key,
+                        ExtraArgs=s3_extra_args(f),
+
+                    )
+                    db.session.add(PostGallery(
+                        title=form.title.data or '',
+                        image_file2=new_filename,
+                        orderz=order_counter,
+                        post_id=post.id
+                    ))
+                    order_counter += 1
 
             db.session.commit()
             flash('Your post has been created!', 'success')
             return redirect(url_for('main.home'))
+
         except Exception as e:
+            current_app.logger.exception("Error in new_post: %s", e)
             db.session.rollback()
-            flash('Chyba pri vytváraní príspevku. Skúste to znova.', 'danger')
-        finally:
-            db.session.remove()
-    return render_template('posts/create_post.html', title='New Post',
-                           form=form, legend='New Post', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+            flash('Chyba pri vytváraní príspevku. Skontroluj S3 bucket, región a kľúče.', 'danger')
+            return redirect(url_for('posts.new_post'))
+
+    return render_template(
+        'posts/create_post.html',
+        title='New Post',
+        form=form,
+        legend='New Post',
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
 
 
 @posts.route("/post/<int:post_id>")
 def post(post_id):
-    title_image = PostGallery.query.filter(PostGallery.post_id == post_id).order_by(PostGallery.orderz.asc()).first()
-    post = db.session.query(Post).options(joinedload(Post.gallery), joinedload(Post.author)).filter(Post.id == post_id).first()
-    galleries = PostGallery.query.filter(PostGallery.post_id == post_id).order_by(PostGallery.orderz.asc()).all()
+    post_obj = (
+        db.session.query(Post)
+        .options(joinedload(Post.gallery), joinedload(Post.author))
+        .filter(Post.id == post_id)
+        .first()
+    )
+    if not post_obj:
+        abort(404)
+
+    title_image = (
+        PostGallery.query
+        .filter_by(post_id=post_id)
+        .order_by(PostGallery.orderz.asc())
+        .first()
+    )
+    galleries = (
+        PostGallery.query
+        .filter_by(post_id=post_id)
+        .order_by(PostGallery.orderz.asc())
+        .all()
+    )
+
+    # Pre šablóny: pripravíme pre-signed URL pre titulku aj pre celú galériu
+    title_image_url = None
+    if title_image:
+        title_image_url = s3_presign(make_gallery_key(post_id, title_image.image_file2))
+
+    galleries_with_urls = []
+    for g in galleries:
+        galleries_with_urls.append({
+            "id": g.id,
+            "title": g.title,
+            "orderz": g.orderz,
+            "image_file2": g.image_file2,
+            "image_url": s3_presign(make_gallery_key(post_id, g.image_file2)),
+        })
+
     category = Category.query.all()
-    
-    if post:
-        title = post.title
-    else:
-        title = ''
-    
-    return render_template('posts/post.html', title_image=title_image, title=title, post=post, galleries=galleries, category=category, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+
+    return render_template(
+        'posts/post.html',
+        title_image=title_image,
+        title_image_url=title_image_url,   # použiteľné v šablóne ako <img src="{{ title_image_url }}">
+        title=post_obj.title,
+        post=post_obj,
+        galleries=galleries_with_urls,     # každý item má .image_url = presign
+        category=category,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
 
 
 @posts.route("/posts/category/<int:category>")
-@login_required
-@roles_required('Admin', 'WebAdmin')
+# @login_required
+# @roles_required('Admin', 'WebAdmin')
 def category_posts(category):
     page = request.args.get('page', 1, type=int)
-    category = Category.query.filter_by(id=category).first()
-    posts = Post.query.filter(Post.category_id == category.id).order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
-    return render_template('posts/category_posts.html', posts=posts, category=category, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    category_obj = Category.query.filter_by(id=category).first_or_404()
+    posts_paginated = (
+        Post.query
+        .options(subqueryload(Post.gallery))  # <--- pridaj
+        .filter(Post.category_id == category_obj.id)
+        .order_by(Post.date_posted.desc())
+        .paginate(page=page, per_page=5)
+    )
+    return render_template(
+        'posts/category_posts.html',
+        posts=posts_paginated,
+        category=category_obj,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
 
-def get_s3_image_url(orderz, post_id, image_file):
-    folder = 'gallery/' if orderz == 0 else 'gallery/'
-    return f'https://{Config.AWS_S3_BUCKET}.s3.amazonaws.com/posts/{post_id}/{folder}{image_file}'
+
+# ---------- Galéria API ----------
 
 @posts.route('/posts/images/<int:post_id>', methods=['GET'])
 def get_images_by_post(post_id):
-    images = PostGallery.query.filter_by(post_id=post_id).order_by(PostGallery.orderz.asc()).all()
+    images = (
+        PostGallery.query
+        .filter_by(post_id=post_id)
+        .order_by(PostGallery.orderz.asc())
+        .all()
+    )
 
+    # Vraciame pre-signed URL priamo v JSON (frontend to môže rovno použiť)
     image_list = []
-    for image in images:
-        image_data = {
-            'id': image.id,
-            'title': image.title,
-            'orderz': image.orderz,
-            'image_url': get_s3_image_url(image.orderz, post_id, image.image_file2)
-        }
-        image_list.append(image_data)
+    for img in images:
+        key = make_gallery_key(post_id, img.image_file2)
+        image_list.append({
+            'id': img.id,
+            'title': img.title,
+            'orderz': img.orderz,
+            'image_url': s3_presign(key)
+        })
 
     return jsonify(image_list)
 
+
 @posts.route('/posts/images/<int:post_id>/upload', methods=['PUT'])
 def upload_image(post_id):
-    post = Post.query.get(post_id)
-    new_directory_name2 = 'posts/' + str(post_id) + '/gallery/'
+    post = Post.query.get_or_404(post_id)
+    file = request.files.get('image_file2')
 
-    file = request.files['image_file2']
+    if not file or not getattr(file, 'filename', '') or not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file"}), 400
 
-    if file:
-        file_filename = secure_filename(file.filename)
-        file_basename, file_extension = os.path.splitext(file_filename)
-        new_filename = uuid.uuid4().hex + '_' + file_basename + file_extension
-        s3_key = new_directory_name2 + new_filename
-        s3.upload_fileobj(file, Config.AWS_S3_BUCKET, s3_key)
-        existing_images_count = PostGallery.query.filter_by(post_id=post.id).count()
-        new_orderz = existing_images_count if existing_images_count == 0 else existing_images_count + 1
+    original = secure_filename(file.filename)
+    base, ext = os.path.splitext(original)
+    new_filename = f'{uuid.uuid4().hex}_{base}{ext.lower()}'
+    s3_key = make_gallery_key(post_id, new_filename)
+    s3_client().upload_fileobj(
+        file,
+        BUCKET_NAME,
+        s3_key,
+        ExtraArgs=s3_extra_args(file)
 
-        picture = PostGallery(title='', image_file2=new_filename, orderz=new_orderz, post_id=post.id)
-        db.session.add(picture)
-        db.session.commit()
+    )
 
-        return jsonify({"message": "Image uploaded successfully"})
+    existing_count = PostGallery.query.filter_by(post_id=post.id).count()
+    new_orderz = existing_count  # 0,1,2,...
 
-    return jsonify({"error": "Failed to upload image"}), 500
+    db.session.add(PostGallery(
+        title='',
+        image_file2=new_filename,
+        orderz=new_orderz,
+        post_id=post.id
+    ))
+    db.session.commit()
 
-@posts.route('/posts/<post_id>/gallery/delete/<image_id>', methods=['DELETE'])
+    return jsonify({"message": "Image uploaded successfully"})
+
+
+@posts.route('/posts/<int:post_id>/gallery/delete/<int:image_id>', methods=['DELETE'])
 @roles_required('Admin', 'WebAdmin')
 def delete_image(post_id, image_id):
+    image = PostGallery.query.filter_by(id=image_id, post_id=post_id).first_or_404()
     try:
-        image = PostGallery.query.filter_by(id=image_id).first()
-        s3.delete_object(Bucket=Config.AWS_S3_BUCKET, Key=f"posts/{post_id}/gallery/{image.image_file2}")
-        db.session.delete(image)
-        db.session.commit()
-        
-        return jsonify({"message": "Obrázok bol úspešne vymazaný"})
+        s3_client().delete_object(Bucket=BUCKET_NAME, Key=make_gallery_key(post_id, image.image_file2))
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.warning("S3 delete failed: %s", e)
+
+    db.session.delete(image)
+    db.session.commit()
+    return jsonify({"message": "Obrázok bol úspešne vymazaný"})
+
 
 @posts.route('/posts/<int:post_id>/gallery/update_order', methods=['POST'])
 def update_image_order(post_id):
-    data = request.json
-    for image in data:
-        new_order_image = PostGallery.query.get(image['image_id'])
-        new_order_image.orderz = image['orderz']
-    
-    db.session.commit()
+    data = request.json or []
+    # očakáva zoznam dictov: {"image_id": X, "orderz": Y}
+    ids = [it.get('image_id') for it in data if 'image_id' in it]
+    if not ids:
+        return jsonify({"message": "No data"}), 400
 
+    images = {img.id: img for img in PostGallery.query.filter(PostGallery.id.in_(ids)).all()}
+
+    for item in data:
+        img = images.get(item.get('image_id'))
+        if img and img.post_id == post_id:
+            img.orderz = int(item.get('orderz', img.orderz))
+
+    db.session.commit()
     return jsonify({"message": "Image order updated successfully"})
+
+
+# ---------- Update / Upload file (single) ----------
 
 @posts.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def update_post(post_id):
-    try:
-        post = Post.query.get(post_id)
-        image = PostGallery.query.filter(PostGallery.post_id == post_id).filter(PostGallery.orderz == 0).first()
-        image_url = get_s3_image_url('', post_id, image.image_file2) if image else ''
-        if post.author != current_user:
-            abort(403)
-        form = PostForm()
-        form.category.choices = [(category.id, category.name) for category in Category.query.all()]
-        if form.validate_on_submit():
+    post = Post.query.get_or_404(post_id)
+    image = (
+        PostGallery.query
+        .filter_by(post_id=post_id, orderz=0)
+        .first()
+    )
+    image_url = s3_presign(make_gallery_key(post_id, image.image_file2)) if image else ''
+
+    if post.author != current_user:
+        abort(403)
+
+    form = PostForm()
+    form.category.choices = [(c.id, c.name) for c in Category.query.all()]
+
+    if form.validate_on_submit():
+        try:
             post.title = form.title.data
             post.content = form.content.data
             post.date_posted = form.date_posted.data
             post.category_id = form.category.data
             db.session.commit()
-            
             flash('Your post has been updated!', 'success')
             return redirect(url_for('posts.post', post_id=post.id))
-        
-        elif request.method == 'GET':
-            form.title.data = post.title
-            form.content.data = post.content
-            form.date_posted.data = post.date_posted
-            form.category.data = post.category_id
-        return render_template('posts/update_post.html', title='Update Post',
-                            image=image, image_url=image_url, post=post, form=form, post_id=post_id, legend='Update Post', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-    except Exception as e:
-        db.session.rollback()
-        flash('Chyba pri aktualizácii príspevku. Skúste to znova.', 'danger')
-    finally:
-        db.session.remove()
+        except Exception as e:
+            current_app.logger.exception("Error in update_post: %s", e)
+            db.session.rollback()
+            flash('Chyba pri aktualizácii príspevku. Skúste to znova.', 'danger')
+    elif request.method == 'GET':
+        form.title.data = post.title
+        form.content.data = post.content
+        form.date_posted.data = post.date_posted
+        form.category.data = post.category_id
+
+    return render_template(
+        'posts/update_post.html',
+        title='Update Post',
+        image=image,
+        image_url=image_url,  # pre-signed URL na náhľad
+        post=post,
+        form=form,
+        post_id=post_id,
+        legend='Update Post',
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
+
 
 @posts.route('/post/files/<int:post_id>/upload', methods=['POST'])
 def upload_file(post_id):
-    if 'file' not in request.files:
-        flash('No file part')
+    file = request.files.get('file')
+    if not file or not getattr(file, 'filename', ''):
+        flash('No file selected')
         return redirect(request.url)
-    file = request.files['file']
-    if file.filename == '':
-        flash('No selected file')
+
+    if not allowed_file(file.filename):
+        flash('File type not allowed')
         return redirect(request.url)
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        new_directory_name2 = 'posts/' + str(post_id) + '/'
-        new_filename = uuid.uuid4().hex + '_' + filename.rsplit('.', 1)[0] + '.' + filename.rsplit('.', 1)[1].lower()
-        s3_key = new_directory_name2 + new_filename
-        s3.upload_fileobj(file, BUCKET_NAME, s3_key)
+
+    original = secure_filename(file.filename)
+    base, ext = os.path.splitext(original)
+    new_filename = f'{uuid.uuid4().hex}_{base}{ext.lower()}'
+    s3_key = make_gallery_key(post_id, new_filename)
+    s3_client().upload_fileobj(
+        file,
+        BUCKET_NAME,
+        s3_key,
+        ExtraArgs=s3_extra_args(file),
+
+    )
 
     post = Post.query.get_or_404(post_id)
-    postgal = PostGallery.query.filter(PostGallery.post_id == post_id).first()
+    postgal = PostGallery.query.filter_by(post_id=post_id, orderz=0).first()
     if not postgal:
-        postgal = PostGallery(title=post.title, image_file2=filename, orderz=0, post_id=post_id)
+        postgal = PostGallery(title=post.title or '', image_file2=new_filename, orderz=0, post_id=post_id)
         db.session.add(postgal)
-        db.session.commit()
-        
     else:
-        postgal.image_file2 = filename
-        db.session.commit()
-        
-        return jsonify(message="File uploaded successfully", image_file2=filename)
-    return jsonify(message="Upload failed"), 400
+        postgal.image_file2 = new_filename
+    db.session.commit()
+
+    return jsonify(message="File uploaded successfully", image_file2=new_filename)
+
 
 @posts.route('/post/files/<int:post_id>/delete_file', methods=['POST'])
 def delete_file(post_id):
-    post = PostGallery.query.filter(PostGallery.post_id == post_id).first()
-    if post.image_file2:
-        s3.delete_object(Bucket=BUCKET_NAME, Key=post.image_file2)
-        db.session.delete(post)
+    postgal = PostGallery.query.filter_by(post_id=post_id, orderz=0).first_or_404()
+    if postgal.image_file2:
+        try:
+            s3_client().delete_object(Bucket=BUCKET_NAME, Key=make_gallery_key(post_id, postgal.image_file2))
+        except Exception as e:
+            current_app.logger.warning("S3 delete failed: %s", e)
+
+        db.session.delete(postgal)
         db.session.commit()
         return jsonify(message="File deleted successfully", file_path=None)
+
     return jsonify(message="No file to delete"), 400
+
 
 @posts.route("/post/<int:post_id>/delete", methods=['POST', 'GET'])
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def delete_post(post_id):
-    try:
-        postgall = PostGallery.query.filter_by(post_id=post_id).all()
-        for gal in postgall:
-            pg = PostGallery.query.get(gal.id)
-            db.session.delete(pg)
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
 
-        post = Post.query.get_or_404(post_id)
-        if post.author != current_user:
-            abort(403)
-        db.session.delete(post)
-        db.session.commit()
-        flash('Your post has been deleted!', 'success')
-        return redirect(url_for('main.home'))
-    except Exception as e:
-        db.session.rollback()
-        flash('Chyba pri mazaní príspevku. Skúste to znova.', 'danger')
-    finally:
-        db.session.remove()
+    galleries = PostGallery.query.filter_by(post_id=post_id).all()
+    for g in galleries:
+        try:
+            s3_client().delete_object(Bucket=BUCKET_NAME, Key=make_gallery_key(post_id, g.image_file2))
+        except Exception as e:
+            current_app.logger.warning("S3 delete failed: %s", e)
+        db.session.delete(g)
 
-################  CATEGORIES  #################
+    db.session.delete(post)
+    db.session.commit()
+    flash('Your post has been deleted!', 'success')
+    return redirect(url_for('main.home'))
+
+
+# ---------- CATEGORIES ----------
 
 @posts.route("/categories")
 @login_required
@@ -294,7 +533,31 @@ def delete_post(post_id):
 def list_categories():
     page = request.args.get('page', 1, type=int)
     categories = Category.query.order_by(Category.id.desc()).paginate(page=page, per_page=5)
-    return render_template('posts/list_categories.html', categories=categories, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template(
+        'posts/list_categories.html',
+        categories=categories,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
+
+
+@posts.route("/category/<int:category_id>")
+def category(category_id):
+    category_obj = Category.query.get_or_404(category_id)
+    return render_template(
+        'posts/category.html',
+        name=category_obj.name,
+        category=category_obj,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
+
 
 @posts.route("/category/new", methods=['GET', 'POST'])
 @login_required
@@ -309,52 +572,66 @@ def new_category():
             flash('Your category has been created!', 'success')
             return redirect(url_for('posts.list_categories'))
         except Exception as e:
+            current_app.logger.exception("Error in new_category: %s", e)
             db.session.rollback()
             flash('Chyba pri vytváraní kategórie. Skúste to znova.', 'danger')
-        finally:
-            db.session.remove()
-    return render_template('posts/create_category.html', title='New Post Category',
-                           form=form, legend='New Post Category', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
-@posts.route("/category/<int:category_id>")
-def category(category_id):
-    category = Category.query.get(category_id)
-    return render_template('posts/category.html', name=category.name, category=category, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template(
+        'posts/create_category.html',
+        title='New Post Category',
+        form=form,
+        legend='New Post Category',
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
 
 @posts.route("/category/<int:category_id>/update", methods=['GET', 'POST'])
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def update_category(category_id):
-    try:
-        category = Category.query.get_or_404(category_id)
-        form = CategoryForm()
-        if form.validate_on_submit():
-            category.name = form.name.data
+    category_obj = Category.query.get_or_404(category_id)
+    form = CategoryForm()
+    if form.validate_on_submit():
+        try:
+            category_obj.name = form.name.data
             db.session.commit()
             flash('A category has been updated!', 'success')
-            return redirect(url_for('posts.list_categories', category_id=category.id))
-        elif request.method == 'GET':
-            form.name.data = category.name
-        return render_template('posts/create_category.html', title='Update Category',
-                            form=form, legend='Update Category', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-    except Exception as e:
-        db.session.rollback()
-        flash('Chyba pri aktualizácii kategórie. Skúste to znova.', 'danger')
-    finally:
-        db.session.remove()
+            return redirect(url_for('posts.list_categories'))
+        except Exception as e:
+            current_app.logger.exception("Error in update_category: %s", e)
+            db.session.rollback()
+            flash('Chyba pri aktualizácii kategórie. Skúste to znova.', 'danger')
+    elif request.method == 'GET':
+        form.name.data = category_obj.name
+
+    return render_template(
+        'posts/create_category.html',
+        title='Update Category',
+        form=form,
+        legend='Update Category',
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table()
+    )
+
 
 @posts.route("/category/<int:category_id>/delete", methods=['POST'])
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def delete_category(category_id):
+    category_obj = Category.query.get_or_404(category_id)
     try:
-        category = Category.query.get(category_id)
-        db.session.delete(category)
+        db.session.delete(category_obj)
         db.session.commit()
         flash('A category has been deleted!', 'success')
         return redirect(url_for('posts.list_categories'))
     except Exception as e:
+        current_app.logger.exception("Error in delete_category: %s", e)
         db.session.rollback()
         flash('Chyba pri mazaní kategórie. Skúste to znova.', 'danger')
-    finally:
-        db.session.remove()
+        return redirect(url_for('posts.list_categories'))

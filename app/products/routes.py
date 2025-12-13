@@ -1,762 +1,807 @@
-import boto3
-import uuid
-from sqlalchemy import text
-
-from app.config import Config
-from flask import (render_template, url_for, flash,
-                   redirect, request, session, abort, Blueprint, current_app, jsonify)
-from flask_login import current_user, login_required
-from app import db
-from app.models import Product, User, Event, Order, ProductGallery, ProductCategory, ProductVariant, Member, variant_products
-from app.products.forms import ProductForm,  ProductCategoryForm, PurchaseForm
-from app.products.utils import save_picture
-from app.main.routes import RightColumn
-from app.main.routes import Next
-from flask import Blueprint
-from werkzeug.utils import secure_filename
-import secrets
-from PIL import Image
-from flask_security import roles_required, roles_accepted
-from datetime import datetime
-
+# app/products/routes.py
 
 import os
+import uuid
+from datetime import datetime
+from app import csrf
 import stripe
-from stripe.error import AuthenticationError
-
-products = Blueprint('products', __name__)
-
-s3 = boto3.client(
-    's3', region_name='eu-north-1',
-    aws_access_key_id=Config.AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=Config.AWS_SECRET_ACCESS_KEY
+from sqlalchemy import text
+from werkzeug.utils import secure_filename
+from flask import (
+    Blueprint, abort, current_app, flash, jsonify,
+    redirect, render_template, request, url_for
 )
-BUCKET_NAME = Config.AWS_S3_BUCKET
-ALLOWED_EXTENSIONS = {'jpg','jpeg', 'png'}
-bucket_name = BUCKET_NAME
+from flask_login import current_user, login_required
+from flask_security import roles_required
 
-def alowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-    
-    
-################  PRODUCTS  #################
+from app import db
+from app.aws_utils import s3_client, s3_presign, s3_extra_args, make_product_key
+from app.main.routes import Next, RightColumn
+from app.models import (
+    Event, Order, Product, ProductCategory, ProductGallery,
+    ProductVariant, variant_products
+)
+from app.products.forms import ProductCategoryForm, ProductForm, PurchaseForm
+import re
 
+products = Blueprint("products", __name__)
 
+YOUTUBE_ID_RE = re.compile(
+    r"(?:youtu\.be/|youtube\.com/(?:watch\?v=|embed/|shorts/))([A-Za-z0-9_-]{6,})"
+)
 
-# @products.route('/products/checkout', methods=['GET', 'POST'])
-# def create_checkout_session():
-    
-    
-#     try:
-#         session = stripe.checkout.Session.create(
-#             payment_method_types=['card'],
-#             line_items=[
-#                 {
-#                     # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-#                     'price': 'price_1MzeHIKr9xveA3fniVgMojgb',
-#                     # 'price': 'price_1MtVALKr9xveA3fnrBasXpqH',
-#                     'quantity': 1,
-#                 },
-#             ],
-#             mode='payment',
-#             success_url=current_app.url_for('products.success_products', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-#             cancel_url=current_app.url_for('products.cancel_products', _external=True),
-#         )
-#     except Exception as e:
-#         return str(e)
+def extract_youtube_id(url: str) -> str | None:
+    if not url:
+        return None
+    url = url.strip()
 
-#     return render_template(
-#         'products/checkout.html', 
-#         checkout_session_id=session['id'],
-#         checkout_publick_key=current_app.config['STRIPE_PUBLIC_KEY']
-#         )
+    # ak už user vložil priamo ID
+    if re.fullmatch(r"[A-Za-z0-9_-]{6,}", url):
+        return url
+
+    m = YOUTUBE_ID_RE.search(url)
+    return m.group(1) if m else None
 
 
+# ------------------------------
+# Helpers
+# ------------------------------
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
+
+def alowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def _upload_product_image(product_id: int, file_storage) -> str:
+    """
+    Uploadne file do S3 a vráti nový filename (uložený do DB).
+    """
+    original = secure_filename(file_storage.filename)
+    base, ext = os.path.splitext(original)
+    new_filename = f"{uuid.uuid4().hex}_{base}{ext.lower()}"
+    key = make_product_key(product_id, new_filename)
 
-@products.route("/products/success", methods=['POST', 'GET'])
-@login_required
-def success_products():
+    s3_client().upload_fileobj(
+        file_storage,
+        current_app.config["AWS_S3_BUCKET"],
+        key,
+        ExtraArgs=s3_extra_args(file_storage),
+    )
+    return new_filename
+
+
+def _delete_product_image_from_s3(product_id: int, filename: str) -> None:
+    """
+    Skúsi vymazať objekt v S3. Ak failne, len zaloguje.
+    """
     try:
-        if stripe.checkout.Session.list():
-            sessions = stripe.checkout.Session.list()
-            print(sessions.data[00]) # tree view
-            if sessions.data[00].metadata.user_id:
-                data = {'username': sessions.data[00].metadata.user_id}
-                order = Order(produc_id=sessions.data[00].metadata.product_id, quantity=sessions.data[00].metadata.quantity, amount=sessions.data[00].metadata.amount, user_id=current_user.id, is_paid=True, variants=sessions.data[00].metadata.product_variants)
-                db.session.add(order)
-                db.session.commit()
-            member = Member.query.get(current_user.id)
-
-            return render_template('products/success.html', member=member, produc_id=sessions.data[00].metadata.product_id, quantity=sessions.data[00].metadata.quantity, amount=sessions.data[00].metadata.amount, user_id=current_user.id, is_paid=True, product_name=sessions.data[00].metadata.product_name, variants=sessions.data[00].metadata.product_variants, data=data, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-        else:
-            return redirect(url_for('main.home'))
-    except AuthenticationError as e:
-        # Zachytíme chybu AuthenticationError a môžeme spracovať návratovú hodnotu alebo vykonať ďalšie akcie.
-        return render_template('errors/404.html',current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table()), 404
+        s3_client().delete_object(
+            Bucket=current_app.config["AWS_S3_BUCKET"],
+            Key=make_product_key(product_id, filename),
+        )
+    except Exception as e:
+        current_app.logger.warning("S3 delete failed: %s", e)
 
 
-
-@products.route("/products/cancel", methods=['POST', 'GET'])
-@login_required
-def cancel_products():
-
-    return render_template('products/cancel.html', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-
-
-
-
-
-
-@products.route("/products", methods=['GET'])
-@login_required
+# ------------------------------
+# PRODUCTS list
+# ------------------------------
+@products.route("/products", methods=["GET"])
 def list_products():
-    page = request.args.get('page', 1, type=int)
-    products = db.session.query(Product).outerjoin(ProductCategory, ProductCategory.id == Product.product_category_id)\
-    .outerjoin(ProductGallery, Product.id == ProductGallery.product_id)\
-    .filter(Product.is_visible==True)\
-    .order_by(Product.date_posted.desc())\
-    .all()
-    
-    products2 = db.session.query(Product).join(ProductGallery, Product.id == ProductGallery.product_id).join(ProductCategory,\
-            ProductCategory.id == Product.product_category_id).filter(Product.is_visible==True)\
-    .order_by(Product.date_posted.desc()).all()
+    products_list = (
+        db.session.query(Product)
+        .filter(Product.is_visible.is_(True))
+        .order_by(Product.date_posted.desc())
+        .all()
+    )
 
     product_category = ProductCategory.query.all()
-    
-    
-    
-    
-    check_user = Order.query.filter(Order.user_id==current_user.id).filter(Product.id==Order.produc_id).first()
-    
-    return render_template(
-        'products/products.html', 
-        page=page,
-        products=products, 
-        products2=products2, 
-        product_category=product_category, 
-        current_date=datetime.now(), next22=Next.next(), 
-        teamz=RightColumn.main_menu(), 
-        next_match=RightColumn.next_match(), 
-        score_table=RightColumn.score_table(),
-        check_user=check_user
+
+    bought_product_ids = set()
+    if current_user.is_authenticated:
+        user_orders = Order.query.filter_by(user_id=current_user.id, is_paid=True).all()
+        bought_product_ids = {o.produc_id for o in user_orders}
+
+    # cover_map: product_id -> presigned url (orderz=0)
+    cover_map = {}
+    if products_list:
+        covers = (
+            ProductGallery.query
+            .filter(ProductGallery.product_id.in_([p.id for p in products_list]))
+            .filter(ProductGallery.orderz == 0)
+            .all()
         )
+        for c in covers:
+            cover_map[c.product_id] = s3_presign(make_product_key(c.product_id, c.image_file2))
+
+    return render_template(
+        "products/products.html",
+        products=products_list,
+        product_category=product_category,
+        bought_product_ids=bought_product_ids,
+        cover_map=cover_map,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
 
 
-
-
-
-@products.route("/product/new", methods=['GET', 'POST'])
+# ------------------------------
+# NEW product (Admin)
+# ------------------------------
+@products.route("/product/new", methods=["GET", "POST"])
 @login_required
-@roles_required('Admin')
+@roles_required("Admin")
 def new_product():
     form = ProductForm()
+    form.category.choices = [(c.id, c.name) for c in ProductCategory.query.all()]
 
-    form.category.choices = [(category.id, category.name) for category in ProductCategory.query.all()]
     if form.validate_on_submit():
-        product =  Product(title=form.title.data, content=form.content.data, saler=current_user, product_category_id=form.category.data, price=form.price.data, stripe_link=form.stripe_link.data, youtube_link=form.youtube_link.data, old_price=form.old_price.data, is_visible=form.is_visible.data)
-        db.session.add(product)
-        db.session.commit()
-        # path_image = os.path.join(str(current_app.root_path)+'/static/products/'+str(product.id)+'/gallery/')
-        # try:
-        #     os.makedirs(path_image)
-        # except OSError as error:
-        #     print(error) 
-            
-
         try:
-            file = form.picture.data
-            file_filename = secure_filename(file.filename)
-            if not alowed_file(file.filename):
-                return "FILE NOT ALLOWED!"
-            bucket_name = "fcsm-files"
-            new_directory_name = 'products/'+str(product.id)+'/gallery/'
-            new_directory_name2 = 'products/'+str(product.id)+'/gallery/'
-            s3.put_object(Bucket=bucket_name, Key=new_directory_name)
+            product = Product(
+                title=form.title.data,
+                content=form.content.data,
+                saler=current_user,
+                product_category_id=form.category.data,
+                price=form.price.data,
+                stripe_link=form.stripe_link.data,
+                youtube_link=extract_youtube_id(form.youtube_link.data or "") or "",
+                old_price=form.old_price.data,
+                is_visible=form.is_visible.data,
+            )
+            db.session.add(product)
+            db.session.flush()  # aby sme mali product.id pred uploadom
 
-            
-            # new_filename = uuid.uuid4().hex + '_'+ file_filename.rsplit('.', 1)[0] +'.' + file_filename.rsplit('.', 1)[1].lower()
-            file_filename = secure_filename(file.filename)
-            file_basename, file_extension = os.path.splitext(file_filename)
-            new_filename = uuid.uuid4().hex + '_' + file_basename + file_extension
-            s3_key = new_directory_name2 + new_filename
-            # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-            
-            s3.upload_fileobj(file, bucket_name, s3_key)
-            
-            # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
-            picture = ProductGallery(title=form.title.data, image_file2=new_filename, orderz=0, product_id=product.id)
-            db.session.add(picture)
+            # titulka (orderz=0)
+            cover = getattr(form, "picture", None).data if hasattr(form, "picture") else None
+            if cover and getattr(cover, "filename", ""):
+                if not alowed_file(cover.filename):
+                    db.session.rollback()
+                    flash("Nepodporovaný typ súboru (len jpg/jpeg/png).", "danger")
+                    return redirect(url_for("products.new_product"))
 
-        
-        except:
-            pass
-                
-        pictures = []
+                fn = _upload_product_image(product.id, cover)
+                db.session.add(ProductGallery(
+                    title=product.title or "",
+                    image_file2=fn,
+                    orderz=0,
+                    product_id=product.id,
+                ))
 
-        for file in form.pictures.data:
-            # Get the filename
-            file_filename = secure_filename(file.filename)
-            file_basename, file_extension = os.path.splitext(file_filename)
-            new_filename = uuid.uuid4().hex + '_' + file_basename + file_extension
-            s3_key = new_directory_name + new_filename
-            # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-            
-            s3.upload_fileobj(file, bucket_name, s3_key)
-            
-            
-            # Create a new PostGallery object with the unique filename
-            picture = ProductGallery(title=form.title.data, image_file2=new_filename, orderz=1, product_id=product.id)
-            db.session.add(picture)
-            
-            # Add the unique filename to the pictures list
-            pictures.append(new_filename)
+            # ďalšie obrázky (orderz=1,2,3…)
+            pics_field = getattr(form, "pictures", None)
+            if pics_field and pics_field.data:
+                order_counter = 1
+                for f in pics_field.data:
+                    if not f or not getattr(f, "filename", ""):
+                        continue
+                    if not alowed_file(f.filename):
+                        continue
 
-        # Commit the changes to the database
-        db.session.commit()
-        flash('Your Product has been created!', 'success')
-        return redirect(url_for('products.list_products'))
-    return render_template('products/new_product.html', title='New Product',
-                           form=form, legend='New Product', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+                    fn = _upload_product_image(product.id, f)
+                    db.session.add(ProductGallery(
+                        title=product.title or "",
+                        image_file2=fn,
+                        orderz=order_counter,
+                        product_id=product.id,
+                    ))
+                    order_counter += 1
 
-# @products.route('/product/get_product_variants')
-# def get_product_variants():
-#     product_variants = ProductVariant.query.all()
-#     variants = [{'name': variant.name} for variant in product_variants]
-#     return jsonify({'variants': variants})
+            db.session.commit()
+            flash("Your Product has been created!", "success")
+            return redirect(url_for("products.list_products"))
 
+        except Exception as e:
+            current_app.logger.exception("Error in new_product: %s", e)
+            db.session.rollback()
+            flash("Chyba pri vytváraní produktu (S3/DB).", "danger")
+            return redirect(url_for("products.new_product"))
 
-
-############### start product gallery
-
-
-
-
-
-
-
-
-
+    return render_template(
+        "products/new_product.html",
+        title="New Product",
+        form=form,
+        legend="New Product",
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
 
 
+# ------------------------------
+# Product gallery API (S3 presign)
+# ------------------------------
+@products.route("/products/images/<int:product_id>", methods=["GET"])
+def get_images_by_product(product_id):
+    images = (
+        ProductGallery.query
+        .filter_by(product_id=product_id)
+        .order_by(ProductGallery.orderz.asc())
+        .all()
+    )
 
-# Function to generate a unique filename for uploaded images (you can customize this)
-def generate_unique_filename(filename):
-    import uuid
-    unique_filename = uuid.uuid4().hex + '_' + filename
-    return unique_filename
+    out = []
+    for img in images:
+        out.append({
+            "id": img.id,
+            "product_id": product_id,
+            "title": img.title,
+            "orderz": img.orderz,
+            "image_url": s3_presign(make_product_key(product_id, img.image_file2)),
+        })
+    return jsonify(out)
 
 
-
-def get_s3_image_url(orderz, product_id, image_file):
-    if orderz==0:
-        folder = 'gallery/'
-    else:
-        folder = 'gallery/'
-    
-    return f'https://{Config.AWS_S3_BUCKET}.s3.amazonaws.com/products/{product_id}/{folder}{image_file}'
-
-@products.route('/products/images/<int:product_id>', methods=['GET'])
-def get_images_by_post(product_id):
-    # Vytvoríme dotaz na databázu, aby sme získali všetky obrázky priradené k príspevku
-    images = ProductGallery.query.filter_by(product_id=product_id).order_by(ProductGallery.orderz.asc()).all()
-
-    # Vytvoríme zoznam obrázkov v JSON formáte
-    image_list = []
-    for image in images:
-        image_data = {
-            'id': image.id,
-            'title': image.title,
-            'orderz': image.orderz,
-            'image_url': get_s3_image_url(image.orderz,product_id, image.image_file2)
-        }
-        image_list.append(image_data)
-        
-    print(image_list)
-
-    return jsonify(image_list)
-
-# Define a route to handle image upload
-@products.route('/products/images/<int:product_id>/upload', methods=['PUT'])
+@products.route("/products/images/<int:product_id>/upload", methods=["PUT"])
+@roles_required("Admin", "WebAdmin")
 def upload_image(product_id):
-    product = Product.query.get(product_id)
-    
-    new_directory_name2 = 'products/'+str(product_id)+'/gallery/'
+    product = Product.query.get_or_404(product_id)
+    file = request.files.get("image_file2")
 
+    if not file or not getattr(file, "filename", "") or not alowed_file(file.filename):
+        return jsonify({"error": "Invalid file"}), 400
 
-    file = request.files['image_file2']
+    fn = _upload_product_image(product.id, file)
 
-    if file:
-        file_filename = secure_filename(file.filename)
-        file_basename, file_extension = os.path.splitext(file_filename)
-        new_filename = uuid.uuid4().hex + '_' + file_basename + file_extension
-        print('---------------------------')
-        print(new_filename)
-        print('---------------------------')
-        # s3_key = new_directory_name2 + 
-        s3_key = new_directory_name2 + new_filename
-        # s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-        
-        s3.upload_fileobj(file, Config.AWS_S3_BUCKET, s3_key)
-        existing_images_count = ProductGallery.query.filter_by(product_id=product.id).count()
-        # Definujte hodnotu orderz na základe počtu prvkov
-        if existing_images_count == 0:
-            new_orderz = existing_images_count  # +1 pre nový obrázok
-        else:
-            new_orderz = existing_images_count + 1  # +1 pre nový obrázok
-        
-        # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id), file_filename))
-        picture = ProductGallery(title='', image_file2=new_filename, orderz=new_orderz, product_id=product.id)
-        db.session.add(picture)
-        db.session.commit()
+    existing_count = ProductGallery.query.filter_by(product_id=product.id).count()
+    new_orderz = existing_count  # 0,1,2...
 
-    # print(file)
-        return jsonify({"message": "Image uploaded successfully"})
-        # return jsonify(message="File uploaded successfully", image_file2=filename)
-
-    return jsonify({"error": "Failed to upload image"}), 500
-
-
-
-
-@products.route('/products/<product_id>/gallery/delete/<image_id>', methods=['DELETE'])
-@roles_required('Admin', 'WebAdmin')
-def delete_image(product_id, image_id):
-    print(product_id)
-    try:     
-        # request_data = request.json
-        # image_id_to_delete = request_data.get('imageId')
-        image = ProductGallery.query.filter_by(id=image_id).first()
-
-        s3.delete_object(Bucket=Config.AWS_S3_BUCKET, Key=f"/products/{product_id}/gallery/{image.image_file2}")
-        db.session.delete(image)
-        db.session.commit()
-        
-        return jsonify({"message": "Obrázok bol úspešne vymazaný"})
-
-    except Exception as e:
-        # logging.error(f'Chyba: {str(e)}')
-        return jsonify({"error": str(e)}), 500  # Vrátiť JSON s chybovou správou a HTTP kódom 500 v prípade chyby
-
-
-
-# Define a route to update image order
-@products.route('/products/<int:product_id>/gallery/update_order', methods=['POST'])
-def update_image_order(product_id):
-    data = request.json
-    # images = data.get('data')
-    print(data)
-    
-    for image in data:
-        new_order_image = ProductGallery.query.get(image['image_id'])
-        new_order_image.orderz = image['orderz']
-    
+    db.session.add(ProductGallery(
+        title="",
+        image_file2=fn,
+        orderz=new_orderz,
+        product_id=product.id,
+    ))
     db.session.commit()
 
+    return jsonify({"message": "Image uploaded successfully"})
+
+
+@products.route("/products/<int:product_id>/gallery/delete/<int:image_id>", methods=["DELETE"])
+@roles_required("Admin", "WebAdmin")
+def delete_image(product_id, image_id):
+    img = ProductGallery.query.filter_by(id=image_id, product_id=product_id).first_or_404()
+
+    _delete_product_image_from_s3(product_id, img.image_file2)
+
+    db.session.delete(img)
+    db.session.commit()
+    return jsonify({"message": "Obrázok bol úspešne vymazaný"})
+
+
+@products.route("/products/<int:product_id>/gallery/update_order", methods=["POST"])
+@roles_required("Admin", "WebAdmin")
+def update_image_order(product_id):
+    data = request.json or []
+    ids = [it.get("image_id") for it in data if it.get("image_id")]
+
+    if not ids:
+        return jsonify({"message": "No data"}), 400
+
+    images = {
+        g.id: g
+        for g in ProductGallery.query.filter(ProductGallery.id.in_(ids)).all()
+    }
+
+    for item in data:
+        g = images.get(item.get("image_id"))
+        if g and g.product_id == product_id:
+            g.orderz = int(item.get("orderz", g.orderz))
+
+    db.session.commit()
     return jsonify({"message": "Image order updated successfully"})
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-################ end product gallery
-
-
-@products.route('/product/add_product_variant', methods=['POST'])
+# ------------------------------
+# Variants
+# ------------------------------
+@products.route("/product/add_product_variant", methods=["POST"])
 def add_product_variant():
-    if request.method == 'POST':
-        name = request.json['name']  # Získajte názov z POST requestu
-        # Vytvorte nový záznam v tabuľke product_variant
-        new_variant = ProductVariant(name=name,type=2)
-        db.session.add(new_variant)
-        db.session.commit()
-        return jsonify({'message': 'Product variant added successfully'})
+    name = request.json["name"]
 
-@products.route('/product/get_product_variants')
+    type_id = db.session.execute(
+        text("SELECT id FROM type_product_variant WHERE name = :n"),
+        {"n": "default"}
+    ).scalar()
+
+    if not type_id:
+        type_id = db.session.execute(
+            text("""
+                INSERT INTO type_product_variant (name, operation)
+                VALUES (:n, :op)
+                RETURNING id
+            """),
+            {"n": "default", "op": "select"}
+        ).scalar()
+
+    new_variant = ProductVariant(name=name, type=type_id)
+    db.session.add(new_variant)
+    db.session.commit()
+
+    return jsonify({"message": "Product variant added successfully"})
+
+
+@products.route("/product/get_product_variants")
 def get_product_variants():
     product_variants = ProductVariant.query.all()
-    print(product_variants)
-    variants = [{'id': variant.id, 'name': variant.name} for variant in product_variants]
-    return jsonify({'variants': variants})
+    variants = [{"id": v.id, "name": v.name} for v in product_variants]
+    return jsonify({"variants": variants})
 
-@products.route('/product/add_variant_product', methods=['POST'])
+
+@products.route("/product/add_variant_product", methods=["POST"])
+@csrf.exempt
 def add_variant_product():
-    if request.method == 'POST':
-        product_id = request.json['product_id']
-        product_variant_id = request.json['product_variant_id']
-        variant_text = request.json['variant_text']
-        variant_image = request.json['variant_image']
-        
-        # Vytvorte nový záznam v tabuľke variant_products
-        new_variant_product = variant_products.insert().values(
-            product_id=product_id,
-            variant_id=product_variant_id,
-            variant_text=variant_text,
-            variant_image=variant_image
-        )
+    product_id = request.json["product_id"]
+    product_variant_id = request.json["product_variant_id"]
+    variant_text = request.json["variant_text"]
+    variant_image = request.json.get("variant_image", "")
 
-        db.session.execute(new_variant_product)
-        db.session.commit()
-        return jsonify({'message': 'Variant product added successfully'})
+    ins = variant_products.insert().values(
+        product_id=product_id,
+        variant_id=product_variant_id,
+        variant_text=variant_text,
+        variant_image=variant_image,
+    )
+    db.session.execute(ins)
+    db.session.commit()
+    return jsonify({"message": "Variant product added successfully"})
 
-@products.route('/product/delete/variants/<int:product_id>/<int:variant_id>/<string:variant_text>', methods=['DELETE'])
+
+@products.route("/product/delete/variants/<int:product_id>/<int:variant_id>/<string:variant_text>", methods=["DELETE"])
 def delete_variants_product(product_id, variant_id, variant_text):
     try:
-        # Použite SQLAlchemy na získanie záznamu, ktorý chcete vymazať
-        variants_to_delete = db.session.execute(
+        res = db.session.execute(
             variant_products.delete()
             .where(variant_products.c.product_id == product_id)
             .where(variant_products.c.variant_id == variant_id)
             .where(variant_products.c.variant_text == variant_text)
         )
-
-        # Potvrďte transakciu
-        if variants_to_delete:
-            # Odstráňte záznam z databázy
-            db.session.commit()
-
-            # Po úspešnom vymazaní produktu vráťte úspešnú odpoveď
-            return jsonify({'message': 'VariantProdukt bol úspešne vymazaný'})
-        else:
-            # Ak sa záznam nenašiel, vráťte chybovú odpoveď
-            return jsonify({'error': 'VariantProdukt neexistuje'}), 404
-
+        db.session.commit()
+        if res.rowcount and res.rowcount > 0:
+            return jsonify({"message": "VariantProdukt bol úspešne vymazaný"})
+        return jsonify({"error": "VariantProdukt neexistuje"}), 404
     except Exception as e:
-        # Ak nastane chyba pri vymazávaní, vráťte chybovú odpoveď
-        return jsonify({'error': 'Chyba pri vymazávaní VariantProdukt', 'details': str(e)}), 500
+        return jsonify({"error": "Chyba pri vymazávaní VariantProdukt", "details": str(e)}), 500
 
 
-@products.route('/product/delete/variant/<int:variant_id>', methods=['DELETE'])
+@products.route("/product/delete/variant/<int:variant_id>", methods=["DELETE"])
 def delete_variant_product(variant_id):
     try:
-        free_variants = db.session.query(variant_products).filter(variant_products.c.variant_id==variant_id).all()
-        if free_variants:
-            return jsonify({'message': 'ProduktVariant nie je moyne vymazat'})
-        else:
-            variant_product = ProductVariant.query.get_or_404(variant_id)
-        
-            db.session.delete(variant_product)
-            db.session.commit()
-
-            return jsonify({'message': 'ProduktVariant bol úspešne vymazaný'})
-
+        used = db.session.query(variant_products).filter(variant_products.c.variant_id == variant_id).all()
+        if used:
+            return jsonify({"message": "ProduktVariant nie je mozne vymazat"})
+        variant_obj = ProductVariant.query.get_or_404(variant_id)
+        db.session.delete(variant_obj)
+        db.session.commit()
+        return jsonify({"message": "ProduktVariant bol úspešne vymazaný"})
     except Exception as e:
-        return jsonify({'error': 'Chyba pri vymazávaní ProduktVariant', 'details': str(e)}), 500
+        return jsonify({"error": "Chyba pri vymazávaní ProduktVariant", "details": str(e)}), 500
 
 
-@products.route('/product/get_variant_products/<int:product_id>')
+@products.route("/product/get_variant_products/<int:product_id>")
 def get_variant_products(product_id):
-    # Načítajte existujúce variant_products a vráťte ich vo forme JSON
-    variant_products2 = db.session.query(
-        variant_products.c.product_id, variant_products.c.variant_id, variant_products.c.variant_text, variant_products.c.variant_image,
+    rows = db.session.query(
+        variant_products.c.product_id,
+        variant_products.c.variant_id,
+        variant_products.c.variant_text,
+        variant_products.c.variant_image,
         ProductVariant.name
-    ).join(ProductVariant,variant_products.c.variant_id==ProductVariant.id).filter(variant_products.c.product_id==product_id).all()
-    print('--------------------------')
-    print(variant_products2)
-    print('--------------------------')
-    return jsonify({'variant_products': [{'variant_name': product.name,'product_id': product.product_id,'variant_id': product.variant_id, 'variant_text': product.variant_text, 'variant_image': product.variant_image} for product in variant_products2]})
+    ).join(
+        ProductVariant, variant_products.c.variant_id == ProductVariant.id
+    ).filter(
+        variant_products.c.product_id == product_id
+    ).all()
 
-# @app.route('/product/delete_variant_product/<int:id>', methods=['POST'])
-# def delete_variant_product(id):
-#     # Nájdite a vymažte variant_product podľa zadaného ID
-#     variant_product = VariantProduct.query.get_or_404(id)
-#     db.session.delete(variant_product)
-#     db.session.commit()
-#     return jsonify({'message': 'Variant product deleted successfully'})
+    return jsonify({
+        "variant_products": [
+            {
+                "variant_name": r.name,
+                "product_id": r.product_id,
+                "variant_id": r.variant_id,
+                "variant_text": r.variant_text,
+                "variant_image": r.variant_image,
+            } for r in rows
+        ]
+    })
 
-@products.route('/product/create-custom-payment-session', methods=['POST'])
+
+# ------------------------------
+# Stripe custom payment session
+# ------------------------------
+@products.route("/product/create-custom-payment-session", methods=["POST"])
+@login_required
 def create_custom_payment_session():
     data = request.get_json()
-    custom_price = data['customPrice']
-    product_name = data['productName']
-    product_id = data['ideProduct']
-    product_variants = data['variantProductsList22']
-    unit_price = data['unit_price']
-    quantity = data['quantity']
-    # print(product_variants)
-    # Vytvorenie platobnej relácie
-    try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[
-                {
-                    'price_data': {
-                        'currency': 'eur',
-                        'product_data': {
-                            'name': product_name,
-             
-      
-                        },
-                        'unit_amount': int(float(unit_price) * 100),  # Cena v centoch
-                    },
-                    'quantity': int(quantity),
-                },
-            ],
-            customer_email=current_user.email,
-            mode='payment',
-            success_url=current_app.url_for('products.success_products', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=current_app.url_for('products.cancel_products', _external=True),
-            metadata={
-                'user_id': current_user.id,
-                'product_id': product_id,
-                'product_name': product_name, 
-                'product_variants': product_variants,  
-                'amount': float(unit_price),  
-                'quantity': int(quantity),  
 
+    product_id = int(data["ideProduct"])
+    quantity = int(data.get("quantity", 1))
+    product_variants = data.get("variantProductsList22", "")
+
+    # načítaj produkt z DB (NEBER cenu z klienta)
+    product = Product.query.get_or_404(product_id)
+
+    stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+
+    if not product.stripe_link or not product.stripe_link.startswith("price_"):
+        return jsonify(error="Produkt nemá nastavené Stripe Price ID (price_...)."), 400
+
+    try:
+        sess = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[{
+                "price": product.stripe_link,   # <-- toto je tvoje price_...
+                "quantity": quantity,
+            }],
+            customer_email=current_user.email,
+            success_url=current_app.url_for("products.success_products", _external=True) + "?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=current_app.url_for("products.cancel_products", _external=True),
+            metadata={
+                "user_id": current_user.id,
+                "product_id": product.id,
+                "product_name": product.title,
+                "product_variants": product_variants,
+                "quantity": quantity,
             },
         )
-        return jsonify(session)
+        return jsonify({"id": sess.id})
     except Exception as e:
-        return jsonify(error=str(e))
+        current_app.logger.exception("Stripe error: %s", e)
+        return jsonify(error=str(e)), 500
 
+
+# ------------------------------
+# Product detail
+# ------------------------------
 @products.route("/product/<int:product_id>")
-@login_required
 def product(product_id):
-    
-    title_image = db.session.query(ProductGallery).filter(ProductGallery.product_id == product_id).order_by(ProductGallery.orderz.asc()).first()
-    product = Product.query.outerjoin(ProductGallery, Product.id == ProductGallery.product_id).filter(Product.is_visible==True).filter(Product.id==product_id).first()
-    check_user = Order.query.filter(Order.user_id==current_user.id).filter(Order.produc_id==product_id).first()
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
-    pro = db.session.query(Product).filter(Product.id == product_id).first()
-    
-    form = PurchaseForm()
+    # bezpečne
+    product_obj = Product.query.filter(Product.is_visible.is_(True), Product.id == product_id).first_or_404()
 
-    form.sizes.choices = [(size.id, size.name) for size in ProductVariant.query.all()]
-    
-    # if form.validate_on_submit():
+    check_user = None
+    if current_user.is_authenticated:
+        check_user = Order.query.filter(
+            Order.user_id == current_user.id,
+            Order.produc_id == product_id
+        ).first()
 
+    # stripe session (nechávam tvoju logiku, len aby to nepadalo)
+    stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+    checkout_session = None
     try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[
-                {
-                    # Namiesto 'price' môžete nastaviť 'price_data' s vlastnou cenou a menou
-                    'price_data': {
-                        'currency': 'eur',  # Mena, napríklad 'usd'
-                        'unit_amount': 2000,  # Cena v centoch (tu je to $10.00)
-                        'product_data': {
-                            'name': 'Váš vlastný produkt',  # Názov vášho produktu
-                            'description': 'Popis vášho produktu',  # Popis vášho produktu
-                        },
-                    },
-                    'quantity': 1,
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "eur",
+                    "unit_amount": 2000,
+                    "product_data": {"name": "Váš vlastný produkt", "description": "Popis vášho produktu"},
                 },
-            ],
-            metadata={
-                'user_id': current_user.id,
-                'product_id': product.id,
-                'custom_field': 'Hodnota pre vlastné pole',  # Ďalšie vlastné údaje môžete pridať sem
-            },
-            customer_email=current_user.email,
-            mode='payment',
-            success_url=current_app.url_for('products.success_products', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=current_app.url_for('products.cancel_products', _external=True),
+                "quantity": 1,
+            }],
+            metadata={"user_id": current_user.id if current_user.is_authenticated else None, "product_id": product_obj.id},
+            customer_email=current_user.email if current_user.is_authenticated else None,
+            mode="payment",
+            success_url=current_app.url_for("products.success_products", _external=True) + "?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=current_app.url_for("products.cancel_products", _external=True),
         )
     except Exception as e:
-        return str(e)
-    
-     
+        current_app.logger.warning("Stripe session create failed: %s", e)
+
     calendar = Event.query.all()
-    page = request.args.get('page', 1, type=int)
+    page = request.args.get("page", 1, type=int)
 
-    products = db.session.query(Product).join(ProductGallery, Product.id == ProductGallery.product_id).join(ProductCategory, ProductCategory.id == Product.product_category_id).filter(ProductGallery.orderz<1).order_by(Product.date_posted.desc()).paginate(page=page, per_page=3)
+    # bočný výpis produktov (ako si mal)
+    products_side = (
+        db.session.query(Product)
+        .join(ProductGallery, Product.id == ProductGallery.product_id)
+        .join(ProductCategory, ProductCategory.id == Product.product_category_id)
+        .filter(ProductGallery.orderz < 1)
+        .order_by(Product.date_posted.desc())
+        .paginate(page=page, per_page=3)
+    )
 
-    
-    galleries = ProductGallery.query.filter(ProductGallery.product_id==product_id).all()
+    galleries = ProductGallery.query.filter_by(product_id=product_id).order_by(ProductGallery.orderz.asc()).all()
     category = ProductCategory.query.all()
-    
-    # session.permanent = True
-    #         session["name"] = form.email.data
-    
-    if check_user or current_user.id==1:
-        return render_template('products/product.html', title_image=title_image,
-                               checkout_session_id=session['id'], 
-                               checkout_public_key=current_app.config['STRIPE_PUBLIC_KEY'],
-                               check_user=check_user, 
-                               page=page, 
-                               products=products, 
-                               calendar=calendar, 
-                               title=product.title, 
-                               product=product, 
-                               galleries=galleries, 
-                               category=category, 
-                               current_date=datetime.now(), next22=Next.next(), 
-                               teamz=RightColumn.main_menu(), 
-                               next_match=RightColumn.next_match(), 
-                               score_table=RightColumn.score_table()
-                            )
-    else:
-        return redirect( url_for('products.list_products'))
 
+    # prístup podľa tvojej logiky
+    if (check_user is not None) or (current_user.is_authenticated and current_user.id == 1):
+        return render_template(
+            "products/product.html",
+            checkout_session_id=(checkout_session["id"] if checkout_session else ""),
+            checkout_public_key=current_app.config.get("STRIPE_PUBLIC_KEY", ""),
+            check_user=check_user,
+            page=page,
+            products=products_side,
+            calendar=calendar,
+            title=product_obj.title,
+            product=product_obj,
+            galleries=galleries,
+            category=category,
+            current_date=datetime.now(),
+            next22=Next.next(),
+            teamz=RightColumn.main_menu(),
+            next_match=RightColumn.next_match(),
+            score_table=RightColumn.score_table(),
+        )
+
+    return redirect(url_for("products.list_products"))
+
+
+# ------------------------------
+# Category products
+# ------------------------------
 @products.route("/products/category/<int:category>")
 def category_products(category):
-    print(category)
-    page = request.args.get('page', 1, type=int)
-    category = ProductCategory.query.filter_by(id=category).first_or_404()
-    products = Product.query\
-        .join(ProductCategory)\
-        .filter(ProductCategory.id==category.id)\
-        .order_by(Product.date_posted.desc())\
+    page = request.args.get("page", 1, type=int)
+    category_obj = ProductCategory.query.filter_by(id=category).first_or_404()
+
+    products_paginated = (
+        Product.query
+        .join(ProductCategory)
+        .filter(ProductCategory.id == category_obj.id)
+        .order_by(Product.date_posted.desc())
         .paginate(page=page, per_page=5)
-    return render_template('products/category_products.html', products=products, category=category, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    )
+
+    return render_template(
+        "products/category_products.html",
+        products=products_paginated,
+        category=category_obj,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
 
 
-
-
-
-@products.route("/product/<int:product_id>/update", methods=['GET', 'POST'])
+# ------------------------------
+# Update product (Admin/WebAdmin) - S3 only
+# ------------------------------
+@products.route("/product/<int:product_id>/update", methods=["GET", "POST"])
 @login_required
+@roles_required("Admin", "WebAdmin")
 def update_product(product_id):
-    product = db.session.query(Product).filter_by(id=product_id).first()
-    
-    
-    if product.saler != current_user:
+    product_obj = Product.query.get_or_404(product_id)
+
+    if product_obj.saler != current_user:
         abort(403)
+
     form = ProductForm()
-    form.category.choices = [(category.id, category.name) for category in ProductCategory.query.all()]
+    form.category.choices = [(c.id, c.name) for c in ProductCategory.query.all()]
+
     if form.validate_on_submit():
-        product.title = form.title.data
-        product.content = form.content.data
-        product.youtube_link = form.youtube_link.data
-        product.stripe_link = form.stripe_link.data
-        product.product_category_id = form.category.data
-        product.price = form.price.data
-        product.is_visible = form.is_visible.data
-        
-        path_image = os.path.join(str(current_app.root_path)+'/static/products/'+str(product.id)+'/gallery/')
         try:
-            os.makedirs(path_image)
-        except OSError as error:
-            print(error) 
+            product_obj.title = form.title.data
+            product_obj.content = form.content.data
+            product_obj.youtube_link = extract_youtube_id(form.youtube_link.data or "") or ""
+            product_obj.stripe_link = form.stripe_link.data
+            product_obj.product_category_id = form.category.data
+            product_obj.price = form.price.data
+            product_obj.old_price = form.old_price.data
+            product_obj.is_visible = form.is_visible.data
 
-        if form.picture.data:
-            file = form.picture.data
-            file_filename = secure_filename(file.filename)
-            form.picture.data.save(os.path.join(current_app.root_path+'/static/products/'+str(product.id)+'/'+file_filename))
+            # titulka (orderz=0)
+            cover = getattr(form, "picture", None).data if hasattr(form, "picture") else None
+            if cover and getattr(cover, "filename", ""):
+                if not alowed_file(cover.filename):
+                    flash("Nepodporovaný typ súboru (len jpg/jpeg/png).", "danger")
+                    return redirect(url_for("products.update_product", product_id=product_obj.id))
 
-       
-            productgall = ProductGallery.query.filter(ProductGallery.orderz==0).filter(ProductGallery.product_id==product_id).first()
-            productgall.title=form.title.data
-            productgall.image_file2=file_filename
+                fn = _upload_product_image(product_obj.id, cover)
 
-        if form.pictures.data:
-            for file in form.pictures.data:
-                if file:
-                    print(file.filename)
-                    with open(os.path.realpath(current_app.root_path+'/static/products/'+str(product.id)+'/gallery/'+str(file.filename)), 'wb') as f:
-                            f.write(file.read())
+                g0 = ProductGallery.query.filter_by(product_id=product_obj.id, orderz=0).first()
+                if not g0:
+                    db.session.add(ProductGallery(
+                        title=product_obj.title or "",
+                        image_file2=fn,
+                        orderz=0,
+                        product_id=product_obj.id,
+                    ))
+                else:
+                    _delete_product_image_from_s3(product_obj.id, g0.image_file2)
+                    g0.title = product_obj.title or ""
+                    g0.image_file2 = fn
 
-                    # file_filename = secure_filename(file.filename)
-                    # form.picture.data.save(os.path.join(current_app.root_path+'/static/posts/'+str(post.id)+'/gallery', file_filename))
-                    pictures = ProductGallery(title=form.title.data, image_file2=file.filename, orderz=1, product_id=product.id)
-                    db.session.add(pictures)
+            # ďalšie obrázky (pridaj na koniec)
+            pics_field = getattr(form, "pictures", None)
+            if pics_field and pics_field.data:
+                existing = ProductGallery.query.filter_by(product_id=product_obj.id).count()
+                order_counter = existing
+                for f in pics_field.data:
+                    if not f or not getattr(f, "filename", ""):
+                        continue
+                    if not alowed_file(f.filename):
+                        continue
+
+                    fn = _upload_product_image(product_obj.id, f)
+                    db.session.add(ProductGallery(
+                        title=product_obj.title or "",
+                        image_file2=fn,
+                        orderz=order_counter,
+                        product_id=product_obj.id,
+                    ))
+                    order_counter += 1
+
+            db.session.commit()
+            flash("Your Product has been updated!", "success")
+            return redirect(url_for("products.product", product_id=product_obj.id))
+
+        except Exception as e:
+            current_app.logger.exception("Error in update_product: %s", e)
+            db.session.rollback()
+            flash("Chyba pri update produktu (S3/DB).", "danger")
+            return redirect(url_for("products.update_product", product_id=product_obj.id))
+
+    elif request.method == "GET":
+        form.title.data = product_obj.title
+        form.content.data = product_obj.content
+        form.category.data = product_obj.product_category_id
+        form.price.data = product_obj.price
+        form.stripe_link.data = product_obj.stripe_link
+        form.youtube_link.data = product_obj.youtube_link
+        form.old_price.data = product_obj.old_price
+        form.is_visible.data = product_obj.is_visible
+
+    return render_template(
+        "products/create_product.html",
+        title="Update Product",
+        product=product_obj,
+        form=form,
+        product_id=product_id,
+        legend="Update Product",
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
 
 
-        db.session.commit()
-        flash('Your Product has been updated!', 'success')
-        return redirect(url_for('products.product', product_id=product.id))
-    elif request.method == 'GET':
-        form.title.data = product.title
-        form.content.data = product.content
-        form.category.data = product.product_category_id
-        form.price.data = product.price
-        form.stripe_link.data = product.stripe_link
-        form.youtube_link.data = product.youtube_link
-        form.old_price.data = product.old_price
-        form.is_visible.data = product.is_visible
-    return render_template('products/create_product.html', title='Update Product',
-                           product=product,form=form, product_id=product_id, legend='Update Product', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-
-
-@products.route("/product/<int:product_id>/delete", methods=['POST'])
+# ------------------------------
+# Delete product (also delete S3)
+# ------------------------------
+@products.route("/product/<int:product_id>/delete", methods=["POST"])
 @login_required
+@roles_required("Admin", "WebAdmin")
 def delete_product(product_id):
+    product_obj = Product.query.get_or_404(product_id)
 
-    productgall = ProductGallery.query.filter_by(product_id=product_id).all()
-    for gal in productgall:
-        pg = ProductGallery.query.get(gal.id)
-        db.session.delete(pg)
-
-    product = Product.query.get(product_id)
-    if product.saler != current_user:
+    if product_obj.saler != current_user:
         abort(403)
-    
-    db.session.delete(product)
+
+    galleries = ProductGallery.query.filter_by(product_id=product_id).all()
+    for g in galleries:
+        if g.image_file2:
+            _delete_product_image_from_s3(product_id, g.image_file2)
+        db.session.delete(g)
+
+    db.session.delete(product_obj)
     db.session.commit()
-    flash('Your Product has been deleted!', 'success')
-    return redirect(url_for('products.list_products'))
+
+    flash("Your Product has been deleted!", "success")
+    return redirect(url_for("products.list_products"))
 
 
-
-
-################  CATEGORIES  #################
-
+# ------------------------------
+# Categories CRUD
+# ------------------------------
 @products.route("/product-categories")
 def list_categories():
-    page = request.args.get('page', 1, type=int)
+    page = request.args.get("page", 1, type=int)
     categories = ProductCategory.query.order_by(ProductCategory.id.desc()).paginate(page=page, per_page=5)
-    return render_template('products/list_categories.html', categories=categories, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    return render_template(
+        "products/list_categories.html",
+        categories=categories,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
 
 
-@products.route("/product-category/new", methods=['GET', 'POST'])
+@products.route("/product-category/new", methods=["GET", "POST"])
 @login_required
+@roles_required("Admin", "WebAdmin")
 def new_category():
     form = ProductCategoryForm()
     if form.validate_on_submit():
         category = ProductCategory(name=form.name.data)
         db.session.add(category)
         db.session.commit()
-        flash('New category has been created!', 'success')
-        return redirect(url_for('products.list_categories'))
-    return render_template('products/create_category.html', title='New Product Category',
-                           form=form, legend='New Product Category', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+        flash("New category has been created!", "success")
+        return redirect(url_for("products.list_categories"))
+    
+    
+    yt = form.youtube_link.data or ""
+    if yt.strip():
+        vid = extract_youtube_id(yt)
+        if not vid:
+            flash("Neplatný YouTube link. Vlož watch/youtu.be/shorts link alebo Video ID.", "danger")
+        return redirect(url_for("products.new_product"))
+
+    return render_template(
+        "products/create_category.html",
+        title="New Product Category",
+        form=form,
+        legend="New Product Category",
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
 
 
-@products.route("/product-category/<int:product_category_id>")
-def category(product_category_id):
-    category = Product.query.get_or_404(product_category_id)
-    return render_template('products/category.html', name=category.name, category=category, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
-
-
-@products.route("/category/<int:product_category_id>/update", methods=['GET', 'POST'])
+@products.route("/category/<int:product_category_id>/update", methods=["GET", "POST"])
 @login_required
+@roles_required("Admin", "WebAdmin")
 def update_category(product_category_id):
-    category = ProductCategory.query.get_or_404(product_category_id)
-    # if post.author != current_user:
-    #     abort(403)
+    category_obj = ProductCategory.query.get_or_404(product_category_id)
     form = ProductCategoryForm()
     if form.validate_on_submit():
-        category.name = form.name.data
+        category_obj.name = form.name.data
         db.session.commit()
-        flash('A product category has been updated!', 'success')
-        return redirect(url_for('products.list_categories', product_category_id=category.id))
-    elif request.method == 'GET':
-        form.name.data = category.name
-    return render_template('products/create_category.html', title='Update Product Category',
-                           form=form, legend='Update Product Category', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+        flash("A product category has been updated!", "success")
+        return redirect(url_for("products.list_categories"))
+
+    elif request.method == "GET":
+        form.name.data = category_obj.name
+
+    return render_template(
+        "products/create_category.html",
+        title="Update Product Category",
+        form=form,
+        legend="Update Product Category",
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
 
 
-@products.route("/product-category/<int:product_category_id>/delete", methods=['POST'])
+@products.route("/product-category/<int:product_category_id>/delete", methods=["POST"])
 @login_required
+@roles_required("Admin", "WebAdmin")
 def delete_category(product_category_id):
-    category = Product.query.get_or_404(product_category_id)
-    # if post.author != current_user:
-    #     abort(403)
-    db.session.delete(category)
+    category_obj = ProductCategory.query.get_or_404(product_category_id)
+    db.session.delete(category_obj)
     db.session.commit()
-    flash('A product category has been deleted!', 'success')
-    return redirect(url_for('products.list_categories'))
+    flash("A product category has been deleted!", "success")
+    return redirect(url_for("products.list_categories"))
+
+
+# ------------------------------
+# Success / Cancel pages
+# ------------------------------
+@products.route("/products/success", methods=["GET"])
+@login_required
+def success_products():
+    return render_template(
+        "products/success.html",
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
+
+
+@products.route("/products/cancel", methods=["GET"])
+@login_required
+def cancel_products():
+    return render_template(
+        "products/cancel.html",
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )

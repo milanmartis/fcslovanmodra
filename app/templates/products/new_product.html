@@ -1,269 +1,553 @@
 {% extends "layout.html" %}
 {% block content %}
+
 <style scoped>
-    .variant-title{
+  .variant-title{
+    display:inline;
+    padding-top:20px;
+    padding-left:20px;
+    padding-right:17px;
+    text-align:left;
+    color:#6d9bff;
+    font-weight:800;
+    text-transform:uppercase;
+  }
 
-        display: inline;
-        left: 0px;
-        padding-top: 20px;
-        padding-left: 20px;
-        padding-right: 17px;
-        text-align: left;
-        color:#6d9bff;
-        font-weight: 800;
-        text-transform: uppercase;
-    }
-    .btn-check:checked + .btn{
-      /*  background-color: #6d9bff;
-        color:#000;*/
-    }
-    .btn:hover{
-        background-color: #000;
-        border: 2px solid #6d9bff;
-        color:#6d9bff;
-    }
-    .btn-check::backdrop + .btn {
-        /* Tu definujte štýl pre neoznačený prvok */
-        background-color: transparent;
-        /* Ďalšie štýly */
-    }
-    .btn-delete{
-        background-color: transparent;
-        border: 0px;
-        color:#6d9bff;
-        margin-left: 14px;
-        margin-right: -7px;
+  .btn:hover{
+    background-color:#000;
+    border:2px solid #6d9bff;
+    color:#6d9bff;
+  }
 
-        font-weight: 800;
+  .btn-delete{
+    background-color:transparent;
+    border:0;
+    color:#6d9bff;
+    margin-left:14px;
+    margin-right:-7px;
+    font-weight:800;
+  }
+  .btn-delete:hover{ color:#3a64c0; }
 
-    }
-    .btn-delete:hover{
-        background-color: transparent;
-        border: 0px;
-        color:#3a64c0;
-        font-weight: 800;
+  /* upload */
+  .upload-btn-wrapper { position:relative; overflow:hidden; display:inline-block; }
+  .upload-btn-wrapper input[type=file] { font-size:100px; position:absolute; left:0; top:0; opacity:0; cursor:pointer; }
 
-    }
+  /* gallery */
+  .draggable { cursor:grab; }
+  .position{
+    position:relative;
+    margin-top:-210px;
+    padding:4px;
+    line-height:90%;
+    z-index:999999;
+  }
+
+  #image-gallery2 img{
+    width:100%;
+    height:200px;
+    object-fit:cover;
+    display:block;
+    border-radius:6px;
+  }
+
+  /* loader */
+  .uploading-indicator{
+    display:none;
+    margin-top:10px;
+    font-weight:800;
+    color:#6d9bff;
+  }
+  .spinner{
+    display:inline-block;
+    width:16px;height:16px;
+    border:2px solid rgba(109,155,255,.35);
+    border-top-color:#6d9bff;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+    margin-right:8px;
+    vertical-align:middle;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+
+  .hint-box{
+    opacity:.8;
+    border:1px dashed rgba(109,155,255,.6);
+    border-radius:8px;
+    padding:12px 14px;
+    margin:12px 0;
+  }
+
+  .field-hidden{ display:none !important; }
 </style>
+
 <div class="content-section">
-    <form action="" method="post" class="form" role="form" enctype="multipart/form-data">
-        {{ form.hidden_tag() }}
-        <fieldset class="form-group">
-            <h3 class="headline">{{ title }}</h3>
+  <form id="product-form" action="" method="post" class="form" role="form" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
 
+    <fieldset class="form-group">
+      <h3 class="headline">{{ title }}</h3>
 
-
-            <div class="form-group form-outline">
-                {{ form.category.label(class="form-control-label") }}
-                {% if form.category.errors %}
-                    {{ form.category(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.category.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.category(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <div class="form-group">
-                {{ form.title.label(class="form-control-label") }}
-                {% if form.title.errors %}
-                    {{ form.title(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.title.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.title(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <div class="form-group">
-                {{ form.content.label(class="form-control-label") }}
-                {% if form.content.errors %}
-                    {{ form.content(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.content.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.content(rows="7", class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <div class="form-group">
-                {{ form.stripe_link.label(class="form-control-label") }}
-                {% if form.stripe_link.errors %}
-                    {{ form.stripe_link(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.stripe_link.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.stripe_link(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <div class="form-group">
-                {{ form.youtube_link.label(class="form-control-label") }}
-                {% if form.youtube_link.errors %}
-                    {{ form.youtube_link(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.youtube_link.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.youtube_link(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <div class="row">
-                <div class="form-group col-md-6">
-
-                    {{ form.price.label(class="form-number-label") }}
-                    {% if form.price.errors %}
-                        {{ form.price(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.price.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.price(class="form-control form-control-lg") }}
-                    {% endif %}
-                </div>
-                <div class="form-group col-md-6">
-                    {{ form.old_price.label(class="form-number-label") }}
-                    {% if form.old_price.errors %}
-                        {{ form.old_price(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.old_price.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.old_price(class="form-control form-control-lg") }}
-                    {% endif %}
-                </div>
-            </div>
-
-
-
-
-
-
-            <div class="row">
-                <div class="form-group col">
-
-                    {{ form.picture.label() }}
-                    {{ form.picture(class="form-control-file") }}
-                    {% if form.picture.errors %}
-                        {% for error in form.picture.errors %}
-                            <span class="text-danger">{{ error }}</span></br>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    {{ form.pictures.label() }}
-                    {{ form.pictures(class="form-control-file") }}
-                    {% if form.pictures.errors %}
-                        {% for error in form.pictures.errors %}
-                            <span class="text-danger">{{ error }}</span></br>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-            </div>
-
-
-
-
-
-
-
-
-
-            <div class="row">
-
-                <div class="form-group col-md-6">
-                    <h1>Add Product Variant</h1>
-                    <input type="text" id="variant_name" placeholder="Variant Name" class="form-control">
-                    <button type="button" id="add_variant_button" class="btn btn-ok">Add +</button>
-                </div>
-                
-                <div class="form-group col-md-6">
-   
-
-
-
-                    <h1>Add Variant Product</h1>
-                    <select id="product_variant_select" class="form-control">
-                        <!-- Naplníme tento zoznam zo servera pomocou JavaScriptu -->
-                    </select>
-                    <input type="text" id="variant_text" placeholder="Variant Text" class="form-control">
-                    <input type="file" id="variant_image" style="display: none;">
-                    <label for="variant_image" id="variant_image_label">
-                        <i style="margin-left: 15px;font-size: 160%;" class="fa fa-solid fa-image"></i> 
-                    </label>
-                    <button type="button" id="add_variant_product_button" class="btn btn-ok">Add +</button>
-                
-                    <script>
-                        const variantImageInput = document.getElementById('variant_image');
-                        const variantImageLabel = document.getElementById('variant_image_label');
-
-                        variantImageLabel.addEventListener('click', () => {
-                            variantImageInput.click(); // Simulácia kliknutia na skrytý input element
-                        });
-
-                        variantImageInput.addEventListener('change', (event) => {
-                            const selectedFile = event.target.files[    0];
-                            if (selectedFile) {
-                                // Tu môžete spracovať vybraný súbor
-                                console.log('Vybraný súbor:', selectedFile);
-                            }
-                        });
-                    </script>
-                </div>
-            </div>
-            <div class="row">
-                <div class="form-group">
-
-                    <h1>Product Variants</h1>
-                    <!--<div class="variant-title">Varianty</div>-->
-                    <div id="variant_list">
-                        <!-- Táto časť bude zobrazená na stránke -->
-                    </div>
-                <hr>
-                    <div id="variant-products-list">
-                        <!-- Záznamy budú zobrazené sem -->
-                    </div>
-
-
-    
-                </div>
-                <div class="form-group col">
-
-                </div>
-            </div>
-
-
-            <div class="form-group">
-                {{ form.is_visible.label() }}
-                {{ form.is_visible() }}
-
-            </div>
-
-        </fieldset>
-        <div class="form-group" style="float:left;">
-            {{ form.submit(class="btn btn-outline-info") }}
-        </div>
-        {% set product = product_id %}
-        {% if product %}
-        <button onclick="javascript:location.href='{{ url_for('products.product', product_id=product) }}';" class="btn btn-sm" />Back</button>
-        {% else %}
-        <button onclick="javascript:location.href='{{ url_for('products.list_products') }}';" class="btn btn-sm" />Back</button>
+      <div class="form-group form-outline">
+        {{ form.category.label(class="form-control-label") }}
+        {{ form.category(class="form-control form-control-lg" + (" is-invalid" if form.category.errors else "")) }}
+        {% if form.category.errors %}
+          <div class="invalid-feedback">
+            {% for error in form.category.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
         {% endif %}
-        
-    </form>
+      </div>
+
+      <div class="form-group">
+        {{ form.title.label(class="form-control-label") }}
+        {{ form.title(class="form-control form-control-lg" + (" is-invalid" if form.title.errors else "")) }}
+        {% if form.title.errors %}
+          <div class="invalid-feedback">
+            {% for error in form.title.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.content.label(class="form-control-label") }}
+        {{ form.content(rows="7", class="form-control form-control-lg" + (" is-invalid" if form.content.errors else "")) }}
+        {% if form.content.errors %}
+          <div class="invalid-feedback">
+            {% for error in form.content.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.stripe_link.label(class="form-control-label") }}
+        {{ form.stripe_link(class="form-control form-control-lg" + (" is-invalid" if form.stripe_link.errors else "")) }}
+        {% if form.stripe_link.errors %}
+          <div class="invalid-feedback">
+            {% for error in form.stripe_link.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      {# --- YOUTUBE / LIVE LINK - show only for Live Stream category --- #}
+      <div class="form-group" id="youtube_link_group">
+        {{ form.youtube_link.label(class="form-control-label") }}
+        {{ form.youtube_link(class="form-control form-control-lg" + (" is-invalid" if form.youtube_link.errors else "")) }}
+        {% if form.youtube_link.errors %}
+          <div class="invalid-feedback">
+            {% for error in form.youtube_link.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="row">
+        <div class="form-group col-md-6">
+          {{ form.price.label(class="form-number-label") }}
+          {{ form.price(class="form-control form-control-lg" + (" is-invalid" if form.price.errors else "")) }}
+          {% if form.price.errors %}
+            <div class="invalid-feedback">
+              {% for error in form.price.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="form-group col-md-6">
+          {{ form.old_price.label(class="form-number-label") }}
+          {{ form.old_price(class="form-control form-control-lg" + (" is-invalid" if form.old_price.errors else "")) }}
+          {% if form.old_price.errors %}
+            <div class="invalid-feedback">
+              {% for error in form.old_price.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <br>
+      <center><h3>Product Image Gallery</h3></center>
+
+      {% if not product_id %}
+        <div class="hint-box">
+          Najprv klikni <b>Submit</b> (vytvorí sa produkt). Potom sa tu aktivuje galéria a môžeš uploadovať obrázky.
+        </div>
+      {% endif %}
+
+      <center>
+        <div id="image-gallery2" class="row"></div>
+      </center>
+
+      <div id="uploading-indicator" class="uploading-indicator">
+        <span class="spinner"></span> Nahrávam obrázok…
+      </div>
+
+      <br><br>
+      <center><h3>New Images</h3></center>
+
+      <div class="form-group">
+        <div class="row">
+          <div class="col-sm-12">
+            <center>
+              <div class="upload-btn-wrapper">
+                <button type="button" class="btn" id="uploadBtn" {% if not product_id %}disabled{% endif %}>
+                  Upload a file
+                </button>
+                <input type="file" id="image_file2" name="image_file2" {% if not product_id %}disabled{% endif %} />
+              </div>
+            </center>
+          </div>
+        </div>
+      </div>
+
+      <hr>
+
+      {# --- VARIANTS sekcia nechávam ako máš (bez zásahov do logiky) --- #}
+      <div class="row">
+        <div class="form-group col-md-6">
+          <h1>Add Product Variant</h1>
+          <input type="text" id="variant_name" placeholder="Variant Name" class="form-control">
+          <button type="button" id="add_variant_button" class="btn btn-ok">Add +</button>
+        </div>
+
+        <div class="form-group col-md-6">
+          <h1>Add Variant Product</h1>
+          <select id="product_variant_select" class="form-control"></select>
+          <input type="text" id="variant_text" placeholder="Variant Text" class="form-control">
+
+          <input type="file" id="variant_image" style="display:none;">
+          <label for="variant_image" id="variant_image_label">
+            <i style="margin-left: 15px;font-size: 160%;" class="fa fa-solid fa-image"></i>
+          </label>
+
+          <button type="button" id="add_variant_product_button" class="btn btn-ok">Add +</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <h1>Product Variants</h1>
+          <div id="variant_list"></div>
+          <hr>
+          <div id="variant-products-list"></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        {{ form.is_visible.label() }}
+        {{ form.is_visible() }}
+      </div>
+
+    </fieldset>
+
+    <div class="form-group" style="float:left;">
+      {{ form.submit(class="btn btn-outline-info") }}
+    </div>
+
+    {% if product_id %}
+      <button type="button"
+              onclick="location.href='{{ url_for('products.product', product_id=product_id) }}';"
+              class="btn btn-sm">Back</button>
+    {% else %}
+      <button type="button"
+              onclick="location.href='{{ url_for('products.list_products') }}';"
+              class="btn btn-sm">Back</button>
+    {% endif %}
+  </form>
 </div>
+
+{# jQuery + jQuery UI sortable (máš ich v layout? ak nie, nechaj tu) #}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+<script>
+  // ---------------------------------------
+  // CATEGORY -> show/hide youtube_link field
+  // ---------------------------------------
+  const categorySelect = document.getElementById("category");
+  const youtubeGroup = document.getElementById("youtube_link_group");
+  const youtubeInput = document.getElementById("youtube_link");
+
+  function isLiveCategory() {
+    // funguje aj keď sa zmení ID, lebo kontrolujeme aj text
+    const opt = categorySelect.options[categorySelect.selectedIndex];
+    const id = String(categorySelect.value || "");
+    const name = (opt?.text || "").toLowerCase();
+
+    // tvoja DB: Live Stream má id=2
+    if (id === "2") return true;
+    if (name.includes("live")) return true;
+    if (name.includes("stream")) return true;
+    return false;
+  }
+
+  function toggleYoutubeField() {
+    if (isLiveCategory()) {
+      youtubeGroup.classList.remove("field-hidden");
+    } else {
+      youtubeGroup.classList.add("field-hidden");
+      if (youtubeInput) youtubeInput.value = ""; // aby si neuložil live link pre merch
+    }
+  }
+
+  if (categorySelect) {
+    categorySelect.addEventListener("change", toggleYoutubeField);
+    toggleYoutubeField(); // initial
+  }
+</script>
+
+<script>
+  // ------------------------------
+  // GALLERY (S3) - ako create_product
+  // ------------------------------
+  const productId = "{{ (product_id or '')|string }}";
+  const imageGallery = document.getElementById('image-gallery2');
+  const imageInput = document.getElementById('image_file2');
+  const uploadingIndicator = document.getElementById('uploading-indicator');
+  const uploadBtn = document.getElementById('uploadBtn');
+
+  function setUploading(state){
+    if (!uploadingIndicator) return;
+    uploadingIndicator.style.display = state ? "block" : "none";
+    if (uploadBtn) uploadBtn.disabled = state || !productId;
+    if (imageInput) imageInput.disabled = state || !productId;
+  }
+
+  async function refreshGallery() {
+    if (!productId) {
+      imageGallery.innerHTML = "";
+      return;
+    }
+
+    $.get(`/products/images/${productId}`, function(data) {
+      imageGallery.innerHTML = '';
+
+      if (!data || data.length === 0){
+        imageGallery.innerHTML = `<div class="hint-box">Zatiaľ žiadne obrázky.</div>`;
+        return;
+      }
+
+      data.forEach(function(item) {
+        const div = document.createElement('div');
+        div.className = 'col draggable';
+        div.dataset.imageId = item.id;
+        div.dataset.productId = item.product_id;
+
+        div.innerHTML = `
+          <img src="${item.image_url}">
+          <button type="button" class="btn btn-close position" aria-label="Delete"></button>
+        `;
+
+        div.querySelector('button').addEventListener('click', () => deleteImage(item.id));
+        imageGallery.appendChild(div);
+      });
+
+      $("#image-gallery2").sortable({
+        update: function() {
+          const payload = [];
+          $("#image-gallery2").find(".draggable").each(function(index) {
+            payload.push({
+              image_id: $(this).data("image-id"),
+              orderz: index
+            });
+          });
+
+          $.ajax({
+            type: "POST",
+            url: `/products/${productId}/gallery/update_order`,
+            data: JSON.stringify(payload),
+            contentType: "application/json",
+            dataType: "json",
+            success: function() { refreshGallery(); }
+          });
+        }
+      }).disableSelection();
+    });
+  }
+
+  async function uploadImage(file) {
+    if (!productId) return;
+
+    setUploading(true);
+
+    const fd = new FormData();
+    fd.append("image_file2", file);
+
+    try{
+      const res = await fetch(`/products/images/${productId}/upload`, {
+        method: "PUT",
+        body: fd
+      });
+
+      if (res.ok) {
+        if (imageInput) imageInput.value = "";
+        await refreshGallery();  // ✅ hneď zobrazí, netreba ďalší upload
+      } else {
+        console.error("Upload failed", await res.text());
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function deleteImage(imageId) {
+    if (!productId) return;
+    const res = await fetch(`/products/${productId}/gallery/delete/${imageId}`, { method: "DELETE" });
+    if (res.ok) refreshGallery();
+    else console.error("Delete failed", await res.text());
+  }
+
+  if (imageInput) {
+    imageInput.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (file) uploadImage(file);
+    });
+  }
+
+  // prvé načítanie
+  refreshGallery();
+</script>
+
+<script>
+  // ------------------------------
+  // VARIANTS (ponechané + drobné fixy)
+  // ------------------------------
+  const variantImageInput = document.getElementById('variant_image');
+  const variantImageLabel = document.getElementById('variant_image_label');
+  if (variantImageLabel && variantImageInput) {
+    variantImageLabel.addEventListener('click', () => variantImageInput.click());
+  }
+
+  function loadProductVariants() {
+    fetch('/product/get_product_variants')
+      .then(r => r.json())
+      .then(data => {
+        const sel = document.getElementById('product_variant_select');
+        sel.innerHTML = '';
+
+        const opt0 = document.createElement('option');
+        opt0.textContent = '--Vyber variant--';
+        opt0.value = 0;
+        opt0.selected = true;
+        sel.appendChild(opt0);
+
+        data.variants.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.id;
+          opt.textContent = v.name;
+          sel.appendChild(opt);
+        });
+      });
+  }
+
+  async function loadVariantProducts() {
+    if (!productId) return;
+
+    const res = await fetch(`/product/get_variant_products/${productId}`);
+    const data = await res.json();
+
+    const wrap = document.getElementById('variant-products-list');
+    wrap.innerHTML = '';
+
+    const by = {};
+    data.variant_products.forEach(p => {
+      const key = `${p.variant_id}-${p.variant_name}`;
+      by[key] ||= { variantId: p.variant_id, variantName: p.variant_name, products: [] };
+      by[key].products.push(p);
+    });
+
+    for (const key in by) {
+      const group = by[key];
+      const block = document.createElement('div');
+
+      const title = document.createElement('div');
+      title.className = 'variant-title';
+      title.textContent = group.variantName;
+      block.appendChild(title);
+
+      group.products.forEach(p => {
+        const label = document.createElement('label');
+        label.className = 'btn';
+        label.textContent = p.variant_text;
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'btn-delete';
+        del.textContent = 'x';
+        del.addEventListener('click', () => deleteVariantProduct(p.product_id, group.variantId, p.variant_text));
+
+        label.appendChild(del);
+        block.appendChild(label);
+      });
+
+      wrap.appendChild(block);
+    }
+  }
+
+  async function deleteVariantProduct(product_id, variant_id, variant_text) {
+    const res = await fetch(`/product/delete/variants/${product_id}/${variant_id}/${encodeURIComponent(variant_text)}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) loadVariantProducts();
+  }
+
+  function loadVariants() {
+    fetch('/product/get_product_variants')
+      .then(r => r.json())
+      .then(data => {
+        const list = document.getElementById('variant_list');
+        list.innerHTML = '';
+
+        const t = document.createElement('div');
+        t.className = 'variant-title';
+        t.textContent = 'Varianty';
+        list.appendChild(t);
+
+        data.variants.forEach(v => {
+          const item = document.createElement('div');
+          item.className = 'btn';
+          item.id = `variantx-${v.id}`;
+          item.textContent = v.name;
+
+          const del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'btn-delete';
+          del.textContent = 'x';
+          del.addEventListener('click', () => deleteProductVariants(v.id));
+
+          item.appendChild(del);
+          list.appendChild(item);
+        });
+      });
+  }
+
+  async function deleteProductVariants(variant_id) {
+    const res = await fetch(`/product/delete/variant/${variant_id}`, { method: 'DELETE' });
+    if (res.ok) { loadVariants(); loadVariantProducts(); }
+  }
+
+  document.getElementById('add_variant_button')?.addEventListener('click', function() {
+    const name = document.getElementById('variant_name').value;
+    fetch('/product/add_product_variant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    }).then(() => loadVariants());
+  });
+
+  document.getElementById('add_variant_product_button')?.addEventListener('click', function() {
+    if (!productId) return;
+
+    const product_variant_id = document.getElementById('product_variant_select').value;
+    const variant_text = document.getElementById('variant_text').value;
+    const variant_image = document.getElementById('variant_image').value;
+
+    fetch('/product/add_variant_product', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: productId, product_variant_id, variant_text, variant_image })
+    }).then(() => loadVariantProducts());
+  });
+
+  loadProductVariants();
+  loadVariants();
+  loadVariantProducts();
+</script>
+
 {% endblock content %}

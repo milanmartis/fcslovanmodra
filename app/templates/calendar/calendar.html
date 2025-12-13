@@ -1,4 +1,6 @@
-
+<!DOCTYPE html>
+<html lang="sk">
+<head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -7,978 +9,906 @@
     <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
     <link rel="apple-touch-startup-image" href="images/apple-touch-startup-image-640x920.png">
     <title>FM APP</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" />
+
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    >
+
+    <!-- jQuery UI štýly (kvôli date/datetime pickeru) -->
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script>
-    $( function() {
-       $("#start2, #end2, #start, #end").datetimepicker({
-    timeFormat:'HH:mm:ss',
-    dateFormat:'yy-mm-dd',
-    controlType: 'slider'
-  });
-    });
-    </script>
 
-    <style scoped>
-
-
-
-
-        @keyframes fadeInBounce {
-          0% { opacity: 0; transform: scale(0.5); }
-          50% { transform: scale(1.3); }
-          70% { transform: scale(0.7); }
-          100% { opacity: 1; transform: scale(1); }
-      }
-      
-      .fade-in-bounce-event {
-          animation: fadeInBounce 0.5s ease-in-out;
-      }
-
-        @keyframes fadeOutBounce {
-          0% { opacity: 1; transform: scale(1); }
-          30% { transform: scale(1.3); }
-          50% { transform: scale(0.7); }
-          100% { opacity: 0; transform: scale(0.5); }
-      }
-      
-      .fade-out-bounce-event {
-          animation: fadeOutBounce 0.6s ease-in-out;
-      }
-
-
-      .datelocalset{
-        background-color: aliceblue;color: #000;cursor: pointer;text-align: center;
-      }
-
-      .input-field{
-        height: calc(1.5em + 1rem + 2px);
-        padding: 0.5rem 1rem;
-        font-size: 1.25rem;
-        line-height: 1.5;
-        border-radius: 0.3rem;
-        display: block;
-        width: 40%;
-        font-weight: 400;
-        color: #495057;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 2px solid black;
-    
-    }
-    
-    input[type="date"]::-webkit-calendar-picker-indicator {
-        color: rgba(0, 0, 0, 0);
-        opacity: 1;
-        display: block;
-        background-repeat:  no-repeat;
-        width: 25px;
-        height: 25px;
-        border-width: thin
-    }
-    input[type="date"]::-webkit-calendar-picker-indicator {
-       /* position: absolute;
-        left: 5%;*/
-        color: #000;
-        cursor: pointer;
-      }
-      input::-webkit-datetime-edit-fields-wrapper {
-      cursor: pointer;
-      
-    }
-    input::-webkit-datetime-edit {
-      cursor: pointer;
-   
-    }
-
-          input::placeholder {
-        color: red;
-      }
-    </style>
-
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-
-  
-
+    <!-- FullCalendar / vlastné CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style/fullcalendar.css') }}"
     />
-
     <link
       rel="stylesheet"
       type="text/css"
       href="{{ url_for('static', filename='style/calendar.css') }}"
     />
 
-    <div id="loader"></div>
+    <style scoped>
+      body, html{
+        background-color: #121212;
+        color: #fff;
 
-    <main role="main" class="container" >
-      <h3 style="padding-top:12px;">Kalendár</h3>
+      }
+        @keyframes fadeInBounce {
+          0% { opacity: 0; transform: scale(0.5); }
+          50% { transform: scale(1.3); }
+          70% { transform: scale(0.7); }
+          100% { opacity: 1; transform: scale(1); }
+        }
 
-      <div class="row">
-        <div class="col-12">
-          {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                  {{ message }}
-                </div>
-              {% endfor %}
-            {% endif %}
-          {% endwith %}
+        .fade-in-bounce-event {
+          animation: fadeInBounce 0.5s ease-in-out;
+        }
 
-            <div id="schedule-calendar"></div>
-      
-            <div
-              class="modal fade"
-              id="confirm-delete"
-              tabindex="-1"
-              role="dialog"
-              aria-labelledby="myModalLabel"
-              aria-hidden="true"
-              data-bs-backdrop="static" data-keyboard="false"
-            >
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    Are you sure to delete this shedule?
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-delete-confirm" id="delete-confirmed-submit">
-                      Delete
-                    </button>
-                    <button type="button" class="btn btn-ok" data-bs-dismiss="modal">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
+        @keyframes fadeOutBounce {
+          0% { opacity: 1; transform: scale(1); }
+          30% { transform: scale(1.3); }
+          50% { transform: scale(0.7); }
+          100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        .fade-out-bounce-event {
+          animation: fadeOutBounce 0.6s ease-in-out;
+        }
+
+        .datelocalset {
+          background-color: aliceblue;
+          color: #000;
+          cursor: pointer;
+          text-align: center;
+        }
+
+        .input-field {
+          height: calc(1.5em + 1rem + 2px);
+          padding: 0.5rem 1rem;
+          font-size: 1.25rem;
+          line-height: 1.5;
+          border-radius: 0.3rem;
+          display: block;
+          width: 40%;
+          font-weight: 400;
+          color: #495057;
+          background-color: #fff;
+          background-clip: padding-box;
+          border: 2px solid black;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          color: rgba(255, 255, 255, 0);
+          opacity: 1;
+          display: block;
+          background-repeat: no-repeat;
+          width: 25px;
+          height: 25px;
+          border-width: thin;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          color: #000;
+          cursor: pointer;
+        }
+
+        input::-webkit-datetime-edit-fields-wrapper {
+          cursor: pointer;
+        }
+
+        input::-webkit-datetime-edit {
+          cursor: pointer;
+        }
+
+        input::placeholder {
+          color: red;
+        }
+
+        select {
+          cursor: pointer;
+        }
+
+        select:focus {
+          background-color: #6d9bff;
+          color: #030303;
+        }
+
+        select::before {
+          background-color: #6d9bff;
+          color: #030303;
+        }
+
+        select:hover {
+          background-color: #6d9bff;
+          color: #030303;
+        }
+
+        select:disabled:hover {
+          cursor: default;
+          color: #030303;
+        }
+
+        select option {
+          background-color: #6d9bff;
+          color: #030303;
+          text-align: center;
+          cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+  <div id="loader"></div>
+
+  <main role="main" class="container">
+    <h3 style="padding-top:12px;">Kalendár</h3>
+
+    <div class="row">
+      <div class="col-12">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div id="schedule-calendar"></div>
+
+        <!-- Confirm delete modal -->
+        <div
+          class="modal fade"
+          id="confirm-delete"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="myModalLabel"
+          aria-hidden="true"
+          data-bs-backdrop="static"
+          data-keyboard="false"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                Are you sure to delete this shedule?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-delete-confirm" id="delete-confirmed-submit">
+                  Delete
+                </button>
+                <button type="button" class="btn btn-ok" data-bs-dismiss="modal">
+                  Cancel
+                </button>
               </div>
             </div>
-      
-            <div
-              id="info-updated"
-              class="modal fade bd-example-modal-lg"
-              tabindex="-1"
-              role="dialog"
-              aria-labelledby="myLargeModalLabel"
-              aria-hidden="true"
-
-            >
-              <div class="modal-dialog modal-sm">
-                <h1>Shedule updated successfully</h1>
-              </div>
-            </div>
-            <div
-              id="info-added"
-              class="modal fade bd-example-modal-lg"
-              tabindex="-1"
-              role="dialog"
-              aria-labelledby="myLargeModalLabel"
-              aria-hidden="true"
-            >
-              <div class="modal-dialog modal-sm">
-                <h1>Shedule added</h1>
-              </div>
-            </div>
-            {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
-
-            <!-- Add Modal -->
-            <div class="modal fade" id="schedule-add" data-bs-backdrop="static" data-keyboard="false">
-              <div class="modal-dialog">
-                <div class="modal-content" style="background-color: #000;border: 2px solid #6d9bff;">
-                  <!-- Modal Header -->
-                  <div class="modal-header">
-                    <h3 class="modal-title">Add New Schedule</h3>
-                    <button
-                    type="button"
-                    class="btn btnclose"
-                    data-bs-dismiss="modal"
-                    >
-                    X
-                  </button>
-
-                  </div>
-                  <!-- Modal body -->
-                  <div class="modal-body">
-                    <form action="javascript:;">
-                      <input
-                      type="hidden"
-                      id="id"
-                      name="id"
-                      class="form-control"
-                    />
-                      <div class="form-group">
-                        {{ form.title.label(class="form-control-label") }}
-                        {% if form.title.errors %}
-                        {{ form.title(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.title.errors %}
-                            <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        {{ form.title(class="form-control form-control-lg") }}
-                        {% endif %}
-                    </div>
-                      <div class="form-group">
-                        {{ form.category.label(class="form-control-label") }}
-                        {% if form.category.errors %}
-                            {{ form.category(class="form-control form-control-lg is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.category.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.category(class="form-control form-control-lg") }}
-                        {% endif %}
-                    </div>
-                      <div class="form-group">
-                        {{ form.team.label(class="form-control-label") }}
-                        {% if form.team.errors %}
-                            {{ form.team(class="form-control form-control-lg is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.team.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.team(class="form-control form-control-lg") }}
-                        {% endif %}
-                    </div>
-      
-      
-      
-      
-                      <div class="row">
-                        <div class="form-group col-6" >
-                          {{ form.start.label(class="form-control-label") }}
-                          {% if form.start.errors %}
-                          {{ form.start(class="form-control form-control-lg is-invalid") }}
-                          <div class="invalid-feedback">
-                              {% for error in form.start.errors %}
-                              <span>{{ error }}</span>
-                              {% endfor %}
-                          </div>
-                          {% else %}
-                          {{ form.start(readonly="readonly", class="form-control", type="datetime", style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;") }}
-                          {% endif %}
-                        </div>
-
-                        <div class="form-group col-6">
-                          {{ form.end.label(class="form-control-label") }}
-                          {% if form.end.errors %}
-                          {{ form.end(class="form-control form-control-lg is-invalid") }}
-                          <div class="invalid-feedback">
-                              {% for error in form.end.errors %}
-                              <span>{{ error }}</span>
-                              {% endfor %}
-                          </div>
-                          {% else %}
-                          {{ form.end(readonly="readonly", class="form-control", type="datetime", style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;") }}
-                          {% endif %}
-                        </div>
-                        <div class="form-group col-6">
-                          {{ form.address.label(class="form-control-label") }}
-                          {% if form.address.errors %}
-                          {{ form.address(class="form-control form-control-lg is-invalid") }}
-                          <div class="invalid-feedback">
-                              {% for error in form.address.errors %}
-                              <span>{{ error }}</span>
-                              {% endfor %}
-                          </div>
-                          {% else %}
-                          {{ form.address(class="form-control form-control-lg") }}
-                          {% endif %}
-                        </div>
-                        <div class="form-group col-6">
-                          {{ form.link.label(class="form-control-label") }}
-                          {% if form.link.errors %}
-                          {{ form.link(class="form-control form-control-lg is-invalid") }}
-                          <div class="invalid-feedback">
-                              {% for error in form.link.errors %}
-                              <span>{{ error }}</span>
-                              {% endfor %}
-                          </div>
-                          {% else %}
-                          {{ form.link(class="form-control form-control-lg") }}
-                          {% endif %}
-                        </div>
-
-                      </div>
-                      <div class="form-group" style="float:right;">
-                        <submit
-                        id="add-submit"
-                        type="button"
-                        class="btn btn-ok"
-                        >Save
-                      </submit>
-                    </div>
-                  </form>
-                  
-                        
-                                    </div>
-                                    <!-- Modal footer -->
-                                    <div class="modal-footer">
-                                      
-                  </div>
-                </div>
-              </div>
-            </div>
-            {% endif %}
-            {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
-            {% set disable = '' %}
-            {% else %}
-            {% set disable = 'disabled' %}
-            {% endif %}
-            
-            <!-- Edit Modal -->
-            <div class="modal fade" id="schedule-edit" data-backdrop="static" data-keyboard="false">
-              <div class="modal-dialog">
-                <div class="modal-content" style="background-color: #000;border: 2px solid #6d9bff;">
-                  <!-- Modal Header -->
-                  <div class="modal-header">
-                    {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
-                    <h3 class="modal-title">Edit Your Schedule</h3>
-                    {% else %}
-                    <center><h3 class="modal-title">{{ form2.category2(disabled=True, class="title-calendar-h3") }} - {{ form2.team2(disabled=True, class="title-calendar-h3") }}</h3></center>
-                    {% endif %}
-                    
-                    <button type="button" class="btn btnclose" data-bs-dismiss="modal">
-                      X
-                    </button>
-                </div>
-                <!-- Modal body -->
-                <div class="modal-body">
-                  <form action="javascript:;">
-                    
-                    <div class="form-group">
-                      <label>Schedule Name:</label>
-    
-                      <input
-                      {{disable}}
-                        type="text"
-                        id="title2"
-                        name="title2"
-                        class="form-control"
-                        value=""
-                      />
-                    </div>
-            
-                    {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
-                    <div class="form-group">
-                      {{ form2.category2.label(class="form-control-label") }}
-                      {% if form2.category2.errors %}
-                          {{ form2.category2(class="form-control form-control-lg is-invalid") }}
-                          <div class="invalid-feedback">
-                              {% for error in form2.category2.errors %}
-                                  <span>{{ error }}</span>
-                              {% endfor %}
-                          </div>
-                      {% else %}
-                      {{ form2.category2(class="form-control form-control-lg") }}
-                      {% endif %}
-                      
-                    </div>
-                    {% endif %}
-                    
-      
-
-                    {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
-                      <div class="form-group">
-                        {{ form2.team2.label(class="form-control-label") }}
-                        {% if form2.team2.errors %}
-                            {{ form2.team2(class="form-control form-control-lg is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form2.team2.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                        {{ form2.team2(class="form-control form-control-lg") }}
-                        {% endif %}
-                      </div>
-                      {% endif %}
-      
-
-                        <div class="row">
-                            <div class="form-group col-6">
-                              <label>Start:</label>
-      
-                              <input
-                              readonly
-                              {{disable}}
-                              type="datetime"
-                              id="start2"
-                              name="start2"
-                              class="form-control"
-                              value=""
-                              style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;"
-                              />
-                            </div>
-                            
-                            <div class="form-group col-6">
-                              <label>End:</label>
-                              <input
-                              readonly
-                              {{disable}}
-                              type="datetime"
-                              id="end2"
-                              name="end2"
-                              class="form-control"
-                              value=""
-                              style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;"
-                        />
-                        </div>
-                        <script>
-                          document.addEventListener('DOMContentLoaded', function () {
-                            var input = document.getElementById('start2');
-                            var now = new Date();
-                        
-                            var day = ("0" + now.getDate()).slice(-2);
-                            var month = ("0" + (now.getMonth() + 1)).slice(-2);
-                            var year = now.getFullYear();
-                            var hours = ("0" + now.getHours()).slice(-2);
-                            var minutes = ("0" + now.getMinutes()).slice(-2);
-                        
-                            input.value = year + "-" + month + "-" + day + "T" + hours + ":" + minutes;
-                        });
-                        </script>
-      
-                        </div>
-      
-                        <input
-                          type="hidden"
-                          id="id2"
-                          name="id2"
-                          class="form-control"
-                        />
-                        <div class="row">
-
-                        <div class="form-group col-6">
-                          {{ form2.address2.label(class="form-control-label") }}
-                          {% if form2.address2.errors %}
-                          {{ form2.address2(class="form-control form-control-lg is-invalid") }}
-                          <div class="invalid-feedback">
-                              {% for error in form2.address2.errors %}
-                              <span>{{ error }}</span>
-                              {% endfor %}
-                          </div>
-                          {% else %}
-                          {{ form2.address2(class="form-control form-control-lg") }}
-                          {% endif %}
-                        </div>
-                        <div class="form-group col-6">
-                          {{ form2.link2.label(class="form-control-label") }}
-                          {% if form2.link2.errors %}
-                          {{ form2.link2(class="form-control form-control-lg is-invalid") }}
-                          <div class="invalid-feedback">
-                              {% for error in form2.link2.errors %}
-                              <span>{{ error }}</span>
-                              {% endfor %}
-                          </div>
-                          {% else %}
-                          {{ form2.link2(class="form-control form-control-lg") }}
-                          {% endif %}
-                        </div>
-                      </div>
-                      </form>
-                  </div>
-                  <!-- Modal footer -->
-                  {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
-                  <div class="modal-footer">
-                    <!-- <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button> -->
-                    <button id="update-submit" type="button" class="btn btn-ok">
-                      Save
-                    </button>
-
-                    <button
-                      id="delete-submit"
-                      type="button"
-                      class="btn btn-delete"
-                      data-bs-toggle="modal"
-                      data-bs-target="#confirm-delete"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        fill="currentColor"
-                        class="bi bi-trash"
-                        viewBox="0 0 16 14"
-                      >
-                        <path
-                          d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"
-                        />
-                        <path
-                          fill-rule="evenodd"
-                          d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-
-          <script>
-            document.onreadystatechange = function() {
-                if (document.readyState !== "complete") {
-                    document.querySelector(
-                    "body").style.visibility = "hidden";
-                    document.querySelector(
-                    "#loader").style.visibility = "visible";
-                } else {
-                    document.querySelector(
-                    "#loader").style.display = "none";
-                    document.querySelector(
-                    "body").style.visibility = "visible";
-                }
-            };
-        </script>
-
-          <script>
-            $(function() {
-
-              // initialize the external events
-              // -----------------------------------------------------------------
-            
-              $('#calendar-events .calendar-events').each(function() {
-            
-                // store data so the calendar knows to render an event upon drop
-                $(this).data('event', {
-                  title: $.trim($(this).text()), // use the element's text as the event title
-                  stick: true // maintain when user navigates (see docs on the renderEvent method)
-                });
-            
-                // make the event draggable using jQuery UI
-                $(this).draggable({
-                  zIndex: 999,
-                  revert: true,      // will cause the event to go back to its
-                  revertDuration: 0  //  original position after the drag
-                });
-            
-              });
-   
-              document.addEventListener('DOMContentLoaded', function() {
-                var calendarEl = document.getElementById('schedule-calendar');
-              
-                var calendar = new FullCalendar.Calendar(calendarEl, {
-                  initialView: 'dayGridMonth',
-                  editable: true,
-                  eventDrop: function(info) {
-                    alert('Udalosť bola posunutá na: ' + info.event.start.toISOString());
-                  },
-                  dateClick: function(info) {
-                    alert('Kliknuté na dátum: ' + info.dateStr);
-                  },
-                  // Prípadné ďalšie nastavenia a udalosti
-                });
-              
-                calendar.render();
-              });
-
-              $(document).ready(function() {
-                
-                $('#schedule-calendar').fullCalendar({
-                  editable:true,
-                  eventLimit: false, // allow "more" link when too many events
-                  droppable: true,
-                  timezone:"local",
-                  eventOrder: 'start, end',
-                  timeFormat: 'H:mm',
-                  header:{
-                   right:'prev,next, today',
-                   left:'title'
-                   //right:'month,agendaWeek,agendaDay'
-                  },
-                  firstDay: 1,
-                  events: [{% for row in calendar %}{ id : '{{row.id}}', title : '{{row.title}}', start : '{{row.start_event}}', address : '{{row.address}}', link : '{{row.link}}', end : '{{row.end_event}}', category : '{{row.event_category_id}}', team : '{{row.event_team_id}}'}, {% endfor %}],
-                  nextDayThreshold: "00:00:00",
-                  selectable:true,
-                  selectHelper:true,
-
-                  eventRender: function(event, element) {
-                    // 'event' je objekt udalosti
-                    // 'element' je jQuery objekt reprezentujúci HTML element udalosti
-            
-                    // Príklad: Pridanie data-id atribútu
-                    element.attr('data-id', event.id);
-            
-                    // Príklad: Zmena farby pozadia udalosti
-                    //element.css('background-color', '#ff0000');
-            
-                    // Príklad: Pridanie vlastnej CSS triedy
-                   // element.addClass('moja-vlastna-trieda');
-                  },
-                  select: function (start, end, jsEvent, view) {
-                    //new
-                    //alert(team.value);
-                    var start = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
-                    var end = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
-                    $('#schedule-add').modal('show');
-                    $('#title').val('');
-                    $('#start').val(start);
-                    $('#end').val(end);
-                    $('#address').val('');
-                    $('#link').val('');
-      
-                  },
-
-      
-                  eventClick: function(event) {
-                 //   if(event.id){
-                    $('#id2').val(event.id);
-                    //update
-                    //alert(event.team);
-                    var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
-                    var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
-                    $('#title2').val(event.title);
-                    $('#start2').val(start);
-                    $('#end2').val(end);
-                    $('#address2').val(event.address);
-                    $('#link2').val(event.link);
-                    $('#team2').val(event.team);
-                    $('#category2').val(event.category);
-                    $('#schedule-edit').modal('show');
-                //  }
-                  },
-      
-                  //dayClick: function(date, jsEvent, view) {
-                   // $('#schedule-add').modal('show');
-                  //},
-      
-                  eventDrop:function(event) {
-                    if(event.id){
-
-                    var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
-                    var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
-                    var title = event.title;
-                    var address = event.address;
-                    var link = event.link;
-                    var category = event.category;
-                    var team = event.team;
-                    var id = event.id;
-                  }else{
-                    var title = $('#title').val();
-                    var team = $('#team').val();
-                    var category = $('#category').val();
-                    var start = $('#start').val();
-                    var end = $('#end').val();
-                    //var start = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
-                    //var end = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
-                    var address = $('#address').val();
-                    var link = $('#link').val();
-                    var id = $('#id').val();
-                    }
-                    $.ajax({
-                    url:"/calendar/update",
-                    type:"POST",
-                    contentType: "application/json",
-                    data:JSON.stringify({'title2':title, 'start2':start, 'end2':end, 'address2':address, 'link2':link, 'category2':category, 'team2':team, 'id2':id}),
-                    success:function()
-                    {
-                      
-                      //alert(title+'+'+start+'+'+end+'+'+address+'+'+link+'+'+category+'+'+team+'+'+id);
-                    //  $('#info-updated').modal('show');
-                    //  setTimeout(function(){
-                    //  $('#info-updated').modal("hide");
-
-                    // }, 1500);
-                    }
-                    });
-                  }
-                });
-      
-      
-                function addBounceEffectToEvent(eventId, inout) {
-                 // alert(inout);
-                 var eventElement=null;
-                 if(inout==1){
-                    eventElement = $(`#schedule-calendar .fc-event[data-id='${eventId}']`);
-                    eventElement.addClass('fade-in-bounce-event');
-                    eventElement.on('animationend', function() {
-                      eventElement.removeClass('fade-in-bounce-event');
-                    });
-                    
-                  }
-                  if(inout==2){
-                    //alert('kuk');
-                    eventElement2 = $(`#schedule-calendar .fc-event[data-id='${eventId}']`);
-                    eventElement2.addClass('fade-out-bounce-event');
-                    eventElement2.on('animationend', function() {
-                    eventElement2.removeClass('fade-out-bounce-event');
-                    });
-                  }
-                }
-
-
-
-
-      
-            $('#add-submit').on('click', function(e){
-              // We don't want this to act as a link so cancel the link action
-                e.preventDefault();
-      
-                AddNewSchedulle();
-              });
-      
-            $('#delete-submit').on('click', function(e){
-              // We don't want this to act as a link so cancel the link action
-             // alert(e);
-             //   e.preventDefault();
-             $("#schedule-edit").modal('hide');
-                $('#confirm-delete').modal('show');
-      
-              });
-      
-              async function AddNewSchedulle(){
-                title = $('#title').val();
-                team = $('#team').val();
-                category = $('#category').val();
-                start = $('#start').val();
-                end = $('#end').val();
-                address = $('#address').val();
-                link = $('#link').val();
-                if(title==""){
-                  var inputText = document.getElementById('title');
-                  inputText.placeholder = "required field";
-                  return false;
-                }
-                
-                if(category==1 && (address=="" || link=="")){
-                  var inputAddress = document.getElementById('address');
-                  var inputLink = document.getElementById('link');
-                  //inputText.style.color = "red";
-                  inputAddress.placeholder = "required field";
-                  inputLink.placeholder = "required field";
-
-                  return false;
-                }
-                $.ajax({
-                    url:"/calendar/insert",
-                    type:"POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({'title':title, 'start':start, 'end':end, 'address':address, 'link':link, 'team':team, 'category':category}),
-                    success:function(data)
-                    {
-                    //  alert(data);
-                      $('#id2').val(data)
-                      $('#id').val(data)
-                      //alert("Added Successfully");
-                      // window.location.replace("/calendar");
-                      //window.location.replace("/calendar");
-                     // $('#info-added').modal('show');
-                     // setTimeout(function(){
-                     //   $('#info-added').modal("hide");
-                    // }, 1500);
-                      // window.location.replace("/calendar");
-                     
-                    //  alert(team);
-                      $("#schedule-add").modal('hide');
-                      $("#schedule-calendar").fullCalendar('renderEvent',
-                      {
-                     // className: 'fade-in-bounce-event', // Pridanie vlastnej CSS triedy
-                        title: $('#title').val(),
-                        start: new Date($('#start').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
-                        end: new Date($('#end').val()).toLocaleString("sv", { timeZone: "Europe/Prague"}),
-                        address: $('#address').val(),
-                        link: $('#link').val(),
-                        category: $('#category').val(),
-                        team: team,
-                        id: $('#id').val()
-                      },
-                      true);
-                   // this.className = 'fade-in-bounce-event';
-                    //$("#schedule-calendar").fullCalendar('updateEvent', this);
-                   // $(this).removeClass('fade-in-bounce-event');
-                   addBounceEffectToEvent(data,1);
-
-                    }
-                  })
-
-                
-              }
-              
-                $('#update-submit').on('click', function(e){
-                  e.preventDefault();
-                 
-                   UpdateSchedulle();
-                 });
-       
-                
-                 async function UpdateSchedulle(){
-              if($('#id2').val()){
-                var title2 = $('#title2').val();
-                var start2 = $('#start2').val();
-                var category2 = $('#category2').val();
-                var team2 = $('#team2 :selected').val();
-                var end2 = $('#end2').val();
-                var address2 = $('#address2').val();
-                var link2 = $('#link2').val();
-                var id2 = $('#id2').val();
-              }else{
-                var title2 = $('#title').val();
-                var team2 = $('#team').val();
-                var category2 = $('#category').val();
-                var start2 = $('#start').val();
-                var end2 = $('#end').val();
-                var start2 = $.fullCalendar.formatDate(start2, "Y-MM-DD HH:mm:ss");
-                var end2 = $.fullCalendar.formatDate(end2, "Y-MM-DD HH:mm:ss");
-                var address2 = $('#address').val();
-                var link2 = $('#link').val();
-                var id2 = $('#id').val();
-                }
-               //alert(start2+'+'+end2);
-
-                if (start2<end2){
-                $.ajax({
-                  url:"/calendar/update",
-                  type:"POST",
-                  contentType: "application/json",
-                  data: JSON.stringify({'title2':title2, 'team2':team2, 'category2':category2, 'start2':start2, 'end2':end2, 'address2':address2, 'link2':link2, 'id2':id2}),
-                  success:function(data)
-                  {
-                    //alert(title2+'+'+start2+'+'+end2+'+'+address2+'+'+link2+'+'+category2+'+'+team2+'+'+id2);
-
-                    
-                    //alert(data)
-                    //alert("Added Successfully");
-                    // window.location.replace("/calendar");
-                    //window.location.replace("/calendar");
-                    $('#schedule-edit').modal('hide');
-                  //  $('#info-updated').modal('show');
-                   // setTimeout(function(){
-                   //   $('#info-updated').modal("hide");
-                  //  }, 1500);
-                    $("#schedule-calendar").fullCalendar('removeEvents',id2);
-                    $("#schedule-calendar").fullCalendar('renderEvent',
-                    {
-                  //    className: 'fade-in-bounce-event',
-                      title: $('#title2').val(),
-                      start: $('#start2').val(),
-                      end: $('#end2').val(),
-                      address: $('#address2').val(),
-                      link: $('#link2').val(),
-                      category: $('#category2').val(),
-                      team: $('#team2').val(),
-                      
-                      id: $('#id2').val()
-                    },
-                      true);
-                   //   this.className = 'fade-in-bounce-event';
-                   // $("#schedule-calendar").fullCalendar('updateEvent', this);
-                   // $(this).removeClass('fade-in-bounce-event');
-
-                    //window.location.replace("/calendar");
-                    addBounceEffectToEvent(id2,1);
-
-                  }
-                 });
-                //$("#schedule-calendar").fullCalendar('removeEvents',id2);
-/*
-
-*/
-                  }else{
-                    alert('Start must be sooner');
-                    return false;
-                  }
-                 }
-      
-      
-      
-      
-               //$('#confirm-delete').on('show.bs.modal', function() {
-               // $("#schedule-edit").modal('hide');
-               //});
-      
-      
-      
-               $('#delete-confirmed-submit').on('click', function(e){
-                  e.preventDefault();
-                  //alert($('#id').val());
-                  let id = $('#id').val();
-                  let id2 = $('#id2').val();
-                  if(id>0){
-                  DeleteSchedulle(id);
-                }else{
-                    DeleteSchedulle(id2);
-                  }
-                  $('#confirm-delete').modal('hide');
-                });
-      
-      
-      
-                function DeleteSchedulle(id){
-          
-                $.ajax({
-                  url:"/calendar/ajax_delete",
-                  type:"POST",
-                  contentType: "application/json",
-                  data: JSON.stringify({'id':id}),
-                  success:function(data)
-                  {
-                 //  alert(data);
-                  $('#modal').hide()
-                  //addBounceEffectToEvent(id,2);
-
-                  $("#schedule-calendar").fullCalendar('removeEvents',id);
-
-                  //setTimeout(function(){
-                 //   $("#schedule-calendar").fullCalendar('removeEvents',id);
-               //       $('#info-updated').modal("hide");
-                //  }, 1000);
-                  //alert("Event Removed");
-                  //window.location.replace("/calendar");
-                   }
-                })
-      
-                }
-      
-      
-              });
-
-
-              $.datepicker.setDefaults($.datepicker.regional['sk']);
-            });
-
-
-
-            document.getElementById('delete-confirmed-submit').addEventListener('click', function() {
-              $('#confirm-delete').modal('hide');
-            });
-          </script>
-
+          </div>
         </div>
 
+        <!-- Info modals -->
+        <div
+          id="info-updated"
+          class="modal fade bd-example-modal-lg"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="myLargeModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-sm">
+            <h1>Shedule updated successfully</h1>
+          </div>
+        </div>
+
+        <div
+          id="info-added"
+          class="modal fade bd-example-modal-lg"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="myLargeModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-sm">
+            <h1>Shedule added</h1>
+          </div>
+        </div>
+
+        {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+
+        <!-- Add Modal -->
+        <div class="modal fade" id="schedule-add" data-bs-backdrop="static" data-bs-keyboard="false">
+          <div class="modal-dialog">
+            <div class="modal-content" style="background-color: #000;border: 2px solid #6d9bff;">
+              <!-- Modal Header -->
+              <div class="modal-header">
+                <h3 class="modal-title">Add New Schedule</h3>
+                <button
+                  type="button"
+                  class="btn btnclose"
+                  data-bs-dismiss="modal"
+                >
+                  X
+                </button>
+              </div>
+              <!-- Modal body -->
+              <div class="modal-body">
+                <form action="javascript:;">
+                  <input
+                    type="hidden"
+                    id="id"
+                    name="id"
+                    class="form-control"
+                  />
+                  <div class="form-group">
+                    {{ form.title.label(class="form-control-label") }}
+                    {% if form.title.errors %}
+                      {{ form.title(class="form-control form-control-lg is-invalid") }}
+                      <div class="invalid-feedback">
+                        {% for error in form.title.errors %}
+                          <span>{{ error }}</span>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      {{ form.title(class="form-control form-control-lg") }}
+                    {% endif %}
+                  </div>
+
+                  <div class="form-group">
+                    {{ form.category.label(class="form-control-label") }}
+                    {% if form.category.errors %}
+                      {{ form.category(class="form-control form-control-lg is-invalid") }}
+                      <div class="invalid-feedback">
+                        {% for error in form.category.errors %}
+                          <span>{{ error }}</span>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      {{ form.category(class="form-control form-control-lg") }}
+                    {% endif %}
+                  </div>
+
+                  <div class="form-group">
+                    {{ form.team.label(class="form-control-label") }}
+                    {% if form.team.errors %}
+                      {{ form.team(class="form-control form-control-lg is-invalid") }}
+                      <div class="invalid-feedback">
+                        {% for error in form.team.errors %}
+                          <span>{{ error }}</span>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      {{ form.team(class="form-control form-control-lg") }}
+                    {% endif %}
+                  </div>
+
+                  <div class="row">
+                    <div class="form-group col-6">
+                      {{ form.start.label(class="form-control-label") }}
+                      {% if form.start.errors %}
+                        {{ form.start(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                          {% for error in form.start.errors %}
+                            <span>{{ error }}</span>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        {{ form.start(readonly="readonly", class="form-control", type="datetime", style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;") }}
+                      {% endif %}
+                    </div>
+
+                    <div class="form-group col-6">
+                      {{ form.end.label(class="form-control-label") }}
+                      {% if form.end.errors %}
+                        {{ form.end(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                          {% for error in form.end.errors %}
+                            <span>{{ error }}</span>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        {{ form.end(readonly="readonly", class="form-control", type="datetime", style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;") }}
+                      {% endif %}
+                    </div>
+
+                    <div class="form-group col-6">
+                      {{ form.address.label(class="form-control-label") }}
+                      {% if form.address.errors %}
+                        {{ form.address(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                          {% for error in form.address.errors %}
+                            <span>{{ error }}</span>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        {{ form.address(class="form-control form-control-lg") }}
+                      {% endif %}
+                    </div>
+
+                    <div class="form-group col-6">
+                      {{ form.link.label(class="form-control-label") }}
+                      {% if form.link.errors %}
+                        {{ form.link(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                          {% for error in form.link.errors %}
+                            <span>{{ error }}</span>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        {{ form.link(class="form-control form-control-lg") }}
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="float:right;">
+                    <submit
+                      id="add-submit"
+                      type="button"
+                      class="btn btn-ok"
+                    >Save
+                    </submit>
+                  </div>
+                </form>
+
+              </div>
+              <!-- Modal footer -->
+              <div class="modal-footer">
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+          {% set disable = '' %}
+        {% else %}
+          {% set disable = 'disabled' %}
+        {% endif %}
+
+        <!-- Edit Modal -->
+        <div class="modal fade" id="schedule-edit" data-bs-backdrop="static" data-bs-keyboard="false">
+          <div class="modal-dialog">
+            <div class="modal-content" style="background-color: #000;border: 2px solid #6d9bff;">
+              <!-- Modal Header -->
+              <div class="modal-header">
+                {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+                  <h3 class="modal-title">Edit Your Schedule</h3>
+                {% else %}
+                  <center>
+                    <h3 class="modal-title">
+                      {{ form2.category2(disabled=True, class="title-calendar-h3") }} -
+                      {{ form2.team2(disabled=True, class="title-calendar-h3") }}
+                    </h3>
+                  </center>
+                {% endif %}
+
+                <button type="button" class="btn btnclose" data-bs-dismiss="modal">
+                  X
+                </button>
+              </div>
+
+              <!-- Modal body -->
+              <div class="modal-body">
+                <form action="javascript:;">
+
+                  <div class="form-group">
+                    <label>Schedule Name:</label>
+                    <input
+                      {{disable}}
+                      type="text"
+                      id="title2"
+                      name="title2"
+                      class="form-control"
+                      value=""
+                    />
+                  </div>
+
+                  {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+                  <div class="form-group">
+                    {{ form2.category2.label(class="form-control-label") }}
+                    {% if form2.category2.errors %}
+                      {{ form2.category2(class="form-control form-control-lg is-invalid") }}
+                      <div class="invalid-feedback">
+                        {% for error in form2.category2.errors %}
+                          <span>{{ error }}</span>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      {{ form2.category2(class="form-control form-control-lg") }}
+                    {% endif %}
+                  </div>
+                  {% endif %}
+
+                  {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+                  <div class="form-group">
+                    {{ form2.team2.label(class="form-control-label") }}
+                    {% if form2.team2.errors %}
+                      {{ form2.team2(class="form-control form-control-lg is-invalid") }}
+                      <div class="invalid-feedback">
+                        {% for error in form2.team2.errors %}
+                          <span>{{ error }}</span>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      {{ form2.team2(class="form-control form-control-lg") }}
+                    {% endif %}
+                  </div>
+                  {% endif %}
+
+                  <div class="row">
+                    <div class="form-group col-6">
+                      <label>Start:</label>
+                      <input
+                        readonly
+                        {{disable}}
+                        type="datetime"
+                        id="start2"
+                        name="start2"
+                        class="form-control"
+                        value=""
+                        style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;"
+                      />
+                    </div>
+
+                    <div class="form-group col-6">
+                      <label>End:</label>
+                      <input
+                        readonly
+                        {{disable}}
+                        type="datetime"
+                        id="end2"
+                        name="end2"
+                        class="form-control"
+                        value=""
+                        style="text-align: center;background-color: aliceblue;color: #000;cursor: pointer;"
+                      />
+                    </div>
+                  </div>
+
+                  <input
+                    type="hidden"
+                    id="id2"
+                    name="id2"
+                    class="form-control"
+                  />
+
+                  <div class="row">
+                    <div class="form-group col-6">
+                      {{ form2.address2.label(class="form-control-label") }}
+                      {% if form2.address2.errors %}
+                        {{ form2.address2(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                          {% for error in form2.address2.errors %}
+                            <span>{{ error }}</span>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        {{ form2.address2(class="form-control form-control-lg") }}
+                      {% endif %}
+                    </div>
+
+                    <div class="form-group col-6">
+                      {{ form2.link2.label(class="form-control-label") }}
+                      {% if form2.link2.errors %}
+                        {{ form2.link2(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                          {% for error in form2.link2.errors %}
+                            <span>{{ error }}</span>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        {{ form2.link2(class="form-control form-control-lg") }}
+                      {% endif %}
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Modal footer -->
+              {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
+              <div class="modal-footer">
+                <button id="update-submit" type="button" class="btn btn-ok">
+                  Save
+                </button>
+
+                <button
+                  id="delete-submit"
+                  type="button"
+                  class="btn btn-delete"
+                  data-bs-toggle="modal"
+                  data-bs-target="#confirm-delete"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    fill="currentColor"
+                    class="bi bi-trash"
+                    viewBox="0 0 16 14"
+                  >
+                    <path
+                      d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"
+                    />
+                    <path
+                      fill-rule="evenodd"
+                      d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
 
       </div>
-    </main>
+    </div>
+  </main>
 
+  <!-- JS knižnice: jQuery, jQuery UI, moment, FullCalendar, datetimepicker addon, touch punch, Bootstrap 5 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="{{ url_for('static', filename='js/fullcalendar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/query-ui-timepicker-addon.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery.ui.touch-punch.min.js') }}"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"
+  ></script>
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+  <script>
+    // Loader cez onreadystatechange
+    document.onreadystatechange = function() {
+      if (document.readyState !== "complete") {
+        document.querySelector("body").style.visibility = "hidden";
+        document.querySelector("#loader").style.visibility = "visible";
+      } else {
+        document.querySelector("#loader").style.display = "none";
+        document.querySelector("body").style.visibility = "visible";
+      }
+    };
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script src="{{ url_for('static', filename='js/fullcalendar.js') }}"></script>
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>-->    
-    <script src="{{ url_for('static', filename='js/query-ui-timepicker-addon.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.ui.touch-punch.min.js') }}"></script>
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
-      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
-      crossorigin="anonymous"
-    ></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    $(function() {
+      // datetimepicker pre start/end polia
+      if ($.fn.datetimepicker) {
+        $("#start2, #end2, #start, #end").datetimepicker({
+          timeFormat: 'HH:mm:ss',
+          dateFormat: 'yy-mm-dd',
+          controlType: 'slider'
+        });
+      }
+
+      // nastavenie default hodnoty do start2 (aktuálny dátum/čas)
+      (function() {
+        var input = document.getElementById('start2');
+        if (!input) return;
+        var now = new Date();
+        var day = ("0" + now.getDate()).slice(-2);
+        var month = ("0" + (now.getMonth() + 1)).slice(-2);
+        var year = now.getFullYear();
+        var hours = ("0" + now.getHours()).slice(-2);
+        var minutes = ("0" + now.getMinutes()).slice(-2);
+        input.value = year + "-" + month + "-" + day + "T" + hours + ":" + minutes;
+      })();
+
+      // jQuery UI datepicker lokalizácia (ak je definovaná)
+      if ($.datepicker && $.datepicker.regional && $.datepicker.regional['sk']) {
+        $.datepicker.setDefaults($.datepicker.regional['sk']);
+      }
+
+      // Externé eventy (ak existujú)
+      $('#calendar-events .calendar-events').each(function() {
+        $(this).data('event', {
+          title: $.trim($(this).text()),
+          stick: true
+        });
+
+        $(this).draggable({
+          zIndex: 999,
+          revert: true,
+          revertDuration: 0
+        });
+      });
+
+      // FullCalendar (jQuery verzia – v3)
+      $('#schedule-calendar').fullCalendar({
+        editable: true,
+        eventLimit: false,
+        droppable: true,
+        timezone: "local",
+        eventOrder: 'start, end',
+        timeFormat: 'H:mm',
+        header: {
+          right: 'prev,next, today',
+          left: 'title'
+          // right:'month,agendaWeek,agendaDay'
+        },
+        firstDay: 1,
+        events: [
+          {% for row in calendar %}
+          {
+            id: '{{ row.id }}',
+            title: '{{ row.title }}',
+            start: '{{ row.start_event }}',
+            address: '{{ row.address }}',
+            link: '{{ row.link }}',
+            end: '{{ row.end_event }}',
+            category: '{{ row.event_category_id }}',
+            team: '{{ row.event_team_id }}'
+          },
+          {% endfor %}
+        ],
+        nextDayThreshold: "00:00:00",
+        selectable: true,
+        selectHelper: true,
+
+        eventRender: function(event, element) {
+          element.attr('data-id', event.id);
+        },
+
+        select: function(start, end, jsEvent, view) {
+          var startStr = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
+          var endStr = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
+          $('#schedule-add').modal('show');
+          $('#title').val('');
+          $('#start').val(startStr);
+          $('#end').val(endStr);
+          $('#address').val('');
+          $('#link').val('');
+        },
+
+        eventClick: function(event) {
+          $('#id2').val(event.id);
+          var start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
+          var end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
+          $('#title2').val(event.title);
+          $('#start2').val(start);
+          $('#end2').val(end);
+          $('#address2').val(event.address);
+          $('#link2').val(event.link);
+          $('#team2').val(event.team);
+          $('#category2').val(event.category);
+          $('#schedule-edit').modal('show');
+        },
+
+        eventDrop: function(event) {
+          var title, address, link, category, team, start, end, id;
+          if (event.id) {
+            start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
+            end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
+            title = event.title;
+            address = event.address;
+            link = event.link;
+            category = event.category;
+            team = event.team;
+            id = event.id;
+          } else {
+            title = $('#title').val();
+            team = $('#team').val();
+            category = $('#category').val();
+            start = $('#start').val();
+            end = $('#end').val();
+            address = $('#address').val();
+            link = $('#link').val();
+            id = $('#id').val();
+          }
+
+          $.ajax({
+            url: "/calendar/update",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+              'title2': title,
+              'start2': start,
+              'end2': end,
+              'address2': address,
+              'link2': link,
+              'category2': category,
+              'team2': team,
+              'id2': id
+            }),
+            success: function() {
+              if (window.parent) {
+                window.parent.postMessage({ type: "calendar-updated" }, "*");
+              }
+            }
+          });
+        }
+      });
+
+      function addBounceEffectToEvent(eventId, inout) {
+        if (inout === 1) {
+          var eventElement = $("#schedule-calendar .fc-event[data-id='" + eventId + "']");
+          eventElement.addClass('fade-in-bounce-event');
+          eventElement.on('animationend', function() {
+            eventElement.removeClass('fade-in-bounce-event');
+          });
+        }
+        if (inout === 2) {
+          var eventElement2 = $("#schedule-calendar .fc-event[data-id='" + eventId + "']");
+          eventElement2.addClass('fade-out-bounce-event');
+          eventElement2.on('animationend', function() {
+            eventElement2.removeClass('fade-out-bounce-event');
+          });
+        }
+      }
+
+      $('#add-submit').on('click', function(e) {
+        e.preventDefault();
+        AddNewSchedulle();
+      });
+
+      $('#delete-submit').on('click', function(e) {
+        $("#schedule-edit").modal('hide');
+        $('#confirm-delete').modal('show');
+      });
+
+      async function AddNewSchedulle() {
+        var title = $('#title').val();
+        var team = $('#team').val();
+        var category = $('#category').val();
+        var start = $('#start').val();
+        var end = $('#end').val();
+        var address = $('#address').val();
+        var link = $('#link').val();
+
+        if (title === "") {
+          var inputText = document.getElementById('title');
+          inputText.placeholder = "required field";
+          return false;
+        }
+
+        if (category == 1 && (address === "" || link === "")) {
+          var inputAddress = document.getElementById('address');
+          var inputLink = document.getElementById('link');
+          inputAddress.placeholder = "required field";
+          inputLink.placeholder = "required field";
+          return false;
+        }
+
+        $.ajax({
+          url: "/calendar/insert",
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({
+            'title': title,
+            'start': start,
+            'end': end,
+            'address': address,
+            'link': link,
+            'team': team,
+            'category': category
+          }),
+          success: function(data) {
+            $('#id2').val(data);
+            $('#id').val(data);
+
+            $("#schedule-add").modal('hide');
+            $("#schedule-calendar").fullCalendar('renderEvent', {
+              title: $('#title').val(),
+              start: new Date($('#start').val()).toLocaleString("sv", { timeZone: "Europe/Prague" }),
+              end: new Date($('#end').val()).toLocaleString("sv", { timeZone: "Europe/Prague" }),
+              address: $('#address').val(),
+              link: $('#link').val(),
+              category: $('#category').val(),
+              team: team,
+              id: $('#id').val()
+            }, true);
+
+            addBounceEffectToEvent(data, 1);
+            if (window.parent) {
+              window.parent.postMessage({ type: "calendar-updated" }, "*");
+            }
+          }
+        });
+      }
+
+      $('#update-submit').on('click', function(e) {
+        e.preventDefault();
+        UpdateSchedulle();
+      });
+
+      async function UpdateSchedulle() {
+        var title2, start2, category2, team2, end2, address2, link2, id2;
+
+        if ($('#id2').val()) {
+          title2 = $('#title2').val();
+          start2 = $('#start2').val();
+          category2 = $('#category2').val();
+          team2 = $('#team2 :selected').val();
+          end2 = $('#end2').val();
+          address2 = $('#address2').val();
+          link2 = $('#link2').val();
+          id2 = $('#id2').val();
+        } else {
+          title2 = $('#title').val();
+          team2 = $('#team').val();
+          category2 = $('#category').val();
+          start2 = $('#start').val();
+          end2 = $('#end').val();
+          start2 = $.fullCalendar.formatDate(start2, "Y-MM-DD HH:mm:ss");
+          end2 = $.fullCalendar.formatDate(end2, "Y-MM-DD HH:mm:ss");
+          address2 = $('#address').val();
+          link2 = $('#link').val();
+          id2 = $('#id').val();
+        }
+
+        if (start2 < end2) {
+          $.ajax({
+            url: "/calendar/update",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+              'title2': title2,
+              'team2': team2,
+              'category2': category2,
+              'start2': start2,
+              'end2': end2,
+              'address2': address2,
+              'link2': link2,
+              'id2': id2
+            }),
+            success: function(data) {
+              $('#schedule-edit').modal('hide');
+
+              $("#schedule-calendar").fullCalendar('removeEvents', id2);
+              $("#schedule-calendar").fullCalendar('renderEvent', {
+                title: $('#title2').val(),
+                start: $('#start2').val(),
+                end: $('#end2').val(),
+                address: $('#address2').val(),
+                link: $('#link2').val(),
+                category: $('#category2').val(),
+                team: $('#team2').val(),
+                id: $('#id2').val()
+              }, true);
+
+              addBounceEffectToEvent(id2, 1);
+              if (window.parent) {
+                window.parent.postMessage({ type: "calendar-updated" }, "*");
+              }
+            }
+          });
+        } else {
+          alert('Start must be sooner');
+          return false;
+        }
+      }
+
+      $('#delete-confirmed-submit').on('click', function(e) {
+        e.preventDefault();
+        let id = $('#id').val();
+        let id2 = $('#id2').val();
+        if (id > 0) {
+          DeleteSchedulle(id);
+        } else {
+          DeleteSchedulle(id2);
+        }
+        $('#confirm-delete').modal('hide');
+      });
+
+      function DeleteSchedulle(id) {
+        $.ajax({
+          url: "/calendar/ajax_delete",
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({ 'id': id }),
+          success: function(data) {
+            $('#modal').hide();
+            $("#schedule-calendar").fullCalendar('removeEvents', id);
+            if (window.parent) {
+              window.parent.postMessage({ type: "calendar-updated" }, "*");
+            }
+          }
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -2,86 +2,96 @@ from datetime import datetime
 from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 from flask import current_app
 from app import db, login_manager
-# from flask_login import UserMixin
 from flask_security import RoleMixin, UserMixin
-
 from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from datetime import datetime
-from sqlalchemy import Table, Column, Integer, String, MetaData
 
-# Preddefinovaná tabuľka
-# metadata = MetaData()
+# =========================
+# Association / M2M tables
+# =========================
+variant_products = db.Table(
+    'variant_products',
+    db.Column('product_id', db.Integer(), db.ForeignKey('product.id')),
+    db.Column('variant_id', db.Integer(), db.ForeignKey('product_variant.id')),
+    db.Column('variant_text', db.String(100), nullable=False),
+    db.Column('variant_image', db.Text, nullable=True),
+)
 
-metadata = MetaData()
+roles_users = db.Table(
+    'roles_users',
+    db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+    db.Column('role_id', db.Integer(), db.ForeignKey('role.id')),
+)
+
+teams_members = db.Table(
+    'teams_members',
+    db.Column('member_id', db.Integer(), db.ForeignKey('member.id')),
+    db.Column('team_id', db.Integer(), db.ForeignKey('team.id')),
+)
+
+positions_members = db.Table(
+    'positions_members',
+    db.Column('member_id', db.Integer(), db.ForeignKey('member.id')),
+    db.Column('position_id', db.Integer(), db.ForeignKey('position.id')),
+)
+
+product_variant_product = db.Table(
+    'product_variant_product',
+    db.Column('product_variant_id', db.Integer(), db.ForeignKey('product_variant.id')),
+    db.Column('product_id', db.Integer(), db.ForeignKey('product.id')),
+)
 
 
-variant_products = db.Table('variant_products',
-                db.Column('product_id', db.Integer(), db.ForeignKey('product.id')),
-                db.Column('variant_id', db.Integer(), db.ForeignKey('product_variant.id')),
-                db.Column('variant_text', db.String(100), nullable=False),
-                db.Column('variant_image', db.Text, nullable=True))
-                # db.Column('variant_image', db.Integer(), db.ForeignKey('product_gallery.id'), nullable=True))
 
-roles_users = db.Table('roles_users',
-                db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-                db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
+class Club(db.Model):
+    __tablename__ = "club"
 
-teams_members = db.Table('teams_members',
-                db.Column('member_id', db.Integer(), db.ForeignKey('member.id')),
-                db.Column('team_id', db.Integer(), db.ForeignKey('team.id')))
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    subdomain = db.Column(db.String(255), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
-positions_members = db.Table('positions_members',
-                db.Column('member_id', db.Integer(), db.ForeignKey('member.id')),
-                db.Column('position_id', db.Integer(), db.ForeignKey('position.id')))
-
-product_variant_product = db.Table('product_variant_product',
-                db.Column('product_variant_id', db.Integer(),db.ForeignKey('product_variant.id')),
-                db.Column('product_id', db.Integer(), db.ForeignKey('product.id')))
+    def __repr__(self):
+        return f"<Club {self.id} {self.subdomain}>"
 
 
+# ===============
+# User management
+# ===============
 @login_manager.user_loader
 def load_user(user_id):
-    print(user_id)
     return User.query.get(int(user_id))
-
-# @login_manager.user_loader
-# def load_user(user_id):
-#     print(user_id)
-#     return User.query.get(int(user_id))
-
 
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    uuid = db.Column(db.Text(length=36), default=lambda: str(uuid.uuid4()))
+    uuid = db.Column(db.String(36), default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    image_file = db.Column(db.String(20), nullable=False,
-                           default='default.jpg')
+    image_file = db.Column(db.String(20), nullable=False, default='default.jpg')
     password = db.Column(db.String(60), nullable=False)
     confirm = db.Column(db.Boolean(), default=False)
-    posts = db.relationship('Post', backref='author', lazy=True)
-    products = db.relationship('Product', backref='saler', lazy=True)
     active = db.Column(db.Boolean, default=True)
-    confirmed_at = db.Column(db.DateTime())  # Optional: Store confirmation timestamp
+    confirmed_at = db.Column(db.DateTime())
     fs_uniquifier = db.Column(db.String(64), unique=True)
-
-    roles = db.relationship('Role', secondary='roles_users', lazy='subquery',
-                            backref=db.backref('roled', lazy=True))
     
-    def is_unique(self, fs_uniquifier):
-        self.fs_uniquifier = fs_uniquifier
 
-    def is_active(self):
-        return True
-    
-    def is_admin(self):
-        return self.admin
+    posts = db.relationship('Post', backref='author', lazy='select')
+    products = db.relationship('Product', backref='saler', lazy='select')
 
+    roles = db.relationship(
+        'Role',
+        secondary='roles_users',
+        lazy='subquery',
+        backref=db.backref('users', lazy='dynamic'),
+    )
+
+    def has_roles(self, *args):
+        return set(args).issubset({role.name for role in self.roles})
+
+    # Flask-Login očakáva string
     def get_id(self):
-        return self.id
+        return str(self.id)
 
     def get_reset_token(self):
         s = Serializer(current_app.config['SECRET_KEY'])
@@ -96,7 +106,7 @@ class User(db.Model, UserMixin):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
             user_id = s.loads(token)['user_id']
-        except:
+        except Exception:
             return None
         return User.query.get(int(user_id))
 
@@ -105,36 +115,67 @@ class User(db.Model, UserMixin):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
             user_id = s.loads(token)['user_id']
-        except:
+        except Exception:
             return None
         return User.query.get(int(user_id))
 
     def __repr__(self):
-        # return f"User('{self.username}', '{self.email}', '{self.image_file}', '{self.roles}')"
         return f"User('{self.username}', '{self.email}', '{self.image_file}', '{self.roles}')"
-    
-    
-    def has_roles(self, *args):
-        return set(args).issubset({role.name for role in self.roles})
-    
 
 
+# =====
+# Blog
+# =====
 class Post(db.Model):
+    __tablename__ = 'post'
+
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    date_posted = db.Column(db.DateTime(timezone=True), nullable=False)
+    date_posted = db.Column(db.DateTime(timezone=True), nullable=False, default=func.now())
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey(
-        'category.id'), nullable=False)
-    gallery = db.relationship('PostGallery', backref='gallz', lazy=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+
+    # PÔVODNÝ názov si necháme kvôli spätnej kompatibilite:
+    gallery = db.relationship('PostGallery', backref='post', lazy='select', cascade="all, delete-orphan")
+
+    # Preferovaný alias pre šablóny a eager loading:
+    @property
+    def galleries(self):
+        return self.gallery
+
+    # Pomocná vlastnosť – nájde cover (orderz == 0), inak prvý
+    def cover(self):
+        if not self.gallery:
+            return None
+        cov = next((g for g in self.gallery if g.orderz == 0 or g.orderz == '0'), None)
+        return cov or (self.gallery[0] if self.gallery else None)
 
     def __repr__(self):
         return f"Post('{self.title}', '{self.date_posted}')"
 
 
+class PostGallery(db.Model):
+    __tablename__ = 'post_gallery'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    image_file2 = db.Column(db.String(250), nullable=False)
+    orderz = db.Column(db.Integer)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+
+
+class Category(db.Model):
+    __tablename__ = 'category'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+
+
+# =========
+# Products
+# =========
 class Product(db.Model):
     __tablename__ = 'product'
+
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     stripe_link = db.Column(db.String(100), nullable=False)
@@ -145,57 +186,20 @@ class Product(db.Model):
     is_visible = db.Column(db.Boolean(), default=True)
     price = db.Column(db.DECIMAL(precision=10, scale=2), nullable=False)
     old_price = db.Column(db.DECIMAL(precision=10, scale=2), nullable=False)
-    product_category_id = db.Column(db.Integer, db.ForeignKey(
-        'product_category.id'), nullable=False)
-    product_gallery = db.relationship('ProductGallery', backref='gallpr', lazy=True)
-    variant = db.relationship('ProductVariant', secondary='variant_products', lazy='subquery',
-                            backref=db.backref('varianted', lazy=True))
+    product_category_id = db.Column(db.Integer, db.ForeignKey('product_category.id'), nullable=False)
+
+    product_gallery = db.relationship('ProductGallery', backref='product', lazy='select', cascade="all, delete-orphan")
+
+    # prepojenie na varianty cez variant_products
+    variant = db.relationship(
+        'ProductVariant',
+        secondary='variant_products',
+        lazy='subquery',
+        backref=db.backref('products', lazy='dynamic'),
+    )
 
     def __repr__(self):
-        return f"Product('{self.title}', '{self.date_posted}', '{self.product_gallery}, '{self.product_category_id}')"
-
-
-
-class ProductVariant(db.Model):
-    metadata
-    # Definícia modelu pre product_variant tabuľku
-    __tablename__ = 'product_variant'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    type = db.Column(db.Integer, db.ForeignKey('type_product_variant.id'), nullable=False)
-    extend_existing=True 
-    # Ďalšie stĺpce tabuľky...
-    
-    # Definícia vzťahu k triede Product
-    # products = db.relationship('Product', secondary='variant_products', back_populates='variants')
-
-
-# class ProductVariant(db.Model):
-#     metadata
-#     __tablename__ = 'product_variant'
-#     id = db.Column(db.Integer, primary_key=True)
-#     text = db.Column(db.String(200), nullable=False)
-#     extend_existing=True 
-
-class ProductCategory(db.Model):
-    __tablename__ = 'product_category'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
-
-class Category(db.Model):
-    __tablename__ = 'category'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
-
-
-class PostGallery(db.Model):
-    __tablename__ = 'post_gallery'
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    image_file2 = db.Column(db.String(250), nullable=False)
-    # image_order = db.Column(db.Integer, unique=True, nullable=False)
-    orderz = db.Column(db.Integer)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+        return f"Product('{self.title}', '{self.date_posted}', '{self.product_category_id}')"
 
 
 class ProductGallery(db.Model):
@@ -203,11 +207,28 @@ class ProductGallery(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     image_file2 = db.Column(db.String(250), nullable=False)
-    # image_order = db.Column(db.Integer, unique=True, nullable=False)
     orderz = db.Column(db.Integer)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
 
 
+class ProductVariant(db.Model):
+    __tablename__ = 'product_variant'
+    __table_args__ = {"extend_existing": True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    type = db.Column(db.Integer, db.ForeignKey('type_product_variant.id'), nullable=False)
+
+
+class ProductCategory(db.Model):
+    __tablename__ = 'product_category'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+
+
+# =======
+# Events
+# =======
 class Event(db.Model):
     __tablename__ = 'event'
     id = db.Column(db.Integer, primary_key=True)
@@ -220,16 +241,16 @@ class Event(db.Model):
     event_category_id = db.Column(db.Integer, db.ForeignKey('event_category.id'), nullable=False)
     event_team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
 
-    # teams = db.relationship('Team', secondary=teams_events, lazy='subquery',
-    #                     backref=db.backref('teamvent', lazy=True))
 
 class EventCategory(db.Model):
     __tablename__ = 'event_category'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
-    # event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
 
 
+# =====
+# RBAC
+# =====
 class Role(db.Model, RoleMixin):
     __tablename__ = 'role'
     id = db.Column(db.Integer(), primary_key=True)
@@ -237,6 +258,9 @@ class Role(db.Model, RoleMixin):
     description = db.Column(db.Text)
 
 
+# ========
+# Teams etc
+# ========
 class Team(db.Model):
     __tablename__ = 'team'
     id = db.Column(db.Integer, primary_key=True)
@@ -244,6 +268,9 @@ class Team(db.Model):
     main_league = db.Column(db.String(300), nullable=False)
     score_scrap = db.Column(db.String(250), nullable=False)
     player_list_scrap = db.Column(db.String(250), nullable=False)
+    
+    events_results_scrap = db.Column(db.String(550))  
+    events_program_scrap = db.Column(db.String(550)) 
 
 
 class Position(db.Model):
@@ -255,7 +282,6 @@ class Position(db.Model):
 class Player(db.Model):
     __tablename__ = 'player'
     id = db.Column(db.Integer, primary_key=True)
-    # member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
     name = db.Column(db.String(250), nullable=False)
     position = db.Column(db.Integer)
     team = db.Column(db.String(250), nullable=False)
@@ -263,10 +289,9 @@ class Player(db.Model):
     yellow_card = db.Column(db.Integer)
     red_card = db.Column(db.Integer)
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    photo_url = db.Column(db.String(600))
 
-    
-    
-    
+
 
 class Member(db.Model):
     __tablename__ = 'member'
@@ -276,29 +301,36 @@ class Member(db.Model):
     address = db.Column(db.String(250), nullable=False)
     psc = db.Column(db.String(250), nullable=False)
     city = db.Column(db.String(250), nullable=False)
-    # eban = db.Column(db.String(250), nullable=False)
-    image_file = db.Column(db.String(20), nullable=False,
-                           default='default.png')
+    image_file = db.Column(db.String(20), nullable=False, default='default.png')
 
     weight = db.Column(db.Integer)
     height = db.Column(db.Integer)
-    position = db.relationship('Position', secondary=positions_members, lazy='subquery',
-                               backref=db.backref('positioned', lazy=True))
+
+    position = db.relationship(
+        'Position',
+        secondary=positions_members,
+        lazy='subquery',
+        backref=db.backref('members', lazy='dynamic'),
+    )
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    teams = db.relationship('Team', secondary=teams_members, lazy='subquery',
-                            backref=db.backref('teamed', lazy=True))
+    teams = db.relationship(
+        'Team',
+        secondary=teams_members,
+        lazy='subquery',
+        backref=db.backref('members', lazy='dynamic'),
+    )
 
     def __repr__(self):
-        return f"Post('{self.name}', '{self.phone}', '{self.address}', '{self.psc}', '{self.city}')"
-
+        return f"Member('{self.name}', '{self.phone}', '{self.address}', '{self.psc}', '{self.city}')"
 
 
 class ScoreTable(db.Model):
     __tablename__ = 'score_table'
     id = db.Column(db.Integer, primary_key=True)
     club = db.Column(db.String(250), nullable=False)
+    logo = db.Column(db.Text, nullable=True)
     games = db.Column(db.Integer)
     wins = db.Column(db.Integer)
     draws = db.Column(db.Integer)
@@ -306,7 +338,6 @@ class ScoreTable(db.Model):
     score = db.Column(db.String(20), nullable=False)
     points = db.Column(db.Integer)
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
-
 
 
 class Order(db.Model):
@@ -322,17 +353,6 @@ class Order(db.Model):
     storno = db.Column(db.Boolean(), default=False)
 
 
-
-# class ProductVariant(db.Model):
-#     __tablename__ = 'product_variant'
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(250), nullable=False)
-#     type = db.Column(db.Integer, db.ForeignKey('type_product_variant.id'), nullable=False)
-#     variants = db.relationship('Product', secondary=product_variant_product, lazy='subquery',
-#                             backref=db.backref('varianted', lazy=True))
-
-
-
 class TypeProductVariant(db.Model):
     __tablename__ = 'type_product_variant'
     id = db.Column(db.Integer, primary_key=True)
@@ -340,8 +360,14 @@ class TypeProductVariant(db.Model):
     operation = db.Column(db.String(450), nullable=False)
 
 
-    
+class Sponsor(db.Model):
+    __tablename__ = "sponsors"
 
-    
-
-    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=True)
+    describe = db.Column(db.Text, nullable=True)
+    url = db.Column(db.String(255), nullable=True)
+    kind = db.Column(db.String(20), nullable=False)      # 'main' alebo 'partner'
+    image_file = db.Column(db.String(255), nullable=False)
+    orderz = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

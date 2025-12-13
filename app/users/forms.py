@@ -121,6 +121,7 @@ class LoginForm(FlaskForm):
                              validators=[DataRequired()])
     remember = BooleanField('Zapamätať prihlásenie')
     submit = SubmitField('Login')
+    
 
 
 class UpdateAccountForm(FlaskForm):

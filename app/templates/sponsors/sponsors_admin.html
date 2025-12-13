@@ -1,0 +1,321 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<style scoped>
+    .upload-btn-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+    }
+
+    .upload-btn-wrapper input[type=file] {
+        font-size: 100px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+    }
+
+    .draggable {
+        cursor: grab;
+    }
+
+    .draggable::drag {
+        cursor: grabbing;
+    }
+
+    .position{
+        position:relative;
+        margin-right:*10px;
+        margin-top:-415px;
+        padding-top: 0px;
+        padding-bottom: 4px;
+        padding-left: 4px;
+        padding-right: 4px;
+        line-height: 90%;
+        z-index: 99999999999;
+        opacity: 1;
+    }
+
+    .col img{
+        margin-bottom: 9px;
+        display: grid;
+        width: 390px;
+        height: 200px;
+        object-fit: cover;
+    }
+</style>
+
+<div class="content-section">
+    <h3>Sponzori – galéria</h3>
+    <hr>
+
+    {# HLAVNÍ PARTNERI #}
+    <center><h3>Hlavní partneri</h3></center>
+    <br>
+
+    <center>
+        <div id="image-gallery-main" class="row">
+            <!-- plní sa cez JS -->
+        </div>
+    </center>
+
+    <br><br>
+
+    <center><h4>Pridať obrázok – Hlavní partneri</h4></center>
+    <div class="form-group">
+        <div class="row">
+            <div class="col-sm-12">
+                <center>
+                    <div class="upload-btn-wrapper">
+                        <button class="btn">Upload a file</button>
+                        <input type="file" id="image_file_main" name="image_file2"/>
+                    </div>
+                </center>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    {# PARTNERI #}
+    <center><h3>Partneri</h3></center>
+    <br>
+
+    <center>
+        <div id="image-gallery-partner" class="row">
+            <!-- plní sa cez JS -->
+        </div>
+    </center>
+
+    <br><br>
+
+    <center><h4>Pridať obrázok – Partneri</h4></center>
+    <div class="form-group">
+        <div class="row">
+            <div class="col-sm-12">
+                <center>
+                    <div class="upload-btn-wrapper">
+                        <button class="btn">Upload a file</button>
+                        <input type="file" id="image_file_partner" name="image_file2"/>
+                    </div>
+                </center>
+            </div>
+        </div>
+    </div>
+
+    <br><br>
+    <center>
+        <button onclick="javascript:location.href='{{ url_for('main.home') }}';" class="btn btn-sm" />Back</button>
+    </center>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+<script>
+    const galleryMain = document.getElementById('image-gallery-main');
+    const galleryPartner = document.getElementById('image-gallery-partner');
+
+    // ---------- RENDER OBRÁZKOV ----------
+
+    function renderGallery(kind, images) {
+        const gallery = (kind === 'main') ? galleryMain : galleryPartner;
+        gallery.innerHTML = '';
+
+        if (!images.length) {
+            gallery.innerHTML = '<h4>NO IMAGES</h4>';
+            return;
+        }
+
+        images.forEach(function(image) {
+            const div = document.createElement('div');
+            div.classList.add('col', 'draggable');
+            div.setAttribute('data-id', image.id);
+            div.setAttribute('data-orderz', image.orderz);
+        
+            const img = document.createElement('img');
+            img.src = image.image_url;
+            img.alt = image.name || '';
+            img.style.width = '100%';
+            img.style.height = '200px';
+            img.style.objectFit = 'cover';
+        
+            const delBtn = document.createElement('button');
+            delBtn.textContent = 'x';
+            delBtn.classList.add('btn', 'btn-close', 'position');
+            delBtn.type = 'button';
+            delBtn.onclick = function() {
+                deleteImage(image.id, kind);
+            };
+        
+            // --- FORMULÁR POD OBRÁZKOM ---
+        
+            const formWrapper = document.createElement('div');
+            formWrapper.style.marginTop = '10px';
+        
+            // Názov
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.classList.add('form-control', 'form-control-sm');
+            nameInput.placeholder = 'Názov sponzora';
+            nameInput.value = image.name || '';
+        
+            // URL
+            const urlInput = document.createElement('input');
+            urlInput.type = 'text';
+            urlInput.classList.add('form-control', 'form-control-sm');
+            urlInput.placeholder = 'URL (https://...)';
+            urlInput.value = image.url || '';
+        
+            // Popis
+            const descInput = document.createElement('textarea');
+            descInput.classList.add('form-control', 'form-control-sm');
+            descInput.placeholder = 'Popis sponzora';
+            descInput.rows = 2;
+            descInput.value = image.describe || '';
+        
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.classList.add('btn', 'btn-primary', 'btn-sm');
+            saveBtn.style.marginTop = '5px';
+            saveBtn.textContent = 'Uložiť';
+            saveBtn.onclick = function() {
+                saveSponsor(image.id, {
+                    name: nameInput.value,
+                    url: urlInput.value,
+                    describe: descInput.value
+                }, kind);
+            };
+        
+            formWrapper.appendChild(nameInput);
+            formWrapper.appendChild(urlInput);
+            formWrapper.appendChild(descInput);
+            formWrapper.appendChild(saveBtn);
+        
+            div.appendChild(img);
+            div.appendChild(delBtn);
+            div.appendChild(formWrapper);
+            gallery.appendChild(div);
+        });
+
+        // jQuery UI sortable na zmenu poradia
+        $(gallery).sortable({
+            update: function(event, ui) {
+                const data = [];
+                $(gallery).find("div.draggable").each(function(index) {
+                    data.push({
+                        id: $(this).data("id"),
+                        orderz: index
+                    });
+                });
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/admin/sponsors/images/update_order',
+                    data: JSON.stringify(data),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(response) {
+                        // po úspechu znovu načítaj galériu
+                        loadImages('main');
+                        loadImages('partner');
+                    }
+                });
+            }
+        }).disableSelection();
+    }
+
+    // ---------- LOAD OBRÁZKOV Z BACKENDU ----------
+
+    function loadImages(kind) {
+        $.get('/admin/sponsors/images/' + kind, function(data) {
+            renderGallery(kind, data);
+        });
+    }
+
+    // ---------- UPLOAD ----------
+
+    async function uploadImage(kind, file) {
+        const formData = new FormData();
+        formData.append('image_file2', file);
+
+        try {
+            const response = await fetch('/admin/sponsors/images/' + kind + '/upload', {
+                method: 'PUT',
+                body: formData
+            });
+
+            if (response.status === 200) {
+                loadImages('main');
+                loadImages('partner');
+            } else {
+                console.error('Upload failed', await response.text());
+            }
+        } catch (err) {
+            console.error('Error:', err);
+        }
+    }
+
+    document.getElementById('image_file_main').addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            uploadImage('main', this.files[0]);
+            this.value = '';
+        }
+    });
+
+    document.getElementById('image_file_partner').addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            uploadImage('partner', this.files[0]);
+            this.value = '';
+        }
+    });
+
+    // ---------- DELETE ----------
+
+    async function deleteImage(id, kind) {
+        try {
+            const response = await fetch('/admin/sponsors/images/delete/' + id, {
+                method: 'DELETE'
+            });
+
+            if (response.status === 200) {
+                loadImages(kind);
+            } else {
+                console.error('Delete failed', await response.text());
+            }
+        } catch (err) {
+            console.error('Error:', err);
+        }
+    }
+
+
+
+    async function saveSponsor(id, payload, kind) {
+        try {
+            const response = await fetch('/admin/sponsors/' + id, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+    
+            if (response.status === 200) {
+                // znovu načítaj len daný druh
+                loadImages(kind);
+            } else {
+                console.error('Update failed', await response.text());
+            }
+        } catch (err) {
+            console.error('Error:', err);
+        }
+    }
+
+    // ---------- INIT ----------
+
+    loadImages('main');
+    loadImages('partner');
+</script>
+
+{% endblock content %}

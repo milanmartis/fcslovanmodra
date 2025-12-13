@@ -1,250 +1,324 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div class="content-section">
-        <form method="POST" action=""  enctype="multipart/form-data">
-            {{ form.hidden_tag() }}
-            <fieldset class="form-group">
-                <h3>Registration Data</h3>
-                    <div class="row">
-                        <div class="col">
-                    {{ form.username.label(class="form-control-label") }}
 
-                    {% if form.username.errors %}
-                        {{ form.username(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.username.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
+<style>
+  .member-photo-wrap{
+    position: relative;
+    width: 225px;
+    height: 225px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(109,155,255,.25);
+    cursor: pointer;
+  }
 
-                    {% else %}
-                        {{ form.username(readonly=true, class="form-control form-control-lg") }}
-                    {% endif %}
-                </div>
-                <div class="col">
-                    {{ form.email.label(class="form-control-label") }}
-                    {% if form.email.errors %}
-                        {{ form.email(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.email.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.email(readonly=true, class="form-control form-control-lg") }}
-                    {% endif %}
-                </div>
-                </div>
+  .member-photo{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 
-            </fieldset>
-            <br>
-            <br>
-            <fieldset class="form-group">
-                <h3>Personal Data</h3>
-                <div class="row">
-                    <div class="col">
-                    <div class="form-group">
-                        {{ form.name.label(class="form-control-label") }}
-                        {% if form.name.errors %}
-                        {{ form.name(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.name.errors %}
-                            <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        {{ form.name(class="form-control form-control-lg") }}
-                        {% endif %}
-                    </div>
+  .member-photo-edit{
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    border: 1px solid rgba(109,155,255,.6);
+    background: rgba(0,0,0,.55);
+    color: #6d9bff;
+    font-weight: 800;
+    padding: 8px 12px;
+    border-radius: 10px;
+    line-height: 1;
+    font-size: 12px;
+    z-index: 2;
+  }
 
-                    <div class="form-group">
-                    {{ form.phone.label(class="form-control-label") }}
-                    {% if form.phone.errors %}
-                        {{ form.phone(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.phone.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        {{ form.phone(class="form-control form-control-lg") }}
-                        {% endif %}
-                    </div>
+  .member-photo-edit:hover{
+    background: rgba(0,0,0,.85);
+    color: #6d9bff;
+  }
+</style>
 
-                    <div class="row">
-                        <div class="col">
-                            
-                            <div class="form-group">
-                                {{ form.weight.label(class="form-control-label") }}
-                                {% if form.weight.errors %}
-                                {{ form.weight(class="form-control form-control-lg is-invalid") }}
-                                <div class="invalid-feedback">
-                                    {% for error in form.weight.errors %}
-                                    <span>{{ error }}</span>
-                                    {% endfor %}
-                                </div>
-                                {% else %}
-                                {{ form.weight(class="form-control form-control-lg") }}
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-group">
-                                {{ form.height.label(class="form-control-label") }}
-                                {% if form.weight.errors %}
-                                {{ form.height(class="form-control form-control-lg is-invalid") }}
-                                <div class="invalid-feedback">
-                                    {% for error in form.height.errors %}
-                                    <span>{{ error }}</span>
-                                    {% endfor %}
-                                </div>
-                                {% else %}
-                                {{ form.height(class="form-control form-control-lg") }}
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
+<div class="content-section">
+  <form method="POST" action="" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
 
+    <fieldset class="form-group">
+      <h3>Registration Data</h3>
 
-
-
-                    </div>
-
-
-                    <div class="col">
-                        <div class="media d-flex justify-content-center">
-                            <img width="225" src="{{ image_file }}">
-                    
-                          </div>
-
-                        {{ form.picturemember.label() }}
-                        {{ form.picturemember(class="form-control-file ") }}
-                        {% if form.picturemember.errors %}
-                            {% for error in form.picturemember.errors %}
-                                <span class="text-danger">{{ error }}</span></br>
-                            {% endfor %}
-                        {% endif %}
-
-
-                    </div>
-
-                </div>
-
-
-                <div class="-row">
-                    <div class="col">
-                    {{ form.address.label(class="form-control-label") }}
-                    {% if form.address.errors %}
-                        {{ form.address(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.address.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.address(class="form-control form-control-lg") }}
-                    {% endif %}
-                    </div>
-
-                    <div class="row">
-                    <div class="col-8">
-                    {{ form.psc.label(class="form-control-label") }}
-                    {% if form.psc.errors %}
-                        {{ form.psc(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.psc.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.psc(class="form-control form-control-lg") }}
-                    {% endif %}
-                    </div>
-                    <div class="col-4">
-                    {{ form.city.label(class="form-control-label") }}
-                    {% if form.city.errors %}
-                        {{ form.city(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.city.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.city(class="form-control form-control-lg") }}
-                    {% endif %}
-                    </div>
-                    </div>
-
-                </div>
-
-            </fieldset>
-            <br><br>
-            <fieldset class="form-group">
-                <h3>Club Data</h3>
-                <div class="row">
-                    <div class="col-4">
-                        {{ form.role.label(class="form-control-label") }}
-                        {% if form.role.errors %}
-                            {{ form.role(class="form-control form-control-md is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.role.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.role(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
-                        {% endif %}
-                    </div>
-
-                    
-                    <div class="col-4">
-                        {{ form.team.label(class="form-control-label") }}
-                        {% if form.team.errors %}
-                            {{ form.team(class="form-control form-control-md is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.team.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.team(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
-                        {% endif %}
-                    </div>
-
-                    <div class="col-4">
-                        {{ form.position.label(class="form-control-label") }}
-                        {% if form.position.errors %}
-                            {{ form.position(class="form-control form-control-md is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.position.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.position(class="form-control form-control-md") }}
-                        {% endif %}
-                    </div>
-
-
-                </div>
-            </fieldset>
-
-            <div class="form-group" style="float:left;">
-                {{ form.submit(class="btn btn-sm") }}
+      <div class="row">
+        <div class="col">
+          {{ form.username.label(class="form-control-label") }}
+          {% if form.username.errors %}
+            {{ form.username(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.username.errors %}<span>{{ error }}</span>{% endfor %}
             </div>
-        </form>
-        {% if current_user.is_authenticated %}
-        <button onclick="javascript:location.href='{{ url_for('users.list_members') }}';" class="btn btn-sm" />Back</button>
-        {% endif %}
+          {% else %}
+            {{ form.username(readonly=true, class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
 
-    </div>
-    {% if not current_user.is_authenticated %}
+        <div class="col">
+          {{ form.email.label(class="form-control-label") }}
+          {% if form.email.errors %}
+            {{ form.email(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.email.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.email(readonly=true, class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+      </div>
+    </fieldset>
 
-    <div class="border-top pt-3">
-        <small class="text-muted">
-            Already Have An Account? <a class="ml-2" href="{{ url_for('users.login') }}">Sign In</a>
-        </small>
+    <br><br>
+
+    <fieldset class="form-group">
+      <h3>Personal Data</h3>
+
+      <div class="row">
+        <div class="col">
+          <div class="form-group">
+            {{ form.name.label(class="form-control-label") }}
+            {% if form.name.errors %}
+              {{ form.name(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                {% for error in form.name.errors %}<span>{{ error }}</span>{% endfor %}
+              </div>
+            {% else %}
+              {{ form.name(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            {{ form.phone.label(class="form-control-label") }}
+            {% if form.phone.errors %}
+              {{ form.phone(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                {% for error in form.phone.errors %}<span>{{ error }}</span>{% endfor %}
+              </div>
+            {% else %}
+              {{ form.phone(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <div class="form-group">
+                {{ form.weight.label(class="form-control-label") }}
+                {% if form.weight.errors %}
+                  {{ form.weight(class="form-control form-control-lg is-invalid") }}
+                  <div class="invalid-feedback">
+                    {% for error in form.weight.errors %}<span>{{ error }}</span>{% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.weight(class="form-control form-control-lg") }}
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="form-group">
+                {{ form.height.label(class="form-control-label") }}
+                {% if form.height.errors %}
+                  {{ form.height(class="form-control form-control-lg is-invalid") }}
+                  <div class="invalid-feedback">
+                    {% for error in form.height.errors %}<span>{{ error }}</span>{% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.height(class="form-control form-control-lg") }}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+<br>
+        <div class="col">
+          <div class="media d-flex justify-content-center">
+            <div class="member-photo-wrap" id="member-photo-wrap" title="Klikni pre zmenu fotky">
+              <img id="member-photo" class="member-photo" src="{{ image_file }}" alt="Member photo">
+              <button type="button" class="member-photo-edit" id="member-photo-btn">Zmeniť</button>
+            </div>
+          </div>
+
+          <input
+            id="member-photo-input"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style="display:none;"
+          />
+
+          <!-- flash-like output (rovnaký štýl ako Flask flash cez Bootstrap) -->
+          <div id="flash-like" style="display:none;" class="alert mt-2" role="alert"></div>
+        </div>
+      </div>
+
+      <div class="-row">
+        <div class="col">
+          {{ form.address.label(class="form-control-label") }}
+          {% if form.address.errors %}
+            {{ form.address(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.address.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.address(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+
+        <div class="row">
+          <div class="col-8">
+            {{ form.psc.label(class="form-control-label") }}
+            {% if form.psc.errors %}
+              {{ form.psc(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                {% for error in form.psc.errors %}<span>{{ error }}</span>{% endfor %}
+              </div>
+            {% else %}
+              {{ form.psc(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+
+          <div class="col-4">
+            {{ form.city.label(class="form-control-label") }}
+            {% if form.city.errors %}
+              {{ form.city(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                {% for error in form.city.errors %}<span>{{ error }}</span>{% endfor %}
+              </div>
+            {% else %}
+              {{ form.city(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </fieldset>
+
+    <br><br>
+
+    <fieldset class="form-group">
+      <h3>Club Data</h3>
+
+      <div class="row">
+        <div class="col-4">
+          {{ form.role.label(class="form-control-label") }}
+          {% if form.role.errors %}
+            {{ form.role(class="form-control form-control-md is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.role.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.role(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
+          {% endif %}
+        </div>
+
+        <div class="col-4">
+          {{ form.team.label(class="form-control-label") }}
+          {% if form.team.errors %}
+            {{ form.team(class="form-control form-control-md is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.team.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.team(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
+          {% endif %}
+        </div>
+
+        <div class="col-4">
+          {{ form.position.label(class="form-control-label") }}
+          {% if form.position.errors %}
+            {{ form.position(class="form-control form-control-md is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.position.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.position(class="form-control form-control-md") }}
+          {% endif %}
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="form-group" style="float:left;">
+      {{ form.submit(class="btn btn-sm") }}
     </div>
-    {% endif %}
+  </form>
+
+  {% if current_user.is_authenticated %}
+    <button onclick="javascript:location.href='{{ url_for('users.list_members') }}';" class="btn btn-sm">Back</button>
+  {% endif %}
+</div>
+
+{% if not current_user.is_authenticated %}
+  <div class="border-top pt-3">
+    <small class="text-muted">
+      Already Have An Account? <a class="ml-2" href="{{ url_for('users.login') }}">Sign In</a>
+    </small>
+  </div>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const wrap = document.getElementById("member-photo-wrap");
+  const img = document.getElementById("member-photo");
+  const btn = document.getElementById("member-photo-btn");
+  const input = document.getElementById("member-photo-input");
+  const flashLike = document.getElementById("flash-like");
+
+  if (!wrap || !img || !input || !flashLike) return;
+
+  function showFlashLike(text, level) {
+    flashLike.className = `alert alert-${level} mt-2`;
+    flashLike.textContent = text;
+    flashLike.style.display = "block";
+  }
+
+  function openPicker() { input.click(); }
+
+  // Klik na fotku alebo wrap otvorí picker
+  wrap.addEventListener("click", (e) => {
+    // ak klikneš na tlačidlo, nech sa to nespustí 2x
+    if (e.target && e.target.id === "member-photo-btn") return;
+    openPicker();
+  });
+
+  // tlačidlo len otvorí picker
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openPicker();
+  });
+
+  input.addEventListener("change", async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    showFlashLike("Nahrávam fotku...", "info");
+
+    try {
+      const fd = new FormData();
+      fd.append("photo", file);
+
+      const res = await fetch("/member/{{ member_id }}/photo", {
+        method: "POST",
+        body: fd
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+
+      img.src = data.image_url; // backend vráti cache-bust URL
+      showFlashLike("Fotka bola zmenená.", "success");
+      input.value = "";
+    } catch (e) {
+      console.error(e);
+      showFlashLike(e.message || "Chyba pri nahrávaní.", "danger");
+    }
+  });
+});
+</script>
+
 {% endblock content %}
-

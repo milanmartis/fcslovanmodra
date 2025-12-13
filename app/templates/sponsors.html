@@ -1,29 +1,50 @@
-
-{% extends 'layout.html' %} 
+{% extends 'layout.html' %}
 {% block content %}
 
-
-
-
 <center>
-<div class="content-section mt-6">
+  <div class="content-section mt-6">
 
-      
-  <div class="row col-12  d-flex justify-content-center"><p class="btn-teams-position">{{'Hlavní partneri'}}</p></div>
-  
-  <a class="sponsor-img d-block w-100" href="https://www.modra.sk/" target="_blank"><img width="80%" src="{{ aws_image_url()+'sponsors/'}}modra.jpg"></a>
-  <br>
-  <div class="row col-12  d-flex justify-content-center"><p class="btn-teams-position">{{'Partneri'}}</p></div>
-    <a class="sponsor-img d-block w-100"  href="https://www.komaco-cba.sk/" target="_blank"><img width="80%"  src="{{ aws_image_url()+'sponsors/'}}comaco.jpg"></a>
-    <a class="sponsor-img d-block w-100"  href="https://www.pavos.sk/" target="_blank"><img width="80%"  src="{{ aws_image_url()+'sponsors/'}}pavos.jpg"></a>
-    <a class="sponsor-img d-block w-100"  href="https://appdesign.sk/" target="_blank"><img width="80%"  src="{{ aws_image_url()+'sponsors/'}}appdesign.jpg"></a>
+    {# Hlavní partneri #}
+    <div class="row col-12 d-flex justify-content-center">
+      <p class="btn-teams-position">Hlavní partneri</p>
+    </div>
 
+    {% if main_sponsors %}
+      {% for s in main_sponsors %}
+        <a class="sponsor-img d-block w-100"
+           href="{{ s.url or '#' }}"
+           target="_blank">
+          <img width="80%" src="{{ aws_image_url() ~ 'sponsors/' ~ s.image_file }}"
+               alt="{{ s.name or 'Sponsor' }}">
+        </a>
+        <br>
+      {% endfor %}
+    {% else %}
+      <p>Momentálne nie sú pridaní žiadni hlavní partneri.</p>
+    {% endif %}
 
+    <br>
 
+    {# Partneri #}
+    <div class="row col-12 d-flex justify-content-center">
+      <p class="btn-teams-position">Partneri</p>
+    </div>
 
+    {% if partners %}
+      {% for s in partners %}
+        <a class="sponsor-img d-block w-100"
+           href="{{ s.url or '#' }}"
+           target="_blank">
+          <img width="80%" src="{{ aws_image_url() ~ 'sponsors/' ~ s.image_file }}"
+               alt="{{ s.name or 'Sponsor' }}">
+        </a>
+        <br>
+      {% endfor %}
+    {% else %}
+      <p>Momentálne nie sú pridaní žiadni partneri.</p>
+    {% endif %}
 
   </div>
-
 </center>
 
-  {% endblock %}
+{% endblock %}

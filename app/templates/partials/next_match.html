@@ -1,0 +1,38 @@
+{# templates/partials/next_match.html #}
+{% if next_event %}
+  {% set parts = next_event.title.split(' - ') if next_event.title else ['---','---'] %}
+  <div class="content-section mt-6">
+    <div class="content-section-sidebar">
+      <h3 style="padding-top:12px;">Najbližší zápasjjj</h3>
+      <center>
+        <h6>{{ next_event.start_event.strftime('%d. %m. %Y') }} |
+          <b>{{ next_event.start_event.strftime('%H:%M') }}</b>
+        </h6>
+
+        <div class="btn-live-frame" id="liveFrame" style="display: none;">
+          <p id="countdown_desc" style="padding:0;margin:0;opacity:.95;color:#fff;font-size:70%"></p>
+          <p id="countdown" style="padding:0;margin:0"></p>
+        </div>
+
+        <img class="image-logo" style="padding:6px;" height="91"
+             src="{{ aws_image_url() ~ 'clubs/' ~ (parts[0] | slugify) ~ '.png' }}">
+        <img class="image-logo" style="padding:6px;" height="91"
+             src="{{ aws_image_url() ~ 'clubs/' ~ (parts[1] | slugify) ~ '.png' }}">
+
+        <h3 style="text-align:center;">{{ parts[0] }}</h3>
+        <h6 style="text-align:center;">vs.</h6>
+        <h3 style="text-align:center;margin-top:-5px;">{{ parts[1] }}</h3>
+
+        <p style="opacity:0.7;">
+          <i class="fa fa-map-marker" aria-hidden="true"></i>
+          <a href="{{ next_event.link }}" target="_blank">{{ next_event.address }}</a>
+        </p>
+      </center>
+    </div>
+  </div>
+
+  <!-- dátum pre JS countdown -->
+  <span id="next-start" data-start="{{ next_event.start_event.isoformat() }}"></span>
+{% else %}
+  <p>Žiadny najbližší zápas.</p>
+{% endif %}

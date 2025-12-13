@@ -38,12 +38,12 @@
             </fieldset>
 
             <div class="row">
-            <div class="col">
+                <div class="col" style="margin-top: 10px;line-height: 150%;">
+                    {{ form.submit(class="btn btn-outline-info") }}
+                </div>
+                <div class="col" style="margin-top: 10px;line-height: 150%;">
                 
-                {{ form.submit(class="btn btn-outline-info") }}
-  
-
-                <small class="text-muted ml-1" style="margin-top:10px;padding:22px;">
+                 <small class="text-muted ml-1" style="margin-top:20px;padding:32px;">
                     <a href="{{ url_for('users.reset_request') }}">Zabudli ste heslo?</a>
                 </small>
 
@@ -52,8 +52,10 @@
                 </small>
 
             </div>
+
             </div>
             
-        </form>
+        </form>        
     </div>
+
 {% endblock content %}

@@ -1,0 +1,562 @@
+{% extends "layout.html" %}
+{% block content %}
+<style scoped>
+  .team-tabs-wrapper {
+    margin: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: 20px;
+  }
+
+  .team-tab-btn222 {
+    border-radius: 10px !important;
+    background-color: #030303;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
+    font-weight: 600;
+    font-size: 100%;
+    padding: 2px 8px 2px 8px;
+    margin-top: 17px;
+    margin-left: 2px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+
+  .team-tab-btn222.active {
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
+    color: #030303;
+  }
+
+  .team-panel {
+    display: none;
+  }
+
+  .team-panel.active {
+    display: block;
+  }
+
+  /* PRAVÝ BLOK NA CELOÚ ŠÍRKU – žiadne stĺpce, všetko full width */
+  .team-layout {
+    display: block;
+    width: 100%;
+  }
+
+  .card-glass {
+    text-align: left;
+    margin: 0 0 20px 0;        /* žiadne centrovanie, nech je to na celú šírku */
+    border-radius: 26px;
+    background: rgba(17,17,17,0.92);
+    border: 1px solid rgba(109,155,255,0.2);
+    backdrop-filter: blur(12px);
+    padding: 18px 20px;
+    box-shadow: 0 0 22px rgba(0,0,0,0.6);
+  }
+
+  .logos{
+    text-align: center;
+    margin: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 26px;
+    background-color: #fff;
+    border: 1px solid rgba(109, 155, 255, 0.18);
+    backdrop-filter: blur(10px);
+    padding: 6px;
+    box-shadow: 0 0 16px rgba(109, 155, 255, 0.87);
+    gap: 4px;
+  }
+
+  .btn222-live {
+    border-radius: 8px;
+    border: none;
+    padding: 4px 6px;
+    font-size: 0.7rem;
+    margin: 0 1px;
+  }
+
+  .schedule-table,
+  .standings-table {
+    font-size: 0.86rem;
+    width: 100%;          /* roztiahni tabuľky na celú šírku */
+    color: #fff;          /* biele písmo v tabuľkách */
+  }
+
+  .schedule-table thead th,
+  .standings-table thead th {
+    color: #fff;
+  }
+
+  .schedule-table tbody td,
+  .standings-table tbody td,
+  .standings-table tbody th {
+    color: #fff;
+  }
+
+  .schedule-table a {
+    color: #fff;          /* odkazy pri udalostiach biele */
+    text-decoration: underline;
+  }
+
+  .schedule-table tbody tr:hover,
+  .standings-table tbody tr:hover {
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* DOLNÉ TABS (Tabuľka / Výsledky / Program) – nech pekne svietia ako active */
+  .nav-pills .btn222 {
+    border-radius: 10px !important;
+    background-color: #030303;
+    border: 2px solid #6d9bff;
+    color: #6d9bff;
+    font-weight: 600;
+    font-size: 100%;
+    padding: 2px 12px 4px 12px;
+    margin-top: 17px;
+    margin-left: 6px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+
+  .nav-pills .btn222.active {
+    background-color: #6d9bff;
+    border: 2px solid #6d9bff;
+    color: #030303;
+  }
+  tr, thead{
+    border-bottom: 1px solid #404a55;
+  }
+</style>
+
+<div class="content-section mt-6">
+  <div class="dez-post-media dez-img-effect zoom-slow">
+
+    <h3 style="padding-top:12px;">Tímy & štatistiky</h3>
+
+    <!-- HORNÉ TABS S TÍMAMI (ako NHL filtre) -->
+    <div style="margin:auto;width:100%;" class="team-tabs-wrapper" id="teamTabs">
+      {% for team in teamz %}
+        {% set is_active = (selected_team_id is not none and team.id == selected_team_id)
+                           or (selected_team_id is none and loop.first) %}
+        <button
+          class="btn222 team-tab-btn222{% if is_active %} active{% endif %}"
+          data-team-id="{{ team.id }}"
+          data-team-name="{{ team.name }}">
+          {{ team.name }}
+        </button>
+      {% endfor %}
+    </div>
+    <br>
+
+    <!-- PANELY PRE JEDNOTLIVÉ TÍMY -->
+    {% for team in teamz %}
+      {% set is_active = (selected_team_id is not none and team.id == selected_team_id)
+                          or (selected_team_id is none and loop.first) %}
+      <div class="team-panel{% if is_active %} active{% endif %}" data-team-panel="{{ team.id }}">
+
+        <h4 style="opacity:0.85; margin-bottom:14px;">
+          {{ team.main_league }}
+        </h4>
+
+        <div class="team-layout">
+
+          <!-- ĽAVO: Najbližší zápas – zatiaľ skryté -->
+          <div class="card-glass" style="display: none;">
+            <h5>Najbližší zápas</h5>
+            <hr style="opacity:0.15; margin:8px 0 14px;">
+
+            {% set next_match = next_match_by_team.get(team.id) %}
+            {% if not next_match %}
+              <p>Bez údajov o najbližšom zápase.</p>
+            {% else %}
+              {# Bezpečný split na 2 časti #}
+              {% if next_match.title is string %}
+                {% set tmp = next_match.title.split(' - ') %}
+              {% else %}
+                {% set tmp = [] %}
+              {% endif %}
+
+              {% set home_name = tmp[0] if tmp|length > 0 else '---' %}
+              {% set away_name = tmp[1] if tmp|length > 1 else '---' %}
+
+              {# DÔLEŽITÉ: pred slugify použijeme default/string #}
+              {% set home_slug = home_name|default('')|string|slugify %}
+              {% set away_slug = away_name|default('')|string|slugify %}
+
+              <p style="margin-bottom:6px; color:#fff;">
+                {% if current_date.strftime('%d. %m. %Y') == next_match.start_event.strftime('%d. %m. %Y') %}
+                  <strong>Dnes</strong>
+                {% else %}
+                  {{ next_match.start_event.strftime('%d. %m. %Y') }}
+                {% endif %}
+                o <strong>{{ next_match.start_event.strftime('%H:%M') }}</strong>
+              </p>
+
+              <!-- countdown – POZOR: class + data atribút, nie id -->
+              <div class="btn222-live-frame" style="display:inline-block;">
+                <p style="padding:0;margin:0;opacity:0.9;color:#fff;font-size:70%;">
+                  deň | hod | min | sek
+                </p>
+                <p class="countdown"
+                   data-start-event="{{ next_match.start_event.isoformat() }}"
+                   style="padding:0;margin:2px 0 0 0;"></p>
+              </div>
+
+              <br><br>
+
+              {# logá podľa score_table #}
+              {% set logos = namespace(home=None, away=None) %}
+
+              {% for row in table_by_team.get(team.id, []) %}
+                {% set club_slug = (row.club|default('', true))|slugify %}
+                {% set raw_logo = row.logo|default('', true) %}
+                {% set cleaned_logo = raw_logo|replace('https://','')|replace('http://','') %}
+                {% set host_part = cleaned_logo.split('/logo')[0] %}
+                {% set logo_slug_source = host_part.split('.futbalnet.sk')[0] %}
+                {% set logo_slug = logo_slug_source|slugify %}
+                {% set final_slug = club_slug if club_slug else logo_slug %}
+
+                {% if not logos.home and final_slug == home_slug %}
+                  {% set logos.home = row.logo %}
+                {% elif not logos.away and final_slug == away_slug %}
+                  {% set logos.away = row.logo %}
+                {% endif %}
+              {% endfor %}
+
+              <div class="logos">
+                <img class="image-logo" height="60" style="padding:4px;"
+                     src="{% if logos.home %}{{ logos.home }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ home_slug ~ '.png' }}{% endif %}">
+                <span style="font-weight:bold; padding:0 4px;">vs</span>
+                <img class="image-logo" height="60" style="padding:4px;"
+                     src="{% if logos.away %}{{ logos.away }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ away_slug ~ '.png' }}{% endif %}">
+              </div>
+
+              <div style="margin-top:10px;text-align:center;color:#fff;">
+                <h5 style="margin-bottom:2px;">{{ home_name }}</h5>
+                <span style="opacity:0.7;">vs.</span>
+                <h5 style="margin-top:2px;">{{ away_name }}</h5>
+                <p style="opacity:0.7;margin-top:8px;">
+                  <i class="fa fa-map-marker" aria-hidden="true"></i>
+                  <a href="{{ next_match.link }}" target="_blank" style="color:#fff;">
+                    {{ next_match.address }}
+                  </a>
+                </p>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- PRAVO: Tabuľka + Výsledky + Program – NA CELOÚ ŠÍRKU -->
+          <div class="card-glass">
+            <!-- mini tabs vo vnútri jedného tímu -->
+            <ul class="nav nav-pills mb-3" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="btn222 active" data-bs-toggle="pill"
+                        data-bs-target="#standings-{{ team.id }}" type="button">
+                  Tabuľka
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="btn222" data-bs-toggle="pill"
+                        data-bs-target="#results-{{ team.id }}" type="button">
+                  Výsledky
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="btn222" data-bs-toggle="pill"
+                        data-bs-target="#schedule-{{ team.id }}" type="button">
+                  Program
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content">
+              <!-- TABUĽKA -->
+              <div class="tab-pane fade show active" id="standings-{{ team.id }}">
+                {% set rows = table_by_team.get(team.id, []) %}
+                {% set ns = namespace(has_rows=false) %}
+
+                {# zistíme, či existuje aspoň jeden riadok s club #}
+                {% for row in rows if row.club %}
+                  {% set ns.has_rows = true %}
+                {% endfor %}
+
+                {% if ns.has_rows %}
+                  <div class="table-responsive">
+                    <table class="table table-sm scoretable standings-table mb-0">
+                      <thead>
+                      <tr style="color:#6d9bff; opacity: 0.864; border-bottom: 1px solid #6d9bff;" class="table-headding">
+                        <th style="color:#6d9bff; opacity: 0.864;" >#</th>
+                        <th style="color:#6d9bff; opacity: 0.864;text-align: left;">Tím</th>
+                        <th style="color:#6d9bff; opacity: 0.864;" class="text-center" title="zápasy">Z</th>
+                        <th style="color:#6d9bff; opacity: 0.864;" class="text-center" title="víťaztvá">V</th>
+                        <th style="color:#6d9bff; opacity: 0.864;" class="text-center" title="remízy">R</th>
+                        <th style="color:#6d9bff; opacity: 0.864;" class="text-center" title="prehry">P</th>
+                        <th style="color:#6d9bff; opacity: 0.864;" class="text-center" title="skóre">S</th>
+                        <th style="color:#6d9bff; opacity: 0.864;" class="text-center" title="body">B</th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      {% for row in rows if row.club %}
+                        <tr>
+                          <th style="opacity:0.8;line-height:127%;" scope="row">{{ loop.index }}</th>
+                          <td  style="color:#fff; font-size:107%; line-height:93%; text-align: left;">
+                            {{ row.club
+                               |replace("Devínska Nová Ves", "Devínska N.V.")
+                               |replace("Futbalová akadémia Lafranconi FTVŠ UK","FA FTVŠ UK") }}
+                          </td>
+                          <td class="text-center" style="font-size:103%; opacity:0.68;color:#fff;line-height:107%;">{{ row.games }}</td>
+                          <td class="text-center" style="font-size:103%; opacity:0.68;color:#fff;line-height:107%;">{{ row.wins }}</td>
+                          <td class="text-center" style="font-size:103%; opacity:0.68;color:#fff;line-height:107%;">{{ row.draws }}</td>
+                          <td class="text-center" style="font-size:103%; opacity:0.68;color:#fff;line-height:107%;">{{ row.loses }}</td>
+                          <td class="text-center" style="font-size:103%; opacity:0.68;color:#fff;line-height:107%;">{{ row.score }}</td>
+                          <td class="text-center" style="font-size:103%; font-weight:600;color:#fff;line-height:107%;">{{ row.points }}</td>
+                        </tr>
+                      {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% else %}
+                  <p class="text-center" style="color:#fff; opacity:0.7; margin: 10px 0;">
+                    Žiadne údaje v tabuľke pre tento tím.
+                  </p>
+                {% endif %}
+              </div>
+
+              <!-- VÝSLEDKY -->
+              <div class="tab-pane fade" id="results-{{ team.id }}">
+                {% set results = results_by_team.get(team.id, []) %}
+                {% set ns_res = namespace(has_rows=false) %}
+
+                {% for match in results %}
+                  {% set ns_res.has_rows = true %}
+                {% endfor %}
+
+                {% if ns_res.has_rows %}
+                  <div class="table-responsive">
+                    <table class="table table-sm scoretable standings-table mb-0">
+                      <thead>
+                      <tr style="opacity: 0.84;" class="table-headding">
+                        <th style="color:#6d9bff;">Dátum</th>
+                        <th style="color:#6d9bff;">Čas</th>
+                        <th style="color:#6d9bff;">Zápas</th>
+                       <!-- <th style="color:#6d9bff;">Miesto</th>-->
+                        <th style="color:#6d9bff;">Výsledok</th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      {% for match in results %}
+
+                        {# defaulty #}
+                        {% set home = '---' %}
+                        {% set away = '---' %}
+                        {% set score_val = match.score if match.score else '' %}
+
+                        {% if match.title is string %}
+                          {% set title = match.title %}
+                          {% set tokens = title.split(' ') %}
+
+                          {# nájdeme token typu X:Y #}
+                          {% set ns = namespace(score=score_val, idx=-1) %}
+                          {% for t in tokens %}
+                            {% if ':' in t %}
+                              {% set p = t.split(':') %}
+                              {% if p|length == 2 and p[0].isdigit() and p[1].isdigit() %}
+                                {% set ns.score = t %}
+                                {% set ns.idx = loop.index0 %}
+                              {% endif %}
+                            {% endif %}
+                          {% endfor %}
+
+                          {% if ns.idx != -1 %}
+                            {# máme X:Y v strede #}
+                            {% set home = tokens[0:ns.idx] | join(' ') %}
+                            {% set away = tokens[ns.idx+1:] | join(' ') %}
+                            {% set score_val = ns.score %}
+                          {% else %}
+                            {# fallback na pôvodné "Home - Away" #}
+                            {% set tmp = title.split(' - ') %}
+                            {% set home = tmp[0] if tmp|length > 0 else '---' %}
+                            {% set away = tmp[1] if tmp|length > 1 else '---' %}
+                          {% endif %}
+                        {% endif %}
+
+                        <tr>
+                          <td>{{ match.start_event.strftime('%d.%m.%Y') }}</td>
+                          <td>{{ match.start_event.strftime('%H:%M') }}</td>
+                          <td>{{ home }} - {{ away }}</td>
+                         <!-- <td>
+                            <a href="{{ match.link }}" target="_blank">
+                              {{ match.address }}
+                            </a>
+                          </td>-->
+                          <td style="line-height:96%;font-size: 108%; font-weight: 700;color:#6d9bff;">
+                            {% if score_val %}
+                              {{ score_val }}
+                            {% else %}
+                              –
+                            {% endif %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% else %}
+                  <p class="text-center" style="color:#fff; opacity:0.7; margin: 10px 0;">
+                    Žiadne odohrané zápasy s výsledkom pre tento tím.
+                  </p>
+                {% endif %}
+              </div>
+
+
+              <!-- KALENDÁR / PROGRAM -->
+              <div class="tab-pane fade" id="schedule-{{ team.id }}">
+                {% set matches = calendar_by_team.get(team.id, []) %}
+                {% set ns2 = namespace(has_rows=false) %}
+
+                {% for match in matches %}
+                  {% set ns2.has_rows = true %}
+                {% endfor %}
+
+                {% if ns2.has_rows %}
+                  <div class="table-responsive">
+                    <table class="table table-sm scoretable standings-table mb-0">
+                      <thead>
+                      <tr style="opacity: 0.84;" class="table-headding">
+                        <th style="color:#6d9bff;">Dátum</th>
+                        <th style="color:#6d9bff;">Čas</th>
+                        <th style="color:#6d9bff;">Zápas</th>
+                        <th style="color:#6d9bff;">Miesto</th>
+                       <!-- <th style="color:#6d9bff;">Výsledok</th>-->
+                      </tr>
+                      </thead>
+                      <tbody>
+                      {% for match in matches %}
+                        {% if match.title is string %}
+                          {% set tmp = match.title.split(' - ') %}
+                        {% else %}
+                          {% set tmp = [] %}
+                        {% endif %}
+                        {% set home = tmp[0] if tmp|length > 0 else '---' %}
+                        {% set away = tmp[1] if tmp|length > 1 else '---' %}
+                        <tr>
+                          <td>{{ match.start_event.strftime('%d.%m.%Y') }}</td>
+                          <td>{{ match.start_event.strftime('%H:%M') }}</td>
+                          <td>{{ home }} - {{ away }}</td>
+                          <td>
+                            <a href="{{ match.link }}" target="_blank">
+                              {{ match.address }}
+                            </a>
+                          </td>
+                          <!--<td>
+                            {% if match.score %}
+                              {{ match.score }}
+                            {% else %}
+                              –
+                            {% endif %}
+                          </td>-->
+                        </tr>
+                      {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% else %}
+                  <p class="text-center" style="color:#fff; opacity:0.7; margin: 10px 0%;">
+                    Žiadne plánované udalosti pre tento tím.
+                  </p>
+                {% endif %}
+              </div>
+
+            </div><!-- tab-content -->
+          </div><!-- card-glass pravá -->
+
+        </div><!-- team-layout -->
+
+      </div><!-- team-panel -->
+    {% endfor %}
+
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabButtons = document.querySelectorAll(".team-tab-btn222");
+    const teamPanels = document.querySelectorAll(".team-panel");
+
+    tabButtons.forEach(btn222 => {
+      btn222.addEventListener("click", () => {
+        const teamId = btn222.getAttribute("data-team-id");
+        const teamName = btn222.getAttribute("data-team-name");
+
+        // prepnutie aktívneho panelu
+        tabButtons.forEach(b => b.classList.remove("active"));
+        teamPanels.forEach(p => p.classList.remove("active"));
+
+        btn222.classList.add("active");
+        const panel = document.querySelector('[data-team-panel="' + teamId + '"]');
+        if (panel) panel.classList.add("active");
+
+        // 🔹 zapíš aktuálny tím do URL ako ?team=...
+        if (teamName) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("team", teamName);
+          window.history.replaceState({}, "", url);
+        }
+      });
+    });
+  });
+</script>
+
+<script>
+  function initNextMatchCountdowns() {
+    const els = document.querySelectorAll(".countdown");
+    if (!els.length) return;
+
+    // vyčisti staré intervaly
+    if (!window._nextMatchTimers) {
+      window._nextMatchTimers = [];
+    }
+    window._nextMatchTimers.forEach(id => clearInterval(id));
+    window._nextMatchTimers = [];
+
+    els.forEach(el => {
+      const dateAttr = el.getAttribute("data-start-event");
+      if (!dateAttr) return;
+
+      const countDownDate = new Date(dateAttr).getTime();
+      if (isNaN(countDownDate)) return;
+
+      const timerId = setInterval(() => {
+        const now = new Date().getTime();
+        let distance = countDownDate - now;
+
+        if (distance <= 0) {
+          clearInterval(timerId);
+          el.innerHTML = "HRÁ SA";
+          return;
+        }
+
+        distance = Math.max(distance - 200, 0); // „fudge“
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        el.innerHTML =
+          '<button class="btn222-live">' + days    + '</button>' +
+          '<button class="btn222-live">' + hours   + '</button>' +
+          '<button class="btn222-live">' + minutes + '</button>' +
+          '<button class="btn222-live">' + seconds + '</button>';
+      }, 1000);
+
+      window._nextMatchTimers.push(timerId);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", initNextMatchCountdowns);
+
+  // ak ti niekde AJAXom refreshneš fragment, zavolaj z JS: initNextMatchCountdowns();
+</script>
+{% endblock content %}

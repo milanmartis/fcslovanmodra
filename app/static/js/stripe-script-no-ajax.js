@@ -1,6 +1,12 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const customPaymentButton = document.getElementById('custom-payment-button');
-    customPaymentButton.addEventListener('click', async () => {
+document.addEventListener('DOMContentLoaded', function () {
+  var customPaymentButton = document.getElementById('customPaymentButton');
+  if (!customPaymentButton) {
+    // stránka nemá tlačidlo – ticho skonči
+    return;
+  }
+  try {
+    customPaymentButton.addEventListener('click', async function (e) {
+      e.preventDefault();
       const customPrice = document.getElementById('final_price').value;
       const ideProduct = document.getElementById('ide_product').value;
       const productName = document.getElementById('name_product').value;
@@ -42,4 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error(error);
       }
     });
-  });
+  } catch (err) {
+    console.error('Stripe init failed:', err);
+  }
+});

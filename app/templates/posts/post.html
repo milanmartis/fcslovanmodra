@@ -1,121 +1,102 @@
-{% extends "layout.html" %} {% block content %}
+{% extends "layout.html" %}
+{% block content %}
 <article class="media content-section">
   <div class="media-body">
 
     {% if current_user.is_authenticated and current_user.has_roles('Admin') %}
-
-    <div class="article-metadata">
-      {% if post.author == current_user %}
-      <div class="article-metadata-admin">
-        <a
-        class="btn btn-secondary btn-sm mt-1 mb-1"
-        href="{{ url_for('posts.update_post', post_id=post.id) }}"
-        >
-        Update
-      </a>
-      <button
-      type="button"
-      class="btn btn-sm m-1"
-      data-bs-toggle="modal"
-      data-bs-target="#deleteModal"
-      >
-      Delete
-        </button>
+      <div class="article-metadata">
+        {% if post.author == current_user %}
+          <div class="article-metadata-admin">
+            <a class="btn btn-secondary btn-sm mt-1 mb-1"
+               href="{{ url_for('posts.update_post', post_id=post.id) }}">
+              Update
+            </a>
+            <button type="button" class="btn btn-sm m-1"
+                    data-bs-toggle="modal" data-bs-target="#deleteModal">
+              Delete
+            </button>
+          </div>
+        {% endif %}
       </div>
-      {% endif %}
-    </div>
-    
     {% endif %}
 
     <div>
-    
+      {# titulný obrázok len hore #}
+      {% if title_image_url %}
+        <img width="100%" src="{{ title_image_url }}" alt="{{ post.title }}">
+      {% endif %}
 
-      <img
-      width="100%"
-      src="{{  aws_image_url()+'posts/'+post.id|string+'/gallery/'+title_image.image_file2 }}"
-      />
-      {% for cat in category %} {% if cat.id==post.category_id %}
-      <a
-        class="mr-2"
-        href="{{ url_for('posts.category_posts', category=cat.id) }}"
-      >
-        {{ cat.name }}
-      </a>
-      {% endif %} {% endfor %}
-      
+      {% for cat in category %}
+        {% if cat.id == post.category_id %}
+          <a class="mr-2" href="{{ url_for('posts.category_posts', category=cat.id) }}">
+            {{ cat.name }}
+          </a>
+        {% endif %}
+      {% endfor %}
+
       <small class="text-muted">
         {{ post.date_posted.strftime('%d. %m. %Y') }}
       </small>
     </div>
+
     <h2 class="article-title">{{ post.title }}</h2>
     <p class="article-content">{{ post.content|safe }}</p>
   </div>
 </article>
 
-      <!-- Modal -->
-      <div
-      class="modal fade"
-      id="deleteModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="deleteModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title" id="deleteModalLabel">Delete Post?</h2>
-
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                data-bs-dismiss="modal"
-              >
-                Close
-              </button>
-              <form
-                action="{{ url_for('posts.delete_post', post_id=post.id) }}"
-                method="POST"
-              >
-                <input
-                  class="btn btn-danger"
-                  type="submit"
-                  value="Delete"
-                />
-              </form>
-            </div>
-          </div>
-
-      
+<!-- Delete modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog"
+     aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="deleteModalLabel">Delete Post?</h2>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
+          <form action="{{ url_for('posts.delete_post', post_id=post.id) }}" method="POST">
+            <input class="btn btn-danger" type="submit" value="Delete" />
+          </form>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
+<!-- Galéria (bez prvého/titulného obrázka) -->
 <div class="content">
   <div class="container">
     <div class="row">
-      {% for pic in galleries %} {% if loop.index0 > -1 %}
-      
-       <div class="col-sm-4">
-        <!-- Button trigger modal -->
-        <a
-          href="{{ aws_image_url()+'posts/'+post.id|string+'/gallery/'+pic.image_file2 }}"
-          data-lightbox="example-set" data-title="{{ post.title }}"
 
-        >
-          <img
-            class="w-100"
-            style="padding-bottom: 12px;"
-            src="{{ aws_image_url()+'posts/'+post.id|string+'/gallery/'+pic.image_file2 }}"
-          />
-        </a>
+      {# Preferovane: vynechať všetko s orderz == 0 #}
+      {% if galleries and galleries[0] is defined and galleries[0].orderz is defined %}
+        {% for pic in galleries if pic.orderz != 0 %}
+          {% set pic_url = (pic.image_url if pic.image_url is defined and pic.image_url
+                            else s3_presign('posts/' ~ post.id ~ '/gallery/' ~ pic.image_file2)) %}
+          <div class="col-sm-4">
+            <a href="{{ pic_url }}" data-lightbox="example-set" data-title="{{ post.title }}">
+              <img class="w-100" style="padding-bottom: 12px;"
+                   src="{{ pic_url }}" alt="{{ post.title }}">
+            </a>
+          </div>
+        {% endfor %}
+      {% else %}
+        {# Fallback: ak orderz nie je k dispozícii, preskoč prvý cez index #}
+        {% for pic in galleries %}
+          {% if not loop.first %}
+            {% set pic_url = (pic.image_url if pic.image_url is defined and pic.image_url
+                              else s3_presign('posts/' ~ post.id ~ '/gallery/' ~ pic.image_file2)) %}
+            <div class="col-sm-4">
+              <a href="{{ pic_url }}" data-lightbox="example-set" data-title="{{ post.title }}">
+                <img class="w-100" style="padding-bottom: 12px;"
+                     src="{{ pic_url }}" alt="{{ post.title }}">
+              </a>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
 
-        
-
-       </div>
-      
-      {% endif %} {% endfor %}
     </div>
   </div>
 </div>

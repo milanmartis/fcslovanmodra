@@ -1,12 +1,26 @@
-{% extends "layout.html" %} {% block content %}
+{% extends "layout.html" %}
+{% block content %}
+{% set is_merch = is_merch|default(false) %}
+
 {% for cat in category %}
-{% if cat.id == product.product_category_id %}
-<h3 class="mb-3">{{ cat.name }} 
-{% endif %}
+  {% if cat.id == product.product_category_id %}
+    <h3 class="mb-3">{{ cat.name }}</h3>
+  {% endif %}
 {% endfor %}
-</h3>
 
 <style scoped>
+  .flashlike-close{
+    background: transparent;
+    border: 0;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 6px;
+    cursor: pointer;
+    opacity: .8;
+    float: right;
+  }
+  .flashlike-close:hover{ opacity: 1; }
+
   .variant-title {
     display: inline;
     left: 0px;
@@ -19,421 +33,553 @@
     font-weight: 800;
     text-transform: uppercase;
     line-height: 155%;
-}
-.btn-check{
-  margin: 0px;
-  padding: 0px;
+  }
+  .btn-check { margin: 0px; padding: 0px; }
 
-}
-
-.btn{
-  margin-bottom: 11px;
-  line-height: 200%;
-}
-
-/* Prirádzenie štýlu len tlačidlám, ktoré nie sú checked (neoznačené) */
-.btn-check:not(:checked) + .btn {
-  margin-top: 0px;
+  .btn-check:not(:checked) + .btn {
+    margin-top: 0px;
     background-color: transparent;
     color: #6d9bff;
-}
+  }
 
-/* Prirádzenie štýlu checked (označeným) tlačidlám */
-.btn-check:checked + .btn {
-  margin-top: 0px;
-
+  .btn-check:checked + .btn {
+    margin-top: 0px;
     background-color: #6d9bff;
     color: #000;
-}
+  }
 
-/* Štýl pre hover efekt na tlačidlá */
-.btn:hover {
+  label{
+    margin-bottom: 5px;
+  }
+
+  .btn:hover {
     background-color: #000;
     border: 2px solid #6d9bff;
     color: #6d9bff;
-}
+  }
 
-.btn-check::backdrop + .btn {
-    background-color: transparent;
-}
+  .btn-check::backdrop + .btn { background-color: transparent; }
 
-.btn-delete {
+  .btn-delete {
     background-color: transparent;
     border: 0px;
     color: #6d9bff;
     margin-left: 14px;
     margin-right: -7px;
     font-weight: 800;
-}
+  }
 
-.btn-delete:hover {
+  .btn-delete:hover {
     background-color: transparent;
     border: 0px;
     color: #3a64c0;
     font-weight: 800;
-}
+  }
+
+  .product-img-main {
+    width: 100%;
+    height: 515px;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+
+  .no-image-box {
+    width: 100%;
+    height: 515px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: .6;
+    border: 1px dashed rgba(109,155,255,.6);
+    border-radius: 6px;
+  }
+
+  .terms-wrap {
+    margin-top: 20px;
+  }
+
+  .terms-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #6d9bff;
+  }
+
+  .terms-check input {
+    display: none;
+  }
+
+  .checkmark {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid #6d9bff;
+    position: relative;
+    transition: all .2s ease;
+    flex-shrink: 0;
+  }
+
+  .terms-check:hover .checkmark {
+    background: rgba(109,155,255,.1);
+  }
+
+  .terms-check input:checked + .checkmark {
+    background: #6d9bff;
+    border-color: #6d9bff;
+  }
+
+  .checkmark::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 12px;
+    border: solid #000;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0);
+    transition: transform .15s ease;
+  }
+
+  .terms-check input:checked + .checkmark::after {
+    transform: rotate(45deg) scale(1);
+  }
+
+  .terms-text a {
+    color: #6d9bff;
+    text-decoration: underline;
+  }
+
+  /* disabled button */
+  button:disabled {
+    opacity: .4;
+    pointer-events: none;
+  }
 </style>
+
 <div class="content">
   <div class="container">
-  <div class="row">
-    <form id="purchase" action="javascript:;" method="post">
+    <div class="row">
+      <form id="purchase" action="javascript:;" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-  {% if product.saler == current_user %}
-
-  <div class="article-metadata-admin" style="position:relative;right:10px;display:block;float:right;z-index:999">
-    <a
-      class="btn btn-secondary btn-sm mt-1 mb-1"
-      href="{{ url_for('products.update_product', product_id=product.id) }}"
-    >
-      Update
-    </a>
-      <button
-        type="button"
-        class="btn btn-sm m-1"
-        data-bs-toggle="modal"
-        data-bs-target="#deleteModal2"
-      >
-        Delete
-      </button>
-  </div>
-  {% endif %}
-</div>
-<div class="row">
-
-
-
-  <div class="col-sm-12 col-md-6 col-lg-6">
-    
-    {% if product.youtube_link %}
-    <div>
-      <iframe width="100%" height="515" allow="fullscreen;"
-      src="{{product.youtube_link}}?autoplay=1&mute=1">
-      </iframe>
-    
+        {% if product.saler == current_user %}
+          <div class="article-metadata-admin" style="position:relative;right:10px;display:block;float:right;z-index:999">
+            <a class="btn btn-secondary btn-sm mt-1 mb-1"
+               href="{{ url_for('products.update_product', product_id=product.id) }}">
+              Update
+            </a>
+            <button type="button" class="btn btn-sm m-1" data-bs-toggle="modal" data-bs-target="#deleteModal2">
+              Delete
+            </button>
+          </div>
+        {% endif %}
     </div>
-      
-      {% else %}
 
-      
-      <div class="product-img">
-        <div class="row">
+    <div class="row">
 
+      <!-- LEFT: MEDIA -->
+      <div class="col-sm-12 col-md-6 col-lg-6">
 
-          {% for pic in galleries %}
-          {% if loop.index0 == 0 and product.product_category_id != 2 %}
-            <div class="col-12" style="padding-right: 0px; padding-left: 17px; margin-right: 0px;">
-              <!-- Button trigger modal -->
-              <a
-                href="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+pic.image_file2 }}"
-                data-lightbox="example-set"
-                data-title="{{ product.title }}"
-              >
-                <img
-                  class="product-img w-100 mt-1 mr-2"
-                  src="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+pic.image_file2 }}"
-                />
-              </a>
-            </div>
-          {% endif %}
-        {% endfor %}
-        {% for pic in galleries %}
-  {% if loop.index0 > 0 and product.product_category_id != 2 %}
-    <div class="col-12" style="padding-right: 0px; padding-left: 17px; margin-right: 0px;">
-      <a
-        href="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+pic.image_file2 }}"
-        data-lightbox="example-set"
-        data-title="{{ product.title }}"
-      >
-        <!-- Ostatné obrázky sú skryté -->
-        <img
-          class="product-img w-100 mt-1 mr-2"
-          style="display: none;"
-          src="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+pic.image_file2 }}"
-        />
-      </a>
-    </div>
-  {% endif %}
-{% endfor %}
-          <script>
-            // Inicializácia Lightboxu
-            lightbox.option({
-              'resizeDuration': 200,
-              'wrapAround': true
-            });
-          
-            // Pridanie klikateľnej udalosti na obrázok
-            const firstImage = document.querySelector('.product-img');
-            firstImage.addEventListener('click', () => {
-              // Simulácia kliknutia na prvý obrázok v Lightboxe
-              firstImage.click();
-            });
-          </script>
-          
+        {% if product.youtube_link and not is_merch %}
+          <div>
+            <iframe
+              width="100%" height="515"
+              src="https://www.youtube-nocookie.com/embed/{{ product.youtube_link }}?rel=0&modestbranding=1&playsinline=1"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen>
+            </iframe>
+          </div>
+        {% else %}
+          <div class="product-img">
+            <div id="product-gallery-wrap"></div>
+          </div>
+        {% endif %}
+
+        <div class="row" style="margin-right:3px; display: inline;"></div>
       </div>
-    </div>
 
-      {% endif %}
-      <div class="row" style="margin-right:3px; display: none;">
-        
-      </div>
-  </div>
-  <div class="col">
-    <br>
-      <h2 class="article-title">{{ product.title }}</h2>
-      <p class="article-content">{{ product.content|safe }}</p>
+      <!-- RIGHT: INFO -->
+      <div class="col">
+        <br>
+        <h2 class="article-title">{{ product.title }}</h2>
+        <p class="article-content">{{ product.content|safe }}</p>
 
-      <div class="mb-3">
-        <label for="final_price" class="variant-title">Cena:</label>
-        <input type="hidden" id="unit_price" name="unit_price" value="{{ product.price }}" />
-        <input type="hidden" id="final_price" name="final_price" value="{{ product.price }}" />
-      
-        <div id="final_price2" class="article-content eshop-item-price">{{ product.price }} €</div>
-      
         <div class="mb-3">
-          <label for="quantity" class="variant-title">Množstvo</label>
-          <input style="width:70px;font-size: 113%;padding:2px;font-weight: 800;margin-left:-5px;" type="number" id="quantity" class="btn" min="1" max="100" value="1">
+          <label for="final_price" class="variant-title">Cena:</label>
+
+          <input type="hidden" id="unit_price" name="unit_price" value="{{ product.price }}" />
+          <input type="hidden" id="final_price" name="final_price" value="{{ product.price }}" />
+
+          <div id="final_price2" class="article-content eshop-item-price">{{ product.price }} €</div>
+
+          {% if product.product_category_id != 2 %}
+          <div class="mb-3">
+            <label for="quantity" class="variant-title">Množstvo</label>
+            <input style="width:70px;font-size: 113%;padding:2px;font-weight: 800;margin-left:-5px;"
+                   type="number" id="quantity" class="btn" min="1" max="100" value="1">
+          </div>
+          {% endif %}
+
+          <script>
+            // CSRF token globálne (použije Stripe fetch)
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || "";
+          </script>
+
+          <script>
+            const quantity = document.getElementById('quantity');
+            const final_price2 = document.getElementById('final_price2');
+            const final_price = document.getElementById('final_price');
+            const unit_price = parseFloat(document.getElementById('unit_price').value);
+
+            let currentTotal = unit_price;
+
+            function animateTotalChange(startValue, endValue) {
+              const duration = 500;
+              const startTime = performance.now();
+
+              function updateValue(timestamp) {
+                const progress = Math.min(1, (timestamp - startTime) / duration);
+                currentTotal = startValue + progress * (endValue - startValue);
+
+                final_price.value = currentTotal.toFixed(2);
+                final_price2.textContent = currentTotal.toFixed(2) + ' €';
+                final_price2.style.opacity = 0.99 + 0.3 * (1 - progress);
+
+                if (progress < 1) requestAnimationFrame(updateValue);
+              }
+
+              requestAnimationFrame(updateValue);
+            }
+
+            if (quantity) {
+              quantity.addEventListener('blur', () => {
+                if (quantity.value === '' || quantity.value == 0 || quantity.value > 100) quantity.value = '1';
+                animateTotalChange(currentTotal, unit_price * quantity.value);
+              });
+
+              quantity.addEventListener('input', () => {
+                if (quantity.value === '' || quantity.value == 0) return;
+                animateTotalChange(currentTotal, unit_price * quantity.value);
+              });
+
+              document.addEventListener('click', (event) => {
+                if (event.target !== quantity) {
+                  if (quantity.value === '') quantity.value = '1';
+                  animateTotalChange(currentTotal, unit_price * quantity.value);
+                }
+              });
+            }
+          </script>
         </div>
-      
+
+        <div id="variant-products-list"></div>
+
         <script>
-          const quantity = document.getElementById('quantity');
-          const final_price2 = document.getElementById('final_price2');
-          const final_price = document.getElementById('final_price');
-          const unit_price = parseFloat(document.getElementById('unit_price').value);
-          
-          let currentTotal = unit_price;
-        
-          // Funkcia na animáciu zmeny hodnoty
-          function animateTotalChange(startValue, endValue) {
-            const duration = 500; // Dĺžka animácie v milisekundách
-            const startTime = performance.now();
-            
-            function updateValue(timestamp) {
-              const progress = Math.min(1, (timestamp - startTime) / duration);
+          const variantProductsList222 = {};
 
-              currentTotal = startValue + progress * (endValue - startValue);
-              final_price.innerHTML=currentTotal;
-              final_price2.textContent = currentTotal.toFixed(2) + ' €';
-        
-              // Nastavenie opacity na základe priebehu animácie
-              final_price2.style.opacity = 0.99 + 0.3 * (1 - progress);
-        
-              if (progress < 1) {
-                requestAnimationFrame(updateValue);
-              }
-            }
-        
-            requestAnimationFrame(updateValue);
-          }
-        
-          // Po strate focusu inputu
-          quantity.addEventListener('blur', () => {
-            if (quantity.value === '' || quantity.value == 0 || quantity.value>100) {
-              quantity.value = '1';
-            }
-            const targetTotal = unit_price * quantity.value;
-            animateTotalChange(currentTotal, targetTotal);
-          });
-        
-          // Po zmene hodnoty inputu
-          quantity.addEventListener('input', () => {
-            const targetTotal = unit_price * quantity.value;
-            animateTotalChange(currentTotal, targetTotal);
-          });
-        
-          // Po kliknutí na iný element
-          document.addEventListener('click', (event) => {
-            if (event.target !== quantity) {
-              if (quantity.value === '') {
-                quantity.value = '1';
-              }
-              const targetTotal = unit_price * quantity.value;
-              animateTotalChange(currentTotal, targetTotal);
-            }
-          });
-        </script>
-      </div>
-      
-      
-      
-      
-      
-      
+          async function loadVariantProducts() {
+            await fetch('/product/get_variant_products/{{product.id}}')
+              .then(response => response.json())
+              .then(data => {
+                const variantProductsList = document.getElementById('variant-products-list');
+                variantProductsList.innerHTML = '';
 
+                const productsByVariant = {};
 
-
-
-    <div id="variant-products-list">
-      <!-- Záznamy budú zobrazené sem -->
-    </div>
-
-
-
-    <script>
-      // Inicializujte objekt pre ukladanie hodnôt
-      const variantProductsList222 = {};
-    
-      async function loadVariantProducts() {
-        await fetch('/product/get_variant_products/{{product.id}}')
-          .then(response => response.json())
-          .then(data => {
-            const variantProductsList = document.getElementById('variant-products-list');
-            variantProductsList.innerHTML = '';
-    
-            // Vytvorte objekt pre uchovanie produktov podľa variant_id a variant_name
-            const productsByVariant = {};
-    
-            // Rozdelte produkty podľa variant_id a variant_name
-            data.variant_products.forEach(product => {
-              const variantKey = `${product.variant_id}-${product.variant_name}`;
-              if (!productsByVariant.hasOwnProperty(variantKey)) {
-                productsByVariant[variantKey] = {
-                  variantId: product.variant_id,
-                  variantName: product.variant_name,
-                  products: []
-                };
-              }
-    
-              productsByVariant[variantKey].products.push(product);
-            });
-    
-            const variantProductsList22 = document.getElementById('product-variant-send');
-            
-            // Pre každý variant_id a variant_name vytvorte záložku
-            for (const key in productsByVariant) {
-              if (productsByVariant.hasOwnProperty(key)) {
-                const { variantId, variantName, products } = productsByVariant[key];
-    
-                const tabContent = document.createElement('div');
-                tabContent.classList.add('tab-pane');
-                tabContent.id = `variant-${variantId}`;
-    
-                const infoVar = document.createElement('div');
-                infoVar.classList.add('variant-title');
-                infoVar.textContent = `${variantName}`;
-                tabContent.appendChild(infoVar);
-    
-                // Pre každý produkt vytvorte Bootstrap prepínacie tlačidlo
-                let x = 0;
-                const selectedValues = {};
-    
-                products.forEach(product => {
-                  x++;
-                  const radioInput = document.createElement('input');
-                  radioInput.type = 'radio';
-                  radioInput.classList.add('btn-check');
-                  radioInput.name = `variant-${variantId}-radio`;
-                  radioInput.id = `variant-${variantId}-${product.product_id}-${x}`;
-    
-                  const radioLabel = document.createElement('label');
-                  radioLabel.classList.add('btn');
-                  radioLabel.htmlFor = `variant-${variantId}-${product.product_id}-${x}`;
-                  radioLabel.textContent = product.variant_text;
-    
-                  // Pridanie click eventu na tlačidlo na označenie a zrušenie označenia
-                  radioInput.addEventListener('click', () => {
-                    if (product.variant_id == variantId) {
-                      if (radioInput.checked) {
-                        // Uložíme jednu vybranú hodnotu pre daný variantName
-                        selectedValues[variantName] = product.variant_text;
-                      } else {
-                        // Ak je tlačidlo neoznačené, odstrániť hodnotu pre daný variantName
-                        delete selectedValues[variantName];
-                      }
-    
-                      // Aktualizujte hodnotu inputu
-                      variantProductsList222[variantName] = selectedValues[variantName];
-                      variantProductsList22.value = JSON.stringify(variantProductsList222);
-                    }
-                  });
-    
-                  tabContent.appendChild(radioInput);
-                  tabContent.appendChild(radioLabel);
+                data.variant_products.forEach(product => {
+                  const variantKey = `${product.variant_id}-${product.variant_name}`;
+                  if (!productsByVariant.hasOwnProperty(variantKey)) {
+                    productsByVariant[variantKey] = {
+                      variantId: product.variant_id,
+                      variantName: product.variant_name,
+                      products: []
+                    };
+                  }
+                  productsByVariant[variantKey].products.push(product);
                 });
-    
-                variantProductsList.appendChild(tabContent);
-              }
-            }
-          })
-          .catch(error => {
-            console.error('Chyba pri získavaní dát:', error);
-          });
-      }
-    
-      // Volanie funkcie pre zobrazenie variantových produktov
-      loadVariantProducts();
-    </script>
 
+                const variantProductsList22 = document.getElementById('product-variant-send');
 
+                for (const key in productsByVariant) {
+                  if (productsByVariant.hasOwnProperty(key)) {
+                    const { variantId, variantName, products } = productsByVariant[key];
 
+                    const tabContent = document.createElement('div');
+                    tabContent.classList.add('tab-pane');
+                    tabContent.id = `variant-${variantId}`;
 
+                    const infoVar = document.createElement('div');
+                    infoVar.classList.add('variant-title');
+                    infoVar.textContent = `${variantName}`;
+                    tabContent.appendChild(infoVar);
 
+                    let x = 0;
+                    const selectedValues = {};
 
-      <input type="hidden" id="ide_product" name="ide_product" value="{{product.id}}" />
-      <input type="hidden" id="name_product" name="name_product" value="{{ product.title }}" />
-      <input type="hidden" id="price_product" name="price_product" value="{{product.price}}"  />
-      <input type="hidden" id="product-variant-send" name="product-variant-send"  value="" />
+                    products.forEach(product => {
+                      x++;
+                      const radioInput = document.createElement('input');
+                      radioInput.type = 'radio';
+                      radioInput.classList.add('btn-check');
+                      radioInput.name = `variant-${variantId}-radio`;
+                      radioInput.id = `variant-${variantId}-${product.product_id}-${x}`;
 
-      <input type="number" style="display: none;" id="amount_product" name="amount_product" value="1" />
+                      const radioLabel = document.createElement('label');
+                      radioLabel.classList.add('btn');
+                      radioLabel.htmlFor = radioInput.id;
+                      radioLabel.textContent = product.variant_text;
 
-      <input type="checkbox" id="agree_terms"> Súhlasím s podmienkami
-      <button id="custom-payment-button" class="btn btn-lg" style="margin-left: 0px; margin-top: 20px; font-size: 120%; float: right;">
-        Zaplatiť
-      </button>
-      <p id="message" style="display: none; color: red;">Musíte súhlasiť s podmienkami!</p>
-      
-     
-      <!--
-        <button id="buy_now_btn" class="btn btn-sm" />Kúpiť</button>
-      -->
+                      radioInput.addEventListener('click', () => {
+                        if (radioInput.checked) selectedValues[variantName] = product.variant_text;
+                        else delete selectedValues[variantName];
 
+                        variantProductsList222[variantName] = selectedValues[variantName];
+                        variantProductsList22.value = JSON.stringify(variantProductsList222);
+                      });
 
+                      tabContent.appendChild(radioInput);
+                      tabContent.appendChild(radioLabel);
+                    });
 
+                    variantProductsList.appendChild(tabContent);
+                  }
+                }
+              })
+              .catch(error => console.error('Chyba pri získavaní dát:', error));
+          }
 
+          loadVariantProducts();
+        </script>
+
+        <input type="hidden" id="ide_product" name="ide_product" value="{{product.id}}" />
+        <input type="hidden" id="name_product" name="name_product" value="{{ product.title }}" />
+        <input type="hidden" id="price_product" name="price_product" value="{{product.price}}" />
+        <input type="hidden" id="product-variant-send" name="product-variant-send" value="" />
+        <input type="number" style="display: none;" id="amount_product" name="amount_product" value="1" />
+
+        <div class="terms-wrap">
+          <label class="terms-check">
+            <input type="checkbox" id="agree_terms">
+            <span class="checkmark"></span>
+            <span class="terms-text">
+              Súhlasím s
+              <a href="/obchodne-podmienky" target="_blank">obchodnými podmienkami</a>
+              a
+              <a href="/ochrana-osobnych-udajov" target="_blank">ochranou osobných údajov</a>
+            </span>
+          </label>
+        </div>
+
+        <div id="flash-like-terms-host"></div>
+
+        <button type="button" id="custom-payment-button" class="btn btn-lg"
+                style="margin-left: 0px; margin-top: 20px; font-size: 120%; float: right;">
+          Zaplatiť
+        </button>
+
+      </div>
+    </div>
+  </form>
   </div>
 </div>
-</div>
-</div>
 
-</form>
 <!-- Modal -->
-<div
-  class="modal fade"
-  id="deleteModal2"
-  tabindex="-1"
-  role="dialog"
-  aria-labelledby="deleteModal2Label"
-  aria-hidden="true"
->
+<div class="modal fade" id="deleteModal2" tabindex="-1" aria-labelledby="deleteModal2Label" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title" id="deleteModal2Label">Delete Product?</h2>
 
-        <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
-            Close
-          </button>
-          <form
-            action="{{ url_for('products.delete_product', product_id=product.id) }}"
-            method="POST"
-          >
-            <input
-              class="btn btn-danger"
-              type="submit"
-              value="Delete"
-            />
-          </form>
-        </div>
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModal2Label">Delete Product?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
-  
+      <div class="modal-body">
+        Naozaj chceš zmazať produkt?
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <form action="{{ url_for('products.delete_product', product_id=product.id) }}" method="POST">
+          <input class="btn btn-danger" type="submit" value="Delete">
+        </form>
+      </div>
+
     </div>
   </div>
 </div>
 
+<!-- GALLERY JS (Products API) -->
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const productId = "{{ product.id }}";
+    const wrap = document.getElementById("product-gallery-wrap");
+
+    console.log("is_merch:", "{{ is_merch|default('UNDEF') }}");
+    console.log("youtube_link:", "{{ product.youtube_link|default('') }}");
+    console.log("wrap:", wrap);
+
+    if (!wrap) {
+      console.warn("NO #product-gallery-wrap in DOM -> gallery will not render");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/products/images/${productId}`);
+      const images = await res.json();
+      console.log("images:", images);
+
+      if (!images || images.length === 0) {
+        wrap.innerHTML = `<div class="no-image-box">NO IMAGE</div>`;
+        return;
+      }
+
+      const first = images[0];
+      let html = `
+        <div class="row">
+          <div class="col-12" style="padding-right:0px; padding-left:17px; margin-right:0px;">
+            <a href="${first.image_url}" data-lightbox="product-set" data-title="{{ product.title|e }}">
+              <img class="product-img-main mt-1 mr-2" src="${first.image_url}" />
+            </a>
+          </div>
+      `;
+
+      for (let i = 1; i < images.length; i++) {
+        html += `
+          <div class="col-12" style="padding-right:0px; padding-left:17px; margin-right:0px;">
+            <a href="${images[i].image_url}" data-lightbox="product-set" data-title="{{ product.title|e }}">
+              <img style="display:inline;" src="${images[i].image_url}" />
+            </a>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      wrap.innerHTML = html;
+
+      if (typeof lightbox !== "undefined") {
+        lightbox.option({ resizeDuration: 200, wrapAround: true });
+      }
+    } catch (e) {
+      console.error("GALLERY ERROR:", e);
+      wrap.innerHTML = `<div class="no-image-box">GALLERY ERROR</div>`;
+    }
+  });
+
+  {% if not (product.youtube_link and not is_merch) %}
+  // Ak máš niekde inde definované loadProductGallery(), nechaj si to.
+  // Ak to nemáš, tento call vyhoď.
+  // loadProductGallery();
+  {% endif %}
+</script>
+
+<script src="https://js.stripe.com/v3/"></script>
+
+<script>
+  // ------------------------------
+  // TERMS FLASH-LIKE + ENABLE BUTTON + STRIPE FLOW (jediný handler)
+  // ------------------------------
+  function showFlashLikeTerms(text, level = "danger") {
+    const host = document.getElementById("flash-like-terms-host");
+    if (!host) return;
+
+    if (!text) { host.innerHTML = ""; return; }
+
+    host.innerHTML = "";
+
+    const el = document.createElement("div");
+    el.className = `alert alert-${level} mt-2`;
+    el.setAttribute("role", "alert");
+
+    el.innerHTML = `
+      <button type="button" class="flashlike-close" aria-label="Close">&times;</button>
+      <span class="flashlike-text"></span>
+    `;
+    el.querySelector(".flashlike-text").textContent = text;
+
+    el.querySelector(".flashlike-close").addEventListener("click", () => {
+      el.remove();
+    });
+
+    host.appendChild(el);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const payBtn = document.getElementById("custom-payment-button");
+    const agree = document.getElementById("agree_terms");
+    const quantityEl = document.getElementById("quantity");
+
+    if (!payBtn || !agree) return;
+
+    // default: disabled kým nesúhlasí
+    payBtn.disabled = !agree.checked;
+
+    agree.addEventListener("change", () => {
+      payBtn.disabled = !agree.checked;
+      if (agree.checked) showFlashLikeTerms(""); // schovaj chybu
+    });
+
+    const stripe = Stripe("{{ checkout_public_key }}");
+
+    payBtn.addEventListener("click", async () => {
+      // bezpečnosť: vždy znova skontroluj súhlas (aj keby niekto odblokoval button)
+      if (!agree.checked) {
+        showFlashLikeTerms("Musíte súhlasiť s podmienkami!", "danger");
+        agree.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+
+      showFlashLikeTerms(""); // clear
+
+      payBtn.disabled = true;
+
+      try {
+        const payload = {
+          ideProduct: document.getElementById("ide_product").value,
+          quantity: parseInt((quantityEl ? quantityEl.value : "1") || "1", 10),
+          variantProductsList22: document.getElementById("product-variant-send").value || ""
+        };
+
+        const res = await fetch("/product/create-custom-payment-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+          },
+          credentials: "same-origin",
+          body: JSON.stringify(payload)
+        });
+
+        const ct = (res.headers.get("content-type") || "").toLowerCase();
+        const raw = await res.text();
+
+        let data = {};
+        if (ct.includes("application/json")) {
+          data = JSON.parse(raw);
+        } else {
+          console.error("Non-JSON response:", raw);
+          throw new Error("Server vrátil HTML (CSRF/redirect/error). Pozri Network -> Response.");
+        }
+
+        if (!res.ok) throw new Error(data.error || "Checkout session create failed");
+
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.id });
+        if (error) throw error;
+
+      } catch (e) {
+        console.error(e);
+        showFlashLikeTerms(e.message || "Chyba pri platbe", "danger");
+      } finally {
+        // znovu zapni podľa checkboxu
+        payBtn.disabled = !agree.checked;
+      }
+    });
+  });
+</script>
 
 {% endblock content %}

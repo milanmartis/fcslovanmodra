@@ -1,125 +1,170 @@
-<nav class="navbar navbar-expand-md navbar-dark bg-steel">
-    <div class="container justify-content-space-between">
+<nav style="z-index: 3;" class="navbar navbar-expand-lg navbar-dark club-navbar">
+  <div class="container d-flex align-items-center justify-content-between">
 
-      <a class="navbar-brand p-0 m-0" href="/"><img class="image-logo-page" onclick="javascript:this.addClass('image-logo-page2');" style="padding-top:-10px;" src="{{ url_for('static', filename='/main/logo-slovan-modra-biele.png') }}" height="82" width="82">  FC Slovan Modra</a>
-      
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggle" data-toggle="collapse" data-bs-target="#navmobile" 
-      aria-controls="navmobile" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+    <!-- BRAND: logo + názov klubu -->
+    <a class="navbar-brand club-brand" href="{{ url_for('main.home') if request.endpoint == 'main.home' else url_for('main.home') }}">
+      <img
+        src="{{ url_for('static', filename='main/logo-slovan-modra-biele.png') }}"
+        alt="FC Slovan Modra logo"
+        class="image-logo-page"
+        height="82"
+        width="82"
+      >
+      <span class="club-name">FC Slovan Modra</span>
+    </a>
 
+    <!-- Toggler pre mobil -->
+    <button
+      class="navbar-toggler club-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNavbar"
+      aria-controls="mainNavbar"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="club-toggler-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+    </button>
 
-      <div style="margin-top:-7px;" class="collapse navbar-collapse" id="navbarToggle"  >
-          <div class="navbar-nav mr-auto">
-            <ul class="navbar-nav mr-auto text-center">
+    <!-- MENU -->
+    <div class="collapse navbar-collapse justify-content-end" id="mainNavbar">
+      <!-- Ľavé hlavné menu -->
+      <ul class="navbar-nav main-menu">
 
-            
-              <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Klub</a>
-              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                  
-                <a class="nav-item nav-link" href="{{ url_for('main.about') }}">O klube </a>
-
-                <a class="nav-item nav-link" href="{{ url_for('main.dokumenty') }}">Dokumenty</a>
-
-
-              </div>
+        <!-- Klub -->
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="clubDropdown"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Klub
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="clubDropdown">
+            <li>
+              <a class="dropdown-item" href="{{ url_for('main.about') }}">O klube</a>
             </li>
-
-
-            
-            
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('posts.list_posts') }}">Články</a>
-            </li>
-
-
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('team.team_name', team_name='A tím') }}">A tím</a>
-            </li>
-
-
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Mládež</a>
-  
-
-                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                  
-                  <a class="nav-item nav-link" href="{{ url_for('team.team_youth') }}">Informácie </a>
-                  {% for team in teamz %}
-                  {% if not loop.first %}
-                  <a class="nav-item nav-link" href="{{ url_for('team.team_name', team_name=team.name) }}">{{ team.name }} </a>
-
-                  {% endif %}
-                  {% endfor %}
-  
-                </div>
-              </li>
-              
-              <!-- <li class="nav-item">
-                <a class="nav-link" href="https://fcslovanmodra.herokuapp.com/products">LIVE</a>
-              </li> -->
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.sponsors') }}">Partneri</a>
-              </li>
-
-
-            </ul>
-
-
-        </div>
-        <!-- Navbar Right Side -->
-        <div class="navbar-nav">
-        
-          {% if not current_user.is_authenticated %}
-          <!--
-            <div class="navbar-nav mr-auto">
-  
-              <a class="nav-item nav-link" href="{{ url_for('users.login') }}">Login</a>
-              <a class="nav-item nav-link" href="{{ url_for('users.register') }}">Registrovať</a>
-            </div>
-
-          -->
-
-          {% endif %}
-          {% if current_user.is_authenticated %}
-          <ul class="navbar-nav mr-auto"  style="margin-top: 6px;">
-            <li class="nav-item dropdown">
-                
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="margin-top:5px;">
-                  <img class="rounded-circle account-img2" src="/static/profile_pics/{{current_user.image_file}}">
-        
-              </a>
-              {% if current_user.has_roles('Admin') %}
-
-              <div class="dropdown-menu mb-10" >
-                <br>
-                <h6 style="font-size:75%;color:#6d9bff;opacity: 0.7;">{{current_user.email}}</h6>
-
-                <a class="nav-item nav-link" href="{{ url_for('posts.new_post') }}">Nový článok</a>
-                <a class="nav-item nav-link" href="{{ url_for('products.new_product') }}">Nový produkt</a>
-                <a class="nav-item nav-link" href="{{ url_for('posts.list_categories') }}">Kategórie článkov</a>
-                <!-- <a class="nav-item nav-link" href="{{ url_for('users.register') }}">New Member</a> -->
-                <a class="nav-item nav-link" href="{{ url_for('users.list_members') }}">Členovia</a>
-                <a class="nav-item nav-link" href="{{ url_for('team.list_teams') }}">Družstvá</a>
-                <a class="nav-item nav-link" href="{{ url_for('users.list_roles') }}">Roly na stránke</a>
-                <a class="nav-item nav-link" href="{{ url_for('users.account') }}">Môj účet</a>
-                {% if current_user.is_authenticated %}
-                <a class="nav-item nav-link" href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
-                {% endif %}
-              </div>
-              {% else %}
-              <div class="dropdown-menu mb-10"  >
-                <br>
-                <h6 style="font-size:75%;color:#6d9bff;opacity: 0.6;">{{current_user.email}}</h6>
-              <a class="nav-item nav-link" href="{{ url_for('users.account') }}">Môj účet</a>
-              <a class="nav-item nav-link" href="{{ url_for('users.logout') }}">Odhlásiť sa</a>       
-              </div>       
-              {% endif %}
+            <li>
+              <a class="dropdown-item" href="{{ url_for('main.dokumenty') }}">Dokumenty</a>
             </li>
           </ul>
-        {% endif %}
-        </div>
-      </div>
+        </li>
+
+        <!-- Články -->
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('posts.list_posts') }}">Články</a>
+        </li>
+
+        <!-- A tím -->
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('team.team_name', team_name='A team') }}">A tím</a>
+        </li>
+
+        <!-- Mládež -->
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="youthDropdown"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Mládež
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="youthDropdown">
+            <li>
+              <a class="dropdown-item" href="{{ url_for('team.team_youth') }}">Informácie</a>
+            </li>
+            {% for team in teamz %}
+              {% if not loop.first %}
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('team.team_name', team_name=team.name) }}">
+                    {{ team.name }}
+                  </a>
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </li>
+
+        <!-- Partneri -->
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.stats') }}">Stats</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('sponsors.sponsors_public') }}">Partneri</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('products.list_products') }}">FunShop</a>
+        </li>
+      </ul>
+
+      <!-- Pravá strana – user menu -->
+      {% if current_user.is_authenticated %}
+      <ul class="navbar-nav user-menu">
+        <li class="nav-item dropdown club-avatar-btn">
+          <a
+            class="nav-link dropdown-toggle d-flex align-items-center"
+            href="#"
+            id="userDropdown"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+          <img
+          id="nav-user-avatar"
+          src="{{ url_for('static', filename='profile_pics/' ~ current_user.image_file) }}"
+          alt="User"
+          style="width:34px;height:34px;border-radius:999px;object-fit:cover;"
+        >
+          </a>
+
+          {% if current_user.has_roles('Admin') %}
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li>
+              <h6 class="dropdown-header" style="font-size: 0.75rem; opacity: 0.7;">
+                {{ current_user.email }}
+              </h6>
+            </li>
+            <li><a id="kalendar_button"  class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('posts.new_post') }}">Nový článok</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('products.new_product') }}">Nový produkt</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('posts.list_categories') }}">Kategórie článkov</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('users.list_members') }}">Členovia</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('team.list_teams') }}">Družstvá</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('users.list_roles') }}">Roly na stránke</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('sponsors.sponsors_admin') }}">Sponzori</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('users.account') }}">Môj účet</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('users.logout') }}">Odhlásiť sa</a></li>
+          </ul>
+          {% else %}
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li>
+              <h6 class="dropdown-header" style="font-size: 0.75rem; opacity: 0.7;">
+                {{ current_user.email }}
+              </h6>
+            </li>
+            <li><a class="dropdown-item" href="{{ url_for('users.account') }}">Môj účet</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('users.logout') }}">Odhlásiť sa</a></li>
+          </ul>
+          {% endif %}
+        </li>
+      </ul>
+      {% else %}
+      <ul class="navbar-nav user-menu">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('users.login') }}">Prihlásiť sa</a>
+        </li>
+      {% endif %}
     </div>
-  </nav>
+  </div>
+</nav>

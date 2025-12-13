@@ -1,90 +1,454 @@
 {% extends "layout.html" %}
 {% block content %}
-<h3 class="headline mb-3">{{ 'CLUB STORE' }} 
-</h3>
+
+<style>
+/* ===== CLUB STORE modern cards ===== */
+
+.store-header { margin-bottom: 10px; }
+
+.empty-state{
+  padding: 30px 15px;
+  border: 1px dashed rgba(109,155,255,.45);
+  border-radius: 12px;
+  text-align:center;
+  opacity:.9;
+}
+
+.store-grid{
+  display:grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* 2 stĺpce na md+ */
+@media (min-width: 768px){
+  .store-grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+.store-card{
+  padding: 0;
+  overflow:hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(109,155,255,.18);
+  box-shadow: 0 10px 28px rgba(0,0,0,.06);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .18s ease;
+}
+
+.store-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.10);
+  border-color: rgba(109,155,255,.35);
+}
+
+.store-media{
+  display:block;
+  position: relative;
+  text-decoration:none;
+}
+
+/* moderný pomer obrázka + crop */
+.store-img{
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display:block;
+}
+
+@media (min-width: 992px){
+  .store-img{ height: 240px; }
+}
+
+.store-img--placeholder{
+  height: 220px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 700;
+  letter-spacing: .06em;
+  border-bottom: 1px solid rgba(109,155,255,.18);
+  color: rgba(109,155,255,.75);
+  background: rgba(109,155,255,.06);
+}
+
+.store-badge{
+  position:absolute;
+  left: 12px;
+  top: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  display:inline-flex;
+  gap: 6px;
+  align-items:center;
+  backdrop-filter: blur(6px);
+}
+
+.store-badge--ok{
+  background: rgba(255,255,255,.88);
+  border: 1px solid rgba(109,155,255,.55);
+  color: #2c5cff;
+}
+
+.store-body{
+  padding: 14px 14px 16px 14px;
+}
+
+.store-meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.store-cat a{
+  font-weight: 700;
+  text-decoration:none;
+}
+
+.store-date{
+  font-size: 12px;
+  opacity: .75;
+  white-space: nowrap;
+}
+
+.store-title{
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.store-title a{
+  text-decoration:none;
+}
+
+.store-bottom{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.store-price--value{
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.store-price--muted{
+  font-size: 13px;
+  opacity: .75;
+}
+
+.store-actions{
+  margin-left:auto;
+}
+
+.store-login-hint{
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  opacity: .9;
+  text-align: right;
+}
+
+.store-auth-btns{
+  display:flex;
+  gap: 8px;
+  justify-content:flex-end;
+}
+
+/* konzistentné btn */
+.store-actions .btn,
+.store-auth-btns .btn{
+  border-radius: 10px;
+  padding: 6px 12px;
+}
+
+/* ===== Category filter buttons (NEW) ===== */
+
+.store-filters{
+  text-align: center;
+  width: 100%;
+  margin: auto;
+
+  gap: 10px;
+  align-items:center;
+}
+
+.filter-btn{
+  appearance: none;
+  border: 1px solid rgba(109,155,255,.35);
+  background: rgba(109,155,255,.06);
+  color: #6d9bff;
+  border-radius: 26px;
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+}
+
+.filter-btn:hover{
+ /* transform: translateY(-1px);*/
+  box-shadow: 0 10px 24px rgba(0,0,0,.10);
+  border-color: rgba(109,155,255,.55);
+}
+
+.filter-btn.is-active{
+  background: rgba(109,155,255,.95);
+  border-color: rgba(109,155,255,.95);
+  color: #000;
+}
+
+.filter-pill-count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.18);
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.filter-btn.is-active .filter-pill-count{
+  background: rgba(0,0,0,.22);
+}
+
+/* fade + hide animation */
+.store-card.is-hiding{
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.store-card.is-hidden{
+  display: none;
+}
+
+/* malý text, keď nič nesedí */
+.filter-empty{
+  margin-top: 14px;
+  padding: 18px 14px;
+  border: 1px dashed rgba(109,155,255,.45);
+  border-radius: 12px;
+  text-align:center;
+  opacity:.9;
+  display:none;
+}
+</style>
+
+<div class="store-header">
+  <h3 class="headline mb-3">FUNSHOP</h3>
+
+  {# ===== FILTER BUTTONS (NEW) ===== #}
+  <div class="store-filters" id="store-filters" aria-label="Filtrovať produkty podľa kategórie">
+
+    <button type="button" class="filter-btn is-active" data-filter="all">
+      Všetko
+             <!-- <span class="filter-pill-count" id="count-all">0</span>-->
+    </button>
+
+    {% for cat in product_category %}
+      <button type="button" class="filter-btn" data-filter="{{ cat.id }}">
+        {{ cat.name }} 
+        <!--
+          <span class="filter-pill-count" data-count-for="{{ cat.id }}">0</span>
+        -->
+      </button>
+    {% endfor %}
+  </div>
+</div>
+<br>
 {% if products|length == 0 %}
-
-<center>
-  <h4>{{'Žiadne produkty'}}</h4>
-</center>
+  <div class="empty-state">
+    <h4>Žiadne produkty</h4>
+  </div>
 {% endif %}
-    {% for product in products %}
-        <article class="media content-section eshop-item">
 
-          <div class="row">
-            <div class="col-sm-12 col-md-6">
+<div class="store-grid" id="store-grid">
+  {% for product in products %}
 
-            <div class="product-img">
-              {% for gall in product.product_gallery %}
-              {% if loop.index0 == 0 %}
-              <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
-                <img class="d-none post-title-image" onload="this.classList.remove('d-none')"  src="{{ aws_image_url()+'products/'+product.id|string+'/gallery/'+gall.image_file2 }}">
-              </a>
-                {% endif %} {% endfor %}
-            </div>
+    {# titulný obrázok = prvý z product.product_gallery (ak existuje) #}
+    {% set cover = (product.product_gallery[0] if product.product_gallery and product.product_gallery|length > 0 else None) %}
+    {% set is_bought = (product.id in bought_product_ids) %}
 
+    {# IMPORTANT: data-cat pre JS filter #}
+    <article class="store-card content-section" data-cat="{{ product.product_category_id }}">
+      <a class="store-media" href="{{ url_for('products.product', product_id=product.id) }}" aria-label="{{ product.title|e }}">
+        {% if cover %}
+          <img
+            class="store-img"
+            src="{{ cover_map.get(product.id) or url_for('static', filename='main/no-image.png') }}"
+            alt="{{ product.title|e }}"
+            loading="lazy"
+          />
+        {% else %}
+          <div class="store-img store-img--placeholder">NO IMAGE</div>
+        {% endif %}
 
-          </div>
-          <div class="col-sm-12 col-md-6">
+        {% if is_bought %}
+          <span class="store-badge store-badge--ok">
+            Zaplatené <i class="fa fa-check" aria-hidden="true"></i>
+          </span>
+        {% endif %}
+      </a>
 
-
-          <div class="media-body products-titles">
-            <div class="article-metadata">
+      <div class="store-body">
+        <div class="store-meta">
+          <div class="store-cat">
             {% for cat in product_category %}
-            {% if cat.id == product.product_category_id %}
-            <span>
-              <a class="w-100" href="{{ url_for('products.category_products', category=cat.id) }}">{{ cat.name }}</a>
-            </span>
-            {% endif %}
+              {% if cat.id == product.product_category_id %}
+                <a href="{{ url_for('products.category_products', category=cat.id) }}">
+                  {{ cat.name }}
+                </a>
+              {% endif %}
             {% endfor %}
-
-              <small class="text-muted">{{ product.date_posted.strftime('%d. %m. %Y') }}</small>
           </div>
-            
-            
-            {% for gall in product.gallery %}
-            {% if gall.orderz == 0 %}
-            <a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">
-              <img width="100%" src="{{ url_for('static', filename='products/'+product.id|string+'/'+gall.image_file2|string) }}">
-            </a>
-            {% endif %}
-            {% endfor %}
-            
-            <h2><a class="article-title" href="{{ url_for('products.product', product_id=product.id) }}">{{ product.title }}</a></h2>
-            <!-- <p class="article-content">{{ product.content }}</p> -->
-  
-            {% if not check_user.produc_id == product.id %}
-            <p class="article-content eshop-item-price">{{ product.price }} €</p>
+          <div class="store-date">
+            {{ product.date_posted.strftime('%d. %m. %Y') }}
+          </div>
+        </div>
+
+        <h2 class="store-title">
+          <a href="{{ url_for('products.product', product_id=product.id) }}">
+            {{ product.title }}
+          </a>
+        </h2>
+
+        <div class="store-bottom">
+          <div class="store-price">
+            {% if is_bought %}
+              <span class="store-price--muted">Produkt už máš</span>
             {% else %}
-            <p class="eshop-item-bought">Zaplatené
-            <i style="margin-left:3px;text-align: left;color:#6d9bff;border:#6d9bff" class="fa fa-check" aria-hidden="true"></i>
-            </p>
+              <span class="store-price--value">{{ product.price }} €</span>
             {% endif %}
+          </div>
 
+          <div class="store-actions">
             {% if current_user.is_authenticated %}
-            <p style="float:right;position:relative;right:20px;">
-   
-              {% if check_user.produc_id == product.id %}
-              <button onclick="javascript:location.href='{{ url_for('products.product', product_id=product.id) }}';" class="btn btn-sm" />Sledovať</button>
+              {% if is_bought %}
+                <a href="{{ url_for('products.product', product_id=product.id) }}" class="btn btn-sm btn-outline-primary">
+                  Sledovať
+                </a>
               {% else %}
-
-              <a href="{{ url_for('products.product', product_id=product.id) }}" class="btn btn-sm" />Kúpiť</a>
+                <a href="{{ url_for('products.product', product_id=product.id) }}" class="btn btn-sm btn-primary">
+                  Kúpiť
+                </a>
               {% endif %}
             {% else %}
-            <p>Ak chceš sledovať zápas, musíš byť príhlásený</p>
-            <button onclick="javascript:location.href='{{ url_for('users.login') }}';" class="btn btn-sm" />Login</button>
-            <button onclick="javascript:location.href='{{ url_for('users.register') }}';" class="btn btn-sm" />Register</button>
+              <div class="store-login-hint">
+                <span>Ak chceš nakupovať, musíš byť prihlásený</span>
+                <div class="store-auth-btns">
+                  <a href="{{ url_for('users.login') }}" class="btn btn-sm btn-primary">Login</a>
+                  <a href="{{ url_for('users.register') }}" class="btn btn-sm btn-outline-primary">Register</a>
+                </div>
+              </div>
             {% endif %}
-
-            </p>
-
           </div>
-          </div>
+        </div>
+      </div>
+    </article>
 
-          </div>
-     
+  {% endfor %}
+</div>
 
-        </article>
-    {% endfor %}
+<div class="filter-empty" id="filter-empty">
+  <h4 style="margin:0;">V tejto kategórii nie sú žiadne produkty</h4>
+</div>
+
+<script>
+  // ===== Category filter JS (NEW) =====
+  document.addEventListener("DOMContentLoaded", () => {
+    const grid = document.getElementById("store-grid");
+    const filters = document.getElementById("store-filters");
+    const empty = document.getElementById("filter-empty");
+
+    if (!grid || !filters) return;
+
+    const cards = Array.from(grid.querySelectorAll(".store-card"));
+    const allCountEl = document.getElementById("count-all");
+
+    // prepočítaj counts
+    const counts = {};
+    for (const c of cards) {
+      const cat = c.getAttribute("data-cat") || "0";
+      counts[cat] = (counts[cat] || 0) + 1;
+    }
+
+    if (allCountEl) allCountEl.textContent = String(cards.length);
+
+    filters.querySelectorAll("[data-count-for]").forEach(el => {
+      const catId = el.getAttribute("data-count-for");
+      el.textContent = String(counts[catId] || 0);
+    });
+
+    function setActiveButton(btn) {
+      filters.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+    }
+
+    function filterTo(catId) {
+      let visible = 0;
+
+      for (const card of cards) {
+        const cardCat = card.getAttribute("data-cat");
+        const shouldShow = (catId === "all") || (String(cardCat) === String(catId));
+
+        if (shouldShow) {
+          // show
+          card.classList.remove("is-hidden");
+          // “pop-in” efekt: najprv bez hiding (aby sa zobrazil), potom jemná animácia
+          card.classList.remove("is-hiding");
+          // reflow pre hladký transition
+          void card.offsetWidth;
+          card.style.opacity = "";
+          card.style.transform = "";
+          visible++;
+        } else {
+          // hide with animation
+          card.classList.add("is-hiding");
+          // po animácii úplne skry
+          window.setTimeout(() => {
+            card.classList.add("is-hidden");
+            card.classList.remove("is-hiding");
+          }, 180);
+        }
+      }
+
+      if (empty) empty.style.display = (visible === 0 ? "block" : "none");
+    }
+
+    filters.addEventListener("click", (e) => {
+      const btn = e.target.closest(".filter-btn");
+      if (!btn) return;
+
+      const filter = btn.getAttribute("data-filter") || "all";
+      setActiveButton(btn);
+      filterTo(filter);
+
+      // jemný "active" bounce
+      btn.animate(
+        [{ transform: "translateY(0px)" }, { transform: "translateY(-2px)" }, { transform: "translateY(0px)" }],
+        { duration: 220, easing: "ease-out" }
+      );
+    });
+
+    // initial
+    filterTo("all");
+  });
+</script>
 
 {% endblock content %}

@@ -10,24 +10,58 @@ from datetime import  timedelta
 from datetime import datetime
 from dateutil import parser
 from flask_security import roles_required
+from flask import current_app
 
 calendar = Blueprint('calendar', __name__)
 
 
 
 
-@calendar.route("/calendar",methods=["POST","GET"])
+@calendar.route("/calendar", methods=["GET"])
 @login_required
 def index():
-    calendar = Event.query.all()
-    form = EventForm()
-    form.team.choices = [(team.id, team.name) for team in Team.query.all()]
-    form.category.choices = [(category.id, category.name) for category in EventCategory.query.all()]
-    form2 = UpdateEventForm()
-    form2.category2.choices = [(category.id, category.name) for category in EventCategory.query.all()]
-    form2.team2.choices = [(team.id, team.name) for team in Team.query.all()]
-    # print(calendar)
-    return render_template('calendar/calendar.html', form=form,form2=form2, calendar=calendar, next=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    current_app.logger.info("calendar.index START")
+
+    try:
+        events = Event.query.all()
+        current_app.logger.info("calendar.index: events OK, count=%s", len(events))
+
+        teams = Team.query.all()
+        cats = EventCategory.query.all()
+        current_app.logger.info("calendar.index: teams=%s, cats=%s", len(teams), len(cats))
+
+        form = EventForm()
+        form.team.choices = [(t.id, t.name) for t in teams]
+        form.category.choices = [(c.id, c.name) for c in cats]
+
+        form2 = UpdateEventForm()
+        form2.team2.choices = [(t.id, t.name) for t in teams]
+        form2.category2.choices = [(c.id, c.name) for c in cats]
+
+        current_app.logger.info("calendar.index: pred RightColumn/Next")
+        next22 = Next.next()
+        teamz = RightColumn.main_menu()
+        next_match = RightColumn.next_match()
+        score_table = RightColumn.score_table()
+        current_app.logger.info("calendar.index: RightColumn/Next OK")
+
+        resp = render_template(
+            'calendar/calendar.html',
+            form=form,
+            form2=form2,
+            calendar=events,
+            current_date=datetime.now(),
+            next22=next22,
+            teamz=teamz,
+            next_match=next_match,
+            score_table=score_table
+        )
+        current_app.logger.info("calendar.index END OK")
+        return resp
+
+    except Exception:
+        current_app.logger.exception("calendar.index ERROR")
+        return "Chyba pri načítaní kalendára", 500
 
 
 @calendar.route("/calendar/insert",methods=["POST"])

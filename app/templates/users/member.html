@@ -1,42 +1,152 @@
-{% extends "layout.html" %} {% block content %}
-<h3 class="mb-3">{{ player_info.teams[0].name }} 
+{% extends "layout.html" %}
+{% block content %}
+
+<h3 class="mb-3">
+  {{ player_info.teams[0].name }}
 </h3>
 
+<style>
+  .player-item { margin-top: 8px; }
 
+  .player-photo-wrap{
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(109,155,255,.18);
+  }
 
+  .player-photo{
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: pointer;
+    object-fit: cover;
+    border-radius: 10px;
+  }
 
-<div class="row  player-item">
-    <div class="col-sm-6 col-lg-6">
+  .player-photo-edit{
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    border: 1px solid rgba(109,155,255,.6);
+    background: rgba(0,0,0,.55);
+    color: #6d9bff;
+    font-weight: 800;
+    padding: 8px 12px;
+    border-radius: 10px;
+    line-height: 1;
+  }
 
-    <div>
-            <img
-        
-        width="100%"
-        height="100%"
-        src="{{ url_for('static', filename='members_pics/'+player_info.image_file+'') }}"
-        />
-    </div>
+  .player-photo-edit:hover{
+    background: rgba(0,0,0,.8);
+    color: #6d9bff;
+  }
 
-  </div>
-    
+  #photo-msg{
+    display:none;
+    margin-top: 10px;
+    font-weight: 700;
+  }
+</style>
+
+<div class="row player-item">
   <div class="col-sm-6 col-lg-6">
 
-      <h3> {{ player_info.name }}</h3>
+    <div class="player-photo-wrap">
+      <img
+        id="player-photo"
+        class="player-photo"
+        src="{{ url_for('static', filename='members_pics/' ~ player_info.image_file) }}"
+        alt="{{ player_info.name|e }}"
+      />
 
-      <div>
-          <h4>  {{ player_info.position[0].name }}</h4>
-      </div>
-      <br>
-      <h4>výška # <font style="color:#fff;">{{ player_info.height }}</font> cm</h4>
-      <h4>váha # <font style="color:#fff;">{{ player_info.weight }}</font> kg</h4>
-      <h4>počet gólov # <font style="color:#fff;">{{ player.score }}</font></h4>
-      <h4>žlté karty # <font style="color:#fff;">{{ player.yellow_card }}</font></h4>
-      <h4>červené karty # <font style="color:#fff;">{{ player.red_card }}</font></h4>
+      {% if current_user.is_authenticated %}
+        <button type="button" id="photo-edit-btn" class="player-photo-edit">
+          Zmeniť fotku
+        </button>
+      {% endif %}
 
+      <input
+        id="photo-input"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style="display:none;"
+      />
+    </div>
 
+    <p id="photo-msg"></p>
+
+  </div>
+
+  <div class="col-sm-6 col-lg-6">
+
+    <h3>{{ player_info.name }}</h3>
+
+    <div>
+      <h4>{{ player_info.position[0].name }}</h4>
+    </div>
+
+    <br>
+
+    <h4>výška # <font style="color:#fff;">{{ player_info.height }}</font> cm</h4>
+    <h4>váha # <font style="color:#fff;">{{ player_info.weight }}</font> kg</h4>
+    <h4>počet gólov # <font style="color:#fff;">{{ player.score }}</font></h4>
+    <h4>žlté karty # <font style="color:#fff;">{{ player.yellow_card }}</font></h4>
+    <h4>červené karty # <font style="color:#fff;">{{ player.red_card }}</font></h4>
 
   </div>
 </div>
-     
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const img = document.getElementById("player-photo");
+  const btn = document.getElementById("photo-edit-btn");
+  const input = document.getElementById("photo-input");
+  const msg = document.getElementById("photo-msg");
+
+  if (!img || !input) return;
+
+  const openPicker = () => input.click();
+
+  img.addEventListener("click", openPicker);
+  if (btn) btn.addEventListener("click", openPicker);
+
+  function showMsg(text, color){
+    msg.style.display = "block";
+    msg.style.color = color || "#6d9bff";
+    msg.textContent = text;
+  }
+
+  input.addEventListener("change", async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    showMsg("Nahrávam fotku...", "#6d9bff");
+
+    try {
+      const fd = new FormData();
+      fd.append("photo", file);
+
+      const res = await fetch("/member/{{ member_db_id }}/photo", {
+        method: "POST",
+        body: fd
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+
+      // okamžitý refresh fotky (backend vráti cache-bust URL)
+      img.src = data.image_url;
+
+      showMsg("Fotka bola úspešne zmenená.", "#7CFF6D");
+      input.value = "";
+    } catch (e) {
+      console.error(e);
+      showMsg(e.message || "Chyba pri nahrávaní.", "red");
+    }
+  });
+});
+</script>
 
 {% endblock content %}

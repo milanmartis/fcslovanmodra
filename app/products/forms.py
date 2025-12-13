@@ -17,7 +17,7 @@ class ProductForm(FlaskForm):
     picture = FileField('Title Image upload')
     pictures = FileField('Preview Picture', render_kw={'multiple': True}, validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
     # pictures = MultipleFileField('Gallery Image(s) upload', render_kw={'multiple': True})
-    submit = SubmitField('Post')
+    submit = SubmitField('Update')
 
 
 class ProductCategoryForm(FlaskForm):
