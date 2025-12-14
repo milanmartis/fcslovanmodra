@@ -16,6 +16,80 @@ from app.firebase_client import init_firebase
 
 talker = Blueprint("talker", __name__, url_prefix="/talker")
 
+
+from flask import Response
+
+@talker.get("/firebase-messaging-sw.js")
+def firebase_messaging_sw():
+    # PUBLIC hodnoty – môžu ísť do klienta
+    api_key = current_app.config.get("FIREBASE_API_KEY") or ""
+    auth_domain = current_app.config.get("FIREBASE_AUTH_DOMAIN") or ""
+    project_id = current_app.config.get("FIREBASE_PROJECT_ID") or ""
+    sender_id = current_app.config.get("FIREBASE_MESSAGING_SENDER_ID") or ""
+    app_id = current_app.config.get("FIREBASE_APP_ID") or ""
+
+    js = f"""
+/* /talker/firebase-messaging-sw.js */
+importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
+
+firebase.initializeApp({{
+  apiKey: {api_key!r},
+  authDomain: {auth_domain!r},
+  projectId: {project_id!r},
+  messagingSenderId: {sender_id!r},
+  appId: {app_id!r},
+}});
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {{
+  const title = payload?.notification?.title || "Talker";
+  const body  = payload?.notification?.body  || "";
+  const data  = payload?.data || {{}};
+
+  const roomId = data.room_id || data.roomId;
+  const url = roomId ? `/talker/rooms/${{roomId}}` : (data.url || "/talker/");
+
+  const icon  = data.icon  || "/static/main/ico.png";
+  const badge = data.badge || "/static/main/ico.png";
+
+  self.registration.showNotification(title, {{
+    body, icon, badge,
+    data: {{ url, roomId, ...data }},
+    actions: [
+      {{ action: "open",  title: "Otvoriť" }},
+      {{ action: "close", title: "Zavrieť" }},
+    ],
+  }});
+}});
+
+self.addEventListener("notificationclick", (event) => {{
+  event.notification.close();
+  if (event.action === "close") return;
+
+  const data = event.notification?.data || {{}};
+  const url = data.url || "/talker/";
+
+  event.waitUntil(
+    clients.matchAll({{ type: "window", includeUncontrolled: true }}).then((wins) => {{
+      for (const w of wins) {{
+        if (w.url && w.url.startsWith(self.location.origin)) {{
+          w.focus();
+          return w.navigate(url);
+        }}
+      }}
+      return clients.openWindow(url);
+    }})
+  );
+}});
+"""
+    return Response(js, mimetype="application/javascript")
+
+
+
+
+
 @talker.get("/push/config")
 @login_required
 def push_config():

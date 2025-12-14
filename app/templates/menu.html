@@ -142,6 +142,7 @@
             <li><a class="dropdown-item" href="{{ url_for('team.list_teams') }}">Družstvá</a></li>
             <li><a class="dropdown-item" href="{{ url_for('users.list_roles') }}">Roly na stránke</a></li>
             <li><a class="dropdown-item" href="{{ url_for('sponsors.sponsors_admin') }}">Sponzori</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('talker.index') }}">Talker</a></li>
             <li><a class="dropdown-item" href="{{ url_for('users.account') }}">Môj účet</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="{{ url_for('users.logout') }}">Odhlásiť sa</a></li>
@@ -153,6 +154,8 @@
                 {{ current_user.email }}
               </h6>
             </li>
+            <li><a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('talker.index') }}">Talker</a></li>
             <li><a class="dropdown-item" href="{{ url_for('users.account') }}">Môj účet</a></li>
             <li><a class="dropdown-item" href="{{ url_for('users.logout') }}">Odhlásiť sa</a></li>
           </ul>

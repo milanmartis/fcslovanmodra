@@ -1,518 +1,487 @@
 <!DOCTYPE html>
 <html lang="sk">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<meta name="theme-color" content="#000000">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="theme-color" content="#000000">
 
-	<script src="https://unpkg.com/htmx.org@2.0.0"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.0"></script>
 
-	<!-- Bootstrap CSS -->
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
-		  rel="stylesheet"
-		  integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
-		  crossorigin="anonymous">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+        crossorigin="anonymous">
 
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/cc.css') }}">
-	<link rel="stylesheet" href="{{ url_for('static', filename='style/menu.css') }}">
-	<link rel="stylesheet" href="{{ url_for('static', filename='style/lightbox.css') }}">
-	<link rel="icon" href="{{ url_for('static', filename='main/ico.png') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/cc.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style/menu.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style/lightbox.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='main/ico.png') }}">
 
-	<!-- Manifest -->
-	<link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}?v=3">
+  <!-- Manifest -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}?v=3">
 
-	<!-- FullCalendar CSS -->
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
+  <!-- FullCalendar CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
 
-	<!-- Service Worker registration -->
-	<script>
-	  if ('serviceWorker' in navigator) {
-		window.addEventListener('load', () => {
-		  navigator.serviceWorker.register('/service-worker.js?v=3', { scope: '/' })
-			.then(reg => console.log('SW registered:', reg.scope))
-			.catch(err => console.error('SW registration failed:', err));
-		});
-	  }
-	</script>
+  <!-- Service Worker registration (tvoj offline SW) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js?v=3', { scope: '/' })
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(err => console.error('SW registration failed:', err));
+      });
+    }
+  </script>
 
-	{% if title %}
-		<title>FC Slovan Modra - {{ title }}</title>
-	{% else %}
-		<title>FC Slovan Modra</title>
-	{% endif %}
+  {% if title %}
+    <title>FC Slovan Modra - {{ title }}</title>
+  {% else %}
+    <title>FC Slovan Modra</title>
+  {% endif %}
 
-	<style scoped>
-	    .card-glass {
-			text-align: center;
-			margin: auto;
-			border-radius: 26px;
-			background: rgba(17,17,17,0.92);
-			border: 1px solid rgba(109,155,255,0.2);
-			backdrop-filter: blur(12px);
-			box-shadow: 0 0 22px rgba(0,0,0,0.6);
-		}
-	</style>
+  <style scoped>
+    .card-glass {
+      text-align: center;
+      margin: auto;
+      border-radius: 26px;
+      background: rgba(17,17,17,0.92);
+      border: 1px solid rgba(109,155,255,0.2);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 22px rgba(0,0,0,0.6);
+    }
+  </style>
 </head>
 
 <body>
-	<!--<div id="loader"></div>-->
-	<header class="site-header">
-		{% include 'menu.html' %}
-	</header>
-	<br>
+  <!--<div id="loader"></div>-->
+  <header class="site-header">
+    {% include 'menu.html' %}
+  </header>
+  <br>
 
-	<main style="margin-top:-30px;z-index: -1;" role="main" class="container">
-		<div class="row">
-			<div class="col-md-8">
-				{% with messages = get_flashed_messages(with_categories=true) %}
-					{% if messages %}
-						{% for category, message in messages %}
-							<div class="alert alert-{{ category }}">
-								{{ message }}
-							</div>
-						{% endfor %}
-					{% endif %}
-				{% endwith %}
-				{% block content %}{% endblock %}
-			</div>
+  <main style="margin-top:-30px;z-index: -1;" role="main" class="container">
+    <div class="row">
+      <div class="col-md-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </div>
 
-			<div class="col-md-4 sidebar-club">
-				{% if current_user.is_authenticated %}
-					{% if current_user.has_roles('Admin') %}
+      <div class="col-md-4 sidebar-club">
+        {% if current_user.is_authenticated %}
+          {% if current_user.has_roles('Admin') %}
 
-					<div class="content-section mt-6">
-						<div class="card-glass content-section-sidebar">
-							<h3 style="padding-top:12px;">Admin panel</h3>
-							<p class="text-muted">
-								<ul class="list-group">
-									<h6 style="font-size:75%;color:#6d9bff;opacity: 0.7;">{{current_user.email}}</h6>
-									<a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a>
-									<a href="{{ url_for('posts.new_post') }}">Nový článok</a>
-									<a href="{{ url_for('products.new_product') }}">Nový produkt</a>
-									<a href="{{ url_for('posts.list_categories') }}">Kategórie článkov</a>
-									<a href="{{ url_for('users.list_members') }}">Členovia</a>
-									<a href="{{ url_for('team.list_teams') }}">Družstvá</a>
-									<a href="{{ url_for('users.list_roles') }}">Roly na stránke</a>
-									<a href="{{ url_for('sponsors.sponsors_admin') }}">Sponzori</a>
-									<a href="{{ url_for('users.account') }}">Môj účet</a>
-									{% if current_user.is_authenticated %}
-										<a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
-									{% endif %}
-								</ul>
-							</p>
-						</div>
-					</div>
+          <div class="content-section mt-6">
+            <div class="card-glass content-section-sidebar">
+              <h3 style="padding-top:12px;">Admin panel</h3>
+              <p class="text-muted">
+                <ul class="list-group">
+                  <h6 style="font-size:75%;color:#6d9bff;opacity: 0.7;">{{current_user.email}}</h6>
+                  <a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a>
+                  <a href="{{ url_for('posts.new_post') }}">Nový článok</a>
+                  <a href="{{ url_for('products.new_product') }}">Nový produkt</a>
+                  <a href="{{ url_for('posts.list_categories') }}">Kategórie článkov</a>
+                  <a href="{{ url_for('users.list_members') }}">Členovia</a>
+                  <a href="{{ url_for('team.list_teams') }}">Družstvá</a>
+                  <a href="{{ url_for('users.list_roles') }}">Roly na stránke</a>
+                  <a href="{{ url_for('sponsors.sponsors_admin') }}">Sponzori</a>
+                  <a href="{{ url_for('talker.index') }}">Talker</a>
+                  <a href="{{ url_for('users.account') }}">Môj účet</a>
+                  {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
+                  {% endif %}
+                </ul>
+              </p>
+            </div>
+          </div>
 
-					{% else %}
+          {% else %}
 
-					<div class="content-section mt-6">
-						<div class="content-section-sidebar">
-							<h3 style="padding-top:12px;">Užívateľský prístup</h3>
-							<p class="text-muted">
-								<h6 style="font-size:70%;color:#6d9bff;opacity: 0.6;">{{current_user.email}}</h6>
-								<ul class="list-group">
-									<a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a>
-									<a href="{{ url_for('users.account') }}">Môj účet</a>
-									<a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
-								</ul>
-							</p>
-						</div>
-					</div>
+          <div class="content-section mt-6">
+            <div class="content-section-sidebar">
+              <h3 style="padding-top:12px;">Užívateľský prístup</h3>
+              <p class="text-muted">
+                <h6 style="font-size:70%;color:#6d9bff;opacity: 0.6;">{{current_user.email}}</h6>
+                <ul class="list-group">
+                  <a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a>
+                  <a href="{{ url_for('talker.index') }}">Talker</a>
+                  <a href="{{ url_for('users.account') }}">Môj účet</a>
+                  <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
+                </ul>
+              </p>
+            </div>
+          </div>
 
-					{% endif %}
-				{% endif %}
+          {% endif %}
+        {% endif %}
 
-				<br>
-				<div id="sidebar-next-matches">
-					{% include 'partials/next_matches_sidebar.html' %}
-				</div>
-			</div>
-		</div>
-	</main>
+        <br>
+        <div id="sidebar-next-matches">
+          {% include 'partials/next_matches_sidebar.html' %}
+        </div>
+      </div>
+    </div>
+  </main>
 
-	{% if current_user.is_authenticated %}
-	<div class="modal fade"
-		 id="calenadrModal"
-		 tabindex="-1"
-		 role="dialog"
-		 aria-labelledby="calenadrModalLabel"
-		 aria-hidden="true"
-		 data-bs-backdrop="static"
-		 data-bs-keyboard="false"
-		 style="z-index: 999999999999999;">
-		<div class="modal-dialog" role="document" style="overflow:none;margin:auto;padding-top: 16px;">
-			<div class="modal-content card-glass" style="height: 660px;overflow:none;">
-				<button type="button" class="btn btnclose" data-bs-dismiss="modal">X</button>
-				<div id="iframeHolder"></div>
-			</div>
-		</div>
-	</div>
-	{% endif %}
+  {% if current_user.is_authenticated %}
+  <div class="modal fade"
+       id="calenadrModal"
+       tabindex="-1"
+       role="dialog"
+       aria-labelledby="calenadrModalLabel"
+       aria-hidden="true"
+       data-bs-backdrop="static"
+       data-bs-keyboard="false"
+       style="z-index: 999999999999999;">
+    <div class="modal-dialog" role="document" style="overflow:none;margin:auto;padding-top: 16px;">
+      <div class="modal-content card-glass" style="height: 660px;overflow:none;">
+        <button type="button" class="btn btnclose" data-bs-dismiss="modal">X</button>
+        <div id="iframeHolder"></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
-	<br><br>
+  <br><br>
 
-	<footer class="footer">
-		<br>
-		<div class="container bottom_border">
-			<div class="row">
-				<div class=" col-sm-4 col-md col-sm-4  col-12 col">
-					<h3>FC SLOVAN MODRA</h3>
-					<p style="font-size: 90%;opacity: 0.9;">
-						Sme najstarší športový klub v Modre, ktorý bol založený v roku 1926 staviteľom Jozefom Horákom a učiteľom Jozefom Kopom.
-						Dnes je v klube registrovaných 115 hráčov v siedmich družstvách.
-					</p>
-					<div style="margin-left:15px; font-size: 90%;opacity: 0.9;">
-						<i class="fa fa-location-arrow" aria-hidden="true"></i> Kalinčiakova 6, 900 01 Modra<br>
-						<i class="fa fa-phone" aria-hidden="true"></i> +421 917 937 501<br>
-						<i class="fa fa fa-envelope" aria-hidden="true"></i> fcslovanmodra@gmail.com
-					</div>
-				</div>
+  <footer class="footer">
+    <br>
+    <div class="container bottom_border">
+      <div class="row">
+        <div class=" col-sm-4 col-md col-sm-4  col-12 col">
+          <h3>FC SLOVAN MODRA</h3>
+          <p style="font-size: 90%;opacity: 0.9;">
+            Sme najstarší športový klub v Modre, ktorý bol založený v roku 1926 staviteľom Jozefom Horákom a učiteľom Jozefom Kopom.
+            Dnes je v klube registrovaných 115 hráčov v siedmich družstvách.
+          </p>
+          <div style="margin-left:15px; font-size: 90%;opacity: 0.9;">
+            <i class="fa fa-location-arrow" aria-hidden="true"></i> Kalinčiakova 6, 900 01 Modra<br>
+            <i class="fa fa-phone" aria-hidden="true"></i> +421 917 937 501<br>
+            <i class="fa fa fa-envelope" aria-hidden="true"></i> fcslovanmodra@gmail.com
+          </div>
+        </div>
 
-				<div class="mx-auto col-sm-4 col-md  col-6 col">
-					<center>
-						<img class="image-logo" style="margin-left:-20px;padding-top:20px;padding-bottom:20px;opacity:0.99;"
-							 width="169" src="{{ url_for('static', filename='main/logo-slovan-modra-biele.png') }}">
-					</center>
-				</div>
+        <div class="mx-auto col-sm-4 col-md  col-6 col">
+          <center>
+            <img class="image-logo" style="margin-left:-20px;padding-top:20px;padding-bottom:20px;opacity:0.99;"
+                 width="169" src="{{ url_for('static', filename='main/logo-slovan-modra-biele.png') }}">
+          </center>
+        </div>
 
-				<div class=" col-sm-4 col-md  col-12 col">
-					<h3>Follow us</h3>
-					<div class="row mb-10" style="margin-bottom: 10px;">
-						<div class="col-12">
-							<center><div style="height:30px;display: block;"></div></center>
-						</div>
+        <div class=" col-sm-4 col-md  col-12 col">
+          <h3>Follow us</h3>
+          <div class="row mb-10" style="margin-bottom: 10px;">
+            <div class="col-12">
+              <center><div style="height:30px;display: block;"></div></center>
+            </div>
 
-						<div class="col-3"></div>
+            <div class="col-3"></div>
 
-						<div class="col-2">
-							<center>
-								<a href="https://www.facebook.com/fcslovanmodra" target="_blank" class="product-img2">
-									<i style="font-size: 300%;text-align: left;" class="fa-brands fa-facebook-f"></i>
-								</a>
-							</center>
-						</div>
+            <div class="col-2">
+              <center>
+                <a href="https://www.facebook.com/fcslovanmodra" target="_blank" class="product-img2">
+                  <i style="font-size: 300%;text-align: left;" class="fa-brands fa-facebook-f"></i>
+                </a>
+              </center>
+            </div>
 
-						<div class="col-2">
-							<center>
-								<a href="https://www.youtube.com/@fcslovanmodra6225" target="_blank" class="product-img2">
-									<i style="font-size: 300%;text-align: left;margin-left: -17px;" class="fa-brands fa-youtube"></i>
-								</a>
-							</center>
-						</div>
+            <div class="col-2">
+              <center>
+                <a href="https://www.youtube.com/@fcslovanmodra6225" target="_blank" class="product-img2">
+                  <i style="font-size: 300%;text-align: left;margin-left: -17px;" class="fa-brands fa-youtube"></i>
+                </a>
+              </center>
+            </div>
 
-						<div class="col-2">
-							<center>
-								<a href="https://www.instagram.com/fcslovanmodra" target="_blank" class="product-img2">
-									<i style="font-size: 300%;text-align: right;" class="fa-brands fa-instagram"></i>
-								</a>
-							</center>
-						</div>
+            <div class="col-2">
+              <center>
+                <a href="https://www.instagram.com/fcslovanmodra" target="_blank" class="product-img2">
+                  <i style="font-size: 300%;text-align: right;" class="fa-brands fa-instagram"></i>
+                </a>
+              </center>
+            </div>
 
-						<div class="col-3"></div>
-					</div>
-				</div>
-			</div>
-		</div>
+            <div class="col-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-		<div class="container">
-			<p style="margin-top:20px;font-size: 75%;" class="text-center">
-				Copyright @{{ current_year }} | Powered by
-				<a target="_blank" href="https://appdesign.sk">appdesign.sk</a>
-			</p>
-		</div>
-	</footer>
-	<button id="enable-notifications">Allow notifications</button>
+    <div class="container">
+      <p style="margin-top:20px;font-size: 75%;" class="text-center">
+        Copyright @{{ current_year }} | Powered by
+        <a target="_blank" href="https://appdesign.sk">appdesign.sk</a>
+      </p>
+    </div>
+  </footer>
 
-	<script>
-	  document.getElementById("enable-notifications").addEventListener("click", async () => {
-		const perm = await Notification.requestPermission();
-		console.log("permission:", perm); // "granted" | "denied" | "default"
-	  });
-	</script>
-	<script>
-		document.onreadystatechange = function() {
-			if (document.readyState !== "complete") {
-				const loader = document.querySelector("#loader");
-				if (loader) loader.style.visibility = "visible";
-			} else {
-				const loader = document.querySelector("#loader");
-				if (loader) loader.style.display = "none";
-			}
-		};
-	</script>
+  <!-- ✅ CORE LIBS (order matters, NO defer) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
 
-	<!-- ✅ CORE LIBS (order matters, NO defer) -->
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+  <!-- Bootstrap 5 bundle -> provides window.bootstrap and Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"></script>
 
-	<!-- Bootstrap 5 bundle -> provides window.bootstrap and Popper -->
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-	integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-	crossorigin="anonymous"></script>
+  <!-- FullCalendar (needs jQuery + moment) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
 
-	<!-- FullCalendar (needs jQuery + moment) -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
+  <!-- Your scripts -->
+  <script src="{{ url_for('static', filename='js/team.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/product.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/filemanager.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/lightbox.js') }}"></script>
 
-	<!-- Your scripts -->
-	<script src="{{ url_for('static', filename='js/team.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/product.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/filemanager.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/lightbox.js') }}"></script>
+  <!-- Calendar modal iframe loader -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const modalEl = document.getElementById('calenadrModal');
+      const loaderEl = document.getElementById('loader');
+      let calendarLoadTimeout = null;
 
-	<!-- Calendar modal iframe loader -->
-	<script>
-		document.addEventListener('DOMContentLoaded', function () {
-			const modalEl = document.getElementById('calenadrModal');
-			const loaderEl = document.getElementById('loader');
-			let calendarLoadTimeout = null;
+      if (!modalEl) return;
 
-			if (!modalEl) return;
+      function showLoader() {
+        if (loaderEl) {
+          loaderEl.style.visibility = 'visible';
+          loaderEl.style.display = 'block';
+        }
+      }
 
-			function showLoader() {
-				if (loaderEl) {
-					loaderEl.style.visibility = 'visible';
-					loaderEl.style.display = 'block';
-				}
-			}
+      function hideLoader() {
+        if (loaderEl) {
+          loaderEl.style.visibility = 'hidden';
+          loaderEl.style.display = 'none';
+        }
+      }
 
-			function hideLoader() {
-				if (loaderEl) {
-					loaderEl.style.visibility = 'hidden';
-					loaderEl.style.display = 'none';
-				}
-			}
+      function createCalendarIframe() {
+        const holder = document.getElementById('iframeHolder');
+        if (!holder) return;
 
-			function createCalendarIframe() {
-				const holder = document.getElementById('iframeHolder');
-				if (!holder) return;
+        const existing = document.getElementById('calendar_iframe');
+        if (existing) return;
 
-				const existing = document.getElementById('calendar_iframe');
-				if (existing) return;
+        showLoader();
+        holder.innerHTML = '';
 
-				showLoader();
-				holder.innerHTML = '';
+        const iframe = document.createElement('iframe');
+        iframe.id = 'calendar_iframe';
+        iframe.title = 'Kalendár zápasov';
+        iframe.style.cssText = 'z-index:9999;height:640px;margin:4px;padding:0;width:100%;border:none;overflow:hidden;background-color:black;';
+        iframe.src = "{{ url_for('calendar.index') }}";
 
-				const iframe = document.createElement('iframe');
-				iframe.id = 'calendar_iframe';
-				iframe.title = 'Kalendár zápasov';
-				iframe.style.cssText = 'z-index:9999;height:640px;margin:4px;padding:0;width:100%;border:none;overflow:hidden;background-color:black;';
-				iframe.src = "{{ url_for('calendar.index') }}";
+        if (calendarLoadTimeout) clearTimeout(calendarLoadTimeout);
+        calendarLoadTimeout = setTimeout(function () {
+          console.error('Načítanie kalendára trvá príliš dlho.');
+          hideLoader();
+        }, 15000);
 
-				if (calendarLoadTimeout) clearTimeout(calendarLoadTimeout);
-				calendarLoadTimeout = setTimeout(function () {
-					console.error('Načítanie kalendára trvá príliš dlho.');
-					hideLoader();
-				}, 15000);
+        iframe.addEventListener('load', function () {
+          clearTimeout(calendarLoadTimeout);
+          hideLoader();
+        });
 
-				iframe.addEventListener('load', function () {
-					clearTimeout(calendarLoadTimeout);
-					hideLoader();
-				});
+        iframe.addEventListener('error', function () {
+          clearTimeout(calendarLoadTimeout);
+          console.error('Chyba pri načítaní kalendára v iframe.');
+          hideLoader();
+        });
 
-				iframe.addEventListener('error', function () {
-					clearTimeout(calendarLoadTimeout);
-					console.error('Chyba pri načítaní kalendára v iframe.');
-					hideLoader();
-				});
+        holder.appendChild(iframe);
+      }
 
-				holder.appendChild(iframe);
-			}
+      modalEl.addEventListener('shown.bs.modal', function () {
+        createCalendarIframe();
+      });
 
-			modalEl.addEventListener('shown.bs.modal', function () {
-				createCalendarIframe();
-			});
+      modalEl.addEventListener('hidden.bs.modal', function () {
+        const holder = document.getElementById('iframeHolder');
+        if (holder) holder.innerHTML = '';
+        if (calendarLoadTimeout) clearTimeout(calendarLoadTimeout);
+        hideLoader();
+      });
 
-			modalEl.addEventListener('hidden.bs.modal', function () {
-				const holder = document.getElementById('iframeHolder');
-				if (holder) holder.innerHTML = '';
-				if (calendarLoadTimeout) clearTimeout(calendarLoadTimeout);
-				hideLoader();
-			});
+      const calendarLink = document.getElementById('kalendar_button');
+      if (calendarLink) {
+        calendarLink.addEventListener('click', function () {
+          showLoader();
+        });
+      }
+    });
+  </script>
 
-			const calendarLink = document.getElementById('kalendar_button');
-			if (calendarLink) {
-				calendarLink.addEventListener('click', function () {
-					showLoader();
-				});
-			}
-		});
-	</script>
+  <!-- Navbar scroll effect -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const navbar = document.querySelector('.club-navbar');
+      if (!navbar) return;
 
-	<!-- Navbar scroll effect -->
-	<script>
-		document.addEventListener('DOMContentLoaded', function () {
-		  const navbar = document.querySelector('.club-navbar');
-		  if (!navbar) return;
+      function onScroll() {
+        if (window.scrollY > 10) navbar.classList.add('club-navbar-scrolled');
+        else navbar.classList.remove('club-navbar-scrolled');
+      }
 
-		  function onScroll() {
-			if (window.scrollY > 10) navbar.classList.add('club-navbar-scrolled');
-			else navbar.classList.remove('club-navbar-scrolled');
-		  }
+      onScroll();
+      window.addEventListener('scroll', onScroll);
+    });
+  </script>
 
-		  onScroll();
-		  window.addEventListener('scroll', onScroll);
-		});
-	</script>
+  <!-- Carousel touch swipe -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const carousels = document.querySelectorAll('.carousel');
 
-	<!-- Carousel touch swipe (Bootstrap needs window.bootstrap -> now OK) -->
-	<script>
-		document.addEventListener('DOMContentLoaded', function () {
-		  const carousels = document.querySelectorAll('.carousel');
+      carousels.forEach(function (carouselEl) {
+        let startX = null;
+        let isMoving = false;
 
-		  carousels.forEach(function (carouselEl) {
-			let startX = null;
-			let isMoving = false;
+        carouselEl.addEventListener('touchstart', function (e) {
+          if (e.touches.length === 1) {
+            startX = e.touches[0].clientX;
+            isMoving = true;
+          }
+        }, { passive: true });
 
-			carouselEl.addEventListener('touchstart', function (e) {
-			  if (e.touches.length === 1) {
-				startX = e.touches[0].clientX;
-				isMoving = true;
-			  }
-			}, { passive: true });
+        carouselEl.addEventListener('touchmove', function (e) {
+          if (!isMoving || startX === null) return;
 
-			carouselEl.addEventListener('touchmove', function (e) {
-			  if (!isMoving || startX === null) return;
+          const currentX = e.touches[0].clientX;
+          const diffX = startX - currentX;
 
-			  const currentX = e.touches[0].clientX;
-			  const diffX = startX - currentX;
+          if (Math.abs(diffX) > 40) {
+            const bsCarousel = bootstrap.Carousel.getOrCreateInstance(carouselEl);
+            if (diffX > 0) bsCarousel.next();
+            else bsCarousel.prev();
 
-			  if (Math.abs(diffX) > 40) {
-				const bsCarousel = bootstrap.Carousel.getOrCreateInstance(carouselEl);
-				if (diffX > 0) bsCarousel.next();
-				else bsCarousel.prev();
+            isMoving = false;
+            startX = null;
+          }
+        }, { passive: true });
 
-				isMoving = false;
-				startX = null;
-			  }
-			}, { passive: true });
+        carouselEl.addEventListener('touchend', function () {
+          isMoving = false;
+          startX = null;
+        });
+      });
+    });
+  </script>
 
-			carouselEl.addEventListener('touchend', function () {
-			  isMoving = false;
-			  startX = null;
-			});
-		  });
-		});
-	</script>
+  <!-- Stripe -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    const checkout_public_key = '{{checkout_public_key}}';
+    const checkout_session_id = '{{checkout_session_id}}';
+  </script>
+  <script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>
 
-	<!-- Stripe -->
-	<script src="https://js.stripe.com/v3/"></script>
-	<script>
-		const checkout_public_key = '{{checkout_public_key}}';
-		const checkout_session_id = '{{checkout_session_id}}';
-	</script>
-	<script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>
-	<script type="module">
-		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-		import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js";
-	  
-		async function loadPushConfig() {
-		  const r = await fetch("/talker/push/config", { credentials: "same-origin" });
-		  if (!r.ok) throw new Error("push config fetch failed: " + r.status);
-		  const cfg = await r.json();
-	  
-		  // očakávame: { firebase:{...}, vapidPublicKey:"..." }
-		  if (!cfg?.firebase?.messagingSenderId) throw new Error("missing firebase.messagingSenderId");
-		  if (!cfg?.vapidPublicKey) throw new Error("missing vapidPublicKey");
-	  
-		  return cfg;
-		}
-	  
-		async function hasTokenAlready() {
-		  // Ak nemáš endpoint, kľudne vráť false a modal ukáže vždy.
-		  // Odporúčam pridať GET /talker/push/status -> {has_token:true/false}
-		  try {
-			const r = await fetch("/talker/push/status", { credentials: "same-origin" });
-			if (!r.ok) return false;
-			const j = await r.json();
-			return !!j.has_token;
-		  } catch (e) {
-			return false;
-		  }
-		}
-	  
-		async function enablePushNotifications() {
-		  if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
-	  
-		  // 1) načítaj config zo servera (.env -> Flask config)
-		  const cfg = await loadPushConfig();
-		  const firebaseConfig = cfg.firebase;
-		  const VAPID_PUBLIC_KEY = cfg.vapidPublicKey;
-	  
-		  // 2) permission
-		  const permission = await Notification.requestPermission();
-		  if (permission !== "granted") {
-			localStorage.setItem("pushPromptDismissed", "1");
-			return;
-		  }
-	  
-		  // 3) registruj FCM SW (samostatný)
-		  const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-	  
-		  // 4) firebase messaging token
-		  const app = initializeApp(firebaseConfig);
-		  const messaging = getMessaging(app);
-	  
-		  const token = await getToken(messaging, {
-			vapidKey: VAPID_PUBLIC_KEY,
-			serviceWorkerRegistration: reg,
-		  });
-	  
-		  if (!token) throw new Error("FCM token is empty");
-	  
-		  // 5) ulož token do Talker tabuľky PushToken
-		  const res = await fetch("/talker/push/register", {
-			method: "POST",
-			credentials: "same-origin",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-			  token,
-			  platform: "web",
-			  device: navigator.userAgent,
-			}),
-		  });
-	  
-		  if (!res.ok) throw new Error("push/register failed: " + res.status + " " + await res.text());
-	  
-		  // 6) zavri modal
-		  localStorage.setItem("pushPromptDismissed", "1");
-		  const modalEl = document.getElementById("notificationModal");
-		  if (modalEl) {
-			const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-			modal.hide();
-		  }
-	  
-		  // 7) foreground správy (keď máš stránku otvorenú)
-		  onMessage(messaging, (payload) => {
-			console.log("FCM foreground:", payload);
-			// tu si vieš spraviť toast/in-app badge
-		  });
-		}
-	  
-		async function checkAndAskForPush() {
-		  if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
-		  if (Notification.permission === "denied") return;
-		  if (localStorage.getItem("pushPromptDismissed") === "1") return;
-	  
-		  const already = await hasTokenAlready();
-		  if (already) return;
-	  
-		  const modalEl = document.getElementById("notificationModal");
-		  if (modalEl) {
-			const modal = new bootstrap.Modal(modalEl);
-			modal.show();
-		  }
-		}
-	  
-		document.addEventListener("DOMContentLoaded", () => {
-		  checkAndAskForPush().catch(console.error);
-	  
-		  const btn = document.getElementById("enable-notifications");
-		  if (btn) btn.addEventListener("click", () => enablePushNotifications().catch(console.error));
-		});
-	  </script>
-	  
-	
+  <!-- ✅ PUSH (Variant A) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js";
+
+    async function loadPushConfig() {
+      const r = await fetch("/talker/push/config", { credentials: "same-origin" });
+      if (!r.ok) throw new Error("push config fetch failed: " + r.status);
+      const cfg = await r.json();
+
+      if (!cfg?.firebase?.messagingSenderId) throw new Error("missing firebase.messagingSenderId");
+      if (!cfg?.vapidPublicKey) throw new Error("missing vapidPublicKey");
+
+      return cfg;
+    }
+
+    async function hasTokenAlready() {
+      try {
+        const r = await fetch("/talker/push/status", { credentials: "same-origin" });
+        if (!r.ok) return false;
+        const j = await r.json();
+        return !!j.has_token;
+      } catch {
+        return false;
+      }
+    }
+
+    async function enablePushNotifications() {
+      if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+
+      const cfg = await loadPushConfig();
+      const firebaseConfig = cfg.firebase;
+      const VAPID_PUBLIC_KEY = cfg.vapidPublicKey;
+
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        localStorage.setItem("pushPromptDismissed", "1");
+        return;
+      }
+
+      // ✅ Variant A: register SW from backend endpoint (dynamic JS with .env values)
+      const reg = await navigator.serviceWorker.register("/talker/firebase-messaging-sw.js");
+
+      const app = initializeApp(firebaseConfig);
+      const messaging = getMessaging(app);
+
+      const token = await getToken(messaging, {
+        vapidKey: VAPID_PUBLIC_KEY,
+        serviceWorkerRegistration: reg,
+      });
+
+      if (!token) throw new Error("FCM token is empty");
+
+      const res = await fetch("/talker/push/register", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          platform: "web",
+          device: navigator.userAgent,
+        }),
+      });
+
+      if (!res.ok) throw new Error("push/register failed: " + res.status + " " + await res.text());
+
+      localStorage.setItem("pushPromptDismissed", "1");
+
+      // foreground
+      onMessage(messaging, (payload) => {
+        console.log("FCM foreground:", payload);
+      });
+    }
+
+    async function checkAndAskForPush() {
+      if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+      if (Notification.permission === "denied") return;
+      if (localStorage.getItem("pushPromptDismissed") === "1") return;
+
+      const already = await hasTokenAlready();
+      if (already) return;
+
+      // Ak chceš modal, daj si sem bootstrap modal show (ty ho máš inde pre talker)
+      // Tu to nechám "tiché" a len nech je pripravené.
+      console.log("Push is not enabled yet (no token).");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      checkAndAskForPush().catch(console.error);
+
+      // Ak chceš tlačidlo niekde v UI, nechaj ho - len ho napojíme na celý flow:
+      const btn = document.getElementById("enable-notifications");
+      if (btn) btn.addEventListener("click", () => enablePushNotifications().catch(console.error));
+    });
+  </script>
+
 </body>
 </html>

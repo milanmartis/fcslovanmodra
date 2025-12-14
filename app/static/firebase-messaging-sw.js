@@ -30,8 +30,8 @@ messaging.onBackgroundMessage((payload) => {
   const roomId = data.room_id || data.roomId;
   const url = roomId ? `/talker/rooms/${roomId}` : (data.url || "/talker/");
 
-  const icon = data.icon || "/static/icons/icon-192.png";
-  const badge = data.badge || "/static/icons/badge-72.png";
+  const icon = data.icon || "/static/main/ico.png";
+  const badge = data.badge || "/static/main/ico.png";
 
   self.registration.showNotification(title, {
     body,
