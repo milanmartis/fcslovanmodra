@@ -2,6 +2,7 @@ from flask import render_template, url_for, flash, redirect, request, Blueprint,
 # from flask_login import 
 from app import db, bcrypt
 from sqlalchemy import func
+from flask_mail import Message
 
 from app.models import User, Post, Role, Team, Member, Player, Position, roles_users, teams_members, positions_members
 from app.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,UpdateMemberForm,
@@ -588,15 +589,14 @@ def upload_member_photo(member_id):
         
 @users.route("/_mail_test")
 def mail_test():
-    from flask_mail import Message
     msg = Message(
         subject="test",
-        recipients=["tvoj@email.sk"],
+        recipients=["milanmartis@gmail.com"],  # dočasne
         sender=current_app.config.get("MAIL_DEFAULT_SENDER"),
         body="hello",
     )
     _send_mail(msg)
-    return "ok"     
+    return "ok"  
 
         
 @users.route("/account/photo", methods=["POST"])
