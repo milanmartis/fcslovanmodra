@@ -59,7 +59,7 @@ def create_app(config_class=None):
     app.config.from_object(config_class)
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(days=365)
     
-    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+    socketio = SocketIO(app, cors_allowed_origins="*")
 
     
 
