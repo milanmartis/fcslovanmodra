@@ -258,7 +258,16 @@
   const connEl = document.getElementById("conn");
   const statusEl = document.getElementById("status");
 
-  const socket = io({ transports: ["websocket", "polling"] });
+  //const socket = io({ transports: ["websocket", "polling"] });
+
+  const socket = io({
+    transports: ["websocket", "polling"],
+    upgrade: true,
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 500,
+    reconnectionDelayMax: 3000,
+  });
 
   function isNearBottom() {
     const delta = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
@@ -357,12 +366,17 @@
       statusEl.textContent = "Nepodarilo sa načítať správy.";
     });
 
+
   socket.on("connect", () => {
     connEl.textContent = "Online";
     connEl.style.color = "rgba(255,255,255,.9)";
     socket.emit("talker_join", { room_id: roomId });
   });
 
+  socket.on("talker_joined", (d) => {
+    console.log("joined:", d.room_id);
+  });
+  
   socket.on("disconnect", () => {
     connEl.textContent = "Offline";
   });

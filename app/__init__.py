@@ -43,7 +43,8 @@ bcrypt = Bcrypt()
 login_manager = LoginManager()
 mail = Mail()
 csrf = CSRFProtect()
-socketio = SocketIO(cors_allowed_origins="*")
+# socketio = SocketIO(cors_allowed_origins="*")
+
 
 def create_app(config_class=None):
     """
@@ -58,6 +59,8 @@ def create_app(config_class=None):
     app.config.from_object(config_class)
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(days=365)
     
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+
     
 
     # Vstreknúť engine options, ak nie sú definované v configu
