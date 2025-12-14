@@ -4,7 +4,13 @@ from app import db, bcrypt
 from app.models import User, Post, Role, Team, Member, Player, Position, roles_users, teams_members, positions_members
 from app.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,UpdateMemberForm,
                                    RequestResetForm, ResetPasswordForm, RolesForm)
-from app.users.utils import save_picture, send_reset_email, send_confirm_email, save_picture_member
+from app.users.utils import (
+    save_picture,
+    save_picture_member,
+    send_reset_email,
+    send_confirm_email,
+    _send_mail,
+)
 import uuid
 from app.main.routes import RightColumn
 from app.main.routes import Next
@@ -218,8 +224,13 @@ def reset_request():
     form = RequestResetForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        send_reset_email(user)
-        flash('Bol vám zaslaný e-mail s inštrukciami, ako obnoviť heslo.', 'info')
+        if user:
+            send_reset_email(user)
+
+        flash(
+            'Ak účet s týmto e-mailom existuje, bol odoslaný e-mail s inštrukciami.',
+            'info'
+        )
         return redirect(url_for('users.login'))
     return render_template('users/reset_request.html', title='Reset Password', form=form, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
@@ -568,7 +579,17 @@ def upload_member_photo(member_id):
         db.session.remove()
         
         
-        
+@users.route("/_mail_test")
+def mail_test():
+    from flask_mail import Message
+    msg = Message(
+        subject="test",
+        recipients=["tvoj@email.sk"],
+        sender=current_app.config.get("MAIL_DEFAULT_SENDER"),
+        body="hello",
+    )
+    _send_mail(msg)
+    return "ok"     
 
         
 @users.route("/account/photo", methods=["POST"])

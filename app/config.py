@@ -28,20 +28,19 @@ class Config:
     }
 
     # ---- MAIL (Flask-Mail)
-    MAIL_SERVER = os.getenv("MAIL_SERVER")
-    MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))  # MUSÍ byť int
+    def env_bool(key: str, default: bool = False) -> bool:
+        v = os.getenv(key)
+        if v is None:
+            return default
+        return v.strip().lower() in ("1", "true", "yes", "on")
+
+    MAIL_SERVER   = os.getenv("MAIL_SERVER", "smtp.m1.websupport.sk")
+    MAIL_PORT     = int(os.getenv("MAIL_PORT", "465"))
+    MAIL_USE_SSL  = env_bool("MAIL_USE_SSL", True)
+    MAIL_USE_TLS  = env_bool("MAIL_USE_TLS", False)
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-
-    MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "1") == "1"
-    MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "0") == "1"
-
-    # dôležité - aby to neviselo večne
-    MAIL_TIMEOUT = int(os.getenv("MAIL_TIMEOUT", "10"))  # sekundy
-
-    MAIL_FROM = os.getenv("MAIL_FROM", "klub@fcsm.sk")
-    MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "FC Slovan Modra")
-    MAIL_DEFAULT_SENDER = (MAIL_FROM_NAME, MAIL_FROM)
+    MAIL_DEFAULT_SENDER = (os.getenv("MAIL_FROM_NAME",""), os.getenv("MAIL_FROM"))
 
     # (voliteľné) debug
     MAIL_SUPPRESS_SEND = os.getenv("MAIL_SUPPRESS_SEND", "0") == "1"
