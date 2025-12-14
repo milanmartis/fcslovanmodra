@@ -1,6 +1,8 @@
 from flask import render_template, url_for, flash, redirect, request, Blueprint, session, current_app, jsonify
 # from flask_login import 
 from app import db, bcrypt
+from sqlalchemy import func
+
 from app.models import User, Post, Role, Team, Member, Player, Position, roles_users, teams_members, positions_members
 from app.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,UpdateMemberForm,
                                    RequestResetForm, ResetPasswordForm, RolesForm)
@@ -217,21 +219,26 @@ def user_posts(username):
 
 
 
-@users.route("/reset_password", methods=['GET', 'POST'])
+@users.route("/reset_password", methods=["GET", "POST"])
 def reset_request():
     if current_user.is_authenticated:
-        return redirect(url_for('main.home'))
+        return redirect(url_for("main.home"))
+
     form = RequestResetForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        email = (form.email.data or "").strip().lower()
+
+        user = User.query.filter(func.lower(User.email) == email).first()
+
+        current_app.logger.warning("RESET_REQUEST email=%s user_found=%s", email, bool(user))
+
         if user:
+            current_app.logger.warning("RESET_REQUEST sending mail to user_id=%s", user.id)
             send_reset_email(user)
 
-        flash(
-            'Ak účet s týmto e-mailom existuje, bol odoslaný e-mail s inštrukciami.',
-            'info'
-        )
-        return redirect(url_for('users.login'))
+        flash("Bol vám odoslaný e-mail s inštrukciami.", "info")
+        return redirect(url_for("users.login"))
+
     return render_template('users/reset_request.html', title='Reset Password', form=form, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
