@@ -9,6 +9,16 @@ import uuid
 # =========================
 # Association / M2M tables
 # =========================
+
+talk_room_members = db.Table(
+    "talk_room_members",
+    db.Column("room_id", db.Integer, db.ForeignKey("talk_room.id"), primary_key=True),
+    db.Column("user_id", db.Integer, db.ForeignKey("user.id"), primary_key=True),
+    db.Column("is_admin", db.Boolean, nullable=False, server_default="false"),
+    db.Column("joined_at", db.DateTime(timezone=True), server_default=func.now()),
+)
+
+
 variant_products = db.Table(
     'variant_products',
     db.Column('product_id', db.Integer(), db.ForeignKey('product.id')),
@@ -123,9 +133,77 @@ class User(db.Model, UserMixin):
         return f"User('{self.username}', '{self.email}', '{self.image_file}', '{self.roles}')"
 
 
+
+
+
+class TalkRoom(db.Model):
+    __tablename__ = "talk_room"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+
+    # ak je room viazaný na Team (U19/U17…), bude vyplnené
+    team_id = db.Column(db.Integer, db.ForeignKey("team.id"), nullable=True)
+
+    # kto room vytvoril
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    members = db.relationship(
+        "User",
+        secondary=talk_room_members,
+        lazy="subquery",
+        backref=db.backref("talk_rooms", lazy="dynamic"),
+    )
+
+    def __repr__(self):
+        return f"<TalkRoom {self.id} {self.name}>"
+
+
+
+class TalkMessage(db.Model):
+    __tablename__ = "talk_message"
+
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey("talk_room.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    room = db.relationship("TalkRoom", backref=db.backref("messages", lazy="dynamic", cascade="all, delete-orphan"))
+    author = db.relationship("User")
+
+    def __repr__(self):
+        return f"<TalkMessage {self.id} room={self.room_id} user={self.user_id}>"
+
+
+
+
+class PushToken(db.Model):
+    __tablename__ = "push_token"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+
+    # FCM registration token (z browsera / mobilu)
+    token = db.Column(db.String(512), nullable=False, unique=True)
+
+    platform = db.Column(db.String(50), nullable=True)   # "web", "ios", "android"
+    device = db.Column(db.String(200), nullable=True)    # napr. user-agent skrátene
+    last_seen_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = db.relationship("User")
 # =====
 # Blog
 # =====
+
+
+
+
+
+
 class Post(db.Model):
     __tablename__ = 'post'
 

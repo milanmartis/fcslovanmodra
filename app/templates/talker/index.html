@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block content %}
+  <h2>Talker rooms</h2>
+
+  <ul>
+    {% for r in rooms %}
+      <li>
+        <a href="{{ url_for('talker.room_detail', room_id=r.id) }}">{{ r.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

@@ -222,7 +222,14 @@
 			</p>
 		</div>
 	</footer>
+	<button id="enable-notifications">Allow notifications</button>
 
+	<script>
+	  document.getElementById("enable-notifications").addEventListener("click", async () => {
+		const perm = await Notification.requestPermission();
+		console.log("permission:", perm); // "granted" | "denied" | "default"
+	  });
+	</script>
 	<script>
 		document.onreadystatechange = function() {
 			if (document.readyState !== "complete") {
@@ -242,8 +249,8 @@
 
 	<!-- Bootstrap 5 bundle -> provides window.bootstrap and Popper -->
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-			integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-			crossorigin="anonymous"></script>
+	integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+	crossorigin="anonymous"></script>
 
 	<!-- FullCalendar (needs jQuery + moment) -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
@@ -396,5 +403,116 @@
 		const checkout_session_id = '{{checkout_session_id}}';
 	</script>
 	<script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>
+	<script type="module">
+		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+		import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js";
+	  
+		async function loadPushConfig() {
+		  const r = await fetch("/talker/push/config", { credentials: "same-origin" });
+		  if (!r.ok) throw new Error("push config fetch failed: " + r.status);
+		  const cfg = await r.json();
+	  
+		  // očakávame: { firebase:{...}, vapidPublicKey:"..." }
+		  if (!cfg?.firebase?.messagingSenderId) throw new Error("missing firebase.messagingSenderId");
+		  if (!cfg?.vapidPublicKey) throw new Error("missing vapidPublicKey");
+	  
+		  return cfg;
+		}
+	  
+		async function hasTokenAlready() {
+		  // Ak nemáš endpoint, kľudne vráť false a modal ukáže vždy.
+		  // Odporúčam pridať GET /talker/push/status -> {has_token:true/false}
+		  try {
+			const r = await fetch("/talker/push/status", { credentials: "same-origin" });
+			if (!r.ok) return false;
+			const j = await r.json();
+			return !!j.has_token;
+		  } catch (e) {
+			return false;
+		  }
+		}
+	  
+		async function enablePushNotifications() {
+		  if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+	  
+		  // 1) načítaj config zo servera (.env -> Flask config)
+		  const cfg = await loadPushConfig();
+		  const firebaseConfig = cfg.firebase;
+		  const VAPID_PUBLIC_KEY = cfg.vapidPublicKey;
+	  
+		  // 2) permission
+		  const permission = await Notification.requestPermission();
+		  if (permission !== "granted") {
+			localStorage.setItem("pushPromptDismissed", "1");
+			return;
+		  }
+	  
+		  // 3) registruj FCM SW (samostatný)
+		  const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+	  
+		  // 4) firebase messaging token
+		  const app = initializeApp(firebaseConfig);
+		  const messaging = getMessaging(app);
+	  
+		  const token = await getToken(messaging, {
+			vapidKey: VAPID_PUBLIC_KEY,
+			serviceWorkerRegistration: reg,
+		  });
+	  
+		  if (!token) throw new Error("FCM token is empty");
+	  
+		  // 5) ulož token do Talker tabuľky PushToken
+		  const res = await fetch("/talker/push/register", {
+			method: "POST",
+			credentials: "same-origin",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+			  token,
+			  platform: "web",
+			  device: navigator.userAgent,
+			}),
+		  });
+	  
+		  if (!res.ok) throw new Error("push/register failed: " + res.status + " " + await res.text());
+	  
+		  // 6) zavri modal
+		  localStorage.setItem("pushPromptDismissed", "1");
+		  const modalEl = document.getElementById("notificationModal");
+		  if (modalEl) {
+			const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+			modal.hide();
+		  }
+	  
+		  // 7) foreground správy (keď máš stránku otvorenú)
+		  onMessage(messaging, (payload) => {
+			console.log("FCM foreground:", payload);
+			// tu si vieš spraviť toast/in-app badge
+		  });
+		}
+	  
+		async function checkAndAskForPush() {
+		  if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+		  if (Notification.permission === "denied") return;
+		  if (localStorage.getItem("pushPromptDismissed") === "1") return;
+	  
+		  const already = await hasTokenAlready();
+		  if (already) return;
+	  
+		  const modalEl = document.getElementById("notificationModal");
+		  if (modalEl) {
+			const modal = new bootstrap.Modal(modalEl);
+			modal.show();
+		  }
+		}
+	  
+		document.addEventListener("DOMContentLoaded", () => {
+		  checkAndAskForPush().catch(console.error);
+	  
+		  const btn = document.getElementById("enable-notifications");
+		  if (btn) btn.addEventListener("click", () => enablePushNotifications().catch(console.error));
+		});
+	  </script>
+	  
+	
 </body>
 </html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Talker Admin – Rooms</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  </head>
+
+  <body class="p-3">
+    <div class="container" style="max-width: 720px;">
+      <h3 class="mb-3">Talker – Rooms (Admin)</h3>
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-8">
+              <label class="form-label">Room name</label>
+              <input id="roomName" class="form-control" placeholder="e.g. A team" />
+            </div>
+            <div class="col-4">
+              <label class="form-label">Team ID</label>
+              <input id="teamId" class="form-control" placeholder="e.g. 1" />
+            </div>
+          </div>
+
+          <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary" onclick="createRoom()">Create</button>
+            <small class="text-muted align-self-center">POST /admin/talker/rooms</small>
+          </div>
+
+          <pre id="msg" class="mt-3 mb-0 small text-muted"></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <h5 class="mb-3">Existing rooms</h5>
+
+          <ul class="list-group" id="roomsList">
+            {% for r in rooms %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>#{{ r.id }}</strong> — {{ r.name }}
+                  {% if r.team_id is not none %}
+                    <span class="text-muted"> (team_id={{ r.team_id }})</span>
+                  {% endif %}
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom({{ r.id }})">
+                  Delete
+                </button>
+              </li>
+            {% else %}
+              <li class="list-group-item">No rooms yet.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function getCsrf() {
+        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      }
+
+      function setMsg(t) {
+        document.getElementById('msg').textContent = t || '';
+      }
+
+      async function createRoom() {
+        setMsg('');
+
+        const name = document.getElementById('roomName').value.trim();
+        const teamIdRaw = document.getElementById('teamId').value.trim();
+
+        if (!name) {
+          setMsg('Room name is required');
+          return;
+        }
+
+        const payload = { name };
+        if (teamIdRaw) payload.team_id = Number(teamIdRaw);
+
+        const res = await fetch('/admin/talker/rooms', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrf(),
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const txt = await res.text();
+        if (!res.ok) {
+          setMsg('Create failed: ' + res.status + '\n' + txt);
+          return;
+        }
+
+        location.reload();
+      }
+
+      async function deleteRoom(id) {
+        setMsg('');
+        if (!confirm('Delete room #' + id + '?')) return;
+
+        const res = await fetch('/admin/talker/rooms/' + id, {
+          method: 'DELETE',
+          headers: { 'X-CSRFToken': getCsrf() }
+        });
+
+        const txt = await res.text();
+        if (!res.ok) {
+          setMsg('Delete failed: ' + res.status + '\n' + txt);
+          return;
+        }
+
+        location.reload();
+      }
+    </script>
+  </body>
+</html>

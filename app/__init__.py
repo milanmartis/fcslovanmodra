@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
+from flask_socketio import SocketIO
 from flask_migrate import Migrate
 from slugify import slugify as _slugify
 from datetime import timedelta
@@ -18,10 +19,12 @@ from botocore.config import Config as BotoConfig
 import stripe
 import base64
 import os
+from app.firebase_client import init_firebase
+
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 load_dotenv()
-
+init_firebase()
 # ---- Rozšírená a bezpečnejšia inicializácia ---------------------------------
 
 # Kľúčové: SQLAlchemy engine options – heartbeat na spojeniach, recyklácia poolu
@@ -40,6 +43,7 @@ bcrypt = Bcrypt()
 login_manager = LoginManager()
 mail = Mail()
 csrf = CSRFProtect()
+socketio = SocketIO(cors_allowed_origins="*")
 
 def create_app(config_class=None):
     """
@@ -74,6 +78,7 @@ def create_app(config_class=None):
     login_manager.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
+    socketio.init_app(app)
     login_manager.login_view = 'users.login'
     login_manager.login_message_category = 'info'
     
@@ -106,6 +111,8 @@ def create_app(config_class=None):
     from app.calendar.routes import calendar
     from app.team.routes import team
     from app.errors.handlers import errors
+    from app.talker.routes import talker
+    from app.talker_admin.routes import talker_admin
 
     app.register_blueprint(users)
     app.register_blueprint(posts)
@@ -115,7 +122,9 @@ def create_app(config_class=None):
     app.register_blueprint(team)
     app.register_blueprint(errors)
     app.register_blueprint(sponsors_bp)
-
+    app.register_blueprint(talker)
+    app.register_blueprint(talker_admin)
+    
     # --- Jinja filtre ----------------------------------------------------------
     from slugify import slugify
     app.jinja_env.filters['slugify'] = slugify

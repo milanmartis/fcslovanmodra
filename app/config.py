@@ -34,13 +34,13 @@ class Config:
             return default
         return v.strip().lower() in ("1", "true", "yes", "on")
 
-    MAIL_SERVER   = os.getenv("MAIL_SERVER", "smtp.m1.websupport.sk")
-    MAIL_PORT     = int(os.getenv("MAIL_PORT", "465"))
-    MAIL_USE_SSL  = env_bool("MAIL_USE_SSL", True)
-    MAIL_USE_TLS  = env_bool("MAIL_USE_TLS", False)
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.m1.websupport.sk")
+    MAIL_PORT = int(os.getenv("MAIL_PORT", "465"))
+    MAIL_USE_SSL = env_bool("MAIL_USE_SSL", True)
+    MAIL_USE_TLS = env_bool("MAIL_USE_TLS", False)
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = (os.getenv("MAIL_FROM_NAME",""), os.getenv("MAIL_FROM"))
+    MAIL_DEFAULT_SENDER = (os.getenv("MAIL_FROM_NAME", ""), os.getenv("MAIL_FROM"))
 
     # (voliteľné) debug
     MAIL_SUPPRESS_SEND = os.getenv("MAIL_SUPPRESS_SEND", "0") == "1"
@@ -56,3 +56,25 @@ class Config:
     STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 
     ASYNC_DATABASE_URL = os.getenv("ASYNC_DATABASE_URL")
+
+    # ======================================================
+    # PUSH / FIREBASE (PUBLIC web config pre frontend)
+    # Toto sú "verejné" hodnoty – môžu ísť do JS cez endpoint.
+    # Nájdeš ich vo Firebase Console -> Project settings -> Web app config.
+    # ======================================================
+    FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
+    FIREBASE_AUTH_DOMAIN = os.getenv("FIREBASE_AUTH_DOMAIN")
+    FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID")
+    FIREBASE_MESSAGING_SENDER_ID = os.getenv("FIREBASE_MESSAGING_SENDER_ID")
+    FIREBASE_APP_ID = os.getenv("FIREBASE_APP_ID")
+
+    # VAPID (PUBLIC ide do frontend-u, PRIVATE nikdy neposielať do JS)
+    VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
+    VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
+
+    # Firebase service account pre firebase-admin (server-side)
+    # Ty máš v .env: FIREBASE_CERT=...
+    FIREBASE_CERT = os.getenv("FIREBASE_CERT")
+    # (kompat) ak by si používal staré názvy:
+    FIREBASE_CERT_JSON = os.getenv("FIREBASE_CERT_JSON")
+    FIREBASE_CERT_PATH = os.getenv("FIREBASE_CERT_PATH")
