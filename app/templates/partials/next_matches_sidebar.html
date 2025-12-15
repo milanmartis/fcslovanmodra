@@ -11,12 +11,18 @@
     .logos{
       display: block;
       width: fit-content;
-      border-radius: 26px;
+      border-radius: 22px;
       background-color: #fff;
       border: 1px solid rgba(109, 155, 255, 0.18);
       backdrop-filter: blur(10px);
       padding: 2px;
       box-shadow: 0 0 16px rgba(109, 155, 255, 0.87);
+    }
+    .image-logo{
+      height: 90px;
+      width: auto;
+      max-width: 49%;
+      object-fit: contain;
     }
     tr{
       padding: 0px;
@@ -145,9 +151,9 @@
   
                     {# logá – ak sa nenašli v DB, fallback na staré AWS #}
                     <div class="logos">
-                      <img class="image-logo" style="padding:6px;" height="81"
+                      <img class="image-logo" style="padding:6px;" 
                            src="{% if logos.home %}{{ logos.home }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ home_slug ~ '.png' }}{% endif %}">
-                      <img class="image-logo" style="padding:6px;" height="81"
+                      <img class="image-logo" style="padding:6px;"
                            src="{% if logos.away %}{{ logos.away }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ away_slug ~ '.png' }}{% endif %}">
                     </div>
                     <br>

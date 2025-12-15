@@ -1,7 +1,7 @@
 {
   "name": "FC Slovan Modra",
   "short_name": "FCSM",
-  "start_url": "/home",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0b1220",
@@ -20,7 +20,7 @@
       "purpose": "any"
     },
     {
-      "src": "/static/icons/icon-180.png",
+      "src": "/static/icons/apple-180.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
