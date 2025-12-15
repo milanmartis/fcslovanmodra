@@ -7,6 +7,7 @@ from flask_security import login_required, current_user
 from flask_socketio import join_room, emit
 from sqlalchemy.exc import IntegrityError
 from firebase_admin import messaging
+from app import csrf
 
 from flask import Response
 from app import db, socketio
@@ -39,8 +40,8 @@ def firebase_messaging_sw():
 "use strict";
 
 try {{
-  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
+importScripts("/static/vendor/firebase/firebase-app-compat.js");
+importScripts("/static/vendor/firebase/firebase-messaging-compat.js");
 }} catch (e) {{
   // ak by importScripts zlyhalo (offline/CSP/proxy), nech SW aspoň nespadne
   console.error("FCM SW importScripts failed:", e);
@@ -138,6 +139,20 @@ def push_config():
         },
         vapidPublicKey=current_app.config.get("VAPID_PUBLIC_KEY"),
     )
+    
+    
+    
+@talker.get("/push/test")
+@login_required
+@csrf.exempt
+def push_test():
+    send_push_to_users(
+        user_ids=[current_user.id],
+        title="Test",
+        body="Ahoj, toto je test push",
+        data={"url": "/talker/", "type": "test"},
+    )
+    return jsonify(ok=True)
     
     
 @talker.post("/push/unregister")
@@ -249,6 +264,8 @@ def load_messages(room_id: int):
 
 @talker.post("/push/register")
 @login_required
+@csrf.exempt
+
 def register_push_token():
     data = request.get_json(silent=True)
 

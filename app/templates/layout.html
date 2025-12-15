@@ -26,26 +26,29 @@
   <!-- FullCalendar CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
 
-  <!-- Service Worker registration (tvoj offline SW) -->
   <script>
-	if ("serviceWorker" in navigator) {
-	  window.addEventListener("load", async () => {
-		try {
-		  const reg = await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
-		  console.log("Offline SW registered:", reg.scope);
-		} catch (e) {
-		  console.error("Offline SW registration failed:", e);
-		}
-	  });
-	}
+    window.__IS_AUTH = {{ "true" if current_user.is_authenticated else "false" }};
   </script>
-  <script>
-	window.__IS_AUTH = {{ "true" if current_user.is_authenticated else "false" }};
-  </script>
-    <!-- Bootstrap 5 bundle -> provides window.bootstrap and Popper -->
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+
+  <!-- Bootstrap 5 bundle (musí byť dostupný pre modaly) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
     crossorigin="anonymous"></script>
+
+  <!-- Service Worker registration (offline SW) -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          const reg = await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
+          console.log("Offline SW registered:", reg.scope);
+        } catch (e) {
+          console.error("Offline SW registration failed:", e);
+        }
+      });
+    }
+  </script>
+
   {% if title %}
     <title>FC Slovan Modra - {{ title }}</title>
   {% else %}
@@ -66,7 +69,6 @@
 </head>
 
 <body>
-  <!--<div id="loader"></div>-->
   <header class="site-header">
     {% include 'menu.html' %}
   </header>
@@ -90,7 +92,6 @@
       <div class="col-md-4 sidebar-club">
         {% if current_user.is_authenticated %}
           {% if current_user.has_roles('Admin') %}
-
           <div class="content-section mt-6">
             <div class="card-glass content-section-sidebar">
               <h3 style="padding-top:12px;">Admin panel</h3>
@@ -107,16 +108,19 @@
                   <a href="{{ url_for('sponsors.sponsors_admin') }}">Sponzori</a>
                   <a href="{{ url_for('talker.index') }}">Talker</a>
                   <a href="{{ url_for('users.account') }}">Môj účet</a>
-                  {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
-                  {% endif %}
+                  <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
                 </ul>
               </p>
+
+              <!-- Voliteľné: manuálne otvorenie push modalu -->
+              <div class="mt-3">
+                <button class="btn btn-sm btn-primary" id="openPushModalBtn" type="button">
+                  Push notifikácie
+                </button>
+              </div>
             </div>
           </div>
-
           {% else %}
-
           <div class="content-section mt-6">
             <div class="content-section-sidebar">
               <h3 style="padding-top:12px;">Užívateľský prístup</h3>
@@ -129,9 +133,15 @@
                   <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
                 </ul>
               </p>
+
+              <!-- Voliteľné: manuálne otvorenie push modalu -->
+              <div class="mt-3">
+                <button class="btn btn-sm btn-primary" id="openPushModalBtn" type="button">
+                  Push notifikácie
+                </button>
+              </div>
             </div>
           </div>
-
           {% endif %}
         {% endif %}
 
@@ -165,6 +175,7 @@
   <br><br>
 
   <footer class="footer">
+    <!-- ... footer obsah nechávam ako máš ... -->
     <br>
     <div class="container bottom_border">
       <div class="row">
@@ -235,14 +246,12 @@
     </div>
   </footer>
 
-  <!-- ✅ CORE LIBS (order matters, NO defer) -->
+  <!-- ✅ CORE LIBS -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
 
-
-
-  <!-- FullCalendar (needs jQuery + moment) -->
+  <!-- FullCalendar -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
 
   <!-- Your scripts -->
@@ -251,7 +260,15 @@
   <script src="{{ url_for('static', filename='js/filemanager.js') }}"></script>
   <script src="{{ url_for('static', filename='js/lightbox.js') }}"></script>
 
-  <!-- Calendar modal iframe loader -->
+  <!-- Stripe -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    const checkout_public_key = '{{checkout_public_key}}';
+    const checkout_session_id = '{{checkout_session_id}}';
+  </script>
+  <script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>
+
+  <!-- Calendar modal iframe loader (nechávam tvoj) -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const modalEl = document.getElementById('calenadrModal');
@@ -261,17 +278,10 @@
       if (!modalEl) return;
 
       function showLoader() {
-        if (loaderEl) {
-          loaderEl.style.visibility = 'visible';
-          loaderEl.style.display = 'block';
-        }
+        if (loaderEl) { loaderEl.style.visibility = 'visible'; loaderEl.style.display = 'block'; }
       }
-
       function hideLoader() {
-        if (loaderEl) {
-          loaderEl.style.visibility = 'hidden';
-          loaderEl.style.display = 'none';
-        }
+        if (loaderEl) { loaderEl.style.visibility = 'hidden'; loaderEl.style.display = 'none'; }
       }
 
       function createCalendarIframe() {
@@ -310,10 +320,7 @@
         holder.appendChild(iframe);
       }
 
-      modalEl.addEventListener('shown.bs.modal', function () {
-        createCalendarIframe();
-      });
-
+      modalEl.addEventListener('shown.bs.modal', function () { createCalendarIframe(); });
       modalEl.addEventListener('hidden.bs.modal', function () {
         const holder = document.getElementById('iframeHolder');
         if (holder) holder.innerHTML = '';
@@ -322,218 +329,210 @@
       });
 
       const calendarLink = document.getElementById('kalendar_button');
-      if (calendarLink) {
-        calendarLink.addEventListener('click', function () {
-          showLoader();
-        });
-      }
-    });
-  </script>
-
-  <!-- Navbar scroll effect -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const navbar = document.querySelector('.club-navbar');
-      if (!navbar) return;
-
-      function onScroll() {
-        if (window.scrollY > 10) navbar.classList.add('club-navbar-scrolled');
-        else navbar.classList.remove('club-navbar-scrolled');
-      }
-
-      onScroll();
-      window.addEventListener('scroll', onScroll);
+      if (calendarLink) calendarLink.addEventListener('click', function () { showLoader(); });
     });
   </script>
 
   <!-- Carousel touch swipe -->
   <script>
-	function initCarouselTouchSwipe() {
-	  if (!window.bootstrap || !window.bootstrap.Carousel) {
-		setTimeout(initCarouselTouchSwipe, 200);
-		return;
-	  }
-	  document.querySelectorAll(".carousel").forEach((el) => {
-		let startX = null;
-  
-		el.addEventListener("touchstart", (e) => {
-		  if (e.touches.length === 1) startX = e.touches[0].clientX;
-		}, { passive: true });
-  
-		el.addEventListener("touchmove", (e) => {
-		  if (startX === null) return;
-		  const diff = startX - e.touches[0].clientX;
-		  if (Math.abs(diff) > 40) {
-			const inst = window.bootstrap.Carousel.getOrCreateInstance(el);
-			diff > 0 ? inst.next() : inst.prev();
-			startX = null;
-		  }
-		}, { passive: true });
-  
-		el.addEventListener("touchend", () => startX = null, { passive: true });
-	  });
-	}
-	document.addEventListener("DOMContentLoaded", initCarouselTouchSwipe);
+    function initCarouselTouchSwipe() {
+      if (!window.bootstrap || !window.bootstrap.Carousel) {
+        setTimeout(initCarouselTouchSwipe, 200);
+        return;
+      }
+      document.querySelectorAll(".carousel").forEach((el) => {
+        let startX = null;
+
+        el.addEventListener("touchstart", (e) => {
+          if (e.touches.length === 1) startX = e.touches[0].clientX;
+        }, { passive: true });
+
+        el.addEventListener("touchmove", (e) => {
+          if (startX === null) return;
+          const diff = startX - e.touches[0].clientX;
+          if (Math.abs(diff) > 40) {
+            const inst = window.bootstrap.Carousel.getOrCreateInstance(el);
+            diff > 0 ? inst.next() : inst.prev();
+            startX = null;
+          }
+        }, { passive: true });
+
+        el.addEventListener("touchend", () => startX = null, { passive: true });
+      });
+    }
+    document.addEventListener("DOMContentLoaded", initCarouselTouchSwipe);
   </script>
 
-  <!-- Stripe -->
-  <script src="https://js.stripe.com/v3/"></script>
-  <script>
-    const checkout_public_key = '{{checkout_public_key}}';
-    const checkout_session_id = '{{checkout_session_id}}';
-  </script>
-  <script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>
-
-  <!-- ✅ PUSH (Variant A) -->
+  <!-- ✅ PUSH (MODAL) -->
   <script type="module">
-	import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-	import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js";
-  
-	async function loadPushConfig() {
-	  const r = await fetch("/talker/push/config", { credentials: "same-origin" });
-	  if (!r.ok) throw new Error("push config fetch failed: " + r.status);
-	  return await r.json();
-	}
-  
-	async function hasTokenAlready() {
-	  // ak nie si prihlásený, nepýtaj status (inak 302 na login)
-	  if (!window.__IS_AUTH) return false;
-	  const r = await fetch("/talker/push/status", { credentials: "same-origin" });
-	  if (!r.ok) return false;
-	  const j = await r.json();
-	  return !!j.has_token;
-	}
-  
-	function setStatus(text) {
-	  const el = document.getElementById("push-status");
-	  if (el) el.textContent = text || "";
-	}
-  
-	function showBtn(show) {
-	  const btn = document.getElementById("enable-notifications");
-	  if (btn) btn.style.display = show ? "inline-block" : "none";
-	}
-  
-	async function enablePushNotifications() {
-	  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-		setStatus("Push nie je podporovaný v tomto prehliadači.");
-		return;
-	  }
-  
-	  const cfg = await loadPushConfig();
-	  const firebaseConfig = cfg.firebase;
-	  const vapidKey = cfg.vapidPublicKey;
-  
-	  if (!firebaseConfig?.messagingSenderId || !firebaseConfig?.appId || !vapidKey) {
-		throw new Error("Missing firebase config/vapid key");
-	  }
-  
-	  // vyžiadaj permission
-	  const permission = await Notification.requestPermission();
-	  if (permission !== "granted") {
-		setStatus(permission === "denied"
-		  ? "Push je zablokovaný v nastaveniach prehliadača."
-		  : "Push nebol povolený.");
-		// ak chceš, toto si môžeš ukladať, ale potom sa ti už nebude zobrazovať
-		// localStorage.setItem("pushPromptDismissed", "1");
-		return;
-	  }
-  
-	  // registruj FCM SW (scope /talker/)
-	  const reg = await navigator.serviceWorker.register("/talker/firebase-messaging-sw.js");
-  
-	  const app = initializeApp(firebaseConfig);
-	  const messaging = getMessaging(app);
-  
-	  const token = await getToken(messaging, {
-		vapidKey,
-		serviceWorkerRegistration: reg,
-	  });
-  
-	  if (!token) throw new Error("FCM token is empty");
-  
-	  // uložiť token do DB (vyžaduje login)
-	  if (window.__IS_AUTH) {
-		const res = await fetch("/talker/push/register", {
-		  method: "POST",
-		  credentials: "same-origin",
-		  headers: { "Content-Type": "application/json" },
-		  body: JSON.stringify({
-			token,
-			platform: "web",
-			device: navigator.userAgent,
-		  }),
-		});
-		if (!res.ok) throw new Error("push/register failed: " + res.status + " " + await res.text());
-	  }
-  
-	  setStatus("Push je zapnutý ✅");
-	  showBtn(false);
-  
-	  // foreground handler
-	  onMessage(messaging, (payload) => {
-		console.log("FCM foreground:", payload);
-	  });
-	}
-  
-	async function initPushUI() {
-	  const btn = document.getElementById("enable-notifications");
-	  if (btn) btn.addEventListener("click", () => enablePushNotifications().catch(e => {
-		console.error(e);
-		setStatus("Chyba pri zapnutí push: " + e.message);
-	  }));
-  
-	  if (!("Notification" in window)) {
-		setStatus("Notifikácie nie sú podporované.");
-		showBtn(false);
-		return;
-	  }
-  
-	  // ak user zakázal, tlačidlo môžeš skryť alebo zobraziť s info
-	  if (Notification.permission === "denied") {
-		setStatus("Push je zablokovaný (Site settings → Notifications → Ask).");
-		showBtn(true); // môžeš aj false
-		return;
-	  }
-  
-	  const already = await hasTokenAlready();
-	  if (Notification.permission === "granted" && already) {
-		setStatus("Push je zapnutý ✅");
-		showBtn(false);
-		return;
-	  }
-  
-	  // default → ukáž tlačidlo
-	  setStatus("Push nie je zapnutý.");
-	  showBtn(true);
-	}
-  
-	document.addEventListener("DOMContentLoaded", () => {
-	  // ak si to chceš riadiť localStorage flagom, odkomentuj:
-	  // if (localStorage.getItem("pushPromptDismissed") === "1") return;
-  
-	  initPushUI().catch(console.error);
-	});
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js";
+
+    async function loadPushConfig() {
+      const r = await fetch("/talker/push/config", { credentials: "same-origin" });
+      if (!r.ok) throw new Error("push config fetch failed: " + r.status);
+      return await r.json();
+    }
+
+    async function hasTokenAlready() {
+      if (!window.__IS_AUTH) return false;
+      const r = await fetch("/talker/push/status", { credentials: "same-origin" });
+      if (!r.ok) return false;
+      const j = await r.json();
+      return !!j.has_token;
+    }
+
+    function setModalStatus(text) {
+      const el = document.getElementById("pushStatusText");
+      if (el) el.textContent = text || "";
+    }
+
+    function openPushModal() {
+      const modalEl = document.getElementById("pushModal");
+      if (!modalEl) return;
+
+      if (!window.bootstrap || !window.bootstrap.Modal) {
+        console.warn("bootstrap Modal not available");
+        return;
+      }
+
+      const inst = window.bootstrap.Modal.getOrCreateInstance(modalEl, {
+        backdrop: "static",
+        keyboard: true
+      });
+      inst.show();
+    }
+
+    async function enablePushFromModal() {
+      setModalStatus("");
+
+      if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+        setModalStatus("Push nie je podporovaný v tomto prehliadači.");
+        return;
+      }
+
+      if (Notification.permission === "denied") {
+        setModalStatus("Push je zablokovaný v nastaveniach prehliadača (Site settings → Notifications → Ask).");
+        return;
+      }
+
+      const cfg = await loadPushConfig();
+      const firebaseConfig = cfg.firebase;
+      const vapidKey = cfg.vapidPublicKey;
+
+      if (!firebaseConfig?.messagingSenderId || !firebaseConfig?.appId || !vapidKey) {
+        throw new Error("Missing firebase config/vapid key");
+      }
+
+      // vyžiadaj permission (toto MUSÍ byť v click handleri)
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setModalStatus(permission === "denied"
+          ? "Push je zablokovaný v nastaveniach prehliadača."
+          : "Push nebol povolený.");
+        return;
+      }
+
+      // registruj FCM SW
+      const reg = await navigator.serviceWorker.register("/talker/firebase-messaging-sw.js");
+
+      const app = initializeApp(firebaseConfig);
+      const messaging = getMessaging(app);
+
+      const token = await getToken(messaging, {
+        vapidKey,
+        serviceWorkerRegistration: reg,
+      });
+
+      if (!token) throw new Error("FCM token is empty");
+
+      // uložiť token do DB
+      if (window.__IS_AUTH) {
+        const res = await fetch("/talker/push/register", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            platform: "web",
+            device: navigator.userAgent,
+          }),
+        });
+        if (!res.ok) throw new Error("push/register failed: " + res.status + " " + await res.text());
+      }
+
+      setModalStatus("Push je zapnutý ✅");
+
+      // foreground handler
+      onMessage(messaging, (payload) => {
+        console.log("FCM foreground:", payload);
+      });
+
+      // môžeš zavrieť modal po úspechu
+      // const modalEl = document.getElementById("pushModal");
+      // window.bootstrap.Modal.getInstance(modalEl)?.hide();
+    }
+
+    async function initPushModalUI() {
+      const openBtn = document.getElementById("openPushModalBtn");
+      if (openBtn) openBtn.addEventListener("click", openPushModal);
+
+      const enableBtn = document.getElementById("pushEnableBtn");
+      if (enableBtn) {
+        enableBtn.addEventListener("click", async () => {
+          try {
+            enableBtn.disabled = true;
+            setModalStatus("Zapínam push...");
+            await enablePushFromModal();
+          } catch (e) {
+            console.error(e);
+            setModalStatus("Chyba pri zapnutí push: " + (e?.message || e));
+          } finally {
+            enableBtn.disabled = false;
+          }
+        });
+      }
+
+      // Auto-open len keď to má zmysel
+      if (!window.__IS_AUTH) return;
+
+      const already = await hasTokenAlready();
+      if (Notification.permission === "granted" && already) return;
+
+      // keď je denied, otvor modal s info (aby user vedel čo spraviť)
+      if (Notification.permission === "denied") {
+        setModalStatus("Push je zablokovaný v nastaveniach prehliadača (Site settings → Notifications → Ask).");
+        openPushModal();
+        return;
+      }
+
+      // default alebo granted bez tokenu → ukáž modal
+      openPushModal();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initPushModalUI().catch(console.error);
+    });
   </script>
-  
 
-
+  <!-- ✅ PUSH MODAL HTML -->
   <div class="modal fade" id="pushModal" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog modal-dialog-centered">
-	  <div class="modal-content card-glass">
-		<div class="modal-body">
-		  <h5 style="margin-bottom:10px;">Push notifikácie</h5>
-		  <p style="opacity:.8;margin-bottom:14px;">
-			Chceš dostávať push správy, keď príde nová správa v Talkeri?
-		  </p>
-		  <div class="d-flex gap-2 justify-content-end">
-			<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Teraz nie</button>
-			<button type="button" class="btn btn-primary" id="pushEnableBtn">Povoliť</button>
-		  </div>
-		  <div id="pushStatusText" style="margin-top:10px;font-size:90%;opacity:.8;"></div>
-		</div>
-	  </div>
-	</div>
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-glass">
+        <div class="modal-body">
+          <h5 style="margin-bottom:10px;">Push notifikácie</h5>
+          <p style="opacity:.8;margin-bottom:14px;">
+            Chceš dostávať push správy, keď príde nová správa v Talkeri?
+          </p>
+          <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Teraz nie</button>
+            <button type="button" class="btn btn-primary" id="pushEnableBtn">Povoliť</button>
+          </div>
+          <div id="pushStatusText" style="margin-top:10px;font-size:90%;opacity:.8;"></div>
+        </div>
+      </div>
+    </div>
   </div>
+
 </body>
 </html>
