@@ -1,30 +1,23 @@
-from flask import Flask, session, g, render_template, redirect, url_for, request, current_app, Response
+from flask import Flask, redirect, url_for, request, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_socketio import SocketIO
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 from slugify import slugify as _slugify
-from datetime import timedelta
-from datetime import datetime
-from flask_security import Security, SQLAlchemyUserDatastore
+from datetime import timedelta, datetime
 from werkzeug.exceptions import NotFound
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import QueuePool
-from app.aws_utils import s3_presign as aws_s3_presign
+from dotenv import load_dotenv
 import boto3
 from botocore.config import Config as BotoConfig
-import stripe
 import base64
 import os
-from app.firebase_client import init_firebase
-
-from flask_wtf.csrf import CSRFProtect
-from dotenv import load_dotenv
 
 load_dotenv()
-init_firebase()
 
 # ---- Rozšírená a bezpečnejšia inicializácia ---------------------------------
 
@@ -36,7 +29,7 @@ DEFAULT_ENGINE_OPTIONS = {
     "max_overflow": int(os.getenv("SQL_MAX_OVERFLOW", "10")),
 }
 
-salt = base64.b64encode(os.urandom(32)).decode('utf-8')
+salt = base64.b64encode(os.urandom(32)).decode("utf-8")
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -57,9 +50,12 @@ def create_app(config_class=None):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # cache pre static súbory nechaj, ale SW/manifest budeme servovať no-store
-    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(days=365)
+    # Firebase init až tu (nie pri importe modulu)
+    from app.firebase_client import init_firebase
+    init_firebase()
 
+    # cache pre static súbory nechaj, ale SW/manifest budeme servovať no-store
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=365)
     app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", DEFAULT_ENGINE_OPTIONS)
 
     def safe_slug(value):
@@ -68,7 +64,7 @@ def create_app(config_class=None):
         except Exception:
             return ""
 
-    app.jinja_env.filters['safe_slug'] = safe_slug
+    app.jinja_env.filters["safe_slug"] = safe_slug
 
     db.init_app(app)
     Migrate(app, db)
@@ -78,14 +74,15 @@ def create_app(config_class=None):
     csrf.init_app(app)
     socketio.init_app(app)
 
-    login_manager.login_view = 'users.login'
-    login_manager.login_message_category = 'info'
+    login_manager.login_view = "users.login"
+    login_manager.login_message_category = "info"
 
-    from .models import User, Role, roles_users, Sponsor
-    from app.aws_utils import make_sponsor_key, s3_presign
+    # --- Security / models ----------------------------------------------------
+    from .models import User, Role, Sponsor
+    from flask_security import Security, SQLAlchemyUserDatastore
 
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    security = Security(app, user_datastore)
+    Security(app, user_datastore)
 
     # --- Robustný user_loader -------------------------------------------------
     @login_manager.user_loader
@@ -143,23 +140,9 @@ def create_app(config_class=None):
     # Musí byť dostupné bez login a bez redirectu.
     @app.get("/firebase-messaging-sw.js")
     def firebase_messaging_sw_root():
-        """
-        Toto routuje na funkciu firebase_messaging_sw z app.talker.routes.
-        Dôležité: musí to byť ROOT route, inak iOS/Push scope robí bordel.
-        """
-        try:
-            # v app/talker/routes.py musí existovať: def firebase_messaging_sw(): ...
-            from app.talker.routes import firebase_messaging_sw  # noqa
-            resp = firebase_messaging_sw()
-
-            # pre istotu vynútime no-store aj tu (ak by to vo view chýbalo)
-            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-            resp.headers["Pragma"] = "no-cache"
-            resp.headers["Expires"] = "0"
-            resp.headers["Service-Worker-Allowed"] = "/"
-            return resp
-        except Exception as e:
-            return Response(f"/* firebase-messaging-sw.js error: {e} */", status=500, mimetype="application/javascript")
+        # LAZY import – vyrieši circular import
+        from app.talker.routes import firebase_messaging_sw as _firebase_messaging_sw
+        return _firebase_messaging_sw()
 
     # --- Blueprints -----------------------------------------------------------
     from app.users.routes import users
@@ -186,13 +169,13 @@ def create_app(config_class=None):
 
     # --- Jinja filtre ---------------------------------------------------------
     from slugify import slugify
-    app.jinja_env.filters['slugify'] = slugify
+    app.jinja_env.filters["slugify"] = slugify
 
     # --- Logging SQL (len v debug) -------------------------------------------
     if app.debug:
         import logging
         logging.basicConfig()
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+        logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
     # --- Session cleanup ------------------------------------------------------
     @app.teardown_appcontext
@@ -244,13 +227,11 @@ def create_app(config_class=None):
     # -------------------------------------------------------------------------
     # Sidebar context
     # -------------------------------------------------------------------------
+    from app.aws_utils import make_sponsor_key
+
     @app.context_processor
     def sidebar_context():
-        partners_q = (
-            Sponsor.query
-            .order_by(Sponsor.orderz.asc())
-            .all()
-        )
+        partners_q = Sponsor.query.order_by(Sponsor.orderz.asc()).all()
 
         partners = []
         for s in partners_q:
@@ -303,25 +284,25 @@ def create_app(config_class=None):
             _S3_CACHE["client"] = _build_s3_client()
         return _S3_CACHE["client"]
 
+    def s3_presign(key: str, expires: int = 3600) -> str:
+        c = _s3()
+        bucket = _S3_CACHE["bucket"]
+        if not c or not bucket or not key:
+            return ""
+        try:
+            return c.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": bucket, "Key": key},
+                ExpiresIn=expires,
+            )
+        except Exception:
+            return ""
+
     @app.context_processor
     def aws_helpers():
         def aws_image_url():
             bucket = _S3_CACHE["bucket"]
             return f"https://{bucket}.s3.amazonaws.com/" if bucket else ""
-
-        def s3_presign(key: str, expires: int = 3600) -> str:
-            c = _s3()
-            bucket = _S3_CACHE["bucket"]
-            if not c or not bucket or not key:
-                return ""
-            try:
-                return c.generate_presigned_url(
-                    "get_object",
-                    Params={"Bucket": bucket, "Key": key},
-                    ExpiresIn=expires,
-                )
-            except Exception:
-                return ""
 
         return dict(aws_image_url=aws_image_url, s3_presign=s3_presign)
 

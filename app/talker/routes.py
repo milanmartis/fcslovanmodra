@@ -13,7 +13,6 @@ from app import db, socketio, csrf
 from app.models import TalkRoom, TalkMessage, PushToken, Team
 from .permissions import user_can_access_room, is_admin_user
 from app.firebase_client import init_firebase
-
 # WebPush
 try:
     from pywebpush import webpush, WebPushException  # type: ignore
@@ -83,8 +82,10 @@ def firebase_messaging_sw():
 // Firebase (FCM) SW
 // -------------------------
 try {{
-  importScripts("/static/vendor/firebase/firebase-app-compat.js");
-  importScripts("/static/vendor/firebase/firebase-messaging-compat.js");
+  // Firebase compat app (OK)
+  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
+  // DÔLEŽITÉ: SW build pre messaging (nie messaging-compat)
+  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-sw.js");
 }} catch (e) {{
   console.error("FCM SW importScripts failed:", e);
 }}

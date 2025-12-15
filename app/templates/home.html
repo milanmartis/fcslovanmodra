@@ -1,11 +1,11 @@
-<main id="app-content" hx-push-url="true">
 {% extends "layout.html" %}
 {% block content %}
+
+<main id="app-content" hx-push-url="true">
   {% for post in posts %}
     <article class="media content-section">
       <div class="media-body">
 
-        {# -- nájdi titulný obrázok (orderz == 0) bezpečne -- #}
         {% set pics = (post.galleries | default(post.gallery) | default([])) %}
         {% set cover = (pics | selectattr('orderz', 'equalto', 0) | list | first) %}
         {% if not cover %}
@@ -16,7 +16,6 @@
         {% endif %}
 
         {% if cover %}
-          {# vždy použijeme pre-signed URL (súkromný bucket) #}
           {% set cover_url = s3_presign('posts/' ~ post.id ~ '/gallery/' ~ cover.image_file2) %}
           <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
             <img class="post-title-image" loading="lazy" src="{{ cover_url }}" alt="{{ post.title }}">
@@ -40,7 +39,6 @@
           <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a>
         </h2>
 
-        {# bezpečný výrez; ak content obsahuje HTML, takto sa nezacyklí ani nespôsobí reflow #}
         <p class="article-content">
           {{ (post.content | default('') | striptags)[:220] }}{% if (post.content | default('') | striptags)|length > 220 %}…{% endif %}
         </p>
@@ -49,7 +47,6 @@
     <br>
   {% endfor %}
 
-  {# -- stránkovanie -- #}
   {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
     {% if page_num %}
       {% if posts.page == page_num %}
@@ -61,5 +58,6 @@
       <span style="color:#6d9bff; letter-spacing:2px; font-weight:800;">…</span>
     {% endif %}
   {% endfor %}
-{% endblock content %}
 </main>
+
+{% endblock content %}
