@@ -1,12 +1,157 @@
 {% extends "layout.html" %}
 {% block content %}
+
+<style>
+  /* fullscreen modal overlay */
+  .tmodal {
+    position: fixed;
+    inset: 0;
+    z-index: 99999999999999999999999999999999999999999999999999999999999999999;
+    background: rgba(0,0,0,.55);
+    display: none;
+  }
+  .tmodal.open { display: block; }
+
+  .tmodal__panel {
+    position: absolute;
+    inset: 0;
+    background: #0b1220;
+  }
+
+  /* top bar */
+  .tmodal__top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    background: rgba(255,255,255,.06);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    color: rgba(255,255,255,.92);
+  }
+  .tmodal__title {
+    font-weight: 700;
+    font-size: 14px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 70%;
+  }
+  .tmodal__close {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.92);
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  /* iframe area */
+  .tmodal__frameWrap {
+    position: absolute;
+    top: 56px;
+    left: 0; right: 0; bottom: 0;
+  }
+  .tmodal__frame {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: transparent;
+  }
+
+  /* nice room list */
+  .rooms {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 12px;
+  }
+  .roomLink {
+    display: block;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(0,0,0,.05);
+    border: 1px solid rgba(0,0,0,.06);
+    text-decoration: none;
+    margin-bottom: 10px;
+  }
+</style>
+
+<div class="rooms">
   <h2>Talker rooms</h2>
 
-  <ul>
-    {% for r in rooms %}
-      <li>
-        <a href="{{ url_for('talker.room_detail', room_id=r.id) }}">{{ r.name }}</a>
-      </li>
-    {% endfor %}
-  </ul>
+  {% for r in rooms %}
+    <a class="roomLink"
+       href="{{ url_for('talker.room_detail', room_id=r.id) }}"
+       data-room-id="{{ r.id }}"
+       data-room-name="{{ r.name|e }}">
+      {{ r.name }}
+    </a>
+  {% endfor %}
+</div>
+
+<!-- Fullscreen modal -->
+<div id="tmodal" class="tmodal" aria-hidden="true">
+  <div class="tmodal__panel">
+    <div class="tmodal__top">
+      <div id="tmodalTitle" class="tmodal__title">Room</div>
+      <button id="tmodalClose" class="tmodal__close" type="button" aria-label="Close">✕</button>
+    </div>
+
+    <div class="tmodal__frameWrap">
+      <iframe id="tmodalFrame" class="tmodal__frame" src="about:blank"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById("tmodal");
+  const frame = document.getElementById("tmodalFrame");
+  const title = document.getElementById("tmodalTitle");
+  const closeBtn = document.getElementById("tmodalClose");
+
+  function openRoom(roomId, roomName) {
+    title.textContent = roomName || "Room";
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
+    // embed=1 -> server vráti “čistý” layout bez navbaru
+    frame.src = `/talker/rooms/${roomId}?embed=1`;
+  }
+
+  function closeRoom() {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+    frame.src = "about:blank";
+  }
+
+  closeBtn.addEventListener("click", closeRoom);
+
+  // klik mimo panel (na overlay) – optional
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeRoom();
+  });
+
+  // ESC zavrie
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("open")) closeRoom();
+  });
+
+  // intercept klik na room link
+  document.querySelectorAll("a.roomLink").forEach(a => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      openRoom(a.dataset.roomId, a.dataset.roomName);
+    });
+  });
+</script>
+
 {% endblock %}

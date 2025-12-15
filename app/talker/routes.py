@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import json
 from typing import Any
 from flask import current_app
 from flask import Blueprint, render_template, request, jsonify, abort
@@ -8,6 +8,7 @@ from flask_socketio import join_room, emit
 from sqlalchemy.exc import IntegrityError
 from firebase_admin import messaging
 
+from flask import Response
 from app import db, socketio
 from app.models import TalkRoom, TalkMessage, PushToken, Team
 from .permissions import user_can_access_room, is_admin_user
@@ -17,58 +18,87 @@ from app.firebase_client import init_firebase
 talker = Blueprint("talker", __name__, url_prefix="/talker")
 
 
-from flask import Response
+
 
 @talker.get("/firebase-messaging-sw.js")
 def firebase_messaging_sw():
-    # PUBLIC hodnoty – môžu ísť do klienta
-    api_key = current_app.config.get("FIREBASE_API_KEY") or ""
-    auth_domain = current_app.config.get("FIREBASE_AUTH_DOMAIN") or ""
-    project_id = current_app.config.get("FIREBASE_PROJECT_ID") or ""
-    sender_id = current_app.config.get("FIREBASE_MESSAGING_SENDER_ID") or ""
-    app_id = current_app.config.get("FIREBASE_APP_ID") or ""
+    # PUBLIC hodnoty – musia existovať (aspoň sender_id a app_id)
+    cfg = {
+        "apiKey": current_app.config.get("FIREBASE_API_KEY") or "",
+        "authDomain": current_app.config.get("FIREBASE_AUTH_DOMAIN") or "",
+        "projectId": current_app.config.get("FIREBASE_PROJECT_ID") or "",
+        "messagingSenderId": current_app.config.get("FIREBASE_MESSAGING_SENDER_ID") or "",
+        "appId": current_app.config.get("FIREBASE_APP_ID") or "",
+    }
 
-    js = f"""
+    # vždy vráť validný JS (aj keď config chýba), aby to nikdy nepadlo na HTML error page
+    cfg_json = json.dumps(cfg)
+
+    js = f"""\
 /* /talker/firebase-messaging-sw.js */
-importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
+"use strict";
 
-firebase.initializeApp({{
-  apiKey: {api_key!r},
-  authDomain: {auth_domain!r},
-  projectId: {project_id!r},
-  messagingSenderId: {sender_id!r},
-  appId: {app_id!r},
-}});
+try {{
+  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
+  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
+}} catch (e) {{
+  // ak by importScripts zlyhalo (offline/CSP/proxy), nech SW aspoň nespadne
+  console.error("FCM SW importScripts failed:", e);
+}}
 
-const messaging = firebase.messaging();
+const FIREBASE_CONFIG = {cfg_json};
 
-messaging.onBackgroundMessage((payload) => {{
-  const title = payload?.notification?.title || "Talker";
-  const body  = payload?.notification?.body  || "";
-  const data  = payload?.data || {{}};
+if (!FIREBASE_CONFIG.messagingSenderId || !FIREBASE_CONFIG.appId) {{
+  console.warn("FCM SW: missing firebase config fields (messagingSenderId/appId).", FIREBASE_CONFIG);
+}} else {{
+  try {{
+    firebase.initializeApp(FIREBASE_CONFIG);
+  }} catch (e) {{
+    console.error("FCM SW firebase.initializeApp failed:", e);
+  }}
 
-  const roomId = data.room_id || data.roomId;
-  const url = roomId ? `/talker/rooms/${{roomId}}` : (data.url || "/talker/");
+  let messaging = null;
+  try {{
+    messaging = firebase.messaging();
+  }} catch (e) {{
+    console.error("FCM SW firebase.messaging() failed:", e);
+  }}
 
-  const icon  = data.icon  || "/static/main/ico.png";
-  const badge = data.badge || "/static/main/ico.png";
+  if (messaging) {{
+    messaging.onBackgroundMessage((payload) => {{
+      try {{
+        const title = (payload && payload.notification && payload.notification.title) ? payload.notification.title : "Talker";
+        const body  = (payload && payload.notification && payload.notification.body)  ? payload.notification.body  : "";
+        const data  = (payload && payload.data) ? payload.data : {{}};
 
-  self.registration.showNotification(title, {{
-    body, icon, badge,
-    data: {{ url, roomId, ...data }},
-    actions: [
-      {{ action: "open",  title: "Otvoriť" }},
-      {{ action: "close", title: "Zavrieť" }},
-    ],
-  }});
-}});
+        const roomId = data.room_id || data.roomId;
+        const url = roomId ? `/talker/rooms/${{roomId}}` : (data.url || "/talker/");
+
+        const icon  = data.icon  || "/static/main/ico.png";
+        const badge = data.badge || "/static/main/ico.png";
+
+        self.registration.showNotification(title, {{
+          body,
+          icon,
+          badge,
+          data: Object.assign({{ url, roomId }}, data),
+          actions: [
+            {{ action: "open",  title: "Otvoriť" }},
+            {{ action: "close", title: "Zavrieť" }},
+          ],
+        }});
+      }} catch (e) {{
+        console.error("FCM SW onBackgroundMessage error:", e);
+      }}
+    }});
+  }}
+}}
 
 self.addEventListener("notificationclick", (event) => {{
   event.notification.close();
   if (event.action === "close") return;
 
-  const data = event.notification?.data || {{}};
+  const data = (event.notification && event.notification.data) ? event.notification.data : {{}};
   const url = data.url || "/talker/";
 
   event.waitUntil(
@@ -84,16 +114,20 @@ self.addEventListener("notificationclick", (event) => {{
   );
 }});
 """
-    return Response(js, mimetype="application/javascript")
-
+    resp = Response(js, mimetype="application/javascript; charset=utf-8")
+    # SW sa NESMIE agresívne cachovať, inak sa budeš trápiť s “nezmenil sa”
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    # umožni scope /talker/
+    resp.headers["Service-Worker-Allowed"] = "/talker/"
+    return resp
 
 
 
 
 @talker.get("/push/config")
-@login_required
 def push_config():
-    # ⚠️ toto sú PUBLIC hodnoty – môžu ísť do klienta
     return jsonify(
         firebase={
             "apiKey": current_app.config.get("FIREBASE_API_KEY"),
@@ -104,6 +138,25 @@ def push_config():
         },
         vapidPublicKey=current_app.config.get("VAPID_PUBLIC_KEY"),
     )
+    
+    
+@talker.post("/push/unregister")
+@login_required
+def unregister_push_token():
+    data = request.get_json(silent=True) or {}
+    token = (data.get("token") or "").strip()
+
+    q = PushToken.query.filter_by(user_id=current_user.id)
+    if token:
+        q = q.filter_by(token=token)
+
+    deleted = q.delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify(ok=True, deleted=int(deleted)), 200
+    
+    
+    
+    
 # -------------------------
 # HTTP ROUTES
 # -------------------------
@@ -152,13 +205,19 @@ def create_room():
     return jsonify(id=room.id, name=room.name, team_id=room.team_id), 201
 
 
-@talker.get("/rooms/<int:room_id>")
+@talker.route("/rooms/<int:room_id>")
 @login_required
-def room_detail(room_id: int):
+def room_detail(room_id):
     room = TalkRoom.query.get_or_404(room_id)
-    if not user_can_access_room(room):
-        abort(403)
-    return render_template("talker/room.html", room=room)
+
+    embed = request.args.get("embed") == "1"
+    base_template = "talker/embed_layout.html" if embed else "layout.html"
+
+    return render_template(
+        "talker/room_detail.html",
+        room=room,
+        base_template=base_template,
+    )
 
 
 @talker.get("/rooms/<int:room_id>/messages")

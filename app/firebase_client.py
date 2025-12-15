@@ -14,23 +14,14 @@ def _strip_quotes(s: str) -> str:
 
 
 def _load_cert_value(val: str):
-    """
-    Podporované formáty:
-    - JSON string (service account json) v env
-    - cesta k súboru .json v env
-    """
     val = _strip_quotes(val)
 
-    # ak vyzerá ako cesta k existujúcemu súboru
     if os.path.exists(val):
         return credentials.Certificate(val)
 
-    # inak predpokladaj JSON string
-    # často býva uložené ako single-line s escaped \n, takže to necháme tak
     try:
         data = json.loads(val)
     except json.JSONDecodeError:
-        # ešte jeden pokus: ak je JSON double-escaped, skúsime odescape
         try:
             data = json.loads(val.encode("utf-8").decode("unicode_escape"))
         except Exception as e:
@@ -40,16 +31,17 @@ def _load_cert_value(val: str):
 
 
 def init_firebase():
-    """
-    Inicializuje firebase-admin app pre posielanie push notifikácií.
-    Firebase je voliteľný: keď nie je cert, vráti None (aplikácia beží ďalej).
-    """
-
     global _firebase_app
     if _firebase_app:
         return _firebase_app
 
-    # ✅ podporujeme tvoje názvy z .env
+    # ak už existuje default app (napr. pri reload)
+    try:
+        _firebase_app = firebase_admin.get_app()
+        return _firebase_app
+    except Exception:
+        pass
+
     cert_env = (
         os.environ.get("FIREBASE_CERT")
         or os.environ.get("FIREBASE_CERT_JSON")
@@ -65,6 +57,5 @@ def init_firebase():
         _firebase_app = firebase_admin.initialize_app(cred)
         return _firebase_app
     except Exception as e:
-        # nech push nezhodí appku – len vypíš dôvod
         print("Firebase init failed:", e)
         return None

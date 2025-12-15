@@ -1,13 +1,18 @@
-from datetime import datetime
-from flask import render_template, request, Blueprint, flash, url_for, redirect
+from datetime import datetime, timedelta, timezone
+from collections import defaultdict
+from flask import send_from_directory, current_app
+
+from flask import render_template, request, Blueprint, flash
 from sqlalchemy.sql import func, and_
 from sqlalchemy.orm import subqueryload
+
 from app.aws_utils import make_sponsor_key, s3_presign
 from app import db
 from app.models import Post, Category, Team, Event, ScoreTable, Sponsor
-from collections import defaultdict
-from datetime import datetime, timedelta
+
+
 main = Blueprint('main', __name__)
+
 
 def get_current_season() -> str:
     """
@@ -15,13 +20,14 @@ def get_current_season() -> str:
     môžeš ju zatiaľ ignorovať. Použiteľná do budúcna.
     Napr. 2024/25 podľa aktuálneho dátumu.
     """
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     year = now.year
     if now.month >= 7:
         # sezóna začína v lete
         return f"{year}/{str(year + 1)[-2:]}"
     else:
         return f"{year - 1}/{str(year)[-2:]}"
+
 
 @main.route("/stats")
 def stats():
@@ -31,7 +37,9 @@ def stats():
     - v rámci tímu: najbližší zápas + tabuľka + výsledky + program zápasov
     """
 
-    current_date = datetime.now()
+    # UTC-aware "now" pre celý handler
+    now_dt = datetime.now(timezone.utc)
+    current_date = now_dt
 
     # ==============
     # Tímy (teamz)
@@ -96,8 +104,7 @@ def stats():
     # ==========================
     # Eventy – výsledky + program
     # ==========================
-    # vezmeme rozumne dlhé obdobie dozadu aj dopredu
-    now_dt = datetime.now()
+    # vezmeme rozumne dlhé obdobie dozadu aj dopredu (UTC-aware)
     from_date = now_dt - timedelta(days=365)   # rok dozadu na výsledky
     to_date = now_dt + timedelta(days=180)     # pol roka dopredu na program
 
@@ -107,8 +114,6 @@ def stats():
             .filter(Event.event_team_id.in_(team_ids))
             .filter(Event.start_event >= from_date)
             .filter(Event.start_event <= to_date)
-            # ak chceš filtrovať len na ligové zápasy:
-            # .filter(Event.event_category_id == 1)
             .order_by(Event.start_event.asc())
             .all()
         )
@@ -124,27 +129,26 @@ def stats():
             continue
 
         if e.start_event and e.start_event >= now_dt:
-            # budúci zápas (program)
             calendar_by_team[e.event_team_id].append(e)
         else:
-            # minulý zápas – zobrazíme ho vo "Výsledkoch" aj bez score
             results_by_team[e.event_team_id].append(e)
 
     # zoradenie – program chronologicky dopredu, výsledky od najnovších
+    max_dt = datetime.max.replace(tzinfo=timezone.utc)
+    min_dt = datetime.min.replace(tzinfo=timezone.utc)
+
     for tid in calendar_by_team:
-        calendar_by_team[tid].sort(key=lambda m: m.start_event or datetime.max)
+        calendar_by_team[tid].sort(key=lambda m: m.start_event or max_dt)
 
     for tid in results_by_team:
-        results_by_team[tid].sort(
-            key=lambda m: m.start_event or datetime.min,
-            reverse=True  # najnovší navrchu
-        )
+        results_by_team[tid].sort(key=lambda m: m.start_event or min_dt, reverse=True)
 
     # =======================================
     # Najbližší zápas pre každý tím (next)
     # =======================================
     next_match_by_team = {tid: None for tid in team_ids}
     try:
+        # Necháme to na DB čase; dôležité je, že ďalej to už neporovnávaš v Pythone
         today_sql = func.now()
 
         subq = (
@@ -154,7 +158,6 @@ def stats():
             )
             .filter(Event.event_team_id.in_(team_ids))
             .filter(Event.start_event >= today_sql)
-            # .filter(Event.event_category_id == 1)
             .group_by(Event.event_team_id)
             .subquery()
         )
@@ -192,12 +195,11 @@ def stats():
     )
 
 
-
 @main.route("/tabz")
 def tabz():
     return render_template(
         'tabz.html',
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -219,28 +221,25 @@ def home():
 
     category = db.session.query(Category).all()
 
-
-
     return render_template(
         'home.html',
         title='',
         posts=posts,
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),
         next22=Next.next(),
         category=category,
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
-        score_table=RightColumn.score_table(),    
+        score_table=RightColumn.score_table(),
     )
 
 
 @main.route("/oklube")
 def about():
-
     return render_template(
         'about.html',
         title='About',
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -253,7 +252,7 @@ def dokumenty():
     return render_template(
         'dokumenty.html',
         title='Dokumenty',
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -261,22 +260,10 @@ def dokumenty():
     )
 
 
-# @main.route("sponsors")
-# def sponsors():
-#     return render_template(
-#         'sponsors/sponsors.html',
-#         title='Sponsors',
-#         current_date=datetime.now(),
-#         next22=Next.next(),
-#         teamz=RightColumn.main_menu(),
-#         next_match=RightColumn.next_match(),
-#         score_table=RightColumn.score_table()
-#     )
-
-
 @main.route("/sidebar/next-matches-fragment")
 def sidebar_next_matches_fragment():
     return render_template("partials/next_matches_sidebar.html")
+
 
 class Next:
     @staticmethod
@@ -285,7 +272,7 @@ class Next:
             today = func.now()
 
             # napr. chceš A-tím, U19, U17, U15, atď.
-            wanted_team_ids = [1, 2, 3, 4, 5, 6]  # sem doplň ID U15
+            wanted_team_ids = [1, 2, 3, 4, 5, 6]
 
             teams = (
                 db.session.query(Team.id, Team.name)
@@ -302,7 +289,7 @@ class Next:
                         func.min(Event.start_event).label('min_start'),
                     )
                     .filter(Event.start_event >= today)
-                    .filter(Event.event_category_id == 1)  # prípadne IN (...)
+                    .filter(Event.event_category_id == 1)
                     .filter(Event.event_team_id == team_id)
                     .group_by(Event.event_team_id)
                     .subquery()
@@ -328,6 +315,7 @@ class Next:
             flash('Chyba pri načítavaní menu tímov.', 'danger')
             return []
 
+
 class RightColumn:
     @staticmethod
     def main_menu():
@@ -340,7 +328,7 @@ class RightColumn:
     @staticmethod
     def next_match():
         try:
-            today = datetime.today()
+            today = datetime.now(timezone.utc)
             return (
                 db.session.query(Event.title, Event.start_event)
                 .filter(Event.start_event >= today)
@@ -351,7 +339,6 @@ class RightColumn:
         except Exception:
             flash('Chyba pri načítavaní nasledujúcich zápasov.', 'danger')
             return []
-
 
     @staticmethod
     def score_table():
