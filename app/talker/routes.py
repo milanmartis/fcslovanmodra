@@ -434,22 +434,57 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
     if not tokens:
         return 0
 
+    # 1) Postav multicast message
     mm = messaging.MulticastMessage(
         notification=messaging.Notification(title=title, body=body),
         data={k: str(v) for k, v in (data or {}).items()},
         tokens=tokens,
     )
-    resp = messaging.send_multicast(mm)
 
-    # cleanup invalid tokenov
-    if resp.failure_count:
-        bad_tokens = [tokens[i] for i, r in enumerate(resp.responses) if not r.success]
+    # 2) POSIELAJ BEZ "batch endpoint /batch"
+    resp = None
+    try:
+        # novšie firebase-admin (preferované)
+        resp = messaging.send_each_for_multicast(mm, app=app)
+    except Exception as e:
+        # fallback: po jednom (toto je najrobustnejšie v dev prostredí)
+        results = []
+        for tok in tokens:
+            msg = messaging.Message(
+                notification=messaging.Notification(title=title, body=body),
+                data={k: str(v) for k, v in (data or {}).items()},
+                token=tok,
+            )
+            try:
+                messaging.send(msg, app=app)
+                results.append((tok, True, None))
+            except Exception as ex:
+                results.append((tok, False, ex))
+
+        # cleanup invalid tokenov
+        bad_tokens = [tok for tok, ok, _ in results if not ok]
         if bad_tokens:
             try:
                 PushToken.query.filter(PushToken.token.in_(bad_tokens)).delete(synchronize_session=False)
                 db.session.commit()
-            except Exception as e:
+            except Exception:
                 db.session.rollback()
-                print("PushToken cleanup error:", e)
 
-    return int(resp.success_count or 0)
+        return sum(1 for _, ok, _ in results if ok)
+
+    # 3) cleanup invalid tokenov (pre send_each_for_multicast)
+    if getattr(resp, "failure_count", 0):
+        bad_tokens = []
+        for i, r in enumerate(resp.responses):
+            if not r.success:
+                bad_tokens.append(tokens[i])
+
+        if bad_tokens:
+            try:
+                PushToken.query.filter(PushToken.token.in_(bad_tokens)).delete(synchronize_session=False)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+    return int(getattr(resp, "success_count", 0) or 0)
+

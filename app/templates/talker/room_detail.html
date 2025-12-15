@@ -206,7 +206,7 @@
   }
 
   .send{
-    height: 42px; /* zmenené späť, 85px robilo divné správanie + zbytočne veľké prekrytie */
+    height: 42px;
     padding: 0 14px;
     border-radius: 14px;
     border: 1px solid rgba(92,159,255,.35);
@@ -293,18 +293,27 @@
     reconnectionDelayMax: 3000,
   });
 
-  // vždy drž úplne na spodku (t.j. vidieť poslednú = "práve odoslanove/prišlo")
-  function stickToBottom() {
-    // 2x rAF = spoľahlivé aj na mobile po reflow (textarea resize / font load)
+  // ---- SCROLL LOGIKA (bez poskakovania vo Firefoxe) ----
+
+  function isNearBottom(px = 60) {
+    const delta = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
+    return delta <= px;
+  }
+
+  // pevný scroll na spodok – nepoužívame scrollIntoView (Firefox poskakuje)
+  function scrollToBottomHard() {
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        // preferuj kotvu, je to stabilnejšie než scrollHeight na iOS
-        if (bottomEl && bottomEl.scrollIntoView) {
-          bottomEl.scrollIntoView({ block: "end" });
-        } else {
-          scrollEl.scrollTop = scrollEl.scrollHeight;
-        }
-      });
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+    });
+  }
+
+  // ak bol user dole a zmenil sa layout (textarea), dorovnaj iba o rozdiel výšky
+  function keepBottomIfWasAtBottom(wasAtBottom, prevScrollHeight) {
+    if (!wasAtBottom) return;
+    requestAnimationFrame(() => {
+      const newScrollHeight = scrollEl.scrollHeight;
+      const delta = newScrollHeight - prevScrollHeight;
+      if (delta !== 0) scrollEl.scrollTop += delta;
     });
   }
 
@@ -349,20 +358,29 @@
     listEl.appendChild(row);
   }
 
+  // autoResize vráti delta výšky (kvôli jemnému držaniu spodku)
   function autoResize() {
+    const prev = inputEl.offsetHeight;
     inputEl.style.height = "auto";
     inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + "px";
+    const next = inputEl.offsetHeight;
+    return next - prev;
   }
 
   function updateSendState() {
     sendBtn.disabled = inputEl.value.trim().length === 0;
   }
 
+  // DÔLEŽITÉ: pri písaní NESKÁČ na spodok.
+  // Iba keď sa textarea zmení a user bol dole, tak jemne dorovnaj.
   inputEl.addEventListener("input", () => {
+    const wasAtBottom = isNearBottom(80);
+    const prevScrollHeight = scrollEl.scrollHeight;
+
     autoResize();
     updateSendState();
-    // pri písaní nech to drží spodok (mobile keyboard často mení viewport)
-    stickToBottom();
+
+    keepBottomIfWasAtBottom(wasAtBottom, prevScrollHeight);
   });
 
   inputEl.addEventListener("keydown", (e) => {
@@ -377,12 +395,19 @@
     catch { inputEl.focus(); }
   }
 
-  // keď sa zmení veľkosť viewportu (mobil klávesnica), drž spodok
+  // Mobil klávesnica/viewport: NEROB hard scroll vždy (to robí “trhanie”),
+  // iba jemne drž spodok keď user už bol dole.
+  function onViewportChanged() {
+    const wasAtBottom = isNearBottom(120);
+    const prevScrollHeight = scrollEl.scrollHeight;
+    keepBottomIfWasAtBottom(wasAtBottom, prevScrollHeight);
+  }
+
   if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", () => stickToBottom());
-    window.visualViewport.addEventListener("scroll", () => stickToBottom());
+    window.visualViewport.addEventListener("resize", onViewportChanged);
+    window.visualViewport.addEventListener("scroll", onViewportChanged);
   } else {
-    window.addEventListener("resize", () => stickToBottom());
+    window.addEventListener("resize", onViewportChanged);
   }
 
   // initial load
@@ -392,7 +417,7 @@
       list.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
       listEl.innerHTML = "";
       list.forEach(renderMessage);
-      stickToBottom();
+      scrollToBottomHard();
     })
     .catch(() => {
       statusEl.textContent = "Nepodarilo sa načítať správy.";
@@ -406,7 +431,7 @@
 
   socket.on("talker_joined", (d) => {
     console.log("joined:", d.room_id);
-    stickToBottom();
+    scrollToBottomHard();
   });
 
   socket.on("disconnect", () => {
@@ -418,9 +443,10 @@
     setTimeout(() => statusEl.textContent = "", 3500);
   });
 
+  // prijatá správa: vždy scroll na spodok (aby bola vidieť najnovšia)
   socket.on("talker_message", (m) => {
     renderMessage(m);
-    stickToBottom(); // vždy skoč úplne dole po prijatí
+    scrollToBottomHard();
   });
 
   formEl.addEventListener("submit", (e) => {
@@ -429,15 +455,14 @@
     const text = inputEl.value.trim();
     if (!text) return;
 
-    // po odoslaní drž spodok
-    stickToBottom();
     socket.emit("talker_send", { room_id: roomId, text });
 
     inputEl.value = "";
     autoResize();
     updateSendState();
     focusNoScroll();
-    stickToBottom();
+
+    scrollToBottomHard();
   });
 
   autoResize();
