@@ -13,6 +13,7 @@ from app import db, socketio, csrf
 from app.models import TalkRoom, TalkMessage, PushToken, Team
 from .permissions import user_can_access_room, is_admin_user
 from app.firebase_client import init_firebase
+
 # WebPush
 try:
     from pywebpush import webpush, WebPushException  # type: ignore
@@ -34,22 +35,8 @@ talker = Blueprint("talker", __name__, url_prefix="/talker")
 # ============================================================
 
 @talker.get("/firebase-messaging-sw.js")
-def _deprecated_sw_path():
-    """
-    ⚠️ DEPRECATED:
-    Staré URL pod /talker. Nesmie sa používať na register().
-    Vraciame 410 Gone, aby sa staré cache/registrácie postupne "odlepili".
-    """
-    return Response(
-        "/* DEPRECATED – use /firebase-messaging-sw.js (root). */",
-        status=410,
-        mimetype="application/javascript; charset=utf-8",
-        headers={
-            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-            "Pragma": "no-cache",
-            "Expires": "0",
-        },
-    )
+def firebase_messaging_sw_root():
+    return firebase_messaging_sw()
 
 
 def firebase_messaging_sw():
@@ -82,9 +69,8 @@ def firebase_messaging_sw():
 // Firebase (FCM) SW
 // -------------------------
 try {{
-  // Firebase compat app (OK)
   importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-  // DÔLEŽITÉ: SW build pre messaging (nie messaging-compat)
+  // SW build pre messaging
   importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-sw.js");
 }} catch (e) {{
   console.error("FCM SW importScripts failed:", e);
@@ -99,7 +85,7 @@ try {{
     try {{
       firebase.initializeApp(FIREBASE_CONFIG);
     }} catch (e) {{
-      // ignore "already exists"
+      // ignore already-initialized
     }}
     try {{
       messaging = firebase.messaging();
@@ -111,21 +97,43 @@ try {{
   console.error("FCM SW init failed:", e);
 }}
 
+// Helper: parse int badge
+function toInt(v) {{
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
+}}
+
+function showNotif(title, body, data) {{
+  try {{
+    const totalUnread = toInt(data && (data.totalUnread ?? data.total_unread ?? data.badge));
+    const roomId = data && (data.room_id || data.roomId);
+    const url = (data && data.url) || (roomId ? `/talker/rooms/${{roomId}}?embed=1` : "/talker/");
+
+    const opts = {{
+      body: body || "",
+      icon: (data && data.icon) || "/static/main/ico.png",
+      tag: roomId ? `talker-room-${{roomId}}` : "talker",
+      renotify: true,
+      data: Object.assign({{ url, roomId }}, data || {{}}),
+    }};
+
+    // iOS WebPush badge + modern browsers: používaj číselnú hodnotu
+    if (totalUnread !== null) {{
+      opts.badge = totalUnread;
+    }}
+
+    return self.registration.showNotification(title || "Talker", opts);
+  }} catch (e) {{
+    console.error("showNotif error:", e);
+  }}
+}}
+
 if (messaging) {{
   messaging.onBackgroundMessage((payload) => {{
     try {{
       const notif = payload?.notification || {{}};
       const data  = payload?.data || {{}};
-
-      const roomId = data.room_id || data.roomId;
-      const url = roomId ? `/talker/rooms/${{roomId}}` : (data.url || "/talker/");
-
-      self.registration.showNotification(notif.title || "Talker", {{
-        body: notif.body || "",
-        icon: data.icon || "/static/main/ico.png",
-        badge: data.badge || "/static/main/ico.png",
-        data: Object.assign({{ url, roomId }}, data),
-      }});
+      return showNotif(notif.title || "Talker", notif.body || "", data);
     }} catch (e) {{
       console.error("FCM SW onBackgroundMessage error:", e);
     }}
@@ -135,33 +143,47 @@ if (messaging) {{
 // -------------------------
 // WebPush (iOS PWA) – "push" event
 // -------------------------
-self.addEventListener("push", (event) => {{
+async function parsePushPayload(event) {{
+  let payload = {{}};
   try {{
-    let payload = {{}};
+    payload = event.data ? event.data.json() : {{}};
+    return payload || {{}};
+  }} catch {{
+    // ignore
+  }}
+  try {{
+    const txt = event.data && event.data.text ? await event.data.text() : "";
+    if (!txt) return {{}};
     try {{
-      payload = event.data ? event.data.json() : {{}};
-    }} catch (e) {{
-      payload = {{}};
+      return JSON.parse(txt);
+    }} catch {{
+      return {{ body: txt }};
     }}
+  }} catch {{
+    return {{}};
+  }}
+}}
+
+self.addEventListener("push", (event) => {{
+  event.waitUntil((async () => {{
+    const payload = await parsePushPayload(event);
 
     const title = payload.title || payload?.notification?.title || "Talker";
     const body  = payload.body  || payload?.notification?.body  || "";
 
     const data = payload.data || {{}};
-    const roomId = data.room_id || data.roomId;
-    const url = data.url || (roomId ? `/talker/rooms/${{roomId}}` : "/talker/");
 
-    event.waitUntil(
-      self.registration.showNotification(title, {{
-        body,
-        icon: data.icon || "/static/main/ico.png",
-        badge: data.badge || "/static/main/ico.png",
-        data: Object.assign({{ url, roomId }}, data),
-      }})
-    );
-  }} catch (e) {{
-    console.error("SW push handler error:", e);
-  }}
+    // umožni poslať url/roomId aj top-level
+    if (payload.url && !data.url) data.url = payload.url;
+    if (payload.roomId && !data.roomId) data.roomId = payload.roomId;
+    if (payload.room_id && !data.room_id) data.room_id = payload.room_id;
+
+    // badge / total unread
+    if ((payload.totalUnread !== undefined) && (data.totalUnread === undefined)) data.totalUnread = payload.totalUnread;
+    if ((payload.total_unread !== undefined) && (data.total_unread === undefined)) data.total_unread = payload.total_unread;
+
+    await showNotif(title, body, data);
+  )());
 }});
 
 // -------------------------
@@ -173,12 +195,16 @@ self.addEventListener("notificationclick", (event) => {{
   const url = data.url || "/talker/";
 
   event.waitUntil(
-    clients.matchAll({{ type: "window", includeUncontrolled: true }}).then((wins) => {{
+    clients.matchAll({{ type: "window", includeUncontrolled: true }}).then(async (wins) => {{
       for (const w of wins) {{
-        if (w.url && w.url.startsWith(self.location.origin)) {{
-          w.focus();
-          return w.navigate(url);
-        }}
+        try {{
+          await w.focus();
+          if ("navigate" in w) {{
+            try {{ await w.navigate(url); }} catch (e) {{}}
+          }}
+          try {{ w.postMessage({{ type: "open", url }}); }} catch (e) {{}}
+          return;
+        }} catch (e) {{}}
       }}
       return clients.openWindow(url);
     }})
@@ -188,7 +214,7 @@ self.addEventListener("notificationclick", (event) => {{
 // -------------------------
 // OFFLINE CACHE (network-first HTML, cache-first /static)
 // -------------------------
-const CACHE = "static-v5";
+const CACHE = "static-v6";
 const PRECACHE = [
   "/offline.html",
   "/static/main/ico.png"
@@ -583,11 +609,17 @@ def on_send(data: dict[str, Any]):
     try:
         user_ids = get_recipients_for_room(room)
         if user_ids:
+            preview = f"{username}: {msg.text[:120]}"
             send_push_to_users(
                 user_ids=user_ids,
                 title=room.name,
-                body=f"{username}: {msg.text[:120]}",
-                data={"room_id": room.id, "type": "talker_message", "url": f"/talker/rooms/{room.id}"},
+                body=preview,
+                data={
+                    "room_id": room.id,
+                    "roomId": room.id,
+                    "type": "talker_message",
+                    "url": f"/talker/rooms/{room.id}?embed=1",
+                },
             )
     except Exception as e:
         print("Talker push error:", e)
@@ -625,27 +657,90 @@ def get_recipients_for_room(room: TalkRoom) -> list[int]:
     return sorted(set(ids))
 
 
-def _send_webpush_to_users(user_ids: list[int], title: str, body: str, data: dict | None = None) -> int:
-    if WebPushSubscription is None or webpush is None:
+def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
+    """
+    Bez current_user – aby sme vedeli počítať unread pre recipientov.
+    """
+    try:
+        # room without team: membership list
+        if getattr(room, "team_id", None) is None:
+            members = getattr(room, "members", None) or []
+            for u in members:
+                if int(getattr(u, "id", 0) or 0) == int(user_id):
+                    return True
+            return False
+
+        # room with team: team membership list
+        team = Team.query.get(room.team_id)
+        if not team:
+            return False
+        members = getattr(team, "members", None) or []
+        for m in members:
+            if int(getattr(m, "user_id", 0) or 0) == int(user_id):
+                return True
+        return False
+    except Exception:
+        return False
+
+
+def _total_unread_for_user(user_id: int) -> int:
+    """
+    Spočíta celkové unread naprieč roomami (podľa TalkRoomReadState).
+    """
+    try:
+        from app.models import TalkRoomReadState  # local import
+
+        total = 0
+        rooms = TalkRoom.query.all()
+
+        for room in rooms:
+            if not _user_can_access_room_for_user(user_id, room):
+                continue
+
+            state = TalkRoomReadState.query.filter_by(user_id=user_id, room_id=room.id).first()
+            last_id = int(getattr(state, "last_read_message_id", 0) or 0)
+
+            cnt = (
+                TalkMessage.query
+                .filter(
+                    TalkMessage.room_id == room.id,
+                    TalkMessage.id > last_id,
+                    TalkMessage.user_id != user_id
+                )
+                .count()
+            )
+            total += int(cnt or 0)
+
+        return int(total)
+    except Exception:
         return 0
-    if not user_ids:
+
+
+def _send_webpush_to_user(user_id: int, title: str, body: str, url: str, room_id: int | None, total_unread: int, data: dict | None = None) -> int:
+    """
+    WebPush pre jedného usera (kvôli per-user badge).
+    """
+    if WebPushSubscription is None or webpush is None:
         return 0
 
     vapid_private = (current_app.config.get("VAPID_PRIVATE_KEY") or "").strip()
     vapid_subject = (current_app.config.get("VAPID_SUBJECT") or "mailto:admin@example.com").strip()
-
     if not vapid_private:
         return 0
 
-    subs = WebPushSubscription.query.filter(WebPushSubscription.user_id.in_(user_ids)).all()
+    subs = WebPushSubscription.query.filter_by(user_id=user_id).all()
     if not subs:
         return 0
 
-    payload = json.dumps({
+    payload = {
         "title": title,
         "body": body,
+        "url": url,
+        "roomId": room_id,
+        "totalUnread": int(total_unread or 0),
         "data": {k: str(v) for k, v in (data or {}).items()},
-    })
+    }
+    payload_json = json.dumps(payload, ensure_ascii=False)
 
     ok = 0
     bad_ids: list[int] = []
@@ -658,9 +753,11 @@ def _send_webpush_to_users(user_ids: list[int], title: str, body: str, data: dic
             }
             webpush(
                 subscription_info=sub_info,
-                data=payload,
+                data=payload_json,
                 vapid_private_key=vapid_private,
                 vapid_claims={"sub": vapid_subject},
+                ttl=60 * 60,  # 1h
+                headers={"Urgency": "high"},
             )
             ok += 1
         except WebPushException as ex:
@@ -685,18 +782,39 @@ def _send_webpush_to_users(user_ids: list[int], title: str, body: str, data: dic
 def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | None = None) -> int:
     """
     Hybrid:
-      - WebPush → WebPushSubscription (iOS PWA)
+      - WebPush → WebPushSubscription (iOS PWA)  [per-user badge]
       - FCM → PushToken (Android/desktop)
     """
     sent_total = 0
 
-    # WebPush (iOS)
+    # -------------------------
+    # WebPush (iOS) – per-user
+    # -------------------------
     try:
-        sent_total += int(_send_webpush_to_users(user_ids, title, body, data))
+        url = (data or {}).get("url") or "/talker/"
+        room_id = (data or {}).get("room_id") or (data or {}).get("roomId")
+        try:
+            room_id_int = int(room_id) if room_id is not None else None
+        except Exception:
+            room_id_int = None
+
+        for uid in user_ids:
+            badge = _total_unread_for_user(int(uid))
+            sent_total += int(_send_webpush_to_user(
+                user_id=int(uid),
+                title=title,
+                body=body,
+                url=str(url),
+                room_id=room_id_int,
+                total_unread=badge,
+                data=data,
+            ))
     except Exception:
         pass
 
-    # FCM
+    # -------------------------
+    # FCM (spoločný multicast)
+    # -------------------------
     if not user_ids:
         return sent_total
 
@@ -766,8 +884,8 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
 
         sent_total += sum(1 for _, ok, _ in results if ok)
         return sent_total
-    
-    
+
+
 @talker.get("/rooms/<int:room_id>/unread")
 @login_required
 def unread_for_room(room_id):
@@ -791,7 +909,6 @@ def unread_for_room(room_id):
     )
 
     return jsonify(room_id=room_id, unread=unread)
-
 
 
 @talker.get("/unread/total")
@@ -827,7 +944,6 @@ def unread_total():
         total += cnt
 
     return jsonify(total=total)
-
 
 
 @talker.post("/rooms/<int:room_id>/mark-read")
