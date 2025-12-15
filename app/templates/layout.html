@@ -2,8 +2,29 @@
 <html lang="sk">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="theme-color" content="#000000">
+
+  <!-- PWA / iOS: nezoomovať + safe area -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+
+  <meta name="theme-color" content="#0b1220">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- iOS PWA meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FC Slovan Modra">
+
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <!-- Icons -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='main/ico.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-180.png">
+
+  <!-- (voliteľné) pinned tab ikonka pre Safari -->
+  <link rel="mask-icon" href="/static/icons/safari-pinned-tab.svg" color="#0b1220">
 
   <script src="https://unpkg.com/htmx.org@2.0.0"></script>
 
@@ -17,11 +38,6 @@
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/cc.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style/menu.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style/lightbox.css') }}">
-  <link rel="icon" href="{{ url_for('static', filename='main/ico.png') }}">
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
-
-  <!-- Manifest -->
-  <link rel="manifest" href="/manifest.webmanifest">
 
   <!-- FullCalendar CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
@@ -32,8 +48,8 @@
 
   <!-- Bootstrap 5 bundle (musí byť dostupný pre modaly) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-    crossorigin="anonymous"></script>
+          integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+          crossorigin="anonymous"></script>
 
   <!-- Service Worker registration (offline SW) -->
   <script>
@@ -55,7 +71,30 @@
     <title>FC Slovan Modra</title>
   {% endif %}
 
-  <style scoped>
+  <style>
+    /* ZÁKLAD: zabráni horizontálnemu posunu */
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      overscroll-behavior-x: none;
+      background: #0b1220;
+    }
+
+    /* iOS: stabilnejší scroll + žiadne "bounce" do strán */
+    body {
+      -webkit-text-size-adjust: 100%;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y; /* umožní iba vertikálny scroll */
+    }
+
+    /* ak niekde niečo pretŕča, toto často zachráni layout */
+    img, video, canvas, svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* tvoje glass karty */
     .card-glass {
       text-align: center;
       margin: auto;
