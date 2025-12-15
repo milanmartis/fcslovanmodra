@@ -766,3 +766,100 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
 
         sent_total += sum(1 for _, ok, _ in results if ok)
         return sent_total
+    
+    
+@talker.get("/rooms/<int:room_id>/unread")
+@login_required
+def unread_for_room(room_id):
+    from app.models import TalkMessage, TalkRoomReadState
+
+    state = TalkRoomReadState.query.filter_by(
+        user_id=current_user.id,
+        room_id=room_id
+    ).first()
+
+    last_id = state.last_read_message_id if state else 0
+
+    unread = (
+        TalkMessage.query
+        .filter(
+            TalkMessage.room_id == room_id,
+            TalkMessage.id > last_id,
+            TalkMessage.user_id != current_user.id
+        )
+        .count()
+    )
+
+    return jsonify(room_id=room_id, unread=unread)
+
+
+
+@talker.get("/unread/total")
+@login_required
+def unread_total():
+    from app.models import TalkMessage, TalkRoomReadState, TalkRoom
+
+    total = 0
+
+    rooms = TalkRoom.query.all()
+
+    for room in rooms:
+        if not user_can_access_room(room):
+            continue
+
+        state = TalkRoomReadState.query.filter_by(
+            user_id=current_user.id,
+            room_id=room.id
+        ).first()
+
+        last_id = state.last_read_message_id if state else 0
+
+        cnt = (
+            TalkMessage.query
+            .filter(
+                TalkMessage.room_id == room.id,
+                TalkMessage.id > last_id,
+                TalkMessage.user_id != current_user.id
+            )
+            .count()
+        )
+
+        total += cnt
+
+    return jsonify(total=total)
+
+
+
+@talker.post("/rooms/<int:room_id>/mark-read")
+@login_required
+@csrf.exempt
+def mark_room_read(room_id):
+    from app.models import TalkMessage, TalkRoomReadState
+
+    last_msg = (
+        TalkMessage.query
+        .filter_by(room_id=room_id)
+        .order_by(TalkMessage.id.desc())
+        .first()
+    )
+
+    if not last_msg:
+        return jsonify(ok=True)
+
+    state = TalkRoomReadState.query.filter_by(
+        user_id=current_user.id,
+        room_id=room_id
+    ).first()
+
+    if not state:
+        state = TalkRoomReadState(
+            user_id=current_user.id,
+            room_id=room_id,
+            last_read_message_id=last_msg.id
+        )
+        db.session.add(state)
+    else:
+        state.last_read_message_id = last_msg.id
+
+    db.session.commit()
+    return jsonify(ok=True)

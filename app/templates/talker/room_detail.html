@@ -140,6 +140,26 @@
     cursor: not-allowed;
   }
 
+  .unread-pill{
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.9);
+    font-weight: 900;
+    font-size: 12px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .unread-pill.on{ display:flex; }
+  .unread-dot{
+    width: 8px; height: 8px; border-radius: 999px;
+    background: rgba(255,110,110,1);
+    box-shadow: 0 0 0 4px rgba(255,110,110,.14);
+  }
+
   .talker-messages{
     flex:1;
     display:flex;
@@ -325,8 +345,6 @@
 
     .send{ padding: 0 12px; }
     .send .txt{ display:none; }
-
-    .push-btn{ display:none; } /* na mobile nech je čistejšie; ak chceš, zmaž */
   }
 </style>
 
@@ -342,6 +360,11 @@
       </div>
 
       <div class="talker-actions">
+        <div class="unread-pill" id="unreadPill" title="Neprečítané v tejto miestnosti">
+          <span class="unread-dot"></span>
+          <span id="unreadCount">0</span>
+        </div>
+
         <button class="push-btn" id="pushBtn" type="button">Zapnúť push</button>
 
         <div class="talker-badge" id="conn">
@@ -372,7 +395,13 @@
   </div>
 </div>
 
+<!-- Socket.IO -->
 <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
+<!-- Firebase compat (poradie je kritické) -->
+<script defer src="/static/vendor/firebase/firebase-app-compat.js"></script>
+<script defer src="/static/vendor/firebase/firebase-messaging-compat.js"></script>
+
 <script>
   const roomId = {{ room.id }};
   const myUserId = {{ current_user.id }};
@@ -388,6 +417,9 @@
   const statusEl = document.getElementById("status");
   const pushBtn = document.getElementById("pushBtn");
 
+  const unreadPill = document.getElementById("unreadPill");
+  const unreadCountEl = document.getElementById("unreadCount");
+
   const socket = io({
     transports: ["websocket", "polling"],
     upgrade: true,
@@ -397,6 +429,58 @@
     reconnectionDelayMax: 3000,
   });
 
+  // ---------------------------
+  // Badge API (ak existuje)
+  // ---------------------------
+  async function setBadge(count) {
+    if (!("setAppBadge" in navigator) || !("clearAppBadge" in navigator)) return;
+    try {
+      if (count > 0) await navigator.setAppBadge(count);
+      else await navigator.clearAppBadge();
+    } catch (e) {
+      console.log("Badge failed:", e);
+    }
+  }
+
+  // ---------------------------
+  // Unread per-room (frontend)
+  // ---------------------------
+  const LS_LAST_READ = `talker:lastReadAt:${roomId}`;
+  const LS_UNREAD = `talker:unread:${roomId}`;
+
+  function nowIso() { return new Date().toISOString(); }
+
+  function getLastReadMs() {
+    const v = localStorage.getItem(LS_LAST_READ);
+    const ms = v ? Date.parse(v) : 0;
+    return Number.isFinite(ms) ? ms : 0;
+  }
+
+  function setLastReadNow() {
+    localStorage.setItem(LS_LAST_READ, nowIso());
+  }
+
+  function getUnread() {
+    const v = parseInt(localStorage.getItem(LS_UNREAD) || "0", 10);
+    return Number.isFinite(v) ? Math.max(0, v) : 0;
+  }
+
+  function setUnread(n) {
+    const v = Math.max(0, parseInt(String(n), 10) || 0);
+    localStorage.setItem(LS_UNREAD, String(v));
+    if (unreadCountEl) unreadCountEl.textContent = String(v);
+    if (unreadPill) unreadPill.classList.toggle("on", v > 0);
+    setBadge(v); // badge = unread v tejto room
+  }
+
+  function incUnread() { setUnread(getUnread() + 1); }
+
+  function clearUnread() {
+    setUnread(0);
+    setLastReadNow();
+  }
+
+  // ---------------------------
   // ---- VH + klávesnica (iOS/Android) ----
   function setVH() {
     const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
@@ -448,6 +532,23 @@
     window.visualViewport.addEventListener("resize", onViewportChange);
     window.visualViewport.addEventListener("scroll", onViewportChange);
   }
+
+  // Keď scrollneš naspäť úplne dole → považuj za prečítané
+  let scrollTick = null;
+  scrollEl.addEventListener("scroll", () => {
+    if (scrollTick) return;
+    scrollTick = setTimeout(() => {
+      scrollTick = null;
+      if (isNearBottom(40)) clearUnread();
+    }, 120);
+  }, { passive: true });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && isNearBottom(80)) clearUnread();
+  });
+  window.addEventListener("focus", () => {
+    if (isNearBottom(80)) clearUnread();
+  });
 
   function fmtTime(iso) {
     if (!iso) return "";
@@ -524,13 +625,19 @@
     catch { inputEl.focus(); }
   }
 
-  // ---- PUSH HELPERS (Hybrid: iOS WebPush / ostatné FCM) ----
-  function isIOS() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  // ---------------------------
+  // PUSH HELPERS (iOS WebPush / ostatné FCM)
+  // ---------------------------
+  function isIosSafariPwa() {
+    const ua = navigator.userAgent || "";
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isSafari = /^((?!chrome|crios|fxios|android).)*safari/i.test(ua);
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    return isIOS && isSafari && isStandalone;
   }
 
-  function canWebPush() {
-    return ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window);
+  function canUsePush() {
+    return ("serviceWorker" in navigator) && ("Notification" in window);
   }
 
   function urlBase64ToUint8Array(base64String) {
@@ -542,160 +649,148 @@
     return outputArray;
   }
 
-  async function registerServiceWorker() {
-    // SW endpoint je /talker/firebase-messaging-sw.js a scope musí byť /talker/
-    return await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/talker/" });
+  async function getPushConfig() {
+    const res = await fetch("/talker/push/config", { credentials: "include" });
+    if (!res.ok) throw new Error("push/config failed");
+    return await res.json();
+  }
+
+  async function registerRootSW() {
+    // ROOT scope pre konzistentné push/offline
+    return await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
   }
 
   async function enableWebPushIOS() {
-    if (!canWebPush()) {
-      throw new Error("Web Push not supported");
-    }
+    const cfg = await getPushConfig();
+    const vapidPublicKey = cfg.vapidPublicKey;
+    if (!vapidPublicKey) throw new Error("Missing VAPID public key");
+
+    await registerRootSW();
 
     const perm = await Notification.requestPermission();
-    if (perm !== "granted") {
-      throw new Error("Permission denied");
-    }
+    if (perm !== "granted") throw new Error("Permission not granted");
 
-    const reg = await registerServiceWorker();
-
-    const cfgResp = await fetch("/talker/push/config", { credentials: "include" });
-    const cfg = await cfgResp.json();
-    const publicKey = (cfg && cfg.vapidPublicKey) ? cfg.vapidPublicKey : null;
-
-    if (!publicKey) {
-      throw new Error("Missing VAPID public key");
-    }
+    const reg = await navigator.serviceWorker.ready;
 
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
     });
 
-    const save = await fetch("/talker/webpush/subscribe", {
+    const r = await fetch("/talker/webpush/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sub),
       credentials: "include",
+      body: JSON.stringify(sub),
     });
-
-    if (!save.ok) {
-      const t = await save.text();
-      throw new Error("Subscribe save failed: " + t);
-    }
+    if (!r.ok) throw new Error("webpush/subscribe failed: " + (await r.text()));
   }
 
-  // FCM branch (Android/desktop)
-  async function enableFCM() {
-    // SW aj pre FCM (rovnaký súbor)
-    await registerServiceWorker();
+  async function enableFcmNonIOS() {
+    const cfg = await getPushConfig();
+    await registerRootSW();
 
-    const cfgResp = await fetch("/talker/push/config", { credentials: "include" });
-    const cfg = await cfgResp.json();
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") throw new Error("Permission not granted");
+
+    if (!window.firebase) throw new Error("firebase not loaded in page");
 
     const firebaseCfg = cfg.firebase || {};
-    if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) {
-      throw new Error("Missing firebase config (senderId/appId)");
-    }
+    if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) throw new Error("Missing firebase config");
 
-    // load firebase compat (ty ich máš lokálne v /static/vendor/...)
-    await new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = "/static/vendor/firebase/firebase-app-compat.js";
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
+    if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseCfg);
 
-    await new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = "/static/vendor/firebase/firebase-messaging-compat.js";
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-
-    if (!window.firebase) throw new Error("firebase not loaded");
-
-    try { firebase.initializeApp(firebaseCfg); } catch (e) { /* ok when already init */ }
+    const reg = await navigator.serviceWorker.ready;
 
     const messaging = firebase.messaging();
 
-    const perm = await Notification.requestPermission();
-    if (perm !== "granted") throw new Error("Permission denied");
-
-    // IMPORTANT: pre getToken potrebuješ service worker registration
-    const reg = await navigator.serviceWorker.getRegistration("/talker/");
+    // Spoľahlivejšie než messaging.useServiceWorker (niektoré verzie ho nemajú)
     const token = await messaging.getToken({
       vapidKey: cfg.vapidPublicKey,
-      serviceWorkerRegistration: reg || undefined,
+      serviceWorkerRegistration: reg,
     });
 
-    if (!token) throw new Error("No FCM token");
+    if (!token) throw new Error("no_token");
 
-    const save = await fetch("/talker/push/register", {
+    const r = await fetch("/talker/push/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token,
-        platform: "fcm",
-        device: navigator.userAgent.slice(0, 200),
-      }),
       credentials: "include",
+      body: JSON.stringify({ token, platform: "web", device: navigator.userAgent }),
     });
-
-    if (!save.ok) {
-      const t = await save.text();
-      throw new Error("FCM token save failed: " + t);
-    }
+    if (!r.ok) throw new Error("push/register failed: " + (await r.text()));
   }
 
   async function enablePush() {
+    if (!canUsePush()) {
+      statusEl.textContent = "Push nie je podporovaný v tomto prehliadači.";
+      return;
+    }
+
     pushBtn.disabled = true;
     statusEl.textContent = "Zapínam push…";
 
     try {
-      // iOS → WebPush (APNs), ostatné → FCM
-      if (isIOS()) {
+      if (isIosSafariPwa()) {
         await enableWebPushIOS();
         statusEl.textContent = "Push zapnuté (iOS Web Push) ✅";
       } else {
-        await enableFCM();
+        await enableFcmNonIOS();
         statusEl.textContent = "Push zapnuté (FCM) ✅";
       }
       setTimeout(() => statusEl.textContent = "", 2500);
     } catch (e) {
       console.error(e);
-      statusEl.textContent = "Push sa nepodarilo zapnúť. Skontroluj iOS 16.4+ + A2HS + HTTPS.";
+      statusEl.textContent = "Push sa nepodarilo zapnúť.";
       setTimeout(() => statusEl.textContent = "", 5000);
     } finally {
       pushBtn.disabled = false;
     }
   }
 
-  if (pushBtn) {
-    pushBtn.addEventListener("click", enablePush);
-  }
+  if (pushBtn) pushBtn.addEventListener("click", enablePush);
 
-  // ---- initial load messages ----
-  fetch(`/talker/rooms/${roomId}/messages`)
-    .then(r => r.json())
-    .then(list => {
+  // ---------------------------
+  // initial load messages + unread bootstrap
+  // ---------------------------
+  (async () => {
+    try {
+      setUnread(getUnread());
+
+      const r = await fetch(`/talker/rooms/${roomId}/messages`);
+      const list = await r.json();
+
       list.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
       listEl.innerHTML = "";
-      list.forEach(renderMessage);
-      scrollToBottomHard();
-    })
-    .catch(() => {
-      statusEl.textContent = "Nepodarilo sa načítať správy.";
-    });
 
-  // ---- socket ----
+      const lastReadMs = getLastReadMs();
+      let computedUnread = 0;
+
+      for (const m of list) {
+        renderMessage(m);
+        const ms = Date.parse(m.created_at || "");
+        if (lastReadMs && Number.isFinite(ms) && ms > lastReadMs && m.user_id !== myUserId) {
+          computedUnread++;
+        }
+      }
+
+      scrollToBottomHard();
+      clearUnread();
+    } catch (e) {
+      console.error(e);
+      statusEl.textContent = "Nepodarilo sa načítať správy.";
+    }
+  })();
+
+  // ---------------------------
+  // socket
+  // ---------------------------
   socket.on("connect", () => {
     connTextEl.textContent = "Online";
     dotEl.classList.add("on");
     socket.emit("talker_join", { room_id: roomId });
     scrollToBottomHard();
+    clearUnread();
   });
 
   socket.on("talker_joined", (d) => {
@@ -709,13 +804,22 @@
   });
 
   socket.on("talker_error", (e) => {
-    statusEl.textContent = "Chyba: " + (e?.error || "unknown");
+    statusEl.textContent = "Chyba: " + ((e && e.error) ? e.error : "unknown");
     setTimeout(() => statusEl.textContent = "", 3500);
   });
 
   socket.on("talker_message", (m) => {
+    const atBottom = isNearBottom(80);
+    const visible = !document.hidden;
+
     renderMessage(m);
-    scrollToBottomHard();
+
+    if (atBottom && visible) {
+      scrollToBottomHard();
+      clearUnread();
+    } else {
+      if (m.user_id !== myUserId) incUnread();
+    }
   });
 
   formEl.addEventListener("submit", (e) => {
@@ -732,6 +836,7 @@
     focusNoScroll();
 
     scrollToBottomHard();
+    clearUnread();
   });
 
   autoResize();
