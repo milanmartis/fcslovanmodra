@@ -179,6 +179,32 @@ class TalkMessage(db.Model):
         return f"<TalkMessage {self.id} room={self.room_id} user={self.user_id}>"
 
 
+class WebPushSubscription(db.Model):
+    __tablename__ = "webpush_subscription"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+
+    # Apple/Chrome endpoint (na iOS typicky https://web.push.apple.com/...)
+    endpoint = db.Column(db.Text, nullable=False, unique=True)
+
+    # VAPID keys z PushManager.subscribe() -> subscription.keys
+    p256dh = db.Column(db.String(256), nullable=False)
+    auth = db.Column(db.String(128), nullable=False)
+
+    # voliteľné: user-agent / device popis pre debug
+    device = db.Column(db.String(200), nullable=True)
+    platform = db.Column(db.String(50), nullable=True)  # napr. "ios_webpush", "webpush"
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    last_seen_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = db.relationship("User")
+
+    def __repr__(self):
+        return f"<WebPushSubscription {self.id} user={self.user_id}>"
+
 
 
 class PushToken(db.Model):

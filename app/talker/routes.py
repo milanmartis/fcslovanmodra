@@ -14,6 +14,18 @@ from app.models import TalkRoom, TalkMessage, PushToken, Team
 from .permissions import user_can_access_room, is_admin_user
 from app.firebase_client import init_firebase
 
+# WebPush (optional)
+try:
+    from pywebpush import webpush, WebPushException  # type: ignore
+except Exception:  # pragma: no cover
+    webpush = None
+    WebPushException = Exception
+
+# subscription model (optional – ak ešte nemáš, kód pôjde ďalej bez neho)
+try:
+    from app.models import WebPushSubscription  # type: ignore
+except Exception:  # pragma: no cover
+    WebPushSubscription = None  # type: ignore
 
 talker = Blueprint("talker", __name__, url_prefix="/talker")
 
@@ -30,7 +42,6 @@ def firebase_messaging_sw():
 
     cfg_json = json.dumps(cfg)
 
-    # POZOR: je to f-string => všetky { } v JS musia byť {{ }}
     js = f"""\
 /* /talker/firebase-messaging-sw.js */
 "use strict";
@@ -110,25 +121,29 @@ self.addEventListener("notificationclick", (event) => {{
   );
 }});
 
-// ---- FALLBACK push handler (keď onBackgroundMessage nezafunguje)
+// ---- WebPush handler (iOS/APNs) ----
 self.addEventListener("push", (event) => {{
   try {{
-    const payload = event.data ? event.data.json() : {{}};
-    const n = payload.notification || {{}};
-    const d = payload.data || {{}};
+    let payload = {{}};
+    try {{
+      payload = event.data ? event.data.json() : {{}};
+    }} catch (e) {{
+      payload = {{}};
+    }}
 
-    const title = n.title || "Talker";
-    const body  = n.body || "";
+    const title = payload.title || (payload.notification && payload.notification.title) || "Talker";
+    const body  = payload.body  || (payload.notification && payload.notification.body) || "";
 
-    const roomId = d.room_id || d.roomId;
-    const url = roomId ? `/talker/rooms/${{roomId}}` : (d.url || "/talker/");
+    const data = payload.data || {{}};
+    const roomId = data.room_id || data.roomId;
+    const url = data.url || (roomId ? `/talker/rooms/${{roomId}}` : "/talker/");
 
     event.waitUntil(
       self.registration.showNotification(title, {{
         body,
-        icon: d.icon || "/static/main/ico.png",
-        badge: d.badge || "/static/main/ico.png",
-        data: Object.assign({{ url, roomId }}, d),
+        icon: data.icon || "/static/main/ico.png",
+        badge: data.badge || "/static/main/ico.png",
+        data: Object.assign({{ url, roomId }}, data),
       }})
     );
   }} catch (e) {{
@@ -157,6 +172,50 @@ def push_config():
         },
         vapidPublicKey=current_app.config.get("VAPID_PUBLIC_KEY"),
     )
+
+
+@talker.post("/webpush/subscribe")
+@login_required
+@csrf.exempt
+def webpush_subscribe():
+    """
+    iOS PWA (a všeobecne WebPush) posiela celý subscription objekt z pushManager.subscribe().
+    Ukladáme ho na usera, aby sme vedeli posielať cez pywebpush.
+    """
+    if WebPushSubscription is None:
+        return jsonify(error="webpush_not_configured", hint="Missing WebPushSubscription model"), 501
+
+    sub = request.get_json(silent=True) or {}
+    endpoint = (sub.get("endpoint") or "").strip()
+    keys = sub.get("keys") or {}
+
+    if not endpoint or not isinstance(keys, dict):
+        return jsonify(error="invalid_subscription"), 400
+
+    p256dh = (keys.get("p256dh") or "").strip()
+    auth = (keys.get("auth") or "").strip()
+
+    if not p256dh or not auth:
+        return jsonify(error="invalid_subscription_keys"), 400
+
+    # 1 user = 1 subscription (môžeš zmeniť na multi-device ak chceš)
+    existing = WebPushSubscription.query.filter_by(user_id=current_user.id).first()
+    if existing:
+        existing.endpoint = endpoint
+        existing.p256dh = p256dh
+        existing.auth = auth
+        db.session.commit()
+        return jsonify(ok=True, updated=True), 200
+
+    s = WebPushSubscription(
+        user_id=current_user.id,
+        endpoint=endpoint,
+        p256dh=p256dh,
+        auth=auth,
+    )
+    db.session.add(s)
+    db.session.commit()
+    return jsonify(ok=True, created=True), 201
 
 
 @talker.get("/push/test")
@@ -386,7 +445,7 @@ def on_send(data: dict[str, Any]):
             user_ids=user_ids,
             title=room.name,
             body=f"{username}: {msg.text[:120]}",
-            data={"room_id": room.id, "type": "talker_message"},
+            data={"room_id": room.id, "type": "talker_message", "url": f"/talker/rooms/{room.id}"},
         )
     except Exception as e:
         print("Talker push error:", e)
@@ -424,13 +483,84 @@ def get_recipients_for_room(room: TalkRoom) -> list[int]:
     return sorted(set(ids))
 
 
-def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | None = None) -> int:
+def _send_webpush_to_users(user_ids: list[int], title: str, body: str, data: dict | None = None) -> int:
+    if WebPushSubscription is None or webpush is None:
+        return 0
     if not user_ids:
         return 0
 
+    vapid_private = (current_app.config.get("VAPID_PRIVATE_KEY") or "").strip()
+    vapid_subject = (current_app.config.get("VAPID_SUBJECT") or "mailto:admin@example.com").strip()
+
+    if not vapid_private:
+        return 0
+
+    subs = WebPushSubscription.query.filter(WebPushSubscription.user_id.in_(user_ids)).all()
+    if not subs:
+        return 0
+
+    payload = json.dumps({
+        "title": title,
+        "body": body,
+        "data": {k: str(v) for k, v in (data or {}).items()},
+    })
+
+    ok = 0
+    bad_ids: list[int] = []
+
+    for s in subs:
+        try:
+            sub_info = {
+                "endpoint": s.endpoint,
+                "keys": {"p256dh": s.p256dh, "auth": s.auth},
+            }
+            webpush(
+                subscription_info=sub_info,
+                data=payload,
+                vapid_private_key=vapid_private,
+                vapid_claims={"sub": vapid_subject},
+            )
+            ok += 1
+        except WebPushException as ex:
+            # keď subscription expirovala / je preč, typicky 410
+            status_code = getattr(getattr(ex, "response", None), "status_code", None)
+            if status_code in (404, 410):
+                bad_ids.append(getattr(s, "id", None))
+        except Exception:
+            # nech to nepadne celé
+            continue
+
+    if bad_ids:
+        try:
+            WebPushSubscription.query.filter(WebPushSubscription.id.in_(bad_ids)).delete(synchronize_session=False)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    return ok
+
+
+def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | None = None) -> int:
+    """
+    Hybrid:
+      - FCM → PushToken
+      - WebPush → WebPushSubscription (iOS PWA)
+    """
+    sent_total = 0
+
+    # --- WebPush (iOS/APNs) ---
+    try:
+        sent_total += int(_send_webpush_to_users(user_ids, title, body, data))
+    except Exception:
+        pass
+
+    # --- FCM (Android/desktop) ---
+    if not user_ids:
+        return sent_total
+
     app = init_firebase()
     if not app:
-        return 0
+        return sent_total
 
     tokens = [
         t.token
@@ -438,7 +568,7 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
         if t and t.token
     ]
     if not tokens:
-        return 0
+        return sent_total
 
     mm = messaging.MulticastMessage(
         notification=messaging.Notification(title=title, body=body),
@@ -446,11 +576,9 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
         tokens=tokens,
     )
 
-    # ✅ preferované: send_each_for_multicast (bez /batch)
     try:
         resp = messaging.send_each_for_multicast(mm, app=app)
 
-        # cleanup invalid tokenov
         bad_tokens = []
         for i, r in enumerate(resp.responses):
             if not r.success:
@@ -463,10 +591,10 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
             except Exception:
                 db.session.rollback()
 
-        return int(resp.success_count or 0)
+        sent_total += int(resp.success_count or 0)
+        return sent_total
 
-    except Exception as e:
-        # fallback: po jednom (najrobustnejšie v dev)
+    except Exception:
         results = []
         for tok in tokens:
             msg = messaging.Message(
@@ -488,4 +616,5 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
             except Exception:
                 db.session.rollback()
 
-        return sum(1 for _, ok, _ in results if ok)
+        sent_total += sum(1 for _, ok, _ in results if ok)
+        return sent_total
