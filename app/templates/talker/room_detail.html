@@ -544,7 +544,7 @@
 
   async function registerServiceWorker() {
     // SW endpoint je /talker/firebase-messaging-sw.js a scope musí byť /talker/
-    return await navigator.serviceWorker.register("/talker/firebase-messaging-sw.js", { scope: "/talker/" });
+    return await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/talker/" });
   }
 
   async function enableWebPushIOS() {

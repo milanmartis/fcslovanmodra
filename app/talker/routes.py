@@ -31,31 +31,40 @@ talker = Blueprint("talker", __name__, url_prefix="/talker")
 
 
 # ============================================================
-# SERVICE WORKER pre FCM/WebPush – ROOT scope "/"
+# SERVICE WORKER – DEPRECATED TALKER PATH + ROOT SW GENERATOR
 # ============================================================
 
 @talker.get("/firebase-messaging-sw.js")
 def _deprecated_sw_path():
     """
-    Staré URL (v scope /talker) – nech to nepadá 404, ak to niekde cachelo.
-    Pozor: service worker súbor nesmie byť redirectovaný.
+    ⚠️ DEPRECATED:
+    Staré URL pod /talker. Nesmie sa používať na register().
+    Vraciame 410 Gone, aby sa staré cache/registrácie postupne "odlepili".
     """
     return Response(
-        "/* moved to /firebase-messaging-sw.js (root). Update your registration. */",
+        "/* DEPRECATED – use /firebase-messaging-sw.js (root). */",
+        status=410,
         mimetype="application/javascript; charset=utf-8",
-        headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"},
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
     )
 
 
 def firebase_messaging_sw():
     """
-    ROOT SW pre push.
+    ROOT SW pre celý web (scope "/") – PUSH + OFFLINE v jednom súbore.
+
     Tento view musí byť namapovaný na /firebase-messaging-sw.js na úrovni appky (nie blueprint),
     napr. v __init__.py:
       @app.get("/firebase-messaging-sw.js")
       def firebase_messaging_sw_root(): return firebase_messaging_sw()
 
-    Dôležité: SW, na ktorý sa robí subscribe(), musí byť ten istý, ktorý má push listener.
+    Dôležité:
+      - register() rob len na /firebase-messaging-sw.js so scope "/"
+      - iné SW (napr. /service-worker.js) NEregistruj, lebo sa bude biť scope
     """
     cfg = {
         "apiKey": current_app.config.get("FIREBASE_API_KEY") or "",
@@ -67,9 +76,12 @@ def firebase_messaging_sw():
     cfg_json = json.dumps(cfg)
 
     js = f"""\
-/* /firebase-messaging-sw.js */
+/* /firebase-messaging-sw.js (ROOT) */
 "use strict";
 
+// -------------------------
+// Firebase (FCM) SW
+// -------------------------
 try {{
   importScripts("/static/vendor/firebase/firebase-app-compat.js");
   importScripts("/static/vendor/firebase/firebase-messaging-compat.js");
@@ -79,21 +91,23 @@ try {{
 
 const FIREBASE_CONFIG = {cfg_json};
 
+let messaging = null;
+
 try {{
   if (typeof firebase !== "undefined" && FIREBASE_CONFIG && FIREBASE_CONFIG.messagingSenderId) {{
-    firebase.initializeApp(FIREBASE_CONFIG);
+    try {{
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }} catch (e) {{
+      // ignore "already exists"
+    }}
+    try {{
+      messaging = firebase.messaging();
+    }} catch (e) {{
+      console.error("FCM SW firebase.messaging() failed:", e);
+    }}
   }}
 }} catch (e) {{
-  console.error("FCM SW firebase.initializeApp failed:", e);
-}}
-
-let messaging = null;
-try {{
-  if (typeof firebase !== "undefined") {{
-    messaging = firebase.messaging();
-  }}
-}} catch (e) {{
-  console.error("FCM SW firebase.messaging() failed:", e);
+  console.error("FCM SW init failed:", e);
 }}
 
 if (messaging) {{
@@ -117,7 +131,9 @@ if (messaging) {{
   }});
 }}
 
-// WebPush (iOS PWA) – push event
+// -------------------------
+// WebPush (iOS PWA) – "push" event
+// -------------------------
 self.addEventListener("push", (event) => {{
   try {{
     let payload = {{}};
@@ -147,6 +163,9 @@ self.addEventListener("push", (event) => {{
   }}
 }});
 
+// -------------------------
+// Notification click
+// -------------------------
 self.addEventListener("notificationclick", (event) => {{
   event.notification.close();
   const data = event.notification?.data || {{}};
@@ -163,6 +182,61 @@ self.addEventListener("notificationclick", (event) => {{
       return clients.openWindow(url);
     }})
   );
+}});
+
+// -------------------------
+// OFFLINE CACHE (network-first HTML, cache-first /static)
+// -------------------------
+const CACHE = "static-v5";
+const PRECACHE = [
+  "/offline.html",
+  "/static/main/ico.png"
+];
+
+self.addEventListener("install", (event) => {{
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).catch(() => {{}})
+  );
+  self.skipWaiting();
+}});
+
+self.addEventListener("activate", (event) => {{
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+}});
+
+self.addEventListener("fetch", (event) => {{
+  const req = event.request;
+  const url = new URL(req.url);
+
+  if (url.origin !== self.location.origin) return;
+
+  // HTML navigácie
+  if (req.mode === "navigate" || req.destination === "document") {{
+    event.respondWith(
+      fetch(req).catch(() => caches.match("/offline.html"))
+    );
+    return;
+  }}
+
+  // cache-first pre /static
+  if (req.method === "GET" && url.pathname.startsWith("/static/")) {{
+    event.respondWith(
+      caches.match(req).then((cached) => {{
+        if (cached) return cached;
+        return fetch(req).then((res) => {{
+          if (res && res.status === 200 && res.type === "basic") {{
+            const copy = res.clone();
+            caches.open(CACHE).then(cache => cache.put(req, copy));
+          }}
+          return res;
+        }});
+      }})
+    );
+  }}
 }});
 """
     resp = Response(js, mimetype="application/javascript; charset=utf-8")
@@ -329,10 +403,10 @@ def load_messages(room_id: int):
     """
     Podporuje:
       - ?limit=50
-      - ?after_id=123  -> vráti len správy s id > after_id (aby si dotiahol zmeškané)
+      - ?after_id=123  -> vráti len správy s id > after_id
 
     Dôležité:
-      - keď after_id NIE JE, chceme "posledných N" správ (nie najstarších)
+      - keď after_id NIE JE, chceme "posledných N" správ
       - UI typicky chce poradie od najstaršej po najnovšiu
     """
     room = TalkRoom.query.get_or_404(room_id)
@@ -367,7 +441,6 @@ def load_messages(room_id: int):
             )
             msgs = list(reversed(msgs))
     else:
-        # posledných N
         msgs = (
             q.order_by(TalkMessage.id.desc())
              .limit(limit)
@@ -420,8 +493,9 @@ def register_push_token():
 @login_required
 def push_status():
     """
-    Predtým si tu vracal iba FCM token (PushToken).
-    Na iOS PWA však ide WebPushSubscription → preto vraciame oboje.
+    Vraciame oboje:
+      - FCM token (PushToken)
+      - WebPush subscription (WebPushSubscription)
     """
     has_fcm = PushToken.query.filter_by(user_id=current_user.id).first() is not None
 
@@ -559,7 +633,6 @@ def _send_webpush_to_users(user_ids: list[int], title: str, body: str, data: dic
     vapid_private = (current_app.config.get("VAPID_PRIVATE_KEY") or "").strip()
     vapid_subject = (current_app.config.get("VAPID_SUBJECT") or "mailto:admin@example.com").strip()
 
-    # vapid_subject by mal byť mailto: alebo https://
     if not vapid_private:
         return 0
 
@@ -630,15 +703,12 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
     if not app:
         return sent_total
 
-    # dedupe + remove empties
     raw_tokens = PushToken.query.filter(PushToken.user_id.in_(user_ids)).all()
-    tokens = []
+    tokens: list[str] = []
     seen = set()
     for t in raw_tokens:
         tok = (t.token or "").strip() if t else ""
-        if not tok:
-            continue
-        if tok in seen:
+        if not tok or tok in seen:
             continue
         seen.add(tok)
         tokens.append(tok)

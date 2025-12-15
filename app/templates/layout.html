@@ -51,19 +51,18 @@
           integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
           crossorigin="anonymous"></script>
 
-  <!-- Service Worker registration (offline SW) -->
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", async () => {
-        try {
-          const reg = await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
-          console.log("Offline SW registered:", reg.scope);
-        } catch (e) {
-          console.error("Offline SW registration failed:", e);
-        }
-      });
-    }
-  </script>
+		  <script>
+			if ("serviceWorker" in navigator) {
+			  window.addEventListener("load", async () => {
+				try {
+				  const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+				  console.log("Main SW (push+offline) registered:", reg.scope);
+				} catch (e) {
+				  console.error("SW registration failed:", e);
+				}
+			  });
+			}
+		  </script>
 
   {% if title %}
     <title>FC Slovan Modra - {{ title }}</title>
