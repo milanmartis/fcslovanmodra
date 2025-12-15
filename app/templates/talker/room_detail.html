@@ -3,40 +3,54 @@
 
 <style scoped>
   :root{
-    --bg: #0b1220;
+    --bg: #070b14;
+    --bg2:#0b1220;
     --panel: rgba(255,255,255,.06);
+    --panel2: rgba(255,255,255,.09);
+    --stroke: rgba(255,255,255,.10);
     --text: rgba(255,255,255,.92);
     --muted: rgba(255,255,255,.60);
-    --me: rgba(92, 159, 255, .20);
+
+    --accent: rgba(92,159,255,1);
+    --accent2: rgba(125, 92, 255, 1);
+
+    --me: rgba(92, 159, 255, .22);
     --them: rgba(255,255,255,.10);
+
+    --radius: 18px;
+    --shadow: 0 18px 50px rgba(0,0,0,.45);
+
+    /* JS nastavuje pri klávesnici */
+    --kb: 0px;
+    --vh: 1vh;
   }
 
   .talker-page{
-    min-height: calc(100vh - 64px);
-    background: radial-gradient(1200px 600px at 20% 0%, rgba(92,159,255,.18), transparent 60%),
-                radial-gradient(900px 500px at 90% 20%, rgba(255,255,255,.08), transparent 55%),
-                var(--bg);
+    min-height: calc(var(--vh) * 100);
+    background:
+      radial-gradient(1100px 560px at 18% 0%, rgba(92,159,255,.20), transparent 60%),
+      radial-gradient(900px 520px at 92% 18%, rgba(125,92,255,.12), transparent 60%),
+      linear-gradient(180deg, var(--bg), var(--bg2));
     color: var(--text);
     padding: 12px;
   }
 
   .talker-page.is-embed{
-    min-height: 100vh;
     padding: 0;
   }
 
   .talker-shell{
-    max-width: 760px;
+    max-width: 820px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 88px);
+    height: calc((var(--vh) * 100) - 88px);
     gap: 10px;
   }
 
   .talker-page.is-embed .talker-shell{
     max-width: 100%;
-    height: 100vh;
+    height: calc(var(--vh) * 100);
     gap: 0;
   }
 
@@ -45,13 +59,18 @@
     align-items:center;
     justify-content:space-between;
     padding: 10px 12px;
-    border-radius: 16px;
-    background: var(--panel);
-    backdrop-filter: blur(10px);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+    border: 1px solid var(--stroke);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
   }
 
   .talker-page.is-embed .talker-header{
     border-radius: 0;
+    box-shadow: none;
+    border-left: 0;
+    border-right: 0;
   }
 
   .talker-title{
@@ -63,7 +82,7 @@
   .talker-title h2{
     margin:0;
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: .2px;
     white-space:nowrap;
     overflow:hidden;
@@ -74,39 +93,58 @@
     font-size: 12px;
     color: var(--muted);
   }
+
   .talker-badge{
+    display:flex;
+    align-items:center;
+    gap: 8px;
     font-size: 12px;
-    color: var(--muted);
+    color: rgba(255,255,255,.86);
     padding: 6px 10px;
     border-radius: 999px;
     background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.10);
+  }
+  .dot{
+    width: 8px; height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.45);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.06);
+  }
+  .dot.on{
+    background: rgba(92,159,255,1);
+    box-shadow: 0 0 0 4px rgba(92,159,255,.18);
   }
 
   .talker-messages{
     flex:1;
-    position: relative;
-    border-radius: 18px;
-    background: var(--panel);
-    backdrop-filter: blur(10px);
-    overflow: hidden;
-
-    display: flex;
+    display:flex;
     flex-direction: column;
-    min-height: 0; /* dôležité pre mobil/Safari: aby scroll fungoval */
+    min-height: 0;
+
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+    border: 1px solid var(--stroke);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow);
+    overflow: hidden;
   }
 
   .talker-page.is-embed .talker-messages{
     border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
   }
 
   .talker-scroll{
-    flex: 1;
-    min-height: 0;           /* dôležité pre mobil/Safari */
-    overflow-y: auto;
-    padding: 12px;
-    scroll-behavior: auto;   /* smooth na mobile často robí “glitche” */
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    padding: 14px 12px;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto;
   }
 
   .talker-scroll::-webkit-scrollbar{ width: 10px; }
@@ -119,29 +157,29 @@
 
   .msg-row{
     display:flex;
-    margin: 6px 0;
+    margin: 8px 0;
   }
   .msg-row.me{ justify-content:flex-end; }
   .msg-row.them{ justify-content:flex-start; }
 
   .bubble{
-    max-width: min(78%, 520px);
+    max-width: min(82%, 560px);
     padding: 10px 12px;
     border-radius: 16px;
     line-height: 1.25;
-    background: var(--them);
-    box-shadow: 0 6px 18px rgba(0,0,0,.18);
-    border: 1px solid rgba(255,255,255,.07);
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 10px 26px rgba(0,0,0,.22);
     animation: pop .14s ease-out;
   }
   .msg-row.me .bubble{
-    background: var(--me);
-    border-color: rgba(92,159,255,.25);
+    background: linear-gradient(180deg, rgba(92,159,255,.30), rgba(92,159,255,.18));
+    border-color: rgba(92,159,255,.30);
   }
 
   @keyframes pop{
-    from{ transform: scale(.98); opacity: .6; }
-    to{ transform: scale(1); opacity: 1; }
+    from{ transform: translateY(2px) scale(.99); opacity: .7; }
+    to{ transform: translateY(0) scale(1); opacity: 1; }
   }
 
   .meta{
@@ -152,8 +190,8 @@
   }
   .name{
     font-size: 12px;
-    font-weight: 700;
-    color: rgba(255,255,255,.84);
+    font-weight: 800;
+    color: rgba(255,255,255,.86);
   }
   .time{
     font-size: 11px;
@@ -166,12 +204,19 @@
     word-break: break-word;
   }
 
+  /* Composer je sticky, takže na mobile zostane hore nad klávesnicou (pomáha aj --kb) */
   .composer{
-    position: static;
-    padding: 10px;
-    background: linear-gradient(to top, rgba(11,18,32,.88), rgba(11,18,32,.0));
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom) + var(--kb));
+    background: linear-gradient(to top,
+      rgba(7,11,20,.92),
+      rgba(7,11,20,.35),
+      rgba(7,11,20,0)
+    );
     pointer-events: none;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom));
   }
 
   .composer-bar{
@@ -179,49 +224,71 @@
     display:flex;
     gap: 10px;
     align-items:flex-end;
+
     padding: 10px;
     border-radius: 16px;
-    background: rgba(0,0,0,.25);
-    border: 1px solid rgba(255,255,255,.08);
-    backdrop-filter: blur(10px);
+    background: rgba(0,0,0,.30);
+    border: 1px solid rgba(255,255,255,.10);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 12px 34px rgba(0,0,0,.35);
   }
 
   .input{
     flex:1;
-    min-height: 42px;
-    max-height: 140px;
+    min-height: 44px;
+    max-height: 160px;
     resize: none;
-    padding: 10px 12px;
+
+    padding: 11px 12px;
     border-radius: 14px;
-    border: 1px solid rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.12);
     background: rgba(255,255,255,.06);
     color: var(--text);
     outline: none;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.25;
   }
   .input:focus{
-    border-color: rgba(92,159,255,.45);
-    box-shadow: 0 0 0 3px rgba(92,159,255,.12);
+    border-color: rgba(92,159,255,.55);
+    box-shadow: 0 0 0 3px rgba(92,159,255,.14);
   }
 
+  /* Send tlačidlo viac “app-like” */
   .send{
-    height: 42px;
+    height: 44px;
+    min-width: 44px;
     padding: 0 14px;
-    border-radius: 14px;
-    border: 1px solid rgba(92,159,255,.35);
-    background: rgba(92,159,255,.18);
-    color: rgba(255,255,255,.92);
-    font-weight: 700;
+    border-radius: 999px;
+
+    border: 1px solid rgba(92,159,255,.40);
+    background: linear-gradient(180deg, rgba(92,159,255,.34), rgba(92,159,255,.18));
+    color: rgba(255,255,255,.95);
+    font-weight: 900;
     cursor: pointer;
-    transition: transform .08s ease, background .2s ease;
+    transition: transform .08s ease, filter .2s ease, background .2s ease;
     display:flex;
     align-items:center;
+    justify-content:center;
     gap: 8px;
     user-select:none;
+    box-shadow: 0 14px 32px rgba(92,159,255,.12);
   }
   .send:active{ transform: scale(.98); }
-  .send[disabled]{ opacity:.55; cursor:not-allowed; }
+  .send[disabled]{
+    opacity:.45;
+    cursor:not-allowed;
+    filter: saturate(.7);
+    box-shadow: none;
+  }
+
+  /* keď je input focusnutý, zvýrazni send (viditeľnejšie pri klávesnici) */
+  .composer:focus-within .send:not([disabled]){
+    filter: saturate(1.25) brightness(1.05);
+    box-shadow: 0 18px 40px rgba(92,159,255,.22);
+  }
+
+  .send .txt{ display:inline; }
+  .send .ico{ font-size: 18px; line-height: 1; }
 
   .status{
     font-size: 12px;
@@ -230,9 +297,14 @@
   }
 
   @media (max-width: 520px){
-    .talker-shell{ height: calc(100vh - 70px); }
-    .bubble{ max-width: 86%; }
-    .talker-page.is-embed .talker-shell{ height: 100vh; }
+    .talker-page{ padding: 8px; }
+    .talker-shell{ height: calc((var(--vh) * 100) - 70px); }
+    .bubble{ max-width: 88%; }
+    .talker-page.is-embed .talker-shell{ height: calc(var(--vh) * 100); }
+
+    /* na mobile skry text "Send", nech je to ikonové a kompaktnejšie */
+    .send{ padding: 0 12px; }
+    .send .txt{ display:none; }
   }
 </style>
 
@@ -246,7 +318,10 @@
         <h2>{{ room.name }}</h2>
         <p class="talker-sub">Najnovšie správy sú dole</p>
       </div>
-      <div class="talker-badge" id="conn">Connecting…</div>
+      <div class="talker-badge" id="conn">
+        <span id="dot" class="dot"></span>
+        <span id="connText">Connecting…</span>
+      </div>
     </div>
 
     <div class="talker-messages">
@@ -259,8 +334,8 @@
         <form id="f" class="composer-bar" autocomplete="off">
           <textarea id="t" class="input" rows="1" placeholder="Napíš správu… (Enter = odoslať, Shift+Enter = nový riadok)"></textarea>
           <button id="sendBtn" class="send" type="submit" disabled>
-            <span>Send</span>
-            <span aria-hidden="true">➤</span>
+            <span class="txt">Send</span>
+            <span class="ico" aria-hidden="true">➤</span>
           </button>
         </form>
         <div class="status" id="status"></div>
@@ -281,7 +356,8 @@
   const formEl = document.getElementById("f");
   const inputEl = document.getElementById("t");
   const sendBtn = document.getElementById("sendBtn");
-  const connEl = document.getElementById("conn");
+  const connTextEl = document.getElementById("connText");
+  const dotEl = document.getElementById("dot");
   const statusEl = document.getElementById("status");
 
   const socket = io({
@@ -293,21 +369,53 @@
     reconnectionDelayMax: 3000,
   });
 
-  // ---- SCROLL LOGIKA (bez poskakovania vo Firefoxe) ----
+  // ---- VH + klávesnica (iOS/Android) ----
+  function setVH() {
+    const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+    document.documentElement.style.setProperty("--vh", (h * 0.01) + "px");
+  }
 
+  // odhad klávesnice: pri visualViewport sa dá krásne zdvihnúť composer cez padding (sticky)
+  function setKeyboardVar() {
+    if (!window.visualViewport) {
+      document.documentElement.style.setProperty("--kb", "0px");
+      return;
+    }
+    // keyboardHeight ~ rozdiel medzi window.innerHeight a visualViewport.height (+ offsetTop na iOS)
+    const vv = window.visualViewport;
+    const keyboard = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
+    document.documentElement.style.setProperty("--kb", keyboard + "px");
+  }
+
+  function onViewportChange() {
+    setVH();
+    setKeyboardVar();
+    // keď sa otvorí klávesnica, drž spodok len ak user bol dole (jemne, bez skákania)
+    const wasAtBottom = isNearBottom(120);
+    const prevScrollHeight = scrollEl.scrollHeight;
+    keepBottomIfWasAtBottom(wasAtBottom, prevScrollHeight);
+  }
+
+  setVH();
+  setKeyboardVar();
+  window.addEventListener("resize", onViewportChange);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", onViewportChange);
+    window.visualViewport.addEventListener("scroll", onViewportChange);
+  }
+
+  // ---- SCROLL LOGIKA (bez poskakovania vo Firefoxe) ----
   function isNearBottom(px = 60) {
     const delta = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
     return delta <= px;
   }
 
-  // pevný scroll na spodok – nepoužívame scrollIntoView (Firefox poskakuje)
   function scrollToBottomHard() {
     requestAnimationFrame(() => {
       scrollEl.scrollTop = scrollEl.scrollHeight;
     });
   }
 
-  // ak bol user dole a zmenil sa layout (textarea), dorovnaj iba o rozdiel výšky
   function keepBottomIfWasAtBottom(wasAtBottom, prevScrollHeight) {
     if (!wasAtBottom) return;
     requestAnimationFrame(() => {
@@ -358,11 +466,10 @@
     listEl.appendChild(row);
   }
 
-  // autoResize vráti delta výšky (kvôli jemnému držaniu spodku)
   function autoResize() {
     const prev = inputEl.offsetHeight;
     inputEl.style.height = "auto";
-    inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + "px";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + "px";
     const next = inputEl.offsetHeight;
     return next - prev;
   }
@@ -371,8 +478,7 @@
     sendBtn.disabled = inputEl.value.trim().length === 0;
   }
 
-  // DÔLEŽITÉ: pri písaní NESKÁČ na spodok.
-  // Iba keď sa textarea zmení a user bol dole, tak jemne dorovnaj.
+  // pri písaní NESKÁČ na spodok (Firefox), len jemne dorovnaj ak user bol dole a textarea sa zmenila
   inputEl.addEventListener("input", () => {
     const wasAtBottom = isNearBottom(80);
     const prevScrollHeight = scrollEl.scrollHeight;
@@ -395,21 +501,6 @@
     catch { inputEl.focus(); }
   }
 
-  // Mobil klávesnica/viewport: NEROB hard scroll vždy (to robí “trhanie”),
-  // iba jemne drž spodok keď user už bol dole.
-  function onViewportChanged() {
-    const wasAtBottom = isNearBottom(120);
-    const prevScrollHeight = scrollEl.scrollHeight;
-    keepBottomIfWasAtBottom(wasAtBottom, prevScrollHeight);
-  }
-
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", onViewportChanged);
-    window.visualViewport.addEventListener("scroll", onViewportChanged);
-  } else {
-    window.addEventListener("resize", onViewportChanged);
-  }
-
   // initial load
   fetch(`/talker/rooms/${roomId}/messages`)
     .then(r => r.json())
@@ -424,9 +515,10 @@
     });
 
   socket.on("connect", () => {
-    connEl.textContent = "Online";
-    connEl.style.color = "rgba(255,255,255,.9)";
+    connTextEl.textContent = "Online";
+    dotEl.classList.add("on");
     socket.emit("talker_join", { room_id: roomId });
+    scrollToBottomHard();
   });
 
   socket.on("talker_joined", (d) => {
@@ -435,7 +527,8 @@
   });
 
   socket.on("disconnect", () => {
-    connEl.textContent = "Offline";
+    connTextEl.textContent = "Offline";
+    dotEl.classList.remove("on");
   });
 
   socket.on("talker_error", (e) => {
@@ -443,7 +536,6 @@
     setTimeout(() => statusEl.textContent = "", 3500);
   });
 
-  // prijatá správa: vždy scroll na spodok (aby bola vidieť najnovšia)
   socket.on("talker_message", (m) => {
     renderMessage(m);
     scrollToBottomHard();

@@ -1,16 +1,15 @@
 from __future__ import annotations
+
 import json
 from typing import Any
-from flask import current_app
-from flask import Blueprint, render_template, request, jsonify, abort
+
+from flask import Blueprint, render_template, request, jsonify, abort, current_app, Response
 from flask_security import login_required, current_user
 from flask_socketio import join_room, emit
 from sqlalchemy.exc import IntegrityError
 from firebase_admin import messaging
-from app import csrf
 
-from flask import Response
-from app import db, socketio
+from app import db, socketio, csrf
 from app.models import TalkRoom, TalkMessage, PushToken, Team
 from .permissions import user_can_access_room, is_admin_user
 from app.firebase_client import init_firebase
@@ -19,11 +18,8 @@ from app.firebase_client import init_firebase
 talker = Blueprint("talker", __name__, url_prefix="/talker")
 
 
-
-
 @talker.get("/firebase-messaging-sw.js")
 def firebase_messaging_sw():
-    # PUBLIC hodnoty – musia existovať (aspoň sender_id a app_id)
     cfg = {
         "apiKey": current_app.config.get("FIREBASE_API_KEY") or "",
         "authDomain": current_app.config.get("FIREBASE_AUTH_DOMAIN") or "",
@@ -32,18 +28,17 @@ def firebase_messaging_sw():
         "appId": current_app.config.get("FIREBASE_APP_ID") or "",
     }
 
-    # vždy vráť validný JS (aj keď config chýba), aby to nikdy nepadlo na HTML error page
     cfg_json = json.dumps(cfg)
 
+    # POZOR: je to f-string => všetky { } v JS musia byť {{ }}
     js = f"""\
 /* /talker/firebase-messaging-sw.js */
 "use strict";
 
 try {{
-importScripts("/static/vendor/firebase/firebase-app-compat.js");
-importScripts("/static/vendor/firebase/firebase-messaging-compat.js");
+  importScripts("/static/vendor/firebase/firebase-app-compat.js");
+  importScripts("/static/vendor/firebase/firebase-messaging-compat.js");
 }} catch (e) {{
-  // ak by importScripts zlyhalo (offline/CSP/proxy), nech SW aspoň nespadne
   console.error("FCM SW importScripts failed:", e);
 }}
 
@@ -114,17 +109,40 @@ self.addEventListener("notificationclick", (event) => {{
     }})
   );
 }});
+
+// ---- FALLBACK push handler (keď onBackgroundMessage nezafunguje)
+self.addEventListener("push", (event) => {{
+  try {{
+    const payload = event.data ? event.data.json() : {{}};
+    const n = payload.notification || {{}};
+    const d = payload.data || {{}};
+
+    const title = n.title || "Talker";
+    const body  = n.body || "";
+
+    const roomId = d.room_id || d.roomId;
+    const url = roomId ? `/talker/rooms/${{roomId}}` : (d.url || "/talker/");
+
+    event.waitUntil(
+      self.registration.showNotification(title, {{
+        body,
+        icon: d.icon || "/static/main/ico.png",
+        badge: d.badge || "/static/main/ico.png",
+        data: Object.assign({{ url, roomId }}, d),
+      }})
+    );
+  }} catch (e) {{
+    console.error("SW push handler error:", e);
+  }}
+}});
 """
+
     resp = Response(js, mimetype="application/javascript; charset=utf-8")
-    # SW sa NESMIE agresívne cachovať, inak sa budeš trápiť s “nezmenil sa”
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
-    # umožni scope /talker/
     resp.headers["Service-Worker-Allowed"] = "/talker/"
     return resp
-
-
 
 
 @talker.get("/push/config")
@@ -139,22 +157,21 @@ def push_config():
         },
         vapidPublicKey=current_app.config.get("VAPID_PUBLIC_KEY"),
     )
-    
-    
-    
+
+
 @talker.get("/push/test")
 @login_required
 @csrf.exempt
 def push_test():
-    send_push_to_users(
+    sent = send_push_to_users(
         user_ids=[current_user.id],
         title="Test",
         body="Ahoj, toto je test push",
         data={"url": "/talker/", "type": "test"},
     )
-    return jsonify(ok=True)
-    
-    
+    return jsonify(ok=True, sent=int(sent))
+
+
 @talker.post("/push/unregister")
 @login_required
 def unregister_push_token():
@@ -168,10 +185,8 @@ def unregister_push_token():
     deleted = q.delete(synchronize_session=False)
     db.session.commit()
     return jsonify(ok=True, deleted=int(deleted)), 200
-    
-    
-    
-    
+
+
 # -------------------------
 # HTTP ROUTES
 # -------------------------
@@ -184,7 +199,6 @@ def index():
     else:
         all_rooms = TalkRoom.query.order_by(TalkRoom.id.desc()).all()
         rooms = [r for r in all_rooms if user_can_access_room(r)]
-
     return render_template("talker/index.html", rooms=rooms)
 
 
@@ -196,7 +210,7 @@ def create_room():
 
     data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip()
-    team_id = data.get("team_id", None)  # môže byť None
+    team_id = data.get("team_id", None)
 
     if not name:
         return jsonify(error="missing_name"), 400
@@ -204,7 +218,7 @@ def create_room():
     room = TalkRoom(
         name=name,
         team_id=team_id,
-        created_by_user_id=current_user.id,  # u teba NOT NULL
+        created_by_user_id=current_user.id,
     )
 
     try:
@@ -265,10 +279,8 @@ def load_messages(room_id: int):
 @talker.post("/push/register")
 @login_required
 @csrf.exempt
-
 def register_push_token():
     data = request.get_json(silent=True)
-
     if data is None:
         return jsonify(error="invalid_json", hint="Send application/json body"), 400
 
@@ -291,7 +303,6 @@ def register_push_token():
     db.session.add(pt)
     db.session.commit()
     return jsonify(ok=True, created=True), 201
-
 
 
 @talker.get("/push/status")
@@ -341,7 +352,6 @@ def on_send(data: dict[str, Any]):
 
     username = getattr(current_user, "username", None) or getattr(current_user, "email", "user")
 
-    # 1) ULOŽ SPRÁVU
     msg = TalkMessage(room_id=room.id, user_id=current_user.id, text=text)
 
     try:
@@ -356,7 +366,6 @@ def on_send(data: dict[str, Any]):
         emit("talker_error", {"error": "db_error", "detail": str(e)})
         return
 
-    # 2) REALTIME EMIT
     emit(
         "talker_message",
         {
@@ -371,7 +380,6 @@ def on_send(data: dict[str, Any]):
         include_self=True,
     )
 
-    # 3) PUSH (best-effort)
     try:
         user_ids = get_recipients_for_room(room)
         send_push_to_users(
@@ -395,7 +403,6 @@ def get_recipients_for_room(room: TalkRoom) -> list[int]:
 
     ids: list[int] = []
 
-    # custom room: room.members
     if getattr(room, "team_id", None) is None:
         members = getattr(room, "members", None) or []
         for u in members:
@@ -404,7 +411,6 @@ def get_recipients_for_room(room: TalkRoom) -> list[int]:
                 ids.append(int(uid))
         return sorted(set(ids))
 
-    # team room: Team.members (member.user_id)
     team = Team.query.get(room.team_id)
     if not team:
         return []
@@ -424,7 +430,7 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
 
     app = init_firebase()
     if not app:
-        return 0  # push disabled / not configured
+        return 0
 
     tokens = [
         t.token
@@ -434,20 +440,33 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
     if not tokens:
         return 0
 
-    # 1) Postav multicast message
     mm = messaging.MulticastMessage(
         notification=messaging.Notification(title=title, body=body),
         data={k: str(v) for k, v in (data or {}).items()},
         tokens=tokens,
     )
 
-    # 2) POSIELAJ BEZ "batch endpoint /batch"
-    resp = None
+    # ✅ preferované: send_each_for_multicast (bez /batch)
     try:
-        # novšie firebase-admin (preferované)
         resp = messaging.send_each_for_multicast(mm, app=app)
+
+        # cleanup invalid tokenov
+        bad_tokens = []
+        for i, r in enumerate(resp.responses):
+            if not r.success:
+                bad_tokens.append(tokens[i])
+
+        if bad_tokens:
+            try:
+                PushToken.query.filter(PushToken.token.in_(bad_tokens)).delete(synchronize_session=False)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        return int(resp.success_count or 0)
+
     except Exception as e:
-        # fallback: po jednom (toto je najrobustnejšie v dev prostredí)
+        # fallback: po jednom (najrobustnejšie v dev)
         results = []
         for tok in tokens:
             msg = messaging.Message(
@@ -461,7 +480,6 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
             except Exception as ex:
                 results.append((tok, False, ex))
 
-        # cleanup invalid tokenov
         bad_tokens = [tok for tok, ok, _ in results if not ok]
         if bad_tokens:
             try:
@@ -471,20 +489,3 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
                 db.session.rollback()
 
         return sum(1 for _, ok, _ in results if ok)
-
-    # 3) cleanup invalid tokenov (pre send_each_for_multicast)
-    if getattr(resp, "failure_count", 0):
-        bad_tokens = []
-        for i, r in enumerate(resp.responses):
-            if not r.success:
-                bad_tokens.append(tokens[i])
-
-        if bad_tokens:
-            try:
-                PushToken.query.filter(PushToken.token.in_(bad_tokens)).delete(synchronize_session=False)
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-
-    return int(getattr(resp, "success_count", 0) or 0)
-

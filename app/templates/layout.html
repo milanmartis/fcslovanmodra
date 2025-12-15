@@ -464,9 +464,22 @@
       setModalStatus("Push je zapnutý ✅");
 
       // foreground handler
-      onMessage(messaging, (payload) => {
-        console.log("FCM foreground:", payload);
-      });
+	  onMessage(messaging, (payload) => {
+		console.log("FCM foreground:", payload);
+	  
+		const n = payload?.notification;
+		if (n?.title || n?.body) {
+		  // ukáž notifikáciu aj keď je stránka otvorená
+		  try {
+			new Notification(n.title || "Talker", {
+			  body: n.body || "",
+			  icon: "/static/main/ico.png",
+			});
+		  } catch (e) {
+			console.warn("Foreground Notification failed:", e);
+		  }
+		}
+	  });
 
       // môžeš zavrieť modal po úspechu
       // const modalEl = document.getElementById("pushModal");
@@ -514,6 +527,59 @@
       initPushModalUI().catch(console.error);
     });
   </script>
+  <script>
+	document.addEventListener("DOMContentLoaded", async () => {
+	  // modal ukáž len ak:
+	  // - user je prihlásený
+	  // - Notification permission je "default" (t.j. ešte sa nepýtalo / neurčilo)
+	  // - a nemá token v DB (push/status false)
+	  if (!window.__IS_AUTH) return;
+	  if (!("Notification" in window)) return;
+  
+	  const statusEl = document.getElementById("pushStatusText");
+	  const enableBtn = document.getElementById("pushEnableBtn");
+	  const modalEl = document.getElementById("pushModal");
+	  if (!modalEl || !enableBtn) return;
+  
+	  function setStatus(t) { if (statusEl) statusEl.textContent = t || ""; }
+  
+	  let hasToken = false;
+	  try {
+		const r = await fetch("/talker/push/status", { credentials: "same-origin" });
+		if (r.ok) {
+		  const j = await r.json();
+		  hasToken = !!j.has_token;
+		}
+	  } catch(e) {}
+  
+	  if (Notification.permission === "granted" && hasToken) return;
+  
+	  if (Notification.permission === "default" && !hasToken) {
+		// ukáž modal
+		const modal = new bootstrap.Modal(modalEl, { backdrop: "static", keyboard: true });
+		modal.show();
+  
+		enableBtn.addEventListener("click", async () => {
+		  setStatus("Zapínam push...");
+		  try {
+			// volá tvoju existujúcu funkciu z module scriptu:
+			// enablePushNotifications()
+			if (typeof enablePushNotifications !== "function") {
+			  setStatus("Chyba: enablePushNotifications() nie je dostupná.");
+			  return;
+			}
+			await enablePushNotifications();
+			setStatus("Hotovo ✅");
+			modal.hide();
+		  } catch (e) {
+			console.error(e);
+			setStatus("Chyba: " + (e?.message || e));
+		  }
+		}, { once: true });
+	  }
+	});
+  </script>
+  
 
   <!-- ✅ PUSH MODAL HTML -->
   <div class="modal fade" id="pushModal" tabindex="-1" aria-hidden="true">
