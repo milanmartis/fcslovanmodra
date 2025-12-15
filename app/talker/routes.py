@@ -35,8 +35,22 @@ talker = Blueprint("talker", __name__, url_prefix="/talker")
 # ============================================================
 
 @talker.get("/firebase-messaging-sw.js")
-def firebase_messaging_sw_root():
-    return firebase_messaging_sw()
+def _deprecated_sw_path():
+    """
+    ⚠️ DEPRECATED:
+    Staré URL pod /talker. Nesmie sa používať na register().
+    Vraciame 410 Gone, aby sa staré cache/registrácie postupne "odlepili".
+    """
+    return Response(
+        "/* DEPRECATED – use /firebase-messaging-sw.js (root). */",
+        status=410,
+        mimetype="application/javascript; charset=utf-8",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 def firebase_messaging_sw():
@@ -183,7 +197,7 @@ self.addEventListener("push", (event) => {{
     if ((payload.total_unread !== undefined) && (data.total_unread === undefined)) data.total_unread = payload.total_unread;
 
     await showNotif(title, body, data);
-  )());
+  }})());
 }});
 
 // -------------------------
