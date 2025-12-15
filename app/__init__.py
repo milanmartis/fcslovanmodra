@@ -99,8 +99,14 @@ def create_app(config_class=None):
     # -------------------------------------------------------------------------
     # PWA / SERVICE WORKER (MUSÍ BYŤ 200 OK, ŽIADNY REDIRECT, ŽIADNY LOGIN)
     # -------------------------------------------------------------------------
+
     @app.get("/service-worker.js")
     def service_worker_js():
+        """
+        Tvoj hlavný offline SW.
+        Pozor: ak tento SW je ten, ktorý kontroluje stránku,
+        tak push subscribe/push eventy pôjdu SEM, nie do iného SW.
+        """
         try:
             path = os.path.join(app.static_folder, "service-worker.js")
             if not os.path.exists(path):
@@ -118,7 +124,6 @@ def create_app(config_class=None):
         except Exception as e:
             return Response(f"/* SW error: {e} */", status=500, mimetype="application/javascript")
 
-    # (voliteľné, ale odporúčam): manifest tiež bez redirectu a správny MIME
     @app.get("/manifest.webmanifest")
     def manifest_webmanifest():
         path = os.path.join(app.static_folder, "manifest.webmanifest")
@@ -130,10 +135,32 @@ def create_app(config_class=None):
 
         resp = Response(data, mimetype="application/manifest+json; charset=utf-8")
         resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
         return resp
-    
-    
-    
+
+    # ✅ ROOT push SW (FCM + WebPush) – aby scope bol "/" a nebil sa s /talker/
+    # Musí byť dostupné bez login a bez redirectu.
+    @app.get("/firebase-messaging-sw.js")
+    def firebase_messaging_sw_root():
+        """
+        Toto routuje na funkciu firebase_messaging_sw z app.talker.routes.
+        Dôležité: musí to byť ROOT route, inak iOS/Push scope robí bordel.
+        """
+        try:
+            # v app/talker/routes.py musí existovať: def firebase_messaging_sw(): ...
+            from app.talker.routes import firebase_messaging_sw  # noqa
+            resp = firebase_messaging_sw()
+
+            # pre istotu vynútime no-store aj tu (ak by to vo view chýbalo)
+            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            resp.headers["Pragma"] = "no-cache"
+            resp.headers["Expires"] = "0"
+            resp.headers["Service-Worker-Allowed"] = "/"
+            return resp
+        except Exception as e:
+            return Response(f"/* firebase-messaging-sw.js error: {e} */", status=500, mimetype="application/javascript")
+
     # --- Blueprints -----------------------------------------------------------
     from app.users.routes import users
     from app.posts.routes import posts
@@ -174,15 +201,14 @@ def create_app(config_class=None):
 
     # -------------------------------------------------------------------------
     # 404 → domovská stránka
-    # POZOR: Nesmie to presmerovať service-worker.js / manifest atď.
-    # (my ich už chytáme route-ami vyššie, takže OK)
+    # POZOR: Nesmie to presmerovať service-worker.js / manifest / push SW atď.
     # -------------------------------------------------------------------------
     @app.errorhandler(NotFound)
     def page_not_found(e):
         p = request.path
 
         # PWA súbory nikdy nepresmeruj na HTML
-        if p in ("/manifest.webmanifest", "/service-worker.js", "/favicon.ico"):
+        if p in ("/manifest.webmanifest", "/service-worker.js", "/firebase-messaging-sw.js", "/favicon.ico"):
             return Response("", status=404)
 
         # statické súbory tiež nepresmeruj
@@ -196,39 +222,19 @@ def create_app(config_class=None):
     # -------------------------------------------------------------------------
     @app.after_request
     def add_csp_headers(response):
-        # Firebase/FCM potrebuje najmä:
-        # - https://www.gstatic.com (firebase js libs, importScripts)
-        # - https://*.googleapis.com (registrácie/instalácie/fcm endpoints)
-        #
-        # Stripe:
-        # - frame-src https://js.stripe.com
-        # - script-src https://js.stripe.com
-
         response.headers["Content-Security-Policy-Report-Only"] = (
             "default-src 'self'; "
             "base-uri 'self'; "
             "object-src 'none'; "
-
-            # iframes (youtube + stripe)
             "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://js.stripe.com; "
-
-            # scripts (povolené CDN + firebase gstatic + stripe)
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
             "https: "
             "https://www.gstatic.com "
             "https://www.googleapis.com "
             "https://js.stripe.com; "
-
-            # styles
             "style-src 'self' 'unsafe-inline' https:; "
-
-            # images
             "img-src 'self' data: https:; "
-
-            # fonts
             "font-src 'self' data: https:; "
-
-            # fetch/xhr/websocket endpoints
             "connect-src 'self' https: "
             "https://www.googleapis.com "
             "https://*.googleapis.com; "

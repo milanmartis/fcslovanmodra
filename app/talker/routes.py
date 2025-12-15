@@ -14,14 +14,14 @@ from app.models import TalkRoom, TalkMessage, PushToken, Team
 from .permissions import user_can_access_room, is_admin_user
 from app.firebase_client import init_firebase
 
-# WebPush (optional)
+# WebPush
 try:
     from pywebpush import webpush, WebPushException  # type: ignore
 except Exception:  # pragma: no cover
     webpush = None
     WebPushException = Exception
 
-# subscription model (optional – ak ešte nemáš, kód pôjde ďalej bez neho)
+# subscription model (optional)
 try:
     from app.models import WebPushSubscription  # type: ignore
 except Exception:  # pragma: no cover
@@ -30,8 +30,33 @@ except Exception:  # pragma: no cover
 talker = Blueprint("talker", __name__, url_prefix="/talker")
 
 
+# ============================================================
+# SERVICE WORKER pre FCM/WebPush – ROOT scope "/"
+# ============================================================
+
 @talker.get("/firebase-messaging-sw.js")
+def _deprecated_sw_path():
+    """
+    Staré URL (v scope /talker) – nech to nepadá 404, ak to niekde cachelo.
+    Pozor: service worker súbor nesmie byť redirectovaný.
+    """
+    return Response(
+        "/* moved to /firebase-messaging-sw.js (root). Update your registration. */",
+        mimetype="application/javascript; charset=utf-8",
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"},
+    )
+
+
 def firebase_messaging_sw():
+    """
+    ROOT SW pre push.
+    Tento view musí byť namapovaný na /firebase-messaging-sw.js na úrovni appky (nie blueprint),
+    napr. v __init__.py:
+      @app.get("/firebase-messaging-sw.js")
+      def firebase_messaging_sw_root(): return firebase_messaging_sw()
+
+    Dôležité: SW, na ktorý sa robí subscribe(), musí byť ten istý, ktorý má push listener.
+    """
     cfg = {
         "apiKey": current_app.config.get("FIREBASE_API_KEY") or "",
         "authDomain": current_app.config.get("FIREBASE_AUTH_DOMAIN") or "",
@@ -39,11 +64,10 @@ def firebase_messaging_sw():
         "messagingSenderId": current_app.config.get("FIREBASE_MESSAGING_SENDER_ID") or "",
         "appId": current_app.config.get("FIREBASE_APP_ID") or "",
     }
-
     cfg_json = json.dumps(cfg)
 
     js = f"""\
-/* /talker/firebase-messaging-sw.js */
+/* /firebase-messaging-sw.js */
 "use strict";
 
 try {{
@@ -55,73 +79,45 @@ try {{
 
 const FIREBASE_CONFIG = {cfg_json};
 
-if (!FIREBASE_CONFIG.messagingSenderId || !FIREBASE_CONFIG.appId) {{
-  console.warn("FCM SW: missing firebase config fields (messagingSenderId/appId).", FIREBASE_CONFIG);
-}} else {{
-  try {{
+try {{
+  if (typeof firebase !== "undefined" && FIREBASE_CONFIG && FIREBASE_CONFIG.messagingSenderId) {{
     firebase.initializeApp(FIREBASE_CONFIG);
-  }} catch (e) {{
-    console.error("FCM SW firebase.initializeApp failed:", e);
   }}
-
-  let messaging = null;
-  try {{
-    messaging = firebase.messaging();
-  }} catch (e) {{
-    console.error("FCM SW firebase.messaging() failed:", e);
-  }}
-
-  if (messaging) {{
-    messaging.onBackgroundMessage((payload) => {{
-      try {{
-        const title = (payload && payload.notification && payload.notification.title) ? payload.notification.title : "Talker";
-        const body  = (payload && payload.notification && payload.notification.body)  ? payload.notification.body  : "";
-        const data  = (payload && payload.data) ? payload.data : {{}};
-
-        const roomId = data.room_id || data.roomId;
-        const url = roomId ? `/talker/rooms/${{roomId}}` : (data.url || "/talker/");
-
-        const icon  = data.icon  || "/static/main/ico.png";
-        const badge = data.badge || "/static/main/ico.png";
-
-        self.registration.showNotification(title, {{
-          body,
-          icon,
-          badge,
-          data: Object.assign({{ url, roomId }}, data),
-          actions: [
-            {{ action: "open",  title: "Otvoriť" }},
-            {{ action: "close", title: "Zavrieť" }},
-          ],
-        }});
-      }} catch (e) {{
-        console.error("FCM SW onBackgroundMessage error:", e);
-      }}
-    }});
-  }}
+}} catch (e) {{
+  console.error("FCM SW firebase.initializeApp failed:", e);
 }}
 
-self.addEventListener("notificationclick", (event) => {{
-  event.notification.close();
-  if (event.action === "close") return;
+let messaging = null;
+try {{
+  if (typeof firebase !== "undefined") {{
+    messaging = firebase.messaging();
+  }}
+}} catch (e) {{
+  console.error("FCM SW firebase.messaging() failed:", e);
+}}
 
-  const data = (event.notification && event.notification.data) ? event.notification.data : {{}};
-  const url = data.url || "/talker/";
+if (messaging) {{
+  messaging.onBackgroundMessage((payload) => {{
+    try {{
+      const notif = payload?.notification || {{}};
+      const data  = payload?.data || {{}};
 
-  event.waitUntil(
-    clients.matchAll({{ type: "window", includeUncontrolled: true }}).then((wins) => {{
-      for (const w of wins) {{
-        if (w.url && w.url.startsWith(self.location.origin)) {{
-          w.focus();
-          return w.navigate(url);
-        }}
-      }}
-      return clients.openWindow(url);
-    }})
-  );
-}});
+      const roomId = data.room_id || data.roomId;
+      const url = roomId ? `/talker/rooms/${{roomId}}` : (data.url || "/talker/");
 
-// ---- WebPush handler (iOS/APNs) ----
+      self.registration.showNotification(notif.title || "Talker", {{
+        body: notif.body || "",
+        icon: data.icon || "/static/main/ico.png",
+        badge: data.badge || "/static/main/ico.png",
+        data: Object.assign({{ url, roomId }}, data),
+      }});
+    }} catch (e) {{
+      console.error("FCM SW onBackgroundMessage error:", e);
+    }}
+  }});
+}}
+
+// WebPush (iOS PWA) – push event
 self.addEventListener("push", (event) => {{
   try {{
     let payload = {{}};
@@ -131,8 +127,8 @@ self.addEventListener("push", (event) => {{
       payload = {{}};
     }}
 
-    const title = payload.title || (payload.notification && payload.notification.title) || "Talker";
-    const body  = payload.body  || (payload.notification && payload.notification.body) || "";
+    const title = payload.title || payload?.notification?.title || "Talker";
+    const body  = payload.body  || payload?.notification?.body  || "";
 
     const data = payload.data || {{}};
     const roomId = data.room_id || data.roomId;
@@ -150,13 +146,30 @@ self.addEventListener("push", (event) => {{
     console.error("SW push handler error:", e);
   }}
 }});
-"""
 
+self.addEventListener("notificationclick", (event) => {{
+  event.notification.close();
+  const data = event.notification?.data || {{}};
+  const url = data.url || "/talker/";
+
+  event.waitUntil(
+    clients.matchAll({{ type: "window", includeUncontrolled: true }}).then((wins) => {{
+      for (const w of wins) {{
+        if (w.url && w.url.startsWith(self.location.origin)) {{
+          w.focus();
+          return w.navigate(url);
+        }}
+      }}
+      return clients.openWindow(url);
+    }})
+  );
+}});
+"""
     resp = Response(js, mimetype="application/javascript; charset=utf-8")
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
-    resp.headers["Service-Worker-Allowed"] = "/talker/"
+    resp.headers["Service-Worker-Allowed"] = "/"  # ROOT scope
     return resp
 
 
@@ -174,13 +187,17 @@ def push_config():
     )
 
 
+# ============================================================
+# WEBPUSH SUBSCRIBE – multi-device (upsert podľa endpointu)
+# ============================================================
+
 @talker.post("/webpush/subscribe")
 @login_required
 @csrf.exempt
 def webpush_subscribe():
     """
-    iOS PWA (a všeobecne WebPush) posiela celý subscription objekt z pushManager.subscribe().
-    Ukladáme ho na usera, aby sme vedeli posielať cez pywebpush.
+    Ukladá subscription z pushManager.subscribe().
+    Multi-device: upsert podľa endpointu (nie 1 user = 1 sub).
     """
     if WebPushSubscription is None:
         return jsonify(error="webpush_not_configured", hint="Missing WebPushSubscription model"), 501
@@ -194,14 +211,12 @@ def webpush_subscribe():
 
     p256dh = (keys.get("p256dh") or "").strip()
     auth = (keys.get("auth") or "").strip()
-
     if not p256dh or not auth:
         return jsonify(error="invalid_subscription_keys"), 400
 
-    # 1 user = 1 subscription (môžeš zmeniť na multi-device ak chceš)
-    existing = WebPushSubscription.query.filter_by(user_id=current_user.id).first()
+    existing = WebPushSubscription.query.filter_by(endpoint=endpoint).first()
     if existing:
-        existing.endpoint = endpoint
+        existing.user_id = current_user.id
         existing.p256dh = p256dh
         existing.auth = auth
         db.session.commit()
@@ -311,17 +326,54 @@ def room_detail(room_id):
 @talker.get("/rooms/<int:room_id>/messages")
 @login_required
 def load_messages(room_id: int):
+    """
+    Podporuje:
+      - ?limit=50
+      - ?after_id=123  -> vráti len správy s id > after_id (aby si dotiahol zmeškané)
+
+    Dôležité:
+      - keď after_id NIE JE, chceme "posledných N" správ (nie najstarších)
+      - UI typicky chce poradie od najstaršej po najnovšiu
+    """
     room = TalkRoom.query.get_or_404(room_id)
     if not user_can_access_room(room):
         abort(403)
 
-    msgs = (
-        TalkMessage.query
-        .filter_by(room_id=room.id)
-        .order_by(TalkMessage.id.desc())
-        .limit(50)
-        .all()
-    )
+    try:
+        limit = int(request.args.get("limit", 50))
+    except Exception:
+        limit = 50
+    limit = max(1, min(limit, 200))
+
+    after_id = request.args.get("after_id", None)
+    q = TalkMessage.query.filter_by(room_id=room.id)
+
+    msgs: list[TalkMessage]
+
+    if after_id:
+        try:
+            after_id_int = int(after_id)
+            msgs = (
+                q.filter(TalkMessage.id > after_id_int)
+                 .order_by(TalkMessage.id.asc())
+                 .limit(limit)
+                 .all()
+            )
+        except Exception:
+            msgs = (
+                q.order_by(TalkMessage.id.desc())
+                 .limit(limit)
+                 .all()
+            )
+            msgs = list(reversed(msgs))
+    else:
+        # posledných N
+        msgs = (
+            q.order_by(TalkMessage.id.desc())
+             .limit(limit)
+             .all()
+        )
+        msgs = list(reversed(msgs))
 
     return jsonify([
         {
@@ -331,7 +383,7 @@ def load_messages(room_id: int):
             "username": m.author.username if getattr(m, "author", None) else "",
             "created_at": m.created_at.isoformat() if getattr(m, "created_at", None) else None,
         }
-        for m in reversed(msgs)
+        for m in msgs
     ])
 
 
@@ -367,8 +419,21 @@ def register_push_token():
 @talker.get("/push/status")
 @login_required
 def push_status():
-    has = PushToken.query.filter_by(user_id=current_user.id).first() is not None
-    return jsonify(has_token=has)
+    """
+    Predtým si tu vracal iba FCM token (PushToken).
+    Na iOS PWA však ide WebPushSubscription → preto vraciame oboje.
+    """
+    has_fcm = PushToken.query.filter_by(user_id=current_user.id).first() is not None
+
+    has_webpush = False
+    if WebPushSubscription is not None:
+        has_webpush = WebPushSubscription.query.filter_by(user_id=current_user.id).first() is not None
+
+    return jsonify(
+        has_token=bool(has_fcm or has_webpush),
+        has_fcm=bool(has_fcm),
+        has_webpush=bool(has_webpush),
+    )
 
 
 # -------------------------
@@ -410,7 +475,6 @@ def on_send(data: dict[str, Any]):
         return
 
     username = getattr(current_user, "username", None) or getattr(current_user, "email", "user")
-
     msg = TalkMessage(room_id=room.id, user_id=current_user.id, text=text)
 
     try:
@@ -425,6 +489,7 @@ def on_send(data: dict[str, Any]):
         emit("talker_error", {"error": "db_error", "detail": str(e)})
         return
 
+    # realtime pre online userov
     emit(
         "talker_message",
         {
@@ -439,14 +504,16 @@ def on_send(data: dict[str, Any]):
         include_self=True,
     )
 
+    # push pre offline userov
     try:
         user_ids = get_recipients_for_room(room)
-        send_push_to_users(
-            user_ids=user_ids,
-            title=room.name,
-            body=f"{username}: {msg.text[:120]}",
-            data={"room_id": room.id, "type": "talker_message", "url": f"/talker/rooms/{room.id}"},
-        )
+        if user_ids:
+            send_push_to_users(
+                user_ids=user_ids,
+                title=room.name,
+                body=f"{username}: {msg.text[:120]}",
+                data={"room_id": room.id, "type": "talker_message", "url": f"/talker/rooms/{room.id}"},
+            )
     except Exception as e:
         print("Talker push error:", e)
 
@@ -492,6 +559,7 @@ def _send_webpush_to_users(user_ids: list[int], title: str, body: str, data: dic
     vapid_private = (current_app.config.get("VAPID_PRIVATE_KEY") or "").strip()
     vapid_subject = (current_app.config.get("VAPID_SUBJECT") or "mailto:admin@example.com").strip()
 
+    # vapid_subject by mal byť mailto: alebo https://
     if not vapid_private:
         return 0
 
@@ -522,12 +590,12 @@ def _send_webpush_to_users(user_ids: list[int], title: str, body: str, data: dic
             )
             ok += 1
         except WebPushException as ex:
-            # keď subscription expirovala / je preč, typicky 410
             status_code = getattr(getattr(ex, "response", None), "status_code", None)
             if status_code in (404, 410):
-                bad_ids.append(getattr(s, "id", None))
+                sid = getattr(s, "id", None)
+                if sid is not None:
+                    bad_ids.append(int(sid))
         except Exception:
-            # nech to nepadne celé
             continue
 
     if bad_ids:
@@ -543,18 +611,18 @@ def _send_webpush_to_users(user_ids: list[int], title: str, body: str, data: dic
 def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | None = None) -> int:
     """
     Hybrid:
-      - FCM → PushToken
       - WebPush → WebPushSubscription (iOS PWA)
+      - FCM → PushToken (Android/desktop)
     """
     sent_total = 0
 
-    # --- WebPush (iOS/APNs) ---
+    # WebPush (iOS)
     try:
         sent_total += int(_send_webpush_to_users(user_ids, title, body, data))
     except Exception:
         pass
 
-    # --- FCM (Android/desktop) ---
+    # FCM
     if not user_ids:
         return sent_total
 
@@ -562,11 +630,19 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
     if not app:
         return sent_total
 
-    tokens = [
-        t.token
-        for t in PushToken.query.filter(PushToken.user_id.in_(user_ids)).all()
-        if t and t.token
-    ]
+    # dedupe + remove empties
+    raw_tokens = PushToken.query.filter(PushToken.user_id.in_(user_ids)).all()
+    tokens = []
+    seen = set()
+    for t in raw_tokens:
+        tok = (t.token or "").strip() if t else ""
+        if not tok:
+            continue
+        if tok in seen:
+            continue
+        seen.add(tok)
+        tokens.append(tok)
+
     if not tokens:
         return sent_total
 
@@ -595,6 +671,7 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
         return sent_total
 
     except Exception:
+        # fallback per token
         results = []
         for tok in tokens:
             msg = messaging.Message(

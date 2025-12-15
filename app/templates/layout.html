@@ -104,6 +104,14 @@
       backdrop-filter: blur(12px);
       box-shadow: 0 0 22px rgba(0,0,0,0.6);
     }
+
+    /* push status text */
+    #pushStatusText {
+      font-size: 0.95rem;
+      opacity: 0.9;
+      margin-top: 10px;
+      min-height: 22px;
+    }
   </style>
 </head>
 
@@ -402,10 +410,59 @@
     document.addEventListener("DOMContentLoaded", initCarouselTouchSwipe);
   </script>
 
-  <!-- ✅ PUSH (MODAL) -->
+  <!-- ✅ PUSH MODAL HTML -->
+  <div class="modal fade" id="pushModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-glass">
+
+        <div class="modal-header border-0">
+          <h5 class="modal-title">Push notifikácie</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body text-center">
+          <p>Chceš dostávať push správy, keď príde nová správa v Talkeri?</p>
+
+          <button id="enablePushBtn" class="btn btn-primary w-100" type="button">
+            Zapnúť push
+          </button>
+
+          <div id="pushStatusText"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ PUSH (JEDEN čistý skript, žiadne duplicity) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js";
+
+    const modalEl = document.getElementById("pushModal");
+    const enableBtn = document.getElementById("enablePushBtn");
+    const openBtn = document.getElementById("openPushModalBtn");
+    const statusEl = document.getElementById("pushStatusText");
+
+    function setStatus(txt) {
+      if (statusEl) statusEl.textContent = txt || "";
+    }
+
+    function isStandalone() {
+      return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    }
+
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent);
+    }
+
+    function canUsePush() {
+      return ("serviceWorker" in navigator) && ("Notification" in window);
+    }
+
+    function canUseWebPush() {
+      return canUsePush() && ("PushManager" in window);
+    }
 
     async function loadPushConfig() {
       const r = await fetch("/talker/push/config", { credentials: "same-origin" });
@@ -421,71 +478,97 @@
       return !!j.has_token;
     }
 
-    function setModalStatus(text) {
-      const el = document.getElementById("pushStatusText");
-      if (el) el.textContent = text || "";
-    }
-
     function openPushModal() {
-      const modalEl = document.getElementById("pushModal");
-      if (!modalEl) return;
-
-      if (!window.bootstrap || !window.bootstrap.Modal) {
-        console.warn("bootstrap Modal not available");
-        return;
-      }
-
+      if (!modalEl || !window.bootstrap?.Modal) return;
       const inst = window.bootstrap.Modal.getOrCreateInstance(modalEl, {
-        backdrop: "static",
-        keyboard: true
+        backdrop: true,     // ✅ dá sa kliknúť mimo
+        keyboard: true      // ✅ ESC
       });
       inst.show();
     }
 
-    async function enablePushFromModal() {
-      setModalStatus("");
+    function closePushModal() {
+      if (!modalEl || !window.bootstrap?.Modal) return;
+      const inst = window.bootstrap.Modal.getInstance(modalEl);
+      inst?.hide();
+    }
 
-      if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-        setModalStatus("Push nie je podporovaný v tomto prehliadači.");
-        return;
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = atob(base64);
+      const out = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i);
+      return out;
+    }
+
+    async function enableWebPushIOSPWA(vapidPublicKey) {
+      // iOS WebPush má zmysel ponúkať len v PWA (standalone)
+      if (!isStandalone()) {
+        setStatus("Na iOS fungujú push notifikácie hlavne po pridaní na plochu cez Safari (Add to Home Screen).");
+        return false;
+      }
+      if (!canUseWebPush()) {
+        setStatus("Push nie je podporovaný v tomto prehliadači.");
+        return false;
+      }
+
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") {
+        setStatus(perm === "denied" ? "Push je zablokovaný v nastaveniach." : "Push nebol povolený.");
+        return false;
+      }
+
+      // používame registráciu /service-worker.js
+      const reg = await navigator.serviceWorker.ready;
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+      });
+
+      const res = await fetch("/talker/webpush/subscribe", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub)
+      });
+      if (!res.ok) throw new Error("webpush/subscribe failed: " + res.status + " " + await res.text());
+
+      setStatus("Push je zapnutý ✅");
+      return true;
+    }
+
+    async function enableFCM(vapidPublicKey, firebaseConfig) {
+      if (!("serviceWorker" in navigator) || !("Notification" in window)) {
+        setStatus("Push nie je podporovaný v tomto prehliadači.");
+        return false;
       }
 
       if (Notification.permission === "denied") {
-        setModalStatus("Push je zablokovaný v nastaveniach prehliadača (Site settings → Notifications → Ask).");
-        return;
+        setStatus("Push je zablokovaný v nastaveniach prehliadača (Site settings → Notifications).");
+        return false;
       }
 
-      const cfg = await loadPushConfig();
-      const firebaseConfig = cfg.firebase;
-      const vapidKey = cfg.vapidPublicKey;
-
-      if (!firebaseConfig?.messagingSenderId || !firebaseConfig?.appId || !vapidKey) {
-        throw new Error("Missing firebase config/vapid key");
+      const perm = await Notification.requestPermission(); // musí byť v click handleri
+      if (perm !== "granted") {
+        setStatus(perm === "denied" ? "Push je zablokovaný v nastaveniach." : "Push nebol povolený.");
+        return false;
       }
 
-      // vyžiadaj permission (toto MUSÍ byť v click handleri)
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setModalStatus(permission === "denied"
-          ? "Push je zablokovaný v nastaveniach prehliadača."
-          : "Push nebol povolený.");
-        return;
-      }
-
-      // registruj FCM SW
-      const reg = await navigator.serviceWorker.register("/talker/firebase-messaging-sw.js");
+      // používame existujúci SW /service-worker.js
+      const reg = await navigator.serviceWorker.ready;
 
       const app = initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
       const token = await getToken(messaging, {
-        vapidKey,
+        vapidKey: vapidPublicKey,
         serviceWorkerRegistration: reg,
       });
 
       if (!token) throw new Error("FCM token is empty");
 
-      // uložiť token do DB
       if (window.__IS_AUTH) {
         const res = await fetch("/talker/push/register", {
           method: "POST",
@@ -500,144 +583,108 @@
         if (!res.ok) throw new Error("push/register failed: " + res.status + " " + await res.text());
       }
 
-      setModalStatus("Push je zapnutý ✅");
+      setStatus("Push je zapnutý ✅");
 
       // foreground handler
-	  onMessage(messaging, (payload) => {
-		console.log("FCM foreground:", payload);
-	  
-		const n = payload?.notification;
-		if (n?.title || n?.body) {
-		  // ukáž notifikáciu aj keď je stránka otvorená
-		  try {
-			new Notification(n.title || "Talker", {
-			  body: n.body || "",
-			  icon: "/static/icons/apple-180.png",
-			});
-		  } catch (e) {
-			console.warn("Foreground Notification failed:", e);
-		  }
-		}
-	  });
+      onMessage(messaging, (payload) => {
+        console.log("FCM foreground:", payload);
+        const n = payload?.notification;
+        if (n?.title || n?.body) {
+          try {
+            new Notification(n.title || "Talker", {
+              body: n.body || "",
+              icon: "/static/icons/apple-180.png",
+            });
+          } catch (e) {
+            console.warn("Foreground Notification failed:", e);
+          }
+        }
+      });
 
-      // môžeš zavrieť modal po úspechu
-      // const modalEl = document.getElementById("pushModal");
-      // window.bootstrap.Modal.getInstance(modalEl)?.hide();
+      return true;
     }
 
-    async function initPushModalUI() {
-      const openBtn = document.getElementById("openPushModalBtn");
+    async function enablePushFlow() {
+      setStatus("");
+
+      if (!window.__IS_AUTH) {
+        setStatus("Push je dostupný až po prihlásení.");
+        return;
+      }
+
+      if (!canUsePush()) {
+        setStatus("Push nie je podporovaný v tomto prehliadači.");
+        return;
+      }
+
+      // iOS v Opera/Edge (nie PWA) – nedávaj subscribe, skončí to timeoutom/push service error
+      if (isIOS() && !isStandalone()) {
+        setStatus("Na iOS fungujú push notifikácie hlavne po pridaní na plochu cez Safari (Add to Home Screen).");
+        return;
+      }
+
+      const cfg = await loadPushConfig();
+      const firebaseConfig = cfg.firebase;
+      const vapidKey = cfg.vapidPublicKey;
+
+      if (!vapidKey) throw new Error("Missing VAPID public key");
+
+      // iOS PWA → WebPush subscribe (tvoj /talker/webpush/subscribe)
+      if (isIOS()) {
+        const ok = await enableWebPushIOSPWA(vapidKey);
+        if (ok) setTimeout(() => closePushModal(), 600);
+        return;
+      }
+
+      // ostatné → FCM
+      if (!firebaseConfig?.messagingSenderId || !firebaseConfig?.appId) {
+        throw new Error("Missing firebase config");
+      }
+      const ok = await enableFCM(vapidKey, firebaseConfig);
+      if (ok) setTimeout(() => closePushModal(), 600);
+    }
+
+    async function initPushUI() {
       if (openBtn) openBtn.addEventListener("click", openPushModal);
 
-      const enableBtn = document.getElementById("pushEnableBtn");
       if (enableBtn) {
         enableBtn.addEventListener("click", async () => {
+          enableBtn.disabled = true;
           try {
-            enableBtn.disabled = true;
-            setModalStatus("Zapínam push...");
-            await enablePushFromModal();
+            setStatus("Zapínam push...");
+            await enablePushFlow();
           } catch (e) {
             console.error(e);
-            setModalStatus("Chyba pri zapnutí push: " + (e?.message || e));
+            const msg = String(e?.message || e);
+
+            // user-friendly pre iOS/Opera timeouty
+            if (msg.toLowerCase().includes("push service error") || msg.toLowerCase().includes("timeout")) {
+              setStatus("Na iOS fungujú push notifikácie hlavne po pridaní na plochu cez Safari (Add to Home Screen).");
+            } else {
+              setStatus("Chyba pri zapnutí push: " + msg);
+            }
           } finally {
             enableBtn.disabled = false;
           }
         });
       }
 
-      // Auto-open len keď to má zmysel
+      // Auto-open len keď to dáva zmysel
       if (!window.__IS_AUTH) return;
 
       const already = await hasTokenAlready();
       if (Notification.permission === "granted" && already) return;
 
-      // keď je denied, otvor modal s info (aby user vedel čo spraviť)
-      if (Notification.permission === "denied") {
-        setModalStatus("Push je zablokovaný v nastaveniach prehliadača (Site settings → Notifications → Ask).");
-        openPushModal();
-        return;
-      }
+      // ak iOS a nie standalone, neotváraj modal automaticky (len manuálne)
+      if (isIOS() && !isStandalone()) return;
 
-      // default alebo granted bez tokenu → ukáž modal
       openPushModal();
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      initPushModalUI().catch(console.error);
+      initPushUI().catch(console.error);
     });
   </script>
-  <script>
-	document.addEventListener("DOMContentLoaded", async () => {
-	  // modal ukáž len ak:
-	  // - user je prihlásený
-	  // - Notification permission je "default" (t.j. ešte sa nepýtalo / neurčilo)
-	  // - a nemá token v DB (push/status false)
-	  if (!window.__IS_AUTH) return;
-	  if (!("Notification" in window)) return;
-  
-	  const statusEl = document.getElementById("pushStatusText");
-	  const enableBtn = document.getElementById("pushEnableBtn");
-	  const modalEl = document.getElementById("pushModal");
-	  if (!modalEl || !enableBtn) return;
-  
-	  function setStatus(t) { if (statusEl) statusEl.textContent = t || ""; }
-  
-	  let hasToken = false;
-	  try {
-		const r = await fetch("/talker/push/status", { credentials: "same-origin" });
-		if (r.ok) {
-		  const j = await r.json();
-		  hasToken = !!j.has_token;
-		}
-	  } catch(e) {}
-  
-	  if (Notification.permission === "granted" && hasToken) return;
-  
-	  if (Notification.permission === "default" && !hasToken) {
-		// ukáž modal
-		const modal = new bootstrap.Modal(modalEl, { backdrop: "static", keyboard: true });
-		modal.show();
-  
-		enableBtn.addEventListener("click", async () => {
-		  setStatus("Zapínam push...");
-		  try {
-			// volá tvoju existujúcu funkciu z module scriptu:
-			// enablePushNotifications()
-			if (typeof enablePushNotifications !== "function") {
-			  setStatus("Chyba: enablePushNotifications() nie je dostupná.");
-			  return;
-			}
-			await enablePushNotifications();
-			setStatus("Hotovo ✅");
-			modal.hide();
-		  } catch (e) {
-			console.error(e);
-			setStatus("Chyba: " + (e?.message || e));
-		  }
-		}, { once: true });
-	  }
-	});
-  </script>
-  
-
-  <!-- ✅ PUSH MODAL HTML -->
-  <div class="modal fade" id="pushModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content card-glass">
-        <div class="modal-body">
-          <h5 style="margin-bottom:10px;">Push notifikácie</h5>
-          <p style="opacity:.8;margin-bottom:14px;">
-            Chceš dostávať push správy, keď príde nová správa v Talkeri?
-          </p>
-          <div class="d-flex gap-2 justify-content-end">
-            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Teraz nie</button>
-            <button type="button" class="btn btn-primary" id="pushEnableBtn">Povoliť</button>
-          </div>
-          <div id="pushStatusText" style="margin-top:10px;font-size:90%;opacity:.8;"></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
 </body>
 </html>
