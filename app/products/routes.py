@@ -46,7 +46,7 @@ def extract_youtube_id(url: str) -> str | None:
 # ------------------------------
 # Helpers
 # ------------------------------
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 
 def alowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -133,7 +133,7 @@ def list_products():
 # ------------------------------
 @products.route("/product/new", methods=["GET", "POST"])
 @login_required
-@roles_required("Admin")
+@roles_required("Admin","WebAdmin")
 def new_product():
     form = ProductForm()
     form.category.choices = [(c.id, c.name) for c in ProductCategory.query.all()]
@@ -509,7 +509,7 @@ def product(product_id):
     category = ProductCategory.query.all()
 
     # prístup podľa tvojej logiky
-    if (check_user is not None) or (current_user.is_authenticated and current_user.id == 1):
+    if (check_user is not None) or (current_user.is_authenticated):
         return render_template(
             "products/product.html",
             checkout_session_id=(checkout_session["id"] if checkout_session else ""),

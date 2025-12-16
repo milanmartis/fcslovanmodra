@@ -356,26 +356,35 @@
     }
 
     async function uploadImage(file) {
+      if (!productId) return;
+    
+      // ✅ preprocess: PNG ostáva PNG, ostatné -> WebP + resize
+      const processed = await preprocessImage(file, {
+        maxW: 1600,
+        maxH: 1600,
+        quality: 0.82,
+        keepPng: true,
+      });
+    
+      setUploading(true);
+    
+      const fd = new FormData();
+      fd.append("image_file2", processed);
+    
       try {
-        setUploading(true);
-
-        const fd = new FormData();
-        fd.append("image_file2", file);
-
         const res = await fetch(`/products/images/${productId}/upload`, {
           method: "PUT",
-          headers: csrfOnlyHeaders(), // ✅ len CSRF, FormData si rieši Content-Type sám
+          headers: csrfOnlyHeaders(),   // ak to máš v create_product; v new_product môže byť bez
           body: fd
         });
-
+    
         if (!res.ok) {
           console.error("Upload failed", await res.text());
           return;
         }
-
+    
         if (imageInput) imageInput.value = "";
         await refreshGallery();
-
       } finally {
         setUploading(false);
       }

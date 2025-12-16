@@ -206,26 +206,30 @@
   }
 
   async function uploadOneFile(file) {
+    // ✅ preprocess (PNG ostáva PNG, ostatné -> WebP + resize)
+    const processed = await preprocessImage(file, {
+      maxW: 1600,
+      maxH: 1600,
+      quality: 0.82,
+      keepPng: true,
+    });
+  
     const fd = new FormData();
-    fd.append("image_file2", file);
-
+    fd.append("image_file2", processed);
+  
     setUploading(true);
     try {
       const response = await fetch(`/posts/images/{{post.id|string}}/upload`, {
         method: 'PUT',
-        
         body: fd,
       });
-
+  
       if (!response.ok) {
         console.error("Upload error:", await response.text());
         return;
       }
-
-      // ✅ hneď refresh, aby sa zobrazil bez ďalšieho uploadu
+  
       await refreshTable();
-
-      // reset input
       fileInput.value = "";
     } catch (e) {
       console.error("Upload failed:", e);
@@ -234,6 +238,7 @@
     }
   }
 
+  
   fileInput.addEventListener("change", async (e) => {
     const file = e.target.files?.[0];
     if (file) await uploadOneFile(file);

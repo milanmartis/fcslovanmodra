@@ -692,6 +692,70 @@
   
   })();
   </script>
-  
+  <script>
+    async function preprocessImage(file, opts = {}) {
+      const {
+        maxW = 1600,
+        maxH = 1600,
+        quality = 0.82,
+        keepPng = true,
+      } = opts;
+    
+      const type = (file.type || "").toLowerCase();
+    
+      // PNG ponecháme (kvôli alpha). Ak je veľké, len zmenšíme a necháme PNG.
+      // Ostatné typy -> WebP (po resize).
+      const targetMime = (keepPng && type === "image/png") ? "image/png" : "image/webp";
+      const targetExt  = targetMime === "image/png" ? "png" : "webp";
+    
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await img.decode();
+    
+      const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+    
+      // ak netreba resize a už je správny typ, nič nerob
+      if (scale === 1 && (type === targetMime)) return file;
+    
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+    
+      // PNG transparentné pozadie -> nič nevypĺňaj
+      // JPG/WebP -> tiež ok, len kresli
+      ctx.drawImage(img, 0, 0, w, h);
+    
+      const blob = await new Promise((res) => {
+        if (targetMime === "image/png") {
+          canvas.toBlob(res, "image/png");
+        } else {
+          canvas.toBlob(res, "image/webp", quality);
+        }
+      });
+    
+      const base = (file.name || "image").replace(/\.[^.]+$/, "");
+      const outName = `${base}.${targetExt}`;
+      return new File([blob], outName, { type: targetMime });
+    }
+    
+    async function replaceInputFileWithProcessed(inputEl, opts) {
+      const f = inputEl.files && inputEl.files[0];
+      if (!f) return null;
+    
+      // len obrázky
+      if (!/^image\//i.test(f.type)) return f;
+    
+      const out = await preprocessImage(f, opts);
+    
+      const dt = new DataTransfer();
+      dt.items.add(out);
+      inputEl.files = dt.files;
+    
+      return out;
+    }
+    </script>
+      
 </body>
 </html>

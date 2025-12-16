@@ -263,6 +263,17 @@ document.addEventListener("DOMContentLoaded", () => {
       img.src = URL.createObjectURL(f);
     });
   }
+
+  input.addEventListener("change", async () => {
+    const out = await replaceInputFileWithProcessed(input, {
+      maxW: 900,
+      maxH: 900,
+      quality: 0.82,
+      keepPng: true,
+    });
+
+    // preview
+    if (out && img) img.src = URL.createObjectURL(out);
 });
 </script>
 
