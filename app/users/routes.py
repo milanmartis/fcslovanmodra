@@ -68,49 +68,59 @@ def allowed_file(filename: str) -> bool:
 
 
 
-@users.route("/register", methods=['GET', 'POST'])
+@users.route("/register", methods=["GET", "POST"])
 @csrf.exempt
 def register():
-    # pass
-
-    # if current_user.is_authenticated and not current_user.id==1:
-    #     return redirect(url_for('main.home'))
-    
     form = RegistrationForm()
     form.role.choices = [(role.id, role.name) for role in Role.query.all()]
-    # form.team.choices = [(team.id, team.name) for team in Team.query.all()]
 
     if form.validate_on_submit():
         try:
-            hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-            user = User(uuid=str(uuid.uuid4()), username=form.username.data, email=form.email.data, password=hashed_password)
+            hashed_password = bcrypt.generate_password_hash(form.password.data).decode("utf-8")
+            user = User(
+                uuid=str(uuid.uuid4()),
+                username=form.username.data,
+                email=form.email.data,
+                password=hashed_password
+            )
             db.session.add(user)
-            db.session.commit()
-            role = Role.query.filter(Role.id.in_(form.role.data)).all()
-            # team = Team.query.filter_by(id=form.team.data).first()
-            member = Member(name=form.name.data, phone=form.phone.data, address=form.address.data, psc=form.psc.data, city=form.city.data,user_id=user.id)
-            for rol in role:
-                user.roles.append(rol)
-            # member.teams.append(team)
+            db.session.flush()  # aby user.id existovalo ešte pred commitom
+
+            member = Member(
+                name=form.name.data,
+                phone=form.phone.data,
+                address=form.address.data,
+                psc=form.psc.data,
+                city=form.city.data,
+                user_id=user.id,
+            )
             db.session.add(member)
+
+            roles = Role.query.filter(Role.id.in_(form.role.data)).all()
+            for rol in roles:
+                user.roles.append(rol)
+
             db.session.commit()
+
             send_confirm_email(user)
-            flash('Bol vám zaslaný e-mail na potvrdenie registrácie.', 'info')
+            flash("Bol vám zaslaný e-mail na potvrdenie registrácie.", "info")
+            return redirect(url_for("users.login"))
+
         except Exception as e:
             db.session.rollback()
-            flash('Chyba pri vytváraní účtu. Skúste to znova.', 'danger')
-        finally:
-            db.session.remove()
-            
-        # flash('Nový účet bol vytvorený!', 'success')
-        
-        
-        if current_user.is_authenticated:
-            return redirect(url_for('main.home'))
-        else:
-            return redirect(url_for('users.login'))
-    
-    return render_template('users/register.html', title='Register', form=form, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+            current_app.logger.exception("register failed: %s", e)
+            flash("Chyba pri vytváraní účtu. Skúste to znova.", "danger")
+
+    return render_template(
+        "users/register.html",
+        title="Register",
+        form=form,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
 
 
 @users.route("/login", methods=['GET', 'POST'])

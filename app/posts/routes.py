@@ -508,6 +508,7 @@ def delete_file(post_id):
 
 
 @posts.route("/post/<int:post_id>/delete", methods=['POST', 'GET'])
+@csrf.exempt
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def delete_post(post_id):

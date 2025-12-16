@@ -43,7 +43,11 @@
   .member-photo-edit:hover{ background: rgba(0,0,0,.85); }
   .photo-help{ font-size: 12px; opacity:.75; margin-top:8px; }
 </style>
-
+{% if form.errors %}
+  <div class="alert alert-danger">
+    Skontroluj povinné polia.
+  </div>
+{% endif %}
 <div class="content-section">
   <form method="POST" action="" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
@@ -68,74 +72,132 @@
 
     <fieldset class="form-group">
       <h3>Personal Data</h3>
-
+    
       <div class="row">
         <div class="col">
+    
           <div class="form-group">
             {{ form.name.label(class="form-control-label") }}
-            {{ form.name(class="form-control form-control-lg") }}
+            {% if form.name.errors %}
+              {{ form.name(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                {% for error in form.name.errors %}<span>{{ error }}</span>{% endfor %}
+              </div>
+            {% else %}
+              {{ form.name(class="form-control form-control-lg") }}
+            {% endif %}
           </div>
-
+    
           <div class="form-group">
             {{ form.phone.label(class="form-control-label") }}
-            {{ form.phone(class="form-control form-control-lg") }}
+            {% if form.phone.errors %}
+              {{ form.phone(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                {% for error in form.phone.errors %}<span>{{ error }}</span>{% endfor %}
+              </div>
+            {% else %}
+              {{ form.phone(class="form-control form-control-lg") }}
+            {% endif %}
           </div>
-
+    
           <div class="row">
             <div class="col">
-              {{ form.weight.label(class="form-control-label") }}
-              {{ form.weight(class="form-control form-control-lg") }}
+              <div class="form-group">
+                {{ form.weight.label(class="form-control-label") }}
+                {% if form.weight.errors %}
+                  {{ form.weight(class="form-control form-control-lg is-invalid") }}
+                  <div class="invalid-feedback">
+                    {% for error in form.weight.errors %}<span>{{ error }}</span>{% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.weight(class="form-control form-control-lg") }}
+                {% endif %}
+              </div>
             </div>
+    
             <div class="col">
-              {{ form.height.label(class="form-control-label") }}
-              {{ form.height(class="form-control form-control-lg") }}
+              <div class="form-group">
+                {{ form.height.label(class="form-control-label") }}
+                {% if form.height.errors %}
+                  {{ form.height(class="form-control form-control-lg is-invalid") }}
+                  <div class="invalid-feedback">
+                    {% for error in form.height.errors %}<span>{{ error }}</span>{% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.height(class="form-control form-control-lg") }}
+                {% endif %}
+              </div>
             </div>
           </div>
         </div>
-
+    
         <div class="col" style="margin-top: 60px;">
           <div class="media d-flex justify-content-center">
             <div class="member-photo-wrap" id="member-photo-wrap" title="Klikni pre zmenu fotky">
-              {% if image_url %}
               <img
-              id="member-photo"
-              src="{{ image_url or url_for('static', filename='members_pics/default.png') }}"
-              class="member-photo"
-              alt="Member photo"
-            />
-              {% else %}
-                <img id="member-photo" src="" class="member-photo" alt="Member photo" style="display:none;">
-                <div class="member-photo-empty">Bez fotky</div>
-              {% endif %}
+                id="member-photo"
+                src="{{ image_url or url_for('static', filename='members_pics/default.png') }}"
+                class="member-photo"
+                alt="Member photo"
+              >
               <button type="button" class="member-photo-edit" id="member-photo-btn">Zmeniť</button>
             </div>
           </div>
-
+    
           <div class="form-group mt-3" style="max-width:340px;display: none;">
             {{ form.picturemember.label(class="form-control-label") }}
-            {{ form.picturemember(class="form-control", id="member-photo-input", accept="image/*") }}
+            {% if form.picturemember.errors %}
+              {{ form.picturemember(class="form-control is-invalid", id="member-photo-input", accept="image/*") }}
+              <div class="invalid-feedback">
+                {% for error in form.picturemember.errors %}<span>{{ error }}</span>{% endfor %}
+              </div>
+            {% else %}
+              {{ form.picturemember(class="form-control", id="member-photo-input", accept="image/*") }}
+            {% endif %}
             <div class="photo-help">Vyber obrázok a klikni “Save”. Upload prebehne pri uložení.</div>
           </div>
         </div>
       </div>
-
+    
       <div class="form-group">
         {{ form.address.label(class="form-control-label") }}
-        {{ form.address(class="form-control form-control-lg") }}
+        {% if form.address.errors %}
+          {{ form.address(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.address.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% else %}
+          {{ form.address(class="form-control form-control-lg") }}
+        {% endif %}
       </div>
-
+    
       <div class="row">
         <div class="col-8">
           {{ form.psc.label(class="form-control-label") }}
-          {{ form.psc(class="form-control form-control-lg") }}
+          {% if form.psc.errors %}
+            {{ form.psc(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.psc.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.psc(class="form-control form-control-lg") }}
+          {% endif %}
         </div>
+    
         <div class="col-4">
           {{ form.city.label(class="form-control-label") }}
-          {{ form.city(class="form-control form-control-lg") }}
+          {% if form.city.errors %}
+            {{ form.city(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.city.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.city(class="form-control form-control-lg") }}
+          {% endif %}
         </div>
       </div>
     </fieldset>
-
+    
     <br><br>
 
     <fieldset class="form-group">

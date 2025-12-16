@@ -60,8 +60,9 @@
                 </div>
 
             </fieldset>
+            <br>
             <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Osobné údaje</legend>
+                <legend class="border-bottom mb-4">Personal Data</legend>
                 <div class="form-row">
                     <div class="form-group col-md-6">
                     {{ form.name.label(class="form-control-label") }}
@@ -137,7 +138,7 @@
 
             </fieldset>
             {% if current_user.is_authenticated %}
-
+            <br>
             <fieldset class="form-group">
                 <legend class="border-bottom mb-4">Club Data</legend>
                 <div class="form-row">
