@@ -2,13 +2,11 @@
   <div class="container d-flex align-items-center justify-content-between">
 
     <!-- BRAND: logo + názov klubu -->
-    <a class="navbar-brand club-brand" href="{{ url_for('main.home') if request.endpoint == 'main.home' else url_for('main.home') }}">
+    <a class="image-logo-page8 navbar-brand club-brand" href="{{ url_for('main.home') if request.endpoint == 'main.home' else url_for('main.home') }}">
       <img
         src="{{ url_for('static', filename='main/logo-slovan-modra-biele.png') }}"
         alt="FC Slovan Modra logo"
-        class="image-logo-page"
-        height="82"
-        width="82"
+
       >
       <span class="club-name">FC Slovan Modra</span>
     </a>

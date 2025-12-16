@@ -127,14 +127,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 
-/* image-logo */
 
-.image-logo-page {
-  margin-top: -15px;
-  margin-bottom: -20px;
-  animation: bounce-in 1s ease infinite;
-  animation-iteration-count: 1;
-}
 
 .image-logo-page2 {
   margin-top: -15px;

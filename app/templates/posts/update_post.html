@@ -213,6 +213,7 @@
     try {
       const response = await fetch(`/posts/images/{{post.id|string}}/upload`, {
         method: 'PUT',
+        
         body: fd,
       });
 

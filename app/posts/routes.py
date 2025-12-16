@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 import mimetypes
 from sqlalchemy.orm import subqueryload
+from app import csrf
 
 import boto3
 from botocore.config import Config as BotoConfig
@@ -307,6 +308,7 @@ def category_posts(category):
 # ---------- Galéria API ----------
 
 @posts.route('/posts/images/<int:post_id>', methods=['GET'])
+@csrf.exempt
 def get_images_by_post(post_id):
     images = (
         PostGallery.query
@@ -330,6 +332,7 @@ def get_images_by_post(post_id):
 
 
 @posts.route('/posts/images/<int:post_id>/upload', methods=['PUT'])
+@csrf.exempt
 def upload_image(post_id):
     post = Post.query.get_or_404(post_id)
     file = request.files.get('image_file2')
@@ -364,6 +367,7 @@ def upload_image(post_id):
 
 
 @posts.route('/posts/<int:post_id>/gallery/delete/<int:image_id>', methods=['DELETE'])
+@csrf.exempt
 @roles_required('Admin', 'WebAdmin')
 def delete_image(post_id, image_id):
     image = PostGallery.query.filter_by(id=image_id, post_id=post_id).first_or_404()

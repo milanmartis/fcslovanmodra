@@ -82,10 +82,12 @@
 </style>
 
 <div class="rooms">
-  <h2>Talker rooms</h2>
+<center><h1>Talker rooms</h1></center>
+
+
 
   {% for r in rooms %}
-    <a class="roomLink"
+    <a class="btn roomLink"
        href="{{ url_for('talker.room_detail', room_id=r.id) }}"
        data-room-id="{{ r.id }}"
        data-room-name="{{ r.name|e }}">
