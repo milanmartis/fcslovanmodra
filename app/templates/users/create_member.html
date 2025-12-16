@@ -11,14 +11,21 @@
     border: 1px solid rgba(109,155,255,.25);
     cursor: pointer;
   }
-
   .member-photo{
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
   }
-
+  .member-photo-empty{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:.7;
+    font-size: 14px;
+  }
   .member-photo-edit{
     position: absolute;
     right: 10px;
@@ -33,11 +40,8 @@
     font-size: 12px;
     z-index: 2;
   }
-
-  .member-photo-edit:hover{
-    background: rgba(0,0,0,.85);
-    color: #6d9bff;
-  }
+  .member-photo-edit:hover{ background: rgba(0,0,0,.85); }
+  .photo-help{ font-size: 12px; opacity:.75; margin-top:8px; }
 </style>
 
 <div class="content-section">
@@ -50,26 +54,12 @@
       <div class="row">
         <div class="col">
           {{ form.username.label(class="form-control-label") }}
-          {% if form.username.errors %}
-            {{ form.username(class="form-control form-control-lg is-invalid") }}
-            <div class="invalid-feedback">
-              {% for error in form.username.errors %}<span>{{ error }}</span>{% endfor %}
-            </div>
-          {% else %}
-            {{ form.username(readonly=true, class="form-control form-control-lg") }}
-          {% endif %}
+          {{ form.username(readonly=true, class="form-control form-control-lg") }}
         </div>
 
         <div class="col">
           {{ form.email.label(class="form-control-label") }}
-          {% if form.email.errors %}
-            {{ form.email(class="form-control form-control-lg is-invalid") }}
-            <div class="invalid-feedback">
-              {% for error in form.email.errors %}<span>{{ error }}</span>{% endfor %}
-            </div>
-          {% else %}
-            {{ form.email(readonly=true, class="form-control form-control-lg") }}
-          {% endif %}
+          {{ form.email(readonly=true, class="form-control form-control-lg") }}
         </div>
       </div>
     </fieldset>
@@ -83,117 +73,65 @@
         <div class="col">
           <div class="form-group">
             {{ form.name.label(class="form-control-label") }}
-            {% if form.name.errors %}
-              {{ form.name(class="form-control form-control-lg is-invalid") }}
-              <div class="invalid-feedback">
-                {% for error in form.name.errors %}<span>{{ error }}</span>{% endfor %}
-              </div>
-            {% else %}
-              {{ form.name(class="form-control form-control-lg") }}
-            {% endif %}
+            {{ form.name(class="form-control form-control-lg") }}
           </div>
 
           <div class="form-group">
             {{ form.phone.label(class="form-control-label") }}
-            {% if form.phone.errors %}
-              {{ form.phone(class="form-control form-control-lg is-invalid") }}
-              <div class="invalid-feedback">
-                {% for error in form.phone.errors %}<span>{{ error }}</span>{% endfor %}
-              </div>
-            {% else %}
-              {{ form.phone(class="form-control form-control-lg") }}
-            {% endif %}
+            {{ form.phone(class="form-control form-control-lg") }}
           </div>
 
           <div class="row">
             <div class="col">
-              <div class="form-group">
-                {{ form.weight.label(class="form-control-label") }}
-                {% if form.weight.errors %}
-                  {{ form.weight(class="form-control form-control-lg is-invalid") }}
-                  <div class="invalid-feedback">
-                    {% for error in form.weight.errors %}<span>{{ error }}</span>{% endfor %}
-                  </div>
-                {% else %}
-                  {{ form.weight(class="form-control form-control-lg") }}
-                {% endif %}
-              </div>
+              {{ form.weight.label(class="form-control-label") }}
+              {{ form.weight(class="form-control form-control-lg") }}
             </div>
-
             <div class="col">
-              <div class="form-group">
-                {{ form.height.label(class="form-control-label") }}
-                {% if form.height.errors %}
-                  {{ form.height(class="form-control form-control-lg is-invalid") }}
-                  <div class="invalid-feedback">
-                    {% for error in form.height.errors %}<span>{{ error }}</span>{% endfor %}
-                  </div>
-                {% else %}
-                  {{ form.height(class="form-control form-control-lg") }}
-                {% endif %}
-              </div>
+              {{ form.height.label(class="form-control-label") }}
+              {{ form.height(class="form-control form-control-lg") }}
             </div>
           </div>
         </div>
-<br>
-        <div class="col">
+
+        <div class="col" style="margin-top: 60px;">
           <div class="media d-flex justify-content-center">
             <div class="member-photo-wrap" id="member-photo-wrap" title="Klikni pre zmenu fotky">
-              <img id="member-photo" class="member-photo" src="{{ image_file }}" alt="Member photo">
+              {% if image_url %}
+              <img
+              id="member-photo"
+              src="{{ image_url or url_for('static', filename='members_pics/default.png') }}"
+              class="member-photo"
+              alt="Member photo"
+            />
+              {% else %}
+                <img id="member-photo" src="" class="member-photo" alt="Member photo" style="display:none;">
+                <div class="member-photo-empty">Bez fotky</div>
+              {% endif %}
               <button type="button" class="member-photo-edit" id="member-photo-btn">Zmeniť</button>
             </div>
           </div>
 
-          <input
-            id="member-photo-input"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            style="display:none;"
-          />
-
-          <!-- flash-like output (rovnaký štýl ako Flask flash cez Bootstrap) -->
-          <div id="flash-like" style="display:none;" class="alert mt-2" role="alert"></div>
+          <div class="form-group mt-3" style="max-width:340px;display: none;">
+            {{ form.picturemember.label(class="form-control-label") }}
+            {{ form.picturemember(class="form-control", id="member-photo-input", accept="image/*") }}
+            <div class="photo-help">Vyber obrázok a klikni “Save”. Upload prebehne pri uložení.</div>
+          </div>
         </div>
       </div>
 
-      <div class="-row">
-        <div class="col">
-          {{ form.address.label(class="form-control-label") }}
-          {% if form.address.errors %}
-            {{ form.address(class="form-control form-control-lg is-invalid") }}
-            <div class="invalid-feedback">
-              {% for error in form.address.errors %}<span>{{ error }}</span>{% endfor %}
-            </div>
-          {% else %}
-            {{ form.address(class="form-control form-control-lg") }}
-          {% endif %}
+      <div class="form-group">
+        {{ form.address.label(class="form-control-label") }}
+        {{ form.address(class="form-control form-control-lg") }}
+      </div>
+
+      <div class="row">
+        <div class="col-8">
+          {{ form.psc.label(class="form-control-label") }}
+          {{ form.psc(class="form-control form-control-lg") }}
         </div>
-
-        <div class="row">
-          <div class="col-8">
-            {{ form.psc.label(class="form-control-label") }}
-            {% if form.psc.errors %}
-              {{ form.psc(class="form-control form-control-lg is-invalid") }}
-              <div class="invalid-feedback">
-                {% for error in form.psc.errors %}<span>{{ error }}</span>{% endfor %}
-              </div>
-            {% else %}
-              {{ form.psc(class="form-control form-control-lg") }}
-            {% endif %}
-          </div>
-
-          <div class="col-4">
-            {{ form.city.label(class="form-control-label") }}
-            {% if form.city.errors %}
-              {{ form.city(class="form-control form-control-lg is-invalid") }}
-              <div class="invalid-feedback">
-                {% for error in form.city.errors %}<span>{{ error }}</span>{% endfor %}
-              </div>
-            {% else %}
-              {{ form.city(class="form-control form-control-lg") }}
-            {% endif %}
-          </div>
+        <div class="col-4">
+          {{ form.city.label(class="form-control-label") }}
+          {{ form.city(class="form-control form-control-lg") }}
         </div>
       </div>
     </fieldset>
@@ -206,38 +144,17 @@
       <div class="row">
         <div class="col-4">
           {{ form.role.label(class="form-control-label") }}
-          {% if form.role.errors %}
-            {{ form.role(class="form-control form-control-md is-invalid") }}
-            <div class="invalid-feedback">
-              {% for error in form.role.errors %}<span>{{ error }}</span>{% endfor %}
-            </div>
-          {% else %}
-            {{ form.role(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
-          {% endif %}
+          {{ form.role(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
         </div>
 
         <div class="col-4">
           {{ form.team.label(class="form-control-label") }}
-          {% if form.team.errors %}
-            {{ form.team(class="form-control form-control-md is-invalid") }}
-            <div class="invalid-feedback">
-              {% for error in form.team.errors %}<span>{{ error }}</span>{% endfor %}
-            </div>
-          {% else %}
-            {{ form.team(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
-          {% endif %}
+          {{ form.team(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
         </div>
 
         <div class="col-4">
           {{ form.position.label(class="form-control-label") }}
-          {% if form.position.errors %}
-            {{ form.position(class="form-control form-control-md is-invalid") }}
-            <div class="invalid-feedback">
-              {% for error in form.position.errors %}<span>{{ error }}</span>{% endfor %}
-            </div>
-          {% else %}
-            {{ form.position(class="form-control form-control-md") }}
-          {% endif %}
+          {{ form.position(rows=3, multiple=True, size=40, class="form-control form-control-md") }}
         </div>
       </div>
     </fieldset>
@@ -252,72 +169,38 @@
   {% endif %}
 </div>
 
-{% if not current_user.is_authenticated %}
-  <div class="border-top pt-3">
-    <small class="text-muted">
-      Already Have An Account? <a class="ml-2" href="{{ url_for('users.login') }}">Sign In</a>
-    </small>
-  </div>
-{% endif %}
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const wrap = document.getElementById("member-photo-wrap");
-  const img = document.getElementById("member-photo");
   const btn = document.getElementById("member-photo-btn");
   const input = document.getElementById("member-photo-input");
-  const flashLike = document.getElementById("flash-like");
+  const img = document.getElementById("member-photo");
 
-  if (!wrap || !img || !input || !flashLike) return;
+  function openPicker(){ if (input) input.click(); }
 
-  function showFlashLike(text, level) {
-    flashLike.className = `alert alert-${level} mt-2`;
-    flashLike.textContent = text;
-    flashLike.style.display = "block";
+  if (wrap) {
+    wrap.addEventListener("click", (e) => {
+      if (e.target && e.target.id === "member-photo-btn") return;
+      openPicker();
+    });
+  }
+  if (btn) {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openPicker();
+    });
   }
 
-  function openPicker() { input.click(); }
-
-  // Klik na fotku alebo wrap otvorí picker
-  wrap.addEventListener("click", (e) => {
-    // ak klikneš na tlačidlo, nech sa to nespustí 2x
-    if (e.target && e.target.id === "member-photo-btn") return;
-    openPicker();
-  });
-
-  // tlačidlo len otvorí picker
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    openPicker();
-  });
-
-  input.addEventListener("change", async () => {
-    const file = input.files && input.files[0];
-    if (!file) return;
-
-    showFlashLike("Nahrávam fotku...", "info");
-
-    try {
-      const fd = new FormData();
-      fd.append("photo", file);
-
-      const res = await fetch("/member/{{ member_id }}/photo", {
-        method: "POST",
-        body: fd
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-
-      img.src = data.image_url; // backend vráti cache-bust URL
-      showFlashLike("Fotka bola zmenená.", "success");
-      input.value = "";
-    } catch (e) {
-      console.error(e);
-      showFlashLike(e.message || "Chyba pri nahrávaní.", "danger");
-    }
-  });
+  // preview
+  if (input && img) {
+    input.addEventListener("change", () => {
+      const f = input.files && input.files[0];
+      if (!f) return;
+      img.style.display = "block";
+      img.src = URL.createObjectURL(f);
+    });
+  }
 });
 </script>
 

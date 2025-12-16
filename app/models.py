@@ -423,7 +423,7 @@ class Member(db.Model):
     address = db.Column(db.String(250), nullable=False)
     psc = db.Column(db.String(250), nullable=False)
     city = db.Column(db.String(250), nullable=False)
-    image_file = db.Column(db.String(20), nullable=False, default='default.png')
+    image_file = db.Column(db.String(255), nullable=True, default='default.png')
 
     weight = db.Column(db.Integer)
     height = db.Column(db.Integer)

@@ -3,6 +3,8 @@ from flask import render_template, url_for, flash, redirect, request, Blueprint,
 from app import db, bcrypt
 from sqlalchemy import func
 from flask_mail import Message
+from app import csrf
+import os
 
 from app.models import User, Post, Role, Team, Member, Player, Position, roles_users, teams_members, positions_members
 from app.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,UpdateMemberForm,
@@ -23,13 +25,22 @@ from flask_principal import Identity, identity_changed
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from app import csrf
+from werkzeug.utils import secure_filename
 
 
 users = Blueprint('users', __name__)
 
+from app.posts.routes import s3_client, s3_presign, s3_extra_args, BUCKET_NAME
+
+def make_member_key(member_id: int, filename: str) -> str:
+    return f"members/{member_id}/{filename}"
 
 from functools import wraps
 
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
+
+def allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # def access_required(role="Admin"):
     
@@ -58,6 +69,7 @@ from functools import wraps
 
 
 @users.route("/register", methods=['GET', 'POST'])
+@csrf.exempt
 def register():
     # pass
 
@@ -102,6 +114,7 @@ def register():
 
 
 @users.route("/login", methods=['GET', 'POST'])
+@csrf.exempt
 def login():
         
     if current_user.is_authenticated:
@@ -409,30 +422,69 @@ def member(member_id):
     )
 
 @users.route("/member/<int:member_id>/update", methods=['GET', 'POST'])
+@csrf.exempt
 @login_required
-# @roles_required('Admin')
 def update_member(member_id):
-
-    # member = Member.query.join(Role, roles_members).filter(Role.id==roles_members.c.role_id).filter(Member.id==member_id)
-
     member = Member.query.get_or_404(member_id)
     user = User.query.get_or_404(member.user_id)
-   
+
     form = UpdateMemberForm()
-    role_list = db.session.query(roles_users).filter(roles_users.c.user_id==user.id).all()
-    team_list = db.session.query(teams_members).filter(teams_members.c.member_id==member_id).all()
-    position_list = db.session.query(positions_members).filter(positions_members.c.member_id==member_id).all()
+
+    role_list = db.session.query(roles_users).filter(roles_users.c.user_id == user.id).all()
+    team_list = db.session.query(teams_members).filter(teams_members.c.member_id == member_id).all()
+    position_list = db.session.query(positions_members).filter(positions_members.c.member_id == member_id).all()
 
     form.role.choices = [(role.id, role.name) for role in Role.query.all()]
-    # form.role.choices = [(role.id, role.name) for role in Role.query.filter(Role.id.not_in([1])).all()]
     form.team.choices = [(team.id, team.name) for team in Team.query.all()]
     form.position.choices = [(position.id, position.name) for position in Position.query.all()]
 
+    # S3 preview
+    image_url = None
+
+    if member.image_file and member.image_file != "default.png":
+        try:
+            image_url = s3_presign(make_member_key(member.id, member.image_file))
+        except Exception as e:
+            current_app.logger.warning("member presign failed: %s", e)
+            image_url = None
+
     if form.validate_on_submit():
         try:
-            if form.picturemember.data:
-                picture_file = save_picture_member(form.picturemember.data)
-                member.image_file = picture_file
+            # --- upload do S3 ---
+            if form.picturemember.data and getattr(form.picturemember.data, "filename", ""):
+                file = form.picturemember.data
+
+                if not allowed_file(file.filename):
+                    flash("Nepodporovaný typ súboru (jpg/jpeg/png/gif/webp).", "danger")
+                    return redirect(request.url)
+
+                # zmaž starý v S3
+                if member.image_file:
+                    try:
+                        s3_client().delete_object(
+                            Bucket=BUCKET_NAME,
+                            Key=make_member_key(member.id, member.image_file)
+                        )
+                    except Exception as e:
+                        current_app.logger.warning("Old member image delete failed: %s", e)
+
+                original = secure_filename(file.filename)
+                _, ext = os.path.splitext(original)
+
+                # ✅ FIX: image_file je VARCHAR(20) → ulož max 20 znakov
+                # 16 + ".jpg"(4) = 20
+                new_filename = f"{uuid.uuid4().hex[:16]}{ext.lower()}"
+
+                s3_client().upload_fileobj(
+                    file,
+                    BUCKET_NAME,
+                    make_member_key(member.id, new_filename),
+                    ExtraArgs=s3_extra_args(file),
+                )
+
+                member.image_file = new_filename
+
+            # --- polia člena ---
             member.name = form.name.data
             member.phone = form.phone.data
             member.address = form.address.data
@@ -440,51 +492,41 @@ def update_member(member_id):
             member.city = form.city.data
             member.weight = form.weight.data
             member.height = form.height.data
-            # member.position = form.position.data
+
+            # ✅ ROLE/TEAM/POSITION – cez association tabuľky (bez .teamed/.positioned)
+            db.session.execute(
+                roles_users.delete().where(roles_users.c.user_id == user.id)
+            )
+            for rid in (form.role.data or []):
+                db.session.execute(
+                    roles_users.insert().values(user_id=user.id, role_id=int(rid))
+                )
+
+            db.session.execute(
+                teams_members.delete().where(teams_members.c.member_id == member.id)
+            )
+            for tid in (form.team.data or []):
+                db.session.execute(
+                    teams_members.insert().values(member_id=member.id, team_id=int(tid))
+                )
+
+            db.session.execute(
+                positions_members.delete().where(positions_members.c.member_id == member.id)
+            )
+            for pid in (form.position.data or []):
+                db.session.execute(
+                    positions_members.insert().values(member_id=member.id, position_id=int(pid))
+                )
+
             db.session.commit()
-
-    ############ ROLE
-            for data in role_list:
-                role = Role.query.filter_by(id=data[1]).first()
-                role.roled.remove(user)
-                db.session.commit()
-
-            for data in form.role.data:
-                role = Role.query.filter_by(id=data).first()
-                role.roled.append(user)
-                db.session.commit()
-
-    ############ TEAM
-            for data2 in team_list:
-                team = Team.query.filter_by(id=data2[1]).first()
-                team.teamed.remove(member)
-                db.session.commit()
-
-            for data2 in form.team.data:
-                team = Team.query.filter_by(id=data2).first()
-                team.teamed.append(member)
-                db.session.commit()
-            
-    ############ POSITION
-            for data3 in position_list:
-                position = Position.query.filter_by(id=data3[1]).first()
-                position.positioned.remove(member)
-                db.session.commit()
-
-            print(form.position.data)
-
-            for data3 in form.position.data:
-                position = Position.query.filter_by(id=data3).first()
-                position.positioned.append(member)
-                db.session.commit()
-            
             flash('A Member has been updated!', 'success')
             return redirect(url_for('users.list_members', member_id=member.id))
+
         except Exception as e:
+            current_app.logger.exception("update_member failed: %s", e)
             db.session.rollback()
             flash('Chyba pri aktualizácii člena. Skúste to znova.', 'danger')
-        finally:
-            db.session.remove()
+
     elif request.method == 'GET':
         form.username.data = user.username
         form.email.data = user.email
@@ -496,28 +538,15 @@ def update_member(member_id):
         form.weight.data = member.weight
         form.height.data = member.height
 
-        rolelist=[]
-        for rol in role_list:
-            rolelist.append(rol[1])
-        form.role.data = rolelist
+        form.role.data = [r[1] for r in role_list]
+        form.team.data = [t[1] for t in team_list]
+        form.position.data = [p[1] for p in position_list]
 
-        teamlist=[]
-        for team in team_list:
-            teamlist.append(team[1])
-        form.team.data = teamlist
-
-        positionlist=[]
-        for position in position_list:
-            positionlist.append(position[1])
-        form.position.data = positionlist
-
-
-    image_file = url_for('static', filename='members_pics/' + member.image_file)
     return render_template(
         'users/create_member.html',
         title='Update Member',
         form=form,
-        image_file=image_file,
+        image_url=image_url,
         member_id=member.id,
         legend='Update Member',
         current_date=datetime.now(),
@@ -526,6 +555,8 @@ def update_member(member_id):
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table()
     )
+
+
 
 @users.route("/member/<int:member_id>/delete", methods=['GET', 'POST'])
 @login_required
