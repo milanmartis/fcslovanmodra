@@ -12,8 +12,12 @@
     return isIOS && isSafari && isStandalone;
   }
 
+  function canPush() {
+    return ("serviceWorker" in navigator) && ("Notification" in window);
+  }
+
   // -------------------------
-  // Badge API
+  // Badge API (page side)
   // -------------------------
   async function setBadge(count) {
     if (!("setAppBadge" in navigator) || !("clearAppBadge" in navigator)) return;
@@ -44,6 +48,26 @@
   }
 
   // -------------------------
+  // Bootstrap modal helpers
+  // -------------------------
+  function getModalInstance() {
+    const el = document.getElementById("pushModal");
+    if (!el) return null;
+    if (!window.bootstrap || !window.bootstrap.Modal) return null;
+    return window.bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true });
+  }
+
+  function openModal() {
+    const inst = getModalInstance();
+    if (inst) inst.show();
+  }
+
+  function setStatus(text) {
+    const el = document.getElementById("pushStatusText");
+    if (el) el.textContent = text || "";
+  }
+
+  // -------------------------
   // Config + SW
   // -------------------------
   async function getPushConfig() {
@@ -53,7 +77,9 @@
   }
 
   async function registerRootSW() {
-    return await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+    const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
+    return reg;
   }
 
   // helper: VAPID
@@ -74,6 +100,10 @@
     const vapidPublicKey = cfg.vapidPublicKey;
     if (!vapidPublicKey) throw new Error("Missing VAPID public key");
 
+    if (!isIosSafariPwa()) {
+      throw new Error("iOS: funguje len v Safari PWA (Add to Home Screen).");
+    }
+
     const reg = await registerRootSW();
 
     const perm = await Notification.requestPermission();
@@ -90,11 +120,9 @@
       credentials: "include",
       body: JSON.stringify(sub),
     });
-    if (!r.ok) throw new Error("webpush/subscribe failed");
+    if (!r.ok) throw new Error("webpush/subscribe failed: " + (await r.text()));
 
-    // po úspechu si rovno nastav badge z backendu (ak máš logiku)
     await refreshBadgeFromBackend();
-
     return { ok: true, mode: "webpush" };
   }
 
@@ -104,17 +132,11 @@
   async function enableFcmNonIOS() {
     const cfg = await getPushConfig();
 
-    // ✅ používaš Firebase v šablóne – ale nepoužívaj 2 rôzne verzie naraz.
-    // Táto vetva predpokladá, že na stránke je firebase v globále (compat),
-    // alebo si to vieš prepnúť na modulový SDK – ale nie oboje.
     if (!window.firebase) throw new Error("firebase not loaded in page");
-
     const firebaseCfg = cfg.firebase || {};
-    if (!firebaseCfg.messagingSenderId) throw new Error("Missing firebase config");
+    if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) throw new Error("Missing firebase config");
 
-    if (!firebase.apps || !firebase.apps.length) {
-      firebase.initializeApp(firebaseCfg);
-    }
+    if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseCfg);
 
     const reg = await registerRootSW();
 
@@ -122,9 +144,13 @@
     if (perm !== "granted") return { ok: false, reason: "permission_not_granted" };
 
     const messaging = firebase.messaging();
-    messaging.useServiceWorker(reg);
 
-    const token = await messaging.getToken({ vapidKey: cfg.vapidPublicKey });
+    // ✅ nepoužívaj messaging.useServiceWorker(reg) (vie robiť bordel)
+    const token = await messaging.getToken({
+      vapidKey: cfg.vapidPublicKey,
+      serviceWorkerRegistration: reg,
+    });
+
     if (!token) return { ok: false, reason: "no_token" };
 
     const r = await fetch("/talker/push/register", {
@@ -133,20 +159,16 @@
       credentials: "include",
       body: JSON.stringify({ token, platform: "web", device: navigator.userAgent }),
     });
-    if (!r.ok) throw new Error("push/register failed");
+    if (!r.ok) throw new Error("push/register failed: " + (await r.text()));
 
     await refreshBadgeFromBackend();
-
     return { ok: true, mode: "fcm", token };
   }
 
   async function enablePush() {
-    if (!("serviceWorker" in navigator) || !("Notification" in window)) {
-      return { ok: false, reason: "not_supported" };
-    }
-    if (Notification.permission === "denied") {
-      return { ok: false, reason: "denied" };
-    }
+    if (!canPush()) return { ok: false, reason: "not_supported" };
+    if (Notification.permission === "denied") return { ok: false, reason: "denied" };
+
     if (isIosSafariPwa()) return await enableWebPushIOS();
     return await enableFcmNonIOS();
   }
@@ -167,26 +189,35 @@
   // UI hookup
   // -------------------------
   document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("enable-notifications") || document.getElementById("enablePushBtn");
+    // manuálne otvorenie modalu (tlačidlo v sidebar-e)
+    const openBtn = document.getElementById("openPushModalBtn");
+    if (openBtn) openBtn.addEventListener("click", openModal);
+
+    // enable button v bootstrp modale
+    const btn = document.getElementById("enablePushBtn");
     if (btn) {
       btn.addEventListener("click", async () => {
         btn.disabled = true;
+        setStatus("Zapínam…");
         try {
           const res = await enablePush();
           console.log("push enable result:", res);
+
+          if (res.ok) setStatus(res.mode === "webpush" ? "Zapnuté ✅ (iOS Web Push)" : "Zapnuté ✅ (FCM)");
+          else setStatus("Nepodarilo sa: " + (res.reason || "error"));
         } catch (e) {
           console.error("enablePush error:", e);
+          setStatus("Chyba: " + (e && e.message ? e.message : "error"));
         } finally {
           btn.disabled = false;
         }
       });
     }
 
-    // keď sa app otvorí, skús refreshnúť badge (ak máš logiku)
+    // auto refresh badge
     refreshBadgeFromBackend().catch(() => {});
   });
 
-  // keď sa user vráti do appky, refreshni badge
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
       refreshBadgeFromBackend().catch(() => {});

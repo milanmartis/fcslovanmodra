@@ -770,18 +770,16 @@ def _send_webpush_to_user(user_id: int, title: str, body: str, url: str, room_id
                 data=payload_json,
                 vapid_private_key=vapid_private,
                 vapid_claims={"sub": vapid_subject},
-                ttl=60 * 60,  # 1h
+                ttl=3600,
                 headers={"Urgency": "high"},
             )
-            ok += 1
+            current_app.logger.info("WEBPUSH OK user=%s endpoint=%s", user_id, sub_info["endpoint"][:60])
         except WebPushException as ex:
-            status_code = getattr(getattr(ex, "response", None), "status_code", None)
-            if status_code in (404, 410):
-                sid = getattr(s, "id", None)
-                if sid is not None:
-                    bad_ids.append(int(sid))
-        except Exception:
-            continue
+            resp = getattr(ex, "response", None)
+            status = getattr(resp, "status_code", None)
+            text = getattr(resp, "text", "")
+            current_app.logger.warning("WEBPUSH FAIL user=%s status=%s body=%s", user_id, status, text[:300])
+            raise  # dočasne nech to padne, nech to uvidíš
 
     if bad_ids:
         try:
