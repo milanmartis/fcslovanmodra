@@ -27,11 +27,11 @@ from app.models import (
 
 
 
-from flask_login import login_required, current_user
+# from flask_login import login_required, current_user
 from app.team.forms import TeamForm
 
 from app import db
-from flask_security import roles_required
+# from flask_security import roles_required
 from app.main.routes import RightColumn
 
 import pandas as pd
@@ -42,7 +42,20 @@ import re
 from typing import List, Optional, Dict, Tuple
 from bs4 import BeautifulSoup
 from sqlalchemy.exc import SQLAlchemyError
-
+from flask_login import login_user, current_user, logout_user, login_required
+from functools import wraps
+from flask import abort
+def roles_required(*roles):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if not current_user.has_role(*roles):
+                abort(403)
+            return fn(*args, **kwargs)
+        return wrapper
+    return deco
 team = Blueprint('team', __name__)
 
 # ------------------------- Pomocné funkcie -------------------------

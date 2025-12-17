@@ -1,13 +1,28 @@
 from functools import wraps
 
 from flask import Blueprint, render_template, request, jsonify
-from flask_security import login_required, current_user
+# from flask_security import login_required, current_user
 from sqlalchemy.exc import IntegrityError
-
+from app import csrf
 from app import db
 
 # ✅ berieme TalkRoom (podľa tvojho erroru to je tabuľka talk_room)
 from app.models import TalkRoom as RoomModel
+from flask_login import login_user, current_user, logout_user, login_required
+from functools import wraps
+from flask import abort
+def roles_required(*roles):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if not current_user.has_role(*roles):
+                abort(403)
+            return fn(*args, **kwargs)
+        return wrapper
+    return deco
+
 
 talker_admin = Blueprint("talker_admin", __name__, url_prefix="/admin/talker")
 
@@ -33,6 +48,7 @@ def admin_required(fn):
 
 
 @talker_admin.route("/rooms", methods=["GET"])
+@csrf.exempt
 @login_required
 @admin_required
 def admin_rooms_page():
@@ -41,6 +57,7 @@ def admin_rooms_page():
 
 
 @talker_admin.route("/rooms", methods=["POST"])
+@csrf.exempt
 @login_required
 @admin_required
 def admin_rooms_create():
@@ -81,6 +98,7 @@ def admin_rooms_create():
 
 
 @talker_admin.route("/rooms/<int:room_id>", methods=["DELETE"])
+@csrf.exempt
 @login_required
 @admin_required
 def admin_rooms_delete(room_id):

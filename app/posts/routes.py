@@ -13,8 +13,8 @@ from flask import (
     Blueprint, abort, current_app, flash, jsonify,
     redirect, render_template, request, url_for
 )
-from flask_login import current_user, login_required
-from flask_security import roles_required
+# from flask_login import current_user, login_required
+# from flask_security import roles_required
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
@@ -23,7 +23,20 @@ from app.config import Config
 from app.main.routes import Next, RightColumn
 from app.models import Category, Post, PostGallery
 from app.posts.forms import PostForm, CategoryForm
-
+from flask_login import login_user, current_user, logout_user, login_required
+from functools import wraps
+from flask import abort
+def roles_required(*roles):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if not current_user.has_role(*roles):
+                abort(403)
+            return fn(*args, **kwargs)
+        return wrapper
+    return deco
 
 posts = Blueprint('posts', __name__)
 

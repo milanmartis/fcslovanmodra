@@ -10,6 +10,8 @@ from slugify import slugify as _slugify
 from datetime import timedelta, datetime
 from werkzeug.exceptions import NotFound
 from sqlalchemy.exc import OperationalError
+
+
 from sqlalchemy.pool import QueuePool
 from dotenv import load_dotenv
 import base64
@@ -35,7 +37,7 @@ salt = base64.b64encode(os.urandom(32)).decode("utf-8")
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
-login_manager = LoginManager()
+# login_manager = LoginManager()
 mail = Mail()
 csrf = CSRFProtect()
 socketio = SocketIO(cors_allowed_origins="*")
@@ -70,27 +72,25 @@ def create_app(config_class=None):
     db.init_app(app)
     Migrate(app, db)
     bcrypt.init_app(app)
-    login_manager.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
     socketio.init_app(app)
 
-    login_manager.login_view = "users.login"
-    login_manager.login_message_category = "info"
+    login_manager = LoginManager()
+    login_manager.login_view = "users.login"  # tvoj endpoint
+    login_manager.login_message = "Please log in to access this page."
+    login_manager.init_app(app)
 
     # models + security až po init db
     from .models import User, Role, roles_users, Sponsor
-    from flask_security import Security, SQLAlchemyUserDatastore
-
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    Security(app, user_datastore)
-
     @login_manager.user_loader
-    def load_user(user_id):
+    def load_user(user_id: str):
         try:
-            return user_datastore.find_user(id=user_id)
-        except OperationalError:
-            db.session.remove()
+            u = db.session.get(User, int(user_id))
+            if u is not None:
+                db.session.add(u)  # reattach, ak by bol detached
+            return u
+        except Exception:
             return None
 
     # ------------------------------------------------------------

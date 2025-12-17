@@ -1,8 +1,10 @@
 from datetime import datetime
 from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 from flask import current_app
-from app import db, login_manager
-from flask_security import RoleMixin, UserMixin
+from app import db
+# from flask_security import RoleMixin, UserMixin
+from flask_login import UserMixin
+
 from sqlalchemy.sql import func
 import uuid
 
@@ -52,6 +54,17 @@ product_variant_product = db.Table(
 )
 
 
+# =====
+# RBAC
+# =====
+class Role(db.Model):
+    __tablename__ = "role"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+
+
+
 
 class Club(db.Model):
     __tablename__ = "club"
@@ -68,9 +81,9 @@ class Club(db.Model):
 # ===============
 # User management
 # ===============
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User.query.get(int(user_id))
 
 
 class User(db.Model, UserMixin):
@@ -90,14 +103,36 @@ class User(db.Model, UserMixin):
     products = db.relationship('Product', backref='saler', lazy='select')
 
     roles = db.relationship(
-        'Role',
-        secondary='roles_users',
-        lazy='subquery',
-        backref=db.backref('users', lazy='dynamic'),
+        "Role",
+        secondary="roles_users",
+        lazy="selectin",
+        backref=db.backref("users", lazy="dynamic"),
     )
+    
+    @property
+    def is_active(self):
+        # čítaj priamo z __dict__, aby SQLAlchemy neskúšal refresh z DB
+        return bool(self.__dict__.get("active", True))
+    
+    @property
+    def is_authenticated(self):
+        # nedovoľ Flask-Loginu ísť cez is_active pri špecifických verziách
+        return True
 
-    def has_roles(self, *args):
-        return set(args).issubset({role.name for role in self.roles})
+    def has_role(self, *names: str) -> bool:
+        wanted = {n.lower() for n in names}
+        return any((r.name or "").lower() in wanted for r in (self.roles or []))
+    
+    def has_roles(self, *names: str) -> bool:
+        # kompatibilita s existujúcimi šablónami: has_roles('Admin')
+        return self.has_role(*names)
+
+    def is_admin(self) -> bool:
+        return self.has_role("admin")
+    
+
+    # def has_roles(self, *args):
+    #     return set(args).issubset({role.name for role in self.roles})
 
     # Flask-Login očakáva string
     def get_id(self):
@@ -370,14 +405,6 @@ class EventCategory(db.Model):
     name = db.Column(db.String(200), nullable=False)
 
 
-# =====
-# RBAC
-# =====
-class Role(db.Model, RoleMixin):
-    __tablename__ = 'role'
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(180), unique=True)
-    description = db.Column(db.Text)
 
 
 # ========

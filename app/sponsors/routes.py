@@ -7,13 +7,28 @@ from flask import (
     current_app, redirect, url_for, flash
 )
 from flask_login import login_required
-from flask_security import roles_required
+# from flask_security import roles_required
 from werkzeug.utils import secure_filename
 
 from app import db
 from app.models import Sponsor
 from app.posts.routes import s3_client, s3_extra_args, BUCKET_NAME, s3_presign
 from app.main.routes import Next, RightColumn
+from app import csrf
+from flask_login import login_user, current_user, logout_user, login_required
+from functools import wraps
+from flask import abort
+def roles_required(*roles):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if not current_user.has_role(*roles):
+                abort(403)
+            return fn(*args, **kwargs)
+        return wrapper
+    return deco
 
 sponsors_bp = Blueprint("sponsors", __name__)
 
@@ -149,6 +164,7 @@ def sponsors_images(kind):
 
 
 @sponsors_bp.route("/admin/sponsors/images/<kind>/upload", methods=["PUT"])
+@csrf.exempt
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def sponsors_upload(kind):
@@ -205,6 +221,7 @@ def sponsors_upload(kind):
 
 
 @sponsors_bp.route("/admin/sponsors/images/delete/<int:sponsor_id>", methods=["DELETE"])
+@csrf.exempt
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def sponsors_delete_image(sponsor_id):
@@ -225,6 +242,7 @@ def sponsors_delete_image(sponsor_id):
 
 
 @sponsors_bp.route("/admin/sponsors/images/update_order", methods=["POST"])
+@csrf.exempt
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def sponsors_update_order():

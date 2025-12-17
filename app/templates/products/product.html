@@ -48,7 +48,9 @@
     color: #000;
   }
 
-  label{ margin-bottom: 5px; }
+  label{
+    margin-bottom: 5px;
+  }
 
   .btn:hover {
     background-color: #000;
@@ -92,7 +94,9 @@
     border-radius: 6px;
   }
 
-  .terms-wrap { margin-top: 20px; }
+  .terms-wrap {
+    margin-top: 20px;
+  }
 
   .terms-check {
     display: flex;
@@ -105,7 +109,9 @@
     color: #6d9bff;
   }
 
-  .terms-check input { display: none; }
+  .terms-check input {
+    display: none;
+  }
 
   .checkmark {
     width: 22px;
@@ -117,7 +123,9 @@
     flex-shrink: 0;
   }
 
-  .terms-check:hover .checkmark { background: rgba(109,155,255,.1); }
+  .terms-check:hover .checkmark {
+    background: rgba(109,155,255,.1);
+  }
 
   .terms-check input:checked + .checkmark {
     background: #6d9bff;
@@ -150,93 +158,6 @@
   button:disabled {
     opacity: .4;
     pointer-events: none;
-  }
-
-  /* ============================
-     MODERN PRODUCT GALLERY (NEW)
-     ============================ */
-  .p-gallery{
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 14px;
-    padding: 10px;
-  }
-
-  .p-gallery__main{
-    position: relative;
-    border-radius: 10px;
-    overflow: hidden;
-    background: rgba(0,0,0,.22);
-    height: 515px;
-    display: grid;
-    place-items: center;
-  }
-
-  .p-gallery__main img{
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* rovnaké ako tvoj main */
-    display: block;
-    transition: opacity .18s ease;
-  }
-
-  .p-gallery__thumbs{
-    margin-top: 10px;
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 78px;
-    gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .p-gallery__thumb{
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,.12);
-    background: rgba(0,0,0,.18);
-    height: 64px;
-    cursor: pointer;
-  }
-
-  .p-gallery__thumb img{
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    opacity: .92;
-  }
-
-  .p-gallery__thumb:hover img{ opacity: 1; }
-
-  .p-gallery__thumb.is-active{
-    border-color: rgba(109,155,255,.95);
-    box-shadow: 0 0 0 3px rgba(109,155,255,.35);
-  }
-
-  .p-gallery__btn{
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.14);
-    background: rgba(0,0,0,.35);
-    color: #fff;
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-    user-select: none;
-  }
-  .p-gallery__btn--prev{ left: 10px; }
-  .p-gallery__btn--next{ right: 10px; }
-
-  @media (max-width: 520px){
-    .p-gallery__main{ height: 420px; }
-    .p-gallery__thumbs{ grid-auto-columns: 86px; }
-    .p-gallery__thumb{ height: 70px; }
   }
 </style>
 
@@ -493,7 +414,7 @@
   </div>
 </div>
 
-<!-- GALLERY JS (Products API) - UPDATED to thumbnails -->
+<!-- GALLERY JS (Products API) -->
 <script>
   document.addEventListener("DOMContentLoaded", async () => {
     const productId = "{{ product.id }}";
@@ -518,92 +439,32 @@
         return;
       }
 
-      const urls = images.map(x => x.image_url).filter(Boolean);
-      const title = "{{ product.title|e }}";
-
-      wrap.innerHTML = `
-        <div class="p-gallery" id="pgRoot" tabindex="0">
-          <div class="p-gallery__main">
-            <a id="pgLink" href="${urls[0]}" data-lightbox="product-set" data-title="${title}">
-              <img id="pgMain" class="mt-1 mr-2" src="${urls[0]}" alt="${title}">
+      const first = images[0];
+      let html = `
+        <div class="row">
+          <div class="col-12" style="padding-right:0px; padding-left:17px; margin-right:0px;">
+            <a href="${first.image_url}" data-lightbox="product-set" data-title="{{ product.title|e }}">
+              <img class="product-img-main mt-1 mr-2" src="${first.image_url}" />
             </a>
-
-            ${urls.length > 1 ? `
-              <div class="p-gallery__btn p-gallery__btn--prev" id="pgPrev" aria-label="Prev">‹</div>
-              <div class="p-gallery__btn p-gallery__btn--next" id="pgNext" aria-label="Next">›</div>
-            ` : ``}
           </div>
-
-          ${urls.length > 1 ? `
-            <div class="p-gallery__thumbs" id="pgThumbs" aria-label="Thumbnails">
-              ${urls.map((u, i) => `
-                <div class="p-gallery__thumb ${i === 0 ? "is-active" : ""}" data-idx="${i}">
-                  <img src="${u}" alt="thumb ${i+1}" loading="lazy" decoding="async">
-                </div>
-              `).join("")}
-            </div>
-          ` : ``}
-        </div>
       `;
+
+      for (let i = 1; i < images.length; i++) {
+        html += `
+          <div class="col-12" style="padding-right:0px; padding-left:17px; margin-right:0px;">
+            <a href="${images[i].image_url}" data-lightbox="product-set" data-title="{{ product.title|e }}">
+              <img style="display:inline;" src="${images[i].image_url}" />
+            </a>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      wrap.innerHTML = html;
 
       if (typeof lightbox !== "undefined") {
         lightbox.option({ resizeDuration: 200, wrapAround: true });
       }
-
-      const root = document.getElementById("pgRoot");
-      const mainImg = document.getElementById("pgMain");
-      const link = document.getElementById("pgLink");
-      const thumbsWrap = document.getElementById("pgThumbs");
-      const prev = document.getElementById("pgPrev");
-      const next = document.getElementById("pgNext");
-
-      let idx = 0;
-
-      function setActive(i){
-        idx = (i + urls.length) % urls.length;
-        const u = urls[idx];
-
-        mainImg.style.opacity = "0.35";
-        const img = new Image();
-        img.decoding = "async";
-        img.onload = () => {
-          mainImg.src = u;
-          link.href = u;
-          mainImg.style.opacity = "1";
-        };
-        img.src = u;
-
-        if (thumbsWrap) {
-          thumbsWrap.querySelectorAll(".p-gallery__thumb").forEach(t => t.classList.remove("is-active"));
-          const active = thumbsWrap.querySelector('.p-gallery__thumb[data-idx="' + CSS.escape(String(idx)) + '"]');
-
-          if (active) {
-            active.classList.add("is-active");
-            active.scrollIntoView({behavior:"smooth", inline:"center", block:"nearest"});
-          }
-        }
-      }
-
-      if (thumbsWrap) {
-        thumbsWrap.addEventListener("click", (e) => {
-          const t = e.target.closest(".p-gallery__thumb");
-          if (!t) return;
-          setActive(parseInt(t.dataset.idx || "0", 10));
-        });
-      }
-
-      if (prev) prev.addEventListener("click", () => setActive(idx - 1));
-      if (next) next.addEventListener("click", () => setActive(idx + 1));
-
-      // keyboard arrows (keď je fokus na galérii)
-      if (root) {
-        root.addEventListener("keydown", (e) => {
-          if (urls.length <= 1) return;
-          if (e.key === "ArrowLeft") { e.preventDefault(); setActive(idx - 1); }
-          if (e.key === "ArrowRight") { e.preventDefault(); setActive(idx + 1); }
-        });
-      }
-
     } catch (e) {
       console.error("GALLERY ERROR:", e);
       wrap.innerHTML = `<div class="no-image-box">GALLERY ERROR</div>`;
@@ -611,6 +472,8 @@
   });
 
   {% if not (product.youtube_link and not is_merch) %}
+  // Ak máš niekde inde definované loadProductGallery(), nechaj si to.
+  // Ak to nemáš, tento call vyhoď.
   // loadProductGallery();
   {% endif %}
 </script>
@@ -664,7 +527,7 @@
     const stripe = Stripe("{{ checkout_public_key }}");
 
     payBtn.addEventListener("click", async () => {
-      // bezpečnosť: vždy znova skontroluj súhlas
+      // bezpečnosť: vždy znova skontroluj súhlas (aj keby niekto odblokoval button)
       if (!agree.checked) {
         showFlashLikeTerms("Musíte súhlasiť s podmienkami!", "danger");
         agree.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -672,6 +535,7 @@
       }
 
       showFlashLikeTerms(""); // clear
+
       payBtn.disabled = true;
 
       try {
@@ -711,6 +575,7 @@
         console.error(e);
         showFlashLikeTerms(e.message || "Chyba pri platbe", "danger");
       } finally {
+        // znovu zapni podľa checkboxu
         payBtn.disabled = !agree.checked;
       }
     });

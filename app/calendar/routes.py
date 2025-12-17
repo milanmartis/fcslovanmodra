@@ -1,6 +1,6 @@
 from flask import render_template, url_for, request, redirect, jsonify, Blueprint, flash
 from app.models import Event, PostGallery, Category, Team, EventCategory
-from flask_login import current_user, login_required
+# from flask_login import current_user, login_required
 from app.calendar.forms import EventForm, UpdateEventForm
 from app.main.routes import RightColumn
 from app.main.routes import Next
@@ -9,9 +9,22 @@ from app import db
 from datetime import  timedelta
 from datetime import datetime
 from dateutil import parser
-from flask_security import roles_required
+# from flask_security import roles_required
 from flask import current_app
-
+from flask_login import login_user, current_user, logout_user, login_required
+from functools import wraps
+from flask import abort
+def roles_required(*roles):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if not current_user.has_role(*roles):
+                abort(403)
+            return fn(*args, **kwargs)
+        return wrapper
+    return deco
 calendar = Blueprint('calendar', __name__)
 
 

@@ -10,21 +10,26 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY")
     SECURITY_PASSWORD_SALT = os.getenv("SECURITY_PASSWORD_SALT")
     SECURITY_PASSWORD_HASH = "bcrypt"
-    SECURITY_LOGIN_URL = "/fs_login"
+    SECURITY_LOGIN_URL = None
+    SECURITY_LOGOUT_URL = None
+    SECURITY_REGISTERABLE = False
+    SECURITY_SEND_REGISTER_EMAIL = False
+    SECURITY_RECOVERABLE = False
+    SECURITY_CONFIRMABLE = False
+    SECURITY_CHANGEABLE = False
 
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=1440)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
     SQLALCHEMY_EXPIRE_ON_COMMIT = False
-
     # SQLAlchemy pool (nechaj len config hodnoty; engine nevytváraj v import time!)
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_size": int(os.getenv("SQLALCHEMY_POOL_SIZE", "10")),
-        "max_overflow": int(os.getenv("SQLALCHEMY_MAX_OVERFLOW", "20")),
-        "pool_timeout": int(os.getenv("SQLALCHEMY_POOL_TIMEOUT", "30")),
-        "pool_recycle": int(os.getenv("SQLALCHEMY_POOL_RECYCLE", "300")),
+    SQSQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
+        "pool_recycle": 1800,     # napr. 30 min
+        "pool_size": 5,
+        "max_overflow": 10,
+        "pool_timeout": 30,
     }
 
     # ---- MAIL (Flask-Mail)

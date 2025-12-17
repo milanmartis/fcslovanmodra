@@ -27,6 +27,22 @@ try:
 except Exception:  # pragma: no cover
     WebPushSubscription = None  # type: ignore
 
+from flask_login import login_user, current_user, logout_user, login_required
+from functools import wraps
+from flask import abort
+def roles_required(*roles):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if not current_user.has_role(*roles):
+                abort(403)
+            return fn(*args, **kwargs)
+        return wrapper
+    return deco
+
+
 talker = Blueprint("talker", __name__, url_prefix="/talker")
 
 

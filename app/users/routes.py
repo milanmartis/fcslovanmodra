@@ -19,7 +19,9 @@ from app.users.utils import (
 import uuid
 from app.main.routes import RightColumn
 from app.main.routes import Next
-from flask_security import roles_required, login_user, current_user, logout_user, login_required
+# from flask_security import roles_required, login_user, current_user, logout_user, login_required
+from flask_login import login_user, current_user, logout_user, login_required
+
 # from flask_principal import identity_changed, Identity
 from flask_principal import Identity, identity_changed
 from datetime import datetime
@@ -36,6 +38,20 @@ def make_member_key(member_id: int, filename: str) -> str:
     return f"members/{member_id}/{filename}"
 
 from functools import wraps
+from flask import abort
+
+def roles_required(*roles):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if not current_user.has_role(*roles):
+                abort(403)
+            return fn(*args, **kwargs)
+        return wrapper
+    return deco
+
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
 
@@ -123,49 +139,48 @@ def register():
     )
 
 
-@users.route("/login", methods=['GET', 'POST'])
+@users.route("/login", methods=["GET", "POST"])
 @csrf.exempt
 def login():
-        
     if current_user.is_authenticated:
-            return redirect(url_for('main.home'))
-        
+        return redirect(url_for("main.home"))
+
     form = LoginForm()
     if form.validate_on_submit():
-        try:
-            user = User.query.filter_by(email=form.email.data).first()
+        user = User.query.filter_by(email=form.email.data).first()
 
-            if user is None:
-                flash('Zadaný účet neexistuje. Registrujte sa!', 'danger')
-            elif not user.confirm:
-                flash('Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!', 'danger')
+        if user is None:
+            flash("Zadaný účet neexistuje. Registrujte sa!", "danger")
+            return redirect(url_for("users.login"))
 
-            elif user and bcrypt.check_password_hash(user.password, form.password.data):
-                identity_changed.send(current_app._get_current_object(), identity=Identity(user.id))
-                identity_changed.send(current_app._get_current_object(),
-                                identity=Identity(user.id))
-                login_user(user)
-                next_page = request.args.get('next')
-                session.permanent = True
-                user.active = True
-                db.session.commit()
+        if not user.confirm:
+            flash("Váš účet nie je aktivovaný. Potvrďte konfirmačný e-mail!", "danger")
+            return redirect(url_for("users.login"))
 
-                session['id'] = user.id
-                session['logged_in'] = True
-                session["name"] = form.email.data
-                
-                return redirect(next_page) if next_page else redirect(url_for('main.home'))
-            else:
-                flash('Prihlásenie nebolo úspešné. Prosím, skontrolujte si e-mail alebo heslo.', 'danger')
-        except Exception as e:
-            db.session.rollback()     
-            flash('Chyba pri prihlásení. Skúste to znova.', 'danger')
-        finally:
-            db.session.remove()
-    # else:
-    #     flash('Prihlásenie nebolo úspešné. Prosím, skontrolujte si e-mail.', 'danger')
+        if bcrypt.check_password_hash(user.password, form.password.data):
+            login_user(user)  # Flask-Login
 
-    return render_template('users/login.html', title='Login', form=form, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+            session.permanent = True
+            session["id"] = user.id
+            session["logged_in"] = True
+            session["name"] = form.email.data
+
+            next_page = request.args.get("next")
+            return redirect(next_page) if next_page else redirect(url_for("main.home"))
+
+        flash("Prihlásenie nebolo úspešné. Skontrolujte e-mail alebo heslo.", "danger")
+        return redirect(url_for("users.login"))
+
+    return render_template(
+        "users/login.html",
+        title="Login",
+        form=form,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
 
 
 @users.route("/logout")
@@ -184,8 +199,8 @@ def logout():
     except Exception as e:
         db.session.rollback()
         flash('Chyba pri odhlásení. Skúste to znova.', 'danger')
-    finally:
-        db.session.remove()
+    # finally:
+    #     db.session.remove()
     return redirect(url_for('main.home'))
 
 
@@ -215,8 +230,8 @@ def account():
         except Exception as e:
             db.session.rollback()
             flash('Chyba pri aktualizácii účtu. Skúste to znova.', 'danger')
-        finally:
-            db.session.remove()
+        # finally:
+        #     db.session.remove()
     elif request.method == 'GET':
         form.username.data = current_user.username
         form.email.data = current_user.email
@@ -624,8 +639,8 @@ def upload_member_photo(member_id):
         db.session.rollback()
         current_app.logger.exception("upload_member_photo error: %s", e)
         return {"error": "Upload failed"}, 500
-    finally:
-        db.session.remove()
+    # finally:
+    #     db.session.remove()
         
         
 @users.route("/_mail_test")
@@ -663,5 +678,5 @@ def upload_account_photo():
         db.session.rollback()
         current_app.logger.exception("upload_account_photo error: %s", e)
         return jsonify({"error": "Upload failed"}), 500
-    finally:
-        db.session.remove()
+    # finally:
+    #     db.session.remove()

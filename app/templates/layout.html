@@ -9,6 +9,7 @@
 
   <meta name="theme-color" content="#111113">
   <meta name="format-detection" content="telephone=no">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <!-- iOS PWA meta -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -43,7 +44,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.css" />
 
   <script>
-    window.__IS_AUTH = {{ "true" if current_user.is_authenticated else "false" }};
+    {% set is_auth = false %}
+{% if current_user is defined %}
+  {% set is_auth = (current_user.is_authenticated | default(false)) %}
+{% endif %}
+window.__IS_AUTH = {{ "true" if is_auth else "false" }};
   </script>
 
   <!-- Bootstrap 5 bundle (musí byť dostupný pre modaly) -->
@@ -246,6 +251,7 @@
                   <a href="{{ url_for('users.list_roles') }}">Roly na stránke</a>
                   <a href="{{ url_for('sponsors.sponsors_admin') }}">Sponzori</a>
                   <a href="{{ url_for('talker.index') }}">Talker</a>
+                  <a href="{{ url_for('talker_admin.admin_rooms_page') }}">Talker Admin</a>
                   <a href="{{ url_for('users.account') }}">Môj účet</a>
                   <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
                 </ul>

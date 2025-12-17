@@ -12,7 +12,7 @@ from flask import (
     redirect, render_template, request, url_for
 )
 from flask_login import current_user, login_required
-from flask_security import roles_required
+# from flask_security import roles_required
 
 from app import db
 from app.aws_utils import s3_client, s3_presign, s3_extra_args, make_product_key
@@ -23,6 +23,21 @@ from app.models import (
 )
 from app.products.forms import ProductCategoryForm, ProductForm, PurchaseForm
 import re
+
+from flask_login import login_user, current_user, logout_user, login_required
+from functools import wraps
+from flask import abort
+def roles_required(*roles):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if not current_user.has_role(*roles):
+                abort(403)
+            return fn(*args, **kwargs)
+        return wrapper
+    return deco
 
 products = Blueprint("products", __name__)
 
