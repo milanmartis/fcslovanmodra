@@ -103,12 +103,16 @@ def _delete_product_image_from_s3(product_id: int, filename: str) -> None:
 # ------------------------------
 @products.route("/products", methods=["GET"])
 def list_products():
-    products_list = (
-        db.session.query(Product)
-        .filter(Product.is_visible.is_(True))
-        .order_by(Product.date_posted.desc())
-        .all()
+    is_staff = (
+        current_user.is_authenticated
+        and current_user.has_role("Admin", "WebAdmin")
     )
+
+    q = db.session.query(Product).order_by(Product.date_posted.desc())
+    if not is_staff:
+        q = q.filter(Product.is_visible.is_(True))
+
+    products_list = q.all()
 
     product_category = ProductCategory.query.all()
 
@@ -475,7 +479,16 @@ def create_custom_payment_session():
 @products.route("/product/<int:product_id>")
 def product(product_id):
     # bezpečne
-    product_obj = Product.query.filter(Product.is_visible.is_(True), Product.id == product_id).first_or_404()
+    is_staff = (
+        current_user.is_authenticated
+        and current_user.has_role("Admin", "WebAdmin")
+    )
+
+    q = Product.query.filter(Product.id == product_id)
+    if not is_staff:
+        q = q.filter(Product.is_visible.is_(True))
+
+    product_obj = q.first_or_404()
 
     check_user = None
     if current_user.is_authenticated:
@@ -511,14 +524,18 @@ def product(product_id):
     page = request.args.get("page", 1, type=int)
 
     # bočný výpis produktov (ako si mal)
-    products_side = (
+    products_side_q = (
         db.session.query(Product)
         .join(ProductGallery, Product.id == ProductGallery.product_id)
         .join(ProductCategory, ProductCategory.id == Product.product_category_id)
         .filter(ProductGallery.orderz < 1)
         .order_by(Product.date_posted.desc())
-        .paginate(page=page, per_page=3)
     )
+
+    if not is_staff:
+        products_side_q = products_side_q.filter(Product.is_visible.is_(True))
+
+    products_side = products_side_q.paginate(page=page, per_page=3)
 
     galleries = ProductGallery.query.filter_by(product_id=product_id).order_by(ProductGallery.orderz.asc()).all()
     category = ProductCategory.query.all()
@@ -555,13 +572,22 @@ def category_products(category):
     page = request.args.get("page", 1, type=int)
     category_obj = ProductCategory.query.filter_by(id=category).first_or_404()
 
-    products_paginated = (
+    is_staff = (
+        current_user.is_authenticated
+        and current_user.has_role("Admin", "WebAdmin")
+    )
+
+    q = (
         Product.query
         .join(ProductCategory)
         .filter(ProductCategory.id == category_obj.id)
         .order_by(Product.date_posted.desc())
-        .paginate(page=page, per_page=5)
     )
+
+    if not is_staff:
+        q = q.filter(Product.is_visible.is_(True))
+
+    products_paginated = q.paginate(page=page, per_page=5)
 
     return render_template(
         "products/category_products.html",

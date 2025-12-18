@@ -180,12 +180,21 @@ def create_app(config_class=None):
             "default-src 'self'; "
             "base-uri 'self'; "
             "object-src 'none'; "
-            "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://js.stripe.com; "
+
+            # Stripe/YouTube iframes
+            "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://js.stripe.com https://hooks.stripe.com; "
+
+            # Stripe JS
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://www.gstatic.com https://www.googleapis.com https://js.stripe.com; "
+
             "style-src 'self' 'unsafe-inline' https:; "
             "img-src 'self' data: https:; "
             "font-src 'self' data: https:; "
-            "connect-src 'self' https: https://www.googleapis.com https://*.googleapis.com; "
+
+            # ✅ TU je fix: Stripe connect endpoints (m.stripe.com/6 + stripe.com + api.stripe.com + m.stripe.network)
+            "connect-src 'self' https: "
+            "https://www.googleapis.com https://*.googleapis.com "
+            "https://api.stripe.com https://stripe.com https://m.stripe.com https://m.stripe.network; "
         )
         return response
 

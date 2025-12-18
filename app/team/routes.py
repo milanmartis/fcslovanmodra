@@ -6,9 +6,9 @@ import time
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Dict, List, Optional
+
 from app import csrf
 
-import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -35,6 +35,13 @@ from app.models import (
 )
 
 team = Blueprint("team", __name__)
+
+
+def _is_ajax() -> bool:
+    # robustnejšie než len X-Requested-With
+    xrw = (request.headers.get("X-Requested-With") or "").lower()
+    accept = (request.headers.get("Accept") or "").lower()
+    return xrw == "xmlhttprequest" or "application/json" in accept
 
 
 # ------------------------- Roles helper (kompatibilný) -------------------------
@@ -266,16 +273,79 @@ def _parse_score_table_dom(html: str) -> List[Dict]:
     return rows
 
 
+# ------------------------- PLAYERS parsing -------------------------
+
+def _normalize_player_name(name: str) -> str:
+    name = re.sub(r"\s+", " ", (name or "")).strip()
+    return name
+
+
+def _find_player_name_col(df: pd.DataFrame) -> str:
+    cols = [str(c).strip() for c in df.columns]
+    low = {c.lower(): c for c in cols}
+    for k in ("hráč", "hrac", "meno", "name", "player"):
+        if k in low:
+            return low[k]
+    return cols[0]
+
+
+def _parse_players_from_html(html: str) -> List[Dict]:
+    tables = _best_read_html_tables(html)
+    if not tables:
+        return []
+
+    best_df = None
+    best_score = -1
+    for raw in tables:
+        df = _normalize_columns(raw)
+        colset = {str(c).lower().strip() for c in df.columns}
+
+        score = 0
+        if any(x in colset for x in ["hráč", "hrac", "meno", "name", "player"]):
+            score += 2
+        if any(x in colset for x in ["g", "goals", "žk", "zk", "čk", "ck", "karty", "cards"]):
+            score += 1
+        if len(df.columns) >= 2 and len(df) >= 5:
+            score += 1
+
+        if score > best_score:
+            best_score = score
+            best_df = df
+
+    if best_df is None:
+        return []
+
+    name_col = _find_player_name_col(best_df)
+    cols_low = {str(c).lower().strip(): c for c in best_df.columns}
+
+    goals_col = cols_low.get("g") or cols_low.get("goals") or cols_low.get("skóre") or cols_low.get("skore")
+    yellow_col = cols_low.get("žk") or cols_low.get("zk") or cols_low.get("yellow")
+    red_col = cols_low.get("čk") or cols_low.get("ck") or cols_low.get("red")
+    pos_col = cols_low.get("post") or cols_low.get("poz") or cols_low.get("pozícia") or cols_low.get("pozicia") or cols_low.get("position")
+
+    out: List[Dict] = []
+    seen = set()
+
+    for _, row in best_df.iterrows():
+        name = _normalize_player_name(str(row.get(name_col, "")))
+        if not name or name.lower() in {"nan", "none"}:
+            continue
+        if name in seen:
+            continue
+        seen.add(name)
+
+        out.append({
+            "name": name,
+            "score": _safe_int_val(row.get(goals_col)) if goals_col else 0,
+            "yellow_card": _safe_int_val(row.get(yellow_col)) if yellow_col else 0,
+            "red_card": _safe_int_val(row.get(red_col)) if red_col else 0,
+            "position": _safe_int_val(row.get(pos_col)) if pos_col else 0,
+        })
+
+    return out
+
+
 # ------------------------- Sportnet API (events) -------------------------
-
-def _fetch_json(url: str, retries: int = 3, base_timeout: float = 8.0):
-    text = _fetch_html(url, retries=retries, base_timeout=base_timeout)
-    try:
-        return json.loads(text)
-    except Exception as e:
-        current_app.logger.exception("JSON parse error for %s: %s", url, e)
-        return {}
-
 
 def _fetch_all_api_items(base_url: str) -> list[dict]:
     parsed = urlparse(base_url)
@@ -316,9 +386,6 @@ def _fetch_all_api_items(base_url: str) -> list[dict]:
 
 
 def _get_match_event_category_id() -> int:
-    """
-    Nájde ID kategórie 'Zápas' (tvoja DB ju má ako 'Zßpas').
-    """
     cat = EventCategory.query.filter(EventCategory.name.ilike("Z%pas")).first()
     if cat:
         return int(cat.id)
@@ -326,12 +393,6 @@ def _get_match_event_category_id() -> int:
 
 
 def _event_data_from_api_match(item: dict) -> dict | None:
-    """
-    Z jedného JSON zápasu z API spraví dict pre Event.
-
-    - address = "Navigácia na štadión"
-    - link = Google Maps dir na "Štadión {home_team_name}"
-    """
     try:
         match_id = item.get("_id") or item.get("id") or item.get("matchId")
         if not match_id:
@@ -497,8 +558,6 @@ def new_team():
             score_scrap=form.score_scrap.data,
             player_list_scrap=form.player_list_scrap.data,
         )
-        # ak máš tieto polia vo Forme/Modeli, doplní sa automaticky cez update,
-        # tu to nechávame minimalne, aby to nepuklo.
         db.session.add(team_obj)
         db.session.commit()
         flash("A New Team has been created!", "success")
@@ -569,10 +628,34 @@ def update_team(team_id):
     form = TeamForm(obj=team_obj)
     what = request.form.get("what")
 
-    # ------------------ 1) TABUĽKA (score_scrap) ------------------
-    score_scrap = request.form.get("score_scrap")
-    if what == "score" and score_scrap:
+    if request.method == "GET":
+        return render_template(
+            "teams/create_team.html",
+            title="Update Team",
+            form=form,
+            team=team_obj,
+            legend="Update Team",
+            teamz=RightColumn.main_menu(),
+            current_date=datetime.now(),
+            next22=Next.next(),
+            next_match=RightColumn.next_match(),
+            score_table=RightColumn.score_table(),
+        )
+
+    # ==========================================================
+    # 1) TABLE OF LIGUE (score_scrap)
+    # ==========================================================
+    if what == "score":
+        score_scrap = request.form.get("score_scrap") or getattr(team_obj, "score_scrap", None)
+        if not score_scrap:
+            msg = "Table of Ligue: link je prázdny."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+            flash(msg, "warning")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
         ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
+
         html = ""
         try:
             html = _fetch_html(score_scrap)
@@ -582,7 +665,7 @@ def update_team(team_id):
 
             if dom_rows:
                 for row in dom_rows:
-                    rec = ScoreTable(
+                    db.session.add(ScoreTable(
                         club=str(row.get("club", "")).strip(),
                         logo=str(row.get("logo", "")).strip(),
                         games=int(row.get("Z", 0)),
@@ -592,95 +675,145 @@ def update_team(team_id):
                         score=str(row.get("Skóre", "")).strip(),
                         points=int(row.get("B", 0)),
                         team_id=team_id,
-                    )
-                    db.session.add(rec)
+                    ))
                     inserted += 1
 
                 db.session.commit()
-                flash(f"Tabuľka výsledkov aktualizovaná ({inserted} záznamov).", "success")
 
-            else:
-                tables = _best_read_html_tables(html)
-                if not tables:
-                    flash("Na stránke nebola nájdená žiadna tabuľka výsledkov.", "warning")
-                    return redirect(url_for("team.update_team", team_id=team_id))
+                msg = f"Table of Ligue: úspešne aktualizované ({inserted} záznamov)."
 
-                expected = {
-                    "klub": "Klub", "mužstvo": "Klub", "muzstvo": "Klub", "tím": "Klub", "tim": "Klub",
-                    "team": "Klub", "club": "Klub", "družstvo": "Klub", "druzstvo": "Klub",
-                    "name": "Klub", "názov": "Klub", "nazov": "Klub",
-                    "z": "Z", "v": "V", "r": "R", "p": "P",
-                    "skóre": "Skóre", "skore": "Skóre", "b": "B",
-                }
+                # ✅ TU presne: najprv AJAX JSON return
+                if _is_ajax():
+                    return jsonify({"ok": True, "category": "success", "message": msg})
 
-                inserted = 0
-                for raw_df in tables:
-                    df = _normalize_columns(raw_df)
-                    lower_map = {c.lower(): c for c in df.columns}
-                    needed = {}
-                    for k, nice in expected.items():
-                        if k in lower_map:
-                            needed[nice] = lower_map[k]
+                # ✅ fallback pre normálny submit
+                flash(msg, "success")
+                return redirect(url_for("team.update_team", team_id=team_id))
 
-                    minimal = {"Klub", "Z", "V", "R", "P", "B"}
-                    if minimal.issubset(set(needed.keys())):
-                        rename_map = {needed[nice]: nice for nice in needed.keys()}
-                        work = df.rename(columns=rename_map)
-                        order = ["Klub", "Z", "V", "R", "P", "Skóre", "B"]
-                        work = work[[c for c in order if c in work.columns]].copy()
-                    else:
-                        if not minimal.issubset(set(df.columns)):
-                            continue
-                        use_cols = list(minimal | {"Skóre"})
-                        use_cols = [c for c in use_cols if c in df.columns]
-                        work = df[use_cols].copy()
+            # ... (tu pokračuje tvoj fallback read_html parsing)
+            # po úspešnom commitnutí aj tam musí byť rovnaký pattern:
+            # if _is_ajax(): return jsonify(...)
+            # flash + redirect
 
-                    if "Klub" in work.columns:
-                        work["Klub"] = work["Klub"].fillna("").astype(str).str.strip()
-                    for col in ("Z", "V", "R", "P", "B"):
-                        if col in work.columns:
-                            work[col] = _to_int_series(work[col])
-                    if "Skóre" in work.columns:
-                        work["Skóre"] = work["Skóre"].fillna("").astype(str).str.strip()
-                    else:
-                        work["Skóre"] = ""
+            # príklad, keď sa nenašla tabuľka:
+            msg = "Table of Ligue: nenašiel som tabuľku."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+            flash(msg, "warning")
+            return redirect(url_for("team.update_team", team_id=team_id))
 
-                    work = _fix_club_column(work)
-
-                    for _, row in work.iterrows():
-                        rec = ScoreTable(
-                            club=str(row.get("Klub", "")).strip(),
-                            logo="",
-                            games=int(row.get("Z", 0)),
-                            wins=int(row.get("V", 0)),
-                            draws=int(row.get("R", 0)),
-                            loses=int(row.get("P", 0)),
-                            score=str(row.get("Skóre", "")).strip(),
-                            points=int(row.get("B", 0)),
-                            team_id=team_id,
-                        )
-                        db.session.add(rec)
-                        inserted += 1
-
-                db.session.commit()
-                flash(f"Tabuľka výsledkov aktualizovaná ({inserted} záznamov).", "success")
-
-        except requests.RequestException as e:
+        except requests.RequestException:
             db.session.rollback()
-            current_app.logger.exception("HTTP/Network chyba score_scrap: %s", e)
-            flash("Nepodarilo sa načítať tabuľku (sieťová chyba).", "danger")
-        except Exception as e:
+            msg = "Table of Ligue: nepodarilo sa načítať stránku (sieťová chyba)."
+
+            # ✅ TU presne: pri chybe najprv JSON a žiadny redirect
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
+
+            flash(msg, "danger")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+        except Exception:
             db.session.rollback()
-            current_app.logger.exception("Chyba pri parsovaní score_scrap: %s", e)
-            current_app.logger.debug("HTML preview: %s", _html_preview_for_log(html))
-            flash("Nepodarilo sa spracovať tabuľku výsledkov.", "danger")
+            msg = "Table of Ligue: nepodarilo sa spracovať tabuľku (parse chyba)."
 
-        return redirect(url_for("team.update_team", team_id=team_id))
+            # ✅ TU presne
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
 
-    # ------------------ 2) EVENTS z API (events_results_scrap) ------------------
-    events_results_scrap = request.form.get("events_results_scrap") or getattr(team_obj, "events_results_scrap", None)
+            flash(msg, "danger")
+            return redirect(url_for("team.update_team", team_id=team_id))
 
-    if what == "events" and events_results_scrap:
+        except requests.RequestException:
+            db.session.rollback()
+            msg = "Table of Ligue: nepodarilo sa načítať stránku (sieťová chyba)."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
+            flash(msg, "danger")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+        except Exception:
+            db.session.rollback()
+            msg = "Table of Ligue: nepodarilo sa spracovať tabuľku (parse chyba)."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
+            flash(msg, "danger")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+    # ==========================================================
+    # 2) PLAYERS LINEUP (player_list_scrap)
+    # ==========================================================
+    if what == "players":
+        player_list_scrap = request.form.get("player_list_scrap") or getattr(team_obj, "player_list_scrap", None)
+        if not player_list_scrap:
+            msg = "Players LineUp: link je prázdny."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+            flash(msg, "warning")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+        html = ""
+        try:
+            html = _fetch_html(player_list_scrap)
+
+            players = _parse_players_from_html(html)
+            if not players:
+                msg = "Players LineUp: nenašiel som žiadnych hráčov na stránke (alebo tabuľku)."
+                if _is_ajax():
+                    return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+                flash(msg, "warning")
+                return redirect(url_for("team.update_team", team_id=team_id))
+
+            Player.query.filter(Player.team_id == team_id).delete()
+
+            inserted = 0
+            for p in players:
+                db.session.add(Player(
+                    name=p["name"],
+                    position=int(p.get("position", 0) or 0),
+                    team=team_obj.name,
+                    score=int(p.get("score", 0) or 0),
+                    yellow_card=int(p.get("yellow_card", 0) or 0),
+                    red_card=int(p.get("red_card", 0) or 0),
+                    team_id=team_id,
+                ))
+                inserted += 1
+
+            db.session.commit()
+            msg = f"Players LineUp: úspešne aktualizované ({inserted} hráčov)."
+            if _is_ajax():
+                return jsonify({"ok": True, "category": "success", "message": msg})
+            flash(msg, "success")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+        except requests.RequestException:
+            db.session.rollback()
+            msg = "Players LineUp: nepodarilo sa načítať stránku (sieťová chyba)."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
+            flash(msg, "danger")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+        except Exception:
+            db.session.rollback()
+            msg = "Players LineUp: nepodarilo sa spracovať hráčov (parse chyba)."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
+            flash(msg, "danger")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+    # ==========================================================
+    # 3) MATCHES RESULTS (events_results_scrap)
+    # ==========================================================
+    if what == "events":
+        events_results_scrap = request.form.get("events_results_scrap") or getattr(team_obj, "events_results_scrap", None)
+        if not events_results_scrap:
+            msg = "Matches results: link je prázdny."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+            flash(msg, "warning")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
         match_cat_id = _get_match_event_category_id()
 
         Event.query.filter(
@@ -704,7 +837,7 @@ def update_team(team_id):
                     continue
                 seen_keys.add(key)
 
-                ev = Event(
+                db.session.add(Event(
                     title=data["title"],
                     start_event=data["start_dt"],
                     end_event=data["end_dt"],
@@ -713,30 +846,44 @@ def update_team(team_id):
                     user_id=current_user.id,
                     event_category_id=match_cat_id,
                     event_team_id=team_id,
-                )
-                db.session.add(ev)
+                ))
                 inserted += 1
 
             db.session.commit()
+
             if inserted:
-                flash(f"Kalendár zápasov aktualizovaný z API ({inserted} zápasov).", "success")
+                msg = f"Matches results: úspešne aktualizované ({inserted} zápasov)."
+                if _is_ajax():
+                    return jsonify({"ok": True, "category": "success", "message": msg})
+                flash(msg, "success")
             else:
-                flash("API nenašlo žiadne zápasy.", "warning")
+                msg = "Matches results: API nenašlo žiadne zápasy."
+                if _is_ajax():
+                    return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+                flash(msg, "warning")
 
-        except requests.RequestException as e:
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+        except requests.RequestException:
             db.session.rollback()
-            current_app.logger.exception("HTTP/Network chyba events_results_scrap: %s", e)
-            flash("Nepodarilo sa načítať zápasy z API (sieťová chyba).", "danger")
-        except Exception as e:
+            msg = "Matches results: nepodarilo sa načítať API (sieťová chyba)."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
+            flash(msg, "danger")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+        except Exception:
             db.session.rollback()
-            current_app.logger.exception("Chyba pri spracovaní zápasov z API: %s", e)
-            flash("Nepodarilo sa spracovať zápasy z API.", "danger")
+            msg = "Matches results: nepodarilo sa spracovať zápasy (parse chyba)."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
+            flash(msg, "danger")
+            return redirect(url_for("team.update_team", team_id=team_id))
 
-        return redirect(url_for("team.update_team", team_id=team_id))
-
-    # ------------------ 3) SAVE META (hlavný submit bez what) ------------------
+    # ==========================================================
+    # 4) SAVE META (normálny submit bez what)
+    # ==========================================================
     if form.validate_on_submit() and not what:
-        # nastavujeme len ak tie atribúty existujú (aby to nepuklo, keď máš inú DB schému)
         team_obj.name = form.name.data
 
         if hasattr(team_obj, "main_league") and hasattr(form, "main_league"):
@@ -757,14 +904,12 @@ def update_team(team_id):
         try:
             db.session.commit()
             flash("A Team has been updated!", "success")
-        except SQLAlchemyError as e:
+        except SQLAlchemyError:
             db.session.rollback()
-            current_app.logger.exception("DB commit error (Team meta): %s", e)
             flash("Chyba pri ukladaní údajov tímu.", "danger")
 
         return redirect(url_for("team.list_teams"))
 
-    # GET: form je už naplnený cez obj=team_obj
     return render_template(
         "teams/create_team.html",
         title="Update Team",
@@ -799,8 +944,10 @@ def delete_team(team_id):
 
 
 # ------------------------- Lineup API -------------------------
+# (fetch z JS bez CSRF tokenu -> preto exempt)
 
 @team.route("/api/team/<int:team_id>/lineup/formation", methods=["POST"])
+@csrf.exempt
 def save_formation(team_id):
     data = request.get_json(force=True)
     formation = data.get("formation", "4-3-3")
@@ -816,6 +963,7 @@ def save_formation(team_id):
 
 
 @team.route("/api/team/<int:team_id>/lineup/swap", methods=["POST"])
+@csrf.exempt
 def swap_players(team_id):
     data = request.get_json(force=True)
     sub_id = int(data["sub_id"])
@@ -846,6 +994,7 @@ def swap_players(team_id):
 
 
 @team.route("/api/team/<int:team_id>/lineup/swap-slots", methods=["POST"])
+@csrf.exempt
 def swap_starter_slots(team_id):
     data = request.get_json(force=True)
     a_id = int(data["a_id"])

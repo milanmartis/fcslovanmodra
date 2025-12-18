@@ -110,12 +110,91 @@
     </center>
 </div>
 
+<!-- RESULT MODAL (shared) -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:14px;">
+      <div class="modal-header">
+        <h5 class="modal-title" id="resultModalTitle">Hotovo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavrieť"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="d-flex align-items-start gap-3">
+          <div id="resultModalIcon"
+               class="d-inline-flex align-items-center justify-content-center"
+               style="width:44px;height:44px;border-radius:12px;background:rgba(92,159,255,.15);">
+          </div>
+
+          <div class="flex-grow-1">
+            <div class="fw-semibold" id="resultModalHeadline">OK</div>
+            <div class="text-muted mt-1" id="resultModalText">Akcia bola dokončená.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
 <script>
     const galleryMain = document.getElementById('image-gallery-main');
     const galleryPartner = document.getElementById('image-gallery-partner');
+
+    // ---------- MODAL HELPERS ----------
+
+    function showResultModal({ ok, title, headline, text }) {
+        const mEl = document.getElementById("resultModal");
+        const titleEl = document.getElementById("resultModalTitle");
+        const headlineEl = document.getElementById("resultModalHeadline");
+        const textEl = document.getElementById("resultModalText");
+        const iconWrap = document.getElementById("resultModalIcon");
+
+        titleEl.textContent = title || (ok ? "Hotovo" : "Chyba");
+        headlineEl.textContent = headline || (ok ? "Podarilo sa." : "Nepodarilo sa.");
+        textEl.textContent = text || "";
+
+        iconWrap.innerHTML = ok
+          ? `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
+               <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+             </svg>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
+               <path d="M12 9v4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+               <path d="M12 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+               <path d="M10.3 4.4h3.4c.7 0 1.3.4 1.6 1l6 12c.6 1.2-.3 2.6-1.6 2.6H4.3c-1.3 0-2.2-1.4-1.6-2.6l6-12c.3-.6.9-1 1.6-1Z"
+                     stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+             </svg>`;
+
+        iconWrap.style.background = ok ? "rgba(92,159,255,.15)" : "rgba(255,92,92,.12)";
+
+        if (window.bootstrap && bootstrap.Modal) {
+          bootstrap.Modal.getOrCreateInstance(mEl).show();
+        } else {
+          // fallback ak by bootstrap JS nebol načítaný
+          mEl.classList.add("show");
+          mEl.style.display = "block";
+          mEl.removeAttribute("aria-hidden");
+          document.body.classList.add("modal-open");
+        }
+    }
+
+    function setBtnLoading(btn, loading) {
+        if (!btn) return;
+        btn.disabled = loading;
+        if (loading) {
+            btn.dataset.origText = btn.textContent;
+            btn.textContent = "Ukladám…";
+        } else {
+            btn.textContent = btn.dataset.origText || "Uložiť";
+            delete btn.dataset.origText;
+        }
+    }
 
     // ---------- RENDER OBRÁZKOV ----------
 
@@ -133,14 +212,14 @@
             div.classList.add('col', 'draggable');
             div.setAttribute('data-id', image.id);
             div.setAttribute('data-orderz', image.orderz);
-        
+
             const img = document.createElement('img');
             img.src = image.image_url;
             img.alt = image.name || '';
             img.style.width = '100%';
             img.style.height = '200px';
             img.style.objectFit = 'cover';
-        
+
             const delBtn = document.createElement('button');
             delBtn.textContent = 'x';
             delBtn.classList.add('btn', 'btn-close', 'position');
@@ -148,33 +227,28 @@
             delBtn.onclick = function() {
                 deleteImage(image.id, kind);
             };
-        
-            // --- FORMULÁR POD OBRÁZKOM ---
-        
+
             const formWrapper = document.createElement('div');
             formWrapper.style.marginTop = '10px';
-        
-            // Názov
+
             const nameInput = document.createElement('input');
             nameInput.type = 'text';
             nameInput.classList.add('form-control', 'form-control-sm');
             nameInput.placeholder = 'Názov sponzora';
             nameInput.value = image.name || '';
-        
-            // URL
+
             const urlInput = document.createElement('input');
             urlInput.type = 'text';
             urlInput.classList.add('form-control', 'form-control-sm');
             urlInput.placeholder = 'URL (https://...)';
             urlInput.value = image.url || '';
-        
-            // Popis
+
             const descInput = document.createElement('textarea');
             descInput.classList.add('form-control', 'form-control-sm');
-            descInput.placeholder = 'Popis sponzora';
+            descInput.placeholder = 'Popis sponzora (voliteľné)';
             descInput.rows = 2;
             descInput.value = image.describe || '';
-        
+
             const saveBtn = document.createElement('button');
             saveBtn.type = 'button';
             saveBtn.classList.add('btn', 'btn-primary', 'btn-sm');
@@ -185,14 +259,14 @@
                     name: nameInput.value,
                     url: urlInput.value,
                     describe: descInput.value
-                }, kind);
+                }, kind, saveBtn);
             };
-        
+
             formWrapper.appendChild(nameInput);
             formWrapper.appendChild(urlInput);
             formWrapper.appendChild(descInput);
             formWrapper.appendChild(saveBtn);
-        
+
             div.appendChild(img);
             div.appendChild(delBtn);
             div.appendChild(formWrapper);
@@ -217,9 +291,23 @@
                     contentType: 'application/json',
                     dataType: 'json',
                     success: function(response) {
-                        // po úspechu znovu načítaj galériu
                         loadImages('main');
                         loadImages('partner');
+
+                        showResultModal({
+                            ok: true,
+                            title: "Uložené",
+                            headline: "Poradie bolo aktualizované.",
+                            text: "Zmeny poradia sponzorov boli úspešne uložené."
+                        });
+                    },
+                    error: function(xhr) {
+                        showResultModal({
+                            ok: false,
+                            title: "Neuložené",
+                            headline: "Poradie sa nepodarilo uložiť.",
+                            text: "Skús to ešte raz alebo obnov stránku."
+                        });
                     }
                 });
             }
@@ -249,11 +337,31 @@
             if (response.status === 200) {
                 loadImages('main');
                 loadImages('partner');
+
+                showResultModal({
+                    ok: true,
+                    title: "Nahrané",
+                    headline: "Obrázok bol pridaný.",
+                    text: (kind === "main")
+                      ? "Sponzor bol pridaný medzi hlavných partnerov."
+                      : "Sponzor bol pridaný medzi partnerov."
+                });
             } else {
-                console.error('Upload failed', await response.text());
+                const t = await response.text();
+                showResultModal({
+                    ok: false,
+                    title: "Nenahrané",
+                    headline: "Obrázok sa nepodarilo nahrať.",
+                    text: t ? t : "Skús iný súbor alebo obnov stránku."
+                });
             }
         } catch (err) {
-            console.error('Error:', err);
+            showResultModal({
+                ok: false,
+                title: "Nenahrané",
+                headline: "Chyba pri nahrávaní.",
+                text: "Skús obnoviť stránku alebo skontroluj pripojenie."
+            });
         }
     }
 
@@ -281,39 +389,89 @@
 
             if (response.status === 200) {
                 loadImages(kind);
+
+                showResultModal({
+                    ok: true,
+                    title: "Zmazané",
+                    headline: "Obrázok bol odstránený.",
+                    text: "Sponzor bol z galérie odstránený."
+                });
             } else {
-                console.error('Delete failed', await response.text());
+                const t = await response.text();
+                showResultModal({
+                    ok: false,
+                    title: "Nezmazané",
+                    headline: "Obrázok sa nepodarilo zmazať.",
+                    text: t ? t : "Skús to ešte raz alebo obnov stránku."
+                });
             }
         } catch (err) {
-            console.error('Error:', err);
+            showResultModal({
+                ok: false,
+                title: "Nezmazané",
+                headline: "Chyba pri mazaní.",
+                text: "Skús obnoviť stránku alebo skontroluj pripojenie."
+            });
         }
     }
 
+    // ---------- SAVE SPONSOR INFO (name/url/describe) ----------
 
+    async function saveSponsor(id, payload, kind, btn) {
+        const name = (payload.name || "").trim();
+        const url = (payload.url || "").trim();
+        const describe = (payload.describe || "").trim();
 
-    async function saveSponsor(id, payload, kind) {
+        if (!name) {
+            showResultModal({
+                ok: false,
+                title: "Neuložené",
+                headline: "Chýba názov sponzora.",
+                text: "Doplň názov a skús to uložiť znovu."
+            });
+            return;
+        }
+
+        setBtnLoading(btn, true);
+
         try {
             const response = await fetch('/admin/sponsors/' + id, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, url, describe })
             });
-    
+
             if (response.status === 200) {
-                // znovu načítaj len daný druh
                 loadImages(kind);
+
+                showResultModal({
+                    ok: true,
+                    title: "Uložené",
+                    headline: "Zmeny boli uložené.",
+                    text: "Informácie o sponzorovi boli úspešne aktualizované."
+                });
             } else {
-                console.error('Update failed', await response.text());
+                const t = await response.text();
+                showResultModal({
+                    ok: false,
+                    title: "Neuložené",
+                    headline: "Zmeny sa nepodarilo uložiť.",
+                    text: t ? t : "Skontroluj údaje alebo obnov stránku."
+                });
             }
         } catch (err) {
-            console.error('Error:', err);
+            showResultModal({
+                ok: false,
+                title: "Neuložené",
+                headline: "Nastala chyba pri ukladaní.",
+                text: "Skontroluj pripojenie alebo obnov stránku a skús to znovu."
+            });
+        } finally {
+            setBtnLoading(btn, false);
         }
     }
 
     // ---------- INIT ----------
-
     loadImages('main');
     loadImages('partner');
 </script>

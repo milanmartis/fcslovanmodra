@@ -26,7 +26,6 @@ from flask_login import login_user, current_user, logout_user, login_required
 from flask_principal import Identity, identity_changed
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from app import csrf
 from werkzeug.utils import secure_filename
 
 
@@ -382,21 +381,30 @@ def update_role(role_id):
                            form=form, legend='Update Role', current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
 
-@users.route("/users/role/<int:role_id>/delete", methods=['POST'])
+from sqlalchemy import exists
+from flask import redirect, url_for, flash
+# from flask_security import roles_required
+from flask_login import login_required
+
+@users.route("/users/role/<int:role_id>/delete", methods=["POST"])
+@csrf.exempt
 @login_required
-# @roles_required('Admin')
+@roles_required("Admin")
 def delete_role(role_id):
     role = Role.query.get_or_404(role_id)
-    ifemptyrole = db.session.query(roles_users).filter(roles_users.c.role_id==role_id).all()
 
-    if ifemptyrole:
-        flash('A Role is not empty!', 'success')
-    else:
-        db.session.delete(role)
-        db.session.commit()
-        flash('A Role has been deleted!', 'success')
-    flash('A role has been deleted!', 'success')
-    return redirect(url_for('users.list_roles'))
+    role_in_use = db.session.query(
+        exists().where(roles_users.c.role_id == role_id)
+    ).scalar()
+
+    if role_in_use:
+        flash("A Role is not empty! (Some users still have it assigned.)", "warning")
+        return redirect(url_for("users.list_roles"))
+
+    db.session.delete(role)
+    db.session.commit()
+    flash("A Role has been deleted!", "success")
+    return redirect(url_for("users.list_roles"))
 
 
 
@@ -413,14 +421,72 @@ def delete_role(role_id):
 
 
 
+from flask import request, render_template
+from flask_security import login_required
+from datetime import datetime
+
+from app import db
+from app.models import Member, User, Role, Team, roles_users, teams_members  # <- dôležité
+
 @users.route("/members")
 @login_required
-# @roles_required('Admin')
 def list_members():
-    page = request.args.get('page', 1, type=int)
-    members = db.session.query(Member).filter(Member.id!=1).order_by(Member.id.desc()).paginate(page=page, per_page=10)
-    return render_template('users/list_members.html', members=members, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
+    page = request.args.get("page", 1, type=int)
 
+    role_id = request.args.get("role", type=int)   # <-- zmena: id
+    team_id = request.args.get("team", type=int)
+    q = (request.args.get("q") or "").strip()
+
+    qry = (
+        db.session.query(Member)
+        .filter(Member.id != 1)
+        .join(User, User.id == Member.user_id)
+    )
+
+    if team_id:
+        qry = (qry
+               .join(teams_members, teams_members.c.member_id == Member.id)
+               .filter(teams_members.c.team_id == team_id))
+
+    if role_id:
+        qry = (qry
+               .join(roles_users, roles_users.c.user_id == User.id)
+               .filter(roles_users.c.role_id == role_id))
+
+    if q:
+        if q.isdigit():
+            qry = qry.filter(Member.id == int(q))
+        else:
+            qry = qry.filter(Member.name.ilike(f"%{q}%"))
+
+    members = qry.order_by(Member.id.desc()).distinct().paginate(page=page, per_page=10)
+
+    roles = Role.query.order_by(Role.name.asc()).all()
+    teams = Team.query.order_by(Team.name.asc()).all()
+
+    wants_partial = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or request.args.get("partial") == "1"
+    )
+
+    ctx = dict(
+        members=members,
+        roles=roles,
+        teams=teams,
+        active_role=role_id,   # <-- zmena: int
+        active_team=team_id,
+        q=q,
+        current_date=datetime.now(),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
+
+    if wants_partial:
+        return render_template("users/_members_list.html", **ctx)
+
+    return render_template("users/list_members.html", **ctx)
 
 
 @users.route("/player/<int:member_id>", methods=['POST','GET'])
@@ -583,17 +649,28 @@ def update_member(member_id):
 
 
 
-@users.route("/member/<int:member_id>/delete", methods=['GET', 'POST'])
+@users.route("/member/<int:member_id>/delete", methods=["POST"])
+@csrf.exempt
 @login_required
-# @roles_required('Admin')
+@roles_required("Admin")
 def delete_member(member_id):
     member = Member.query.get_or_404(member_id)
-    user = User.query.get_or_404(member.user_id)
+
+    user_id = member.user_id
+    user = User.query.get(user_id)
+
+    # 1) najprv Member (tým uvoľníš FK)
     db.session.delete(member)
-    db.session.delete(user)
+    db.session.flush()
+
+    # 2) až potom User (ak chceš mazať aj user účet)
+    if user:
+        db.session.delete(user)
+
     db.session.commit()
-    flash('A Member has been deleted!', 'success')
-    return redirect(url_for('users.list_members'))
+    flash("Člen bol odstránený.", "success")
+    return redirect(url_for("users.list_members"))
+
 
 
 

@@ -1,69 +1,76 @@
-{% extends "layout.html" %} {% block content %}
+{% extends "layout.html" %}
+{% block content %}
+
 <h3>Roles Page</h3>
+
 <div class="article-metadata">
   <div class="article-metadata2">
-    <a
-      class="btn btn-secondary btn-sm mt-1 mb-1"
-      href="{{ url_for('users.new_role') }}"
-    >
+    <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{{ url_for('users.new_role') }}">
       New Role
     </a>
   </div>
 </div>
+
 <article class="media content-section">
   <div class="media-body">
+
     {% for role in roles %}
+      <div class="article-metadata2 d-flex flex-row align-items-center gap-2">
 
+        <a class="btn btn-sm-item mt-1 mb-1 w-100"
+           href="{{ url_for('users.update_role', role_id=role.id) }}">
+          {{ role.name }}
+        </a>
 
-    <div class="article-metadata2 d-flex flex-row">
-      <a
-        class="btn btn-sm-item mt-1 mb-1 w-100"
-        href="{{ url_for('users.update_role', role_id=role.id) }}"
-      >
-      {{ role.name }}
-      </a>
+        {# Delete tlačidlo len pre Admin #}
+        {% if current_user.has_role('Admin') %}
+          <button type="button"
+                  class="btn btn-sm btn-danger m-1"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteModal{{ role.id }}">
+            Delete
+          </button>
+        {% endif %}
 
-      <button
-        type="button"
-        class="btn btn-sm m-1"
-        data-bs-toggle="modal"
-        data-bs-target="#deleteModal{{role.id}}"
-      >
-        Delete
-      </button>
+      </div>
 
-    </div>
+      {% if current_user.has_role('Admin') %}
+        <div class="modal fade" id="deleteModal{{ role.id }}" tabindex="-1"
+             aria-labelledby="deleteModalLabel{{ role.id }}" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
 
-    <div
-      class="modal fade"
-      id="deleteModal{{role.id}}"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="deleteModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title" py run.py>Delete „{{role.name}}“?</h2>
+              <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel{{ role.id }}">
+                  Delete „{{ role.name }}“?
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
 
-            <div class="modal-footer">
-              <button type="button" class="btn btn-sm" data-bs-dismiss="modal">
-                Close
-              </button>
-              <form
-                action="{{ url_for('users.delete_role', role_id=role.id) }}"
-                method="POST"
-              >
-                <input class="btn btn-sm" type="submit" value="Delete" />
-              </form>
+              <div class="modal-body">
+                This action cannot be undone.
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+
+                <form action="{{ url_for('users.delete_role', role_id=role.id) }}" method="POST" class="m-0">
+                  {# Ak používaš flask-wtf CSRF #}
+                  {% if csrf_token is defined %}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {% endif %}
+
+                  <input class="btn btn-sm btn-danger" type="submit" value="Delete">
+                </form>
+              </div>
+
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      {% endif %}
     {% endfor %}
+
   </div>
 </article>
-<!-- Modal -->
+
 {% endblock content %}

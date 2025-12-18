@@ -97,6 +97,8 @@ class User(db.Model, UserMixin):
     active = db.Column(db.Boolean, default=True)
     confirmed_at = db.Column(db.DateTime())
     fs_uniquifier = db.Column(db.String(64), unique=True)
+    member = db.relationship("Member", backref="user", uselist=False, cascade="all, delete-orphan")
+
     
 
     posts = db.relationship('Post', backref='author', lazy='select')
@@ -451,6 +453,7 @@ class Member(db.Model):
     psc = db.Column(db.String(250), nullable=False)
     city = db.Column(db.String(250), nullable=False)
     image_file = db.Column(db.String(255), nullable=True, default='default.png')
+    
 
     weight = db.Column(db.Integer)
     height = db.Column(db.Integer)
@@ -462,7 +465,7 @@ class Member(db.Model):
         backref=db.backref('members', lazy='dynamic'),
     )
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
 
     teams = db.relationship(
         'Team',

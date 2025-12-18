@@ -288,6 +288,11 @@
     {# IMPORTANT: data-cat pre JS filter #}
     <article class="store-card content-section" data-cat="{{ product.product_category_id }}">
       <a class="store-media" href="{{ url_for('products.product', product_id=product.id) }}" aria-label="{{ product.title|e }}">
+        {% if not product.is_visible %}
+        <span class="store-badge" style="right:12px; left:auto; background: rgba(255,120,120,.9); border:1px solid rgba(255,255,255,.25); color:#000;">
+          Hidden
+        </span>
+      {% endif %}
         {% if cover %}
           <img
             class="store-img"

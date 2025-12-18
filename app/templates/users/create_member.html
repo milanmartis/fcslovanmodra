@@ -232,49 +232,34 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const wrap = document.getElementById("member-photo-wrap");
-  const btn = document.getElementById("member-photo-btn");
-  const input = document.getElementById("member-photo-input");
-  const img = document.getElementById("member-photo");
-
-  function openPicker(){ if (input) input.click(); }
-
-  if (wrap) {
-    wrap.addEventListener("click", (e) => {
-      if (e.target && e.target.id === "member-photo-btn") return;
-      openPicker();
-    });
-  }
-  if (btn) {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      openPicker();
-    });
-  }
-
-  // preview
-  if (input && img) {
-    input.addEventListener("change", () => {
-      const f = input.files && input.files[0];
-      if (!f) return;
-      img.style.display = "block";
-      img.src = URL.createObjectURL(f);
-    });
-  }
-
-  input.addEventListener("change", async () => {
-    const out = await replaceInputFileWithProcessed(input, {
-      maxW: 900,
-      maxH: 900,
-      quality: 0.82,
-      keepPng: true,
-    });
-
-    // preview
-    if (out && img) img.src = URL.createObjectURL(out);
-});
-</script>
-
+  document.addEventListener("DOMContentLoaded", () => {
+    const wrap  = document.getElementById("member-photo-wrap");
+    const btn   = document.getElementById("member-photo-btn");
+    const input = document.getElementById("member-photo-input");
+    const img   = document.getElementById("member-photo");
+  
+    const openPicker = () => input && input.click();
+  
+    if (wrap) {
+      wrap.addEventListener("click", () => openPicker());
+    }
+  
+    if (btn) {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openPicker();
+      });
+    }
+  
+    if (input && img) {
+      input.addEventListener("change", () => {
+        const f = input.files && input.files[0];
+        if (!f) return;
+        img.src = URL.createObjectURL(f);
+      });
+    }
+  });
+  </script>
+  
 {% endblock content %}

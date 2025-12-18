@@ -1,87 +1,239 @@
-{% extends "layout.html" %} {% block content %}
-<h3>Members Page</h3>
-<div class="article-metadata">
-  <div class="article-metadata2">
-    <a
-      class="btn btn-secondary btn-sm mt-1 mb-1"
-      href="{{ url_for('users.register') }}"
-    >
-      New Member
-    </a>
-  </div>
+{% extends "layout.html" %}
+{% block content %}
+
+<style>
+  .filters-bar{
+    display:flex; flex-wrap:wrap; gap:10px;
+    align-items:center; justify-content:space-between;
+    padding:12px; border-radius:14px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    margin-bottom: 14px;
+  }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .chip{
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: inherit;
+    padding: 8px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    user-select:none;
+    transition: transform .08s ease, background .2s ease, border-color .2s ease;
+  }
+  .chip:hover{ transform: translateY(-1px); }
+  .chip.is-active{
+    background: rgba(13,110,253,.25);
+    border-color: rgba(13,110,253,.55);
+  }
+  .filters-right{
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  }
+  .searchbox{
+    display:flex; gap:8px; align-items:center;
+    padding: 8px 10px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.10);
+  }
+  .searchbox input{
+    border:0; outline:0; background:transparent;
+    color: inherit; width: 210px; max-width: 60vw;
+  }
+  .mini-muted{ opacity:.7; font-size: 12px; }
+  #membersWrap{ position: relative; }
+  #membersLoader{
+    position:absolute; inset:0;
+    display:none; align-items:center; justify-content:center;
+    backdrop-filter: blur(2px);
+    background: rgba(0,0,0,.18);
+    border-radius: 14px;
+    z-index: 5;
+  }
+  .spinner{
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,.25);
+    border-top-color: rgba(255,255,255,.85);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-2">
+  <h3 class="mb-0">Members</h3>
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('users.register') }}">New Member</a>
 </div>
-<article class="media content-section">
-  <div class="media-body">
-    {% for member in members %}
 
+<div class="filters-bar" id="filtersBar">
 
-    <div class="article-metadata2 d-flex flex-row">
-      <a
-        class="btn btn-sm-item mt-1 mb-1 w-100"
-        href="{{ url_for('users.update_member', member_id=member.id) }}"
-      >
-      {{ member.name }} |
-      {{ member.id }}
-
-      </a>
-
+  <!-- ROLE chips -->
+  <div class="chips" aria-label="Role filter">
+    <span class="mini-muted me-1">Role:</span>
+  
+    <button class="chip js-role {% if not active_role %}is-active{% endif %}" data-role="">
+      All
+    </button>
+  
+    {% for r in roles %}
       <button
-        type="button"
-        class="btn btn-sm m-1"
-        data-bs-toggle="modal"
-        data-bs-target="#deleteModal{{member.id}}"
+        class="chip js-role {% if active_role == r.id %}is-active{% endif %}"
+        data-role="{{ r.id }}"
       >
-        Delete
+        {{ r.name }}
+      </button>
+    {% endfor %}
+  </div>
+
+  <!-- TEAM chips + search -->
+  <div class="filters-right">
+    <div class="chips" aria-label="Team filter">
+      <span class="mini-muted me-1">Team:</span>
+
+      <button class="chip js-team {% if not active_team %}is-active{% endif %}" data-team="">
+        All
       </button>
 
-    </div>
-
-
-    {% endfor %}
-    {% for page_num in members.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-      {% if page_num %}
-        {% if members.page == page_num %}
-          <a class="btn btn-info mb-4" href="{{ url_for('users.list_members', page=page_num) }}">{{ page_num }}</a>
-        {% else %}
-          <a class="btn btn-outline-info mb-4" href="{{ url_for('users.list_members', page=page_num) }}">{{ page_num }}</a>
-        {% endif %}
-      {% else %}
-        ...
-      {% endif %}
-    {% endfor %}
-  </div>
-</article>
-<!-- Modal -->
-{% for member in members %}
-
-<div
-class="modal fade"
-id="deleteModal{{member.id}}"
-tabindex="-1"
-role="dialog"
-aria-labelledby="deleteModalLabel"
-aria-hidden="true"
->
-<div class="modal-dialog" role="document">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 class="modal-title" py run.py>Are You Sure to Delete?</h2>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm" data-bs-dismiss="modal">
-          Close
+      {% for t in teams %}
+        <button class="chip js-team {% if active_team == t.id %}is-active{% endif %}" data-team="{{ t.id }}">
+          {{ t.name }}
         </button>
-        <form
-          action="{{ url_for('users.delete_member', member_id=member.id) }}"
-          method="POST"
-        >
-          <input class="btn btn-sm" type="submit" value="Delete" />
-        </form>
-      </div>
+      {% endfor %}
+    </div>
+
+    <div class="searchbox">
+      <span class="mini-muted">🔎</span>
+      <input id="qInput" type="text" value="{{ q }}" placeholder="meno alebo ID…" />
+      <button class="chip" id="qClear" type="button" title="Clear">✕</button>
     </div>
   </div>
+
 </div>
+
+<div id="membersWrap">
+  <div id="membersLoader"><div class="spinner"></div></div>
+
+  <!-- sem sa AJAX-om swapne partial -->
+  <div id="membersList">
+    {% include "users/_members_list.html" %}
+  </div>
 </div>
-{% endfor %}
+
+<script>
+(function(){
+  const membersList = document.getElementById('membersList');
+  const loader = document.getElementById('membersLoader');
+  const qInput = document.getElementById('qInput');
+  const qClear = document.getElementById('qClear');
+
+  function setLoading(on){
+    loader.style.display = on ? 'flex' : 'none';
+  }
+
+  function buildUrl(params){
+    const url = new URL(window.location.href);
+    // reset page keď meníš filtre
+    url.searchParams.set('page', '1');
+
+    if (params.role !== undefined){
+      if (params.role) url.searchParams.set('role', params.role);
+      else url.searchParams.delete('role');
+    }
+    if (params.team !== undefined){
+      if (params.team) url.searchParams.set('team', params.team);
+      else url.searchParams.delete('team');
+    }
+    if (params.q !== undefined){
+      const v = (params.q || '').trim();
+      if (v) url.searchParams.set('q', v);
+      else url.searchParams.delete('q');
+    }
+
+    // pre AJAX si pýtame partial
+    url.searchParams.set('partial', '1');
+    return url.toString();
+  }
+
+  async function fetchPartial(url){
+    setLoading(true);
+    try{
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
+      const html = await res.text();
+      membersList.innerHTML = html;
+
+      // push URL bez partial param
+      const clean = new URL(url);
+      clean.searchParams.delete('partial');
+      window.history.pushState({}, '', clean.toString());
+    }catch(e){
+      // fallback: keď niečo padne, reload
+      window.location.href = url.replace('partial=1','');
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  function activateChip(groupSelector, activeValue){
+    document.querySelectorAll(groupSelector).forEach(btn=>{
+      const val = btn.dataset.role ?? btn.dataset.team ?? '';
+      btn.classList.toggle('is-active', String(val) === String(activeValue || ''));
+    });
+  }
+
+  // ROLE click
+  document.querySelectorAll('.js-role').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const role = btn.dataset.role || '';
+      activateChip('.js-role', role);
+      fetchPartial(buildUrl({ role }));
+    });
+  });
+
+  // TEAM click
+  document.querySelectorAll('.js-team').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const team = btn.dataset.team || '';
+      activateChip('.js-team', team);
+      fetchPartial(buildUrl({ team }));
+    });
+  });
+
+  // search (debounce)
+  let t = null;
+  qInput.addEventListener('input', ()=>{
+    clearTimeout(t);
+    t = setTimeout(()=>{
+      fetchPartial(buildUrl({ q: qInput.value }));
+    }, 250);
+  });
+
+  qClear.addEventListener('click', ()=>{
+    qInput.value = '';
+    fetchPartial(buildUrl({ q: '' }));
+    qInput.focus();
+  });
+
+  // pagination links: intercept klik a načítaj partial
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest('a');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    if (!href.includes('/members')) return;
+
+    e.preventDefault();
+    const url = new URL(href, window.location.origin);
+    url.searchParams.set('partial','1');
+    fetchPartial(url.toString());
+  });
+
+  // back/forward
+  window.addEventListener('popstate', ()=>{
+    const url = new URL(window.location.href);
+    url.searchParams.set('partial','1');
+    fetchPartial(url.toString());
+  });
+
+})();
+</script>
 
 {% endblock content %}

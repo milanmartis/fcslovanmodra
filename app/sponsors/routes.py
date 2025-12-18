@@ -1,7 +1,6 @@
 import os
 import uuid
 from datetime import datetime
-
 from flask import (
     Blueprint, render_template, request, jsonify,
     current_app, redirect, url_for, flash
@@ -109,19 +108,19 @@ def sponsors_admin():
 
 
 @sponsors_bp.route("/admin/sponsors/<int:sponsor_id>", methods=["PUT"])
+@csrf.exempt
 @login_required
 @roles_required('Admin', 'WebAdmin')
 def sponsors_update_info(sponsor_id):
     sponsor = Sponsor.query.get_or_404(sponsor_id)
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
 
     sponsor.name = data.get("name", "") or ""
     sponsor.url = data.get("url", "") or ""
-    sponsor.describe = data.get("describe", "") or ""  # <--- POUŽI describe
+    sponsor.describe = data.get("describe", "") or ""
 
     db.session.commit()
     return jsonify({"message": "Sponsor updated"}), 200
-
 
 # ---------- JSON API PRE GALÉRIU (HLAVNÍ / PARTNERI) ----------
 
