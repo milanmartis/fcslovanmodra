@@ -520,3 +520,31 @@ class Sponsor(db.Model):
     image_file = db.Column(db.String(255), nullable=False)
     orderz = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    
+class TeamLineup(db.Model):
+    __tablename__ = "team_lineups"
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.Integer, db.ForeignKey("team.id"), nullable=False, index=True)
+    formation = db.Column(db.String(16), nullable=False, default="4-3-3")
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    slots = db.relationship("TeamLineupSlot", backref="lineup", cascade="all, delete-orphan", lazy=True)
+
+class TeamLineupSlot(db.Model):
+    __tablename__ = "team_lineup_slots"
+    id = db.Column(db.Integer, primary_key=True)
+    lineup_id = db.Column(db.Integer, db.ForeignKey("team_lineups.id"), nullable=False, index=True)
+
+    player_id = db.Column(db.Integer, db.ForeignKey("player.id"), nullable=False, index=True)
+    is_starter = db.Column(db.Boolean, nullable=False, default=False)
+
+    # poradie v rámci “starters” alebo “subs” (kvôli stabilite)
+    order_index = db.Column(db.Integer, nullable=False, default=0)
+
+    # snapshot pozície (1..4) pre rýchle filtrovanie swapu
+    position = db.Column(db.Integer, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint("lineup_id", "player_id", name="uq_lineup_player"),
+    )

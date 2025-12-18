@@ -2,116 +2,735 @@
 {% block content %}
 
 <style>
-  /* --- simple avatar circle + card tweaks --- */
-  .player-card {
-    width: 95%;
-    margin: 0;
-    padding: 0;
-    text-align: center;
+  :root{
+    --pitch-bg-1: #071a2d;
+    --pitch-bg-2: #0b2a4d;
+    --pitch-glow: rgba(120, 190, 255, .10);
+
+    --line: rgba(255,255,255,.32);
+    --line-strong: rgba(255,255,255,.52);
+
+    --text: rgba(255,255,255,.94);
+    --muted: rgba(255,255,255,.72);
+
+    --panel-bg: rgba(9, 17, 29, .92);
+    --panel-border: rgba(255,255,255,.08);
+    --panel-item: rgba(255,255,255,.06);
+    --panel-item-hover: rgba(255,255,255,.09);
   }
-  .player-card .card-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .5rem;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+
+  .lineup-wrap{ display:grid; grid-template-columns: 1fr 320px; gap: 16px; }
+  @media (max-width: 992px){ .lineup-wrap{ grid-template-columns: 1fr; } }
+
+  .pitch{
+    position:relative;
+    width:100%;
+    min-height: 650px;
+    border-radius: 18px;
+    background:
+      radial-gradient(1100px 700px at 50% 35%, var(--pitch-glow), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.18)),
+      linear-gradient(180deg, var(--pitch-bg-2), var(--pitch-bg-1));
+    overflow:hidden;
+    box-shadow: 0 18px 60px rgba(0,0,0,.28);
+    border: 1px solid rgba(255,255,255,.10);
+    touch-action: none;
   }
-  .player-avatar {
-    width: 96px;
-    height: 96px;
+
+  .pitch::before{
+    content:"";
+    position:absolute;
+    inset: 10px;
+    border: 2px solid var(--line-strong);
+    border-radius: 14px;
+    pointer-events:none;
+  }
+
+  .pitch .midline{
+    position:absolute;
+    top: 50%;
+    left: 10px;
+    right: 10px;
+    height: 0;
+    border-top: 2px solid var(--line);
+    transform: translateY(-1px);
+    pointer-events:none;
+  }
+
+  .pitch .center-circle{
+    position:absolute; left: 50%; top: 50%;
+    width: 180px; height: 180px;
+    border: 2px solid var(--line);
     border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events:none;
+  }
+  .pitch .center-dot{
+    position:absolute; left: 50%; top: 50%;
+    width: 6px; height: 6px;
+    background: var(--line-strong);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events:none;
+  }
+
+  .pitch .pen-area{ position:absolute; left: 22%; right: 22%; height: 165px; border: 2px solid var(--line); pointer-events:none; }
+  .pitch .pen-area.top{ top: 10px; }
+  .pitch .pen-area.bottom{ bottom: 10px; }
+  .pitch .six-yard{ position:absolute; left: 34%; right: 34%; height: 72px; border: 2px solid var(--line); pointer-events:none; }
+  .pitch .six-yard.top{ top: 10px; }
+  .pitch .six-yard.bottom{ bottom: 10px; }
+  .pitch .pen-spot{ position:absolute; left:50%; width:6px; height:6px; background: var(--line-strong); border-radius:50%; transform: translateX(-50%); pointer-events:none; }
+  .pitch .pen-spot.top{ top: 125px; }
+  .pitch .pen-spot.bottom{ bottom: 125px; }
+
+  .controls{
+    position:absolute; left: 12px; right: 12px; top: 12px;
+    display:flex; align-items:center; justify-content:space-between; gap: 10px;
+    z-index: 50; padding: 10px 12px; border-radius: 14px;
+    background: rgba(0,0,0,.22);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.10);
+  }
+  .controls .title{ color: var(--text); font-weight: 900; font-size: .95rem; margin:0; white-space:nowrap; }
+  .controls .select{ display:flex; gap:8px; align-items:center; color: var(--muted); font-size:.9rem; }
+  .controls select{
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,.14);
+    padding: .35rem .5rem;
+    border-radius: 10px;
+    outline:none;
+  }
+
+  .slot{ position:absolute; width:2px; height:2px; opacity:0; pointer-events:none; }
+
+  .player{
+    position:absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 86px;
+    text-align:center;
+    z-index: 10;
+    will-change: transform;
+    user-select:none;
+    cursor: grab;
+    touch-action: none;
+  }
+  .player.dragging{
+    cursor: grabbing;
+    z-index: 80;
+  }
+
+  .player.dragging .avatar{
+    transform: scale(1.06);
+    box-shadow: 0 16px 40px rgba(0,0,0,.45);
+  }
+
+  .player.drop-target .avatar{
+    outline: 3px solid rgba(255,255,255,.45);
+    outline-offset: 3px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.55);
+  }
+
+  .avatar{
+    width: 68px; height: 68px; border-radius: 50%;
+    overflow:hidden; margin: 0 auto;
+    box-shadow: 0 10px 26px rgba(0,0,0,.35);
+    border: 2px solid rgba(255,255,255,.40);
+    background: rgba(255,255,255,.14);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .avatar img{ width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
+
+  /* meno vždy 2 riadky (max) + rovnaká výška */
+  .pname{
+    margin-top: 6px;
+    font-size: .82rem;
+    color: var(--text);
+    font-weight: 800;
+    line-height: 1.05;
+    text-shadow: 0 2px 10px rgba(0,0,0,.45);
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,.12);
-    border: 0px solid rgba(255,255,255,.75);
-    background: #f3f3f3;
+
+    height: calc(2 * 1.05em); /* vždy miesto na 2 riadky */
   }
-  .player-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;    /* vyplní kruh */
-    object-position: center;
-    display: block;
+
+  .prole{ font-size: .72rem; color: var(--muted); margin-top: 2px; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
+
+  .side{
+    border-radius: 18px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 18px 50px rgba(0,0,0,.18);
+    overflow:hidden;
+    backdrop-filter: blur(10px);
   }
-  .btn-teams-position {
-    display: inline-block;
-    padding: .35rem .8rem;
-    border-radius: 999px;
+  .side .side-head{ padding: 14px 14px 10px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .side .side-head h5{ margin:0; font-size: .95rem; font-weight: 900; color: var(--text); }
+  .side .side-body{ padding: 12px 12px 14px; display:flex; flex-direction:column; gap: 12px; }
+
+  .list{ display:grid; grid-template-columns: 1fr; gap: 10px; }
+  .row-item{
+    display:flex; align-items:center; gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+    background: var(--panel-item);
+    border: 1px solid rgba(255,255,255,.08);
+    text-decoration:none;
+    color: var(--text);
+    cursor:pointer;
+  }
+  .row-item:hover{ background: var(--panel-item-hover); }
+  .row-item .mini{
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    overflow:hidden;
+    flex:0 0 42px;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.14);
+  }
+  .row-item .mini img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .row-item .meta{ min-width:0; }
+  .row-item .meta .nm{ font-weight: 900; font-size: .9rem; line-height: 1.1; margin:0; color: var(--text); }
+  .row-item .meta .sm{ margin: 2px 0 0; font-size: .78rem; color: var(--muted); }
+
+  .toast{
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,.82);
     color: #fff;
-    font-weight: 600;
-    letter-spacing: .2px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events:none;
+    transition: opacity .2s ease;
   }
-  .section-wrap {
-    margin-top: .75rem;
-    margin-bottom: 1.25rem;
-  }
-  .player-name {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 600;
-  }
+  .toast.show{ opacity: 1; }
 </style>
 
 <h3 class="headline">{{ team.name }}</h3>
 <br>
+{% set fallback = url_for('static', filename='img/avatar.svg') %}
 
-{% macro section(title, pos_id) -%}
-  <div class="row section-wrap d-flex justify-content-center">
-    <p class="btn-teams-position">{{ title }}</p>
-  </div>
+<div class="lineup-wrap">
 
-  <div class="row">
-    {% for player in members %}
-      {% if player.position == pos_id %}
-        <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4" href="{{ url_for('users.member', member_id=player.id) }}">
-          <div class="card player-card">
-            <div class="card-body">
-              {# foto – ak nie je, použije sa fallback zo statických súborov #}
-              {% set fallback = url_for('static', filename='img/avatar.svg') %}
-              {% set photo = player.photo_url if player.photo_url else fallback %}
-              <div class="player-avatar">
-                <img
-                  src="{{ photo }}"
-                  alt="{{ player.name }}"
-                  onerror="this.onerror=null;this.src='{{ fallback }}';">
-              </div>
-              <h6 class="player-name">{{ player.name }}</h6>
-            </div>
+  <div>
+    <div class="pitch" id="pitch">
+
+      <div class="controls">
+        <p class="title">Základná zostava</p>
+        <div class="select">
+          <span>Rozostavenie</span>
+          <select id="formationSelect">
+            {% for f in ["4-4-2","4-3-3","4-2-3-1","4-1-4-1","3-5-2","3-4-3","5-3-2"] %}
+              <option value="{{ f }}" {% if formation == f %}selected{% endif %}>{{ f }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="midline"></div>
+      <div class="center-circle"></div>
+      <div class="center-dot"></div>
+      <div class="pen-area top"></div>
+      <div class="pen-area bottom"></div>
+      <div class="six-yard top"></div>
+      <div class="six-yard bottom"></div>
+      <div class="pen-spot top"></div>
+      <div class="pen-spot bottom"></div>
+
+      {% for i in range(11) %}
+        <div class="slot" data-slot="{{ i }}"></div>
+      {% endfor %}
+
+      {% for s in starters %}
+        {% set p = s.player %}
+        {% set photo = p.photo_url if p.photo_url else fallback %}
+        <a
+          class="player"
+          data-player-id="{{ p.id }}"
+          data-profile-url="{{ url_for('users.member', member_id=p.id) }}"
+          data-pos="{{ s.pos }}"
+          data-slot="{{ s.slot }}"
+          title="{{ p.name }}"
+          href="javascript:void(0)"
+        >
+          <div class="avatar">
+            <img src="{{ photo }}" alt="{{ p.name }}" onerror="this.onerror=null;this.src='{{ fallback }}';">
+          </div>
+          <div class="pname">{{ p.name }}</div>
+          <div class="prole">
+            {% if s.pos == 1 %}GK{% elif s.pos == 2 %}DEF{% elif s.pos == 3 %}MID{% elif s.pos == 4 %}FWD{% else %}—{% endif %}
           </div>
         </a>
-      {% endif %}
-    {% endfor %}
+      {% endfor %}
+    </div>
   </div>
-{%- endmacro %}
 
-{{ section('Útok', 4) }}
-{{ section('Záloha', 3) }}
-{{ section('Obrana', 2) }}
-{{ section('Brankári', 1) }}
-
-<div class="row col-12 d-flex justify-content-center section-wrap">
-  <p class="btn-teams-position">Tréneri</p>
-</div>
-<div class="row">
-  {% for tren in trener %}
-    {% if tren.position[0].id == 5 %}
-      <a class="col-xs-6 col-sm-6 col-md-4 col-lg-4" href="{{ url_for('users.member', member_id=tren.id) }}">
-        <div class="card player-card">
-          <div class="card-body">
-            {% set fallback = url_for('static', filename='img/avatar.svg') %}
-            {% set photo = tren.photo_url if tren.photo_url else fallback %}
-            <div class="player-avatar">
-              <img
-                src="{{ photo }}"
-                alt="{{ tren.name }}"
-                onerror="this.onerror=null;this.src='{{ fallback }}';">
+  <div class="side">
+    <div class="side-head"><h5>Náhradníci</h5></div>
+    <div class="side-body">
+      <div class="list" id="subsList">
+        {% for s in subs %}
+          {% set p = s.player %}
+          {% set photo = p.photo_url if p.photo_url else fallback %}
+          <a class="row-item sub-item"
+             data-player-id="{{ p.id }}"
+             data-profile-url="{{ url_for('users.member', member_id=p.id) }}"
+             data-pos="{{ s.pos }}"
+             data-name="{{ p.name }}"
+             data-img="{{ photo }}"
+             href="javascript:void(0)">
+            <div class="mini">
+              <img src="{{ photo }}" alt="{{ p.name }}" onerror="this.onerror=null;this.src='{{ fallback }}';">
             </div>
-            <h6 class="player-name">{{ tren.name }}</h6>
-          </div>
-        </div>
-      </a>
-    {% endif %}
-  {% endfor %}
+            <div class="meta">
+              <p class="nm">{{ p.name }}</p>
+              <p class="sm">
+                {% if s.pos == 1 %}Brankár{% elif s.pos == 2 %}Obrana{% elif s.pos == 3 %}Záloha{% elif s.pos == 4 %}Útok{% else %}—{% endif %}
+              </p>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const TEAM_ID = {{ team.id }};
+
+  const FORMATIONS = {
+    "4-4-2": [4,4,2],
+    "4-3-3": [4,3,3],
+    "4-2-3-1": [4,5,1],
+    "4-1-4-1": [4,5,1],
+    "3-5-2": [3,5,2],
+    "3-4-3": [3,4,3],
+    "5-3-2": [5,3,2],
+  };
+
+  // toast
+  const toastEl = document.getElementById("toast");
+  let toastT = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastT);
+    toastT = setTimeout(()=>toastEl.classList.remove("show"), 1600);
+  }
+
+  // CSRF
+  function getCsrfToken(){
+    const m = document.querySelector('meta[name="csrf-token"]');
+    return m ? m.getAttribute("content") : "";
+  }
+
+  async function apiPost(url, payload){
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type":"application/json",
+        "X-CSRFToken": getCsrfToken()
+      },
+      body: JSON.stringify(payload),
+      credentials: "same-origin"
+    });
+
+    let data = null;
+    try { data = await res.json(); } catch(e) {}
+
+    if(!res.ok){
+      const msg = (data && (data.error || data.message)) ? (data.error || data.message) : `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+    if(data && data.ok === false){
+      throw new Error(data.error || "Request failed");
+    }
+    return data;
+  }
+
+  // formation coords
+  function lineX(count){
+    // IMPORTANT: keď sú 2 hráči v línii (napr. 4-4-2 útočníci),
+    // nech sú viac "dnu" (nie úplne na krajoch).
+    if(count === 1) return [50];
+    if(count === 2) return [28, 72]; // ako na obrázku
+
+    const left = 14, right = 86;
+    const step = (right - left) / (count - 1);
+    return Array.from({length: count}, (_,i)=> left + i*step);
+  }
+
+  let slotCoords = new Map(); // slot -> {x,y}
+
+  function buildSlotCoords(formationName){
+    const [defN, midN, fwdN] = FORMATIONS[formationName] || [4,3,3];
+    const yGK = 88, yDEF = 72, yMID = 50, yFWD = 26;
+
+    const coords = [];
+    coords.push({x:50, y:yGK});
+    lineX(defN).forEach(x => coords.push({x, y:yDEF}));
+    lineX(midN).forEach(x => coords.push({x, y:yMID}));
+    lineX(fwdN).forEach(x => coords.push({x, y:yFWD}));
+    return coords.slice(0, 11);
+  }
+
+  function applyFormation(name, animate=true){
+    const pitch = document.getElementById("pitch");
+    const anchors = Array.from(pitch.querySelectorAll(".slot"));
+    const players = Array.from(pitch.querySelectorAll(".player"));
+
+    const coordsArr = buildSlotCoords(name);
+    slotCoords = new Map();
+    coordsArr.forEach((c, idx) => slotCoords.set(String(idx), c));
+
+    anchors.forEach(a => {
+      const s = a.dataset.slot;
+      const c = slotCoords.get(s);
+      if(!c) return;
+      a.style.left = c.x + "%";
+      a.style.top  = c.y + "%";
+    });
+
+    const first = new Map();
+    if(animate) players.forEach(p => first.set(p, p.getBoundingClientRect()));
+
+    players.forEach(p => {
+      const s = p.dataset.slot;
+      const c = slotCoords.get(s);
+      if(!c) return;
+      p.style.left = c.x + "%";
+      p.style.top  = c.y + "%";
+      p.style.transform = "translate(-50%, -50%)";
+      p.dataset.dragX = "0";
+      p.dataset.dragY = "0";
+    });
+
+    if(animate){
+      players.forEach(el => {
+        const f = first.get(el);
+        const l = el.getBoundingClientRect();
+        if(!f) return;
+        const dx = f.left - l.left;
+        const dy = f.top  - l.top;
+        el.animate(
+          [
+            { transform: `translate(-50%, -50%) translate(${dx}px, ${dy}px)` },
+            { transform: `translate(-50%, -50%) translate(0px, 0px)` }
+          ],
+          { duration: 620, easing: "cubic-bezier(.2,.9,.2,1)" }
+        );
+      });
+    }
+  }
+
+  // -----------------------
+  // Sub <-> Starter swap (klik)
+  // -----------------------
+  let pendingSub = null;
+
+  function clearSubSelection(){
+    document.querySelectorAll(".sub-item").forEach(x => x.style.outline = "none");
+    pendingSub = null;
+  }
+
+  function roleTextShort(pos){
+    pos = parseInt(pos,10);
+    if(pos===1) return "GK";
+    if(pos===2) return "DEF";
+    if(pos===3) return "MID";
+    if(pos===4) return "FWD";
+    return "—";
+  }
+  function roleTextLong(pos){
+    pos = parseInt(pos,10);
+    if(pos===1) return "Brankár";
+    if(pos===2) return "Obrana";
+    if(pos===3) return "Záloha";
+    if(pos===4) return "Útok";
+    return "—";
+  }
+
+  function swapDomSubStarter(subRowEl, starterEl){
+    const stId = starterEl.dataset.playerId;
+    const stPos = starterEl.dataset.pos;
+    const stName = starterEl.querySelector(".pname").textContent;
+    const stImg = starterEl.querySelector("img").getAttribute("src");
+    const stUrl = starterEl.dataset.profileUrl || "";
+
+    const subId = subRowEl.dataset.playerId;
+    const subPos = subRowEl.dataset.pos;
+    const subName = subRowEl.dataset.name;
+    const subImg = subRowEl.dataset.img;
+    const subUrl = subRowEl.dataset.profileUrl || "";
+
+    starterEl.dataset.playerId = subId;
+    starterEl.dataset.pos = subPos;
+    starterEl.dataset.profileUrl = subUrl;
+    starterEl.querySelector(".pname").textContent = subName;
+    starterEl.querySelector(".prole").textContent = roleTextShort(subPos);
+    starterEl.querySelector("img").setAttribute("src", subImg);
+
+    subRowEl.dataset.playerId = stId;
+    subRowEl.dataset.pos = stPos;
+    subRowEl.dataset.name = stName;
+    subRowEl.dataset.img = stImg;
+    subRowEl.dataset.profileUrl = stUrl;
+    subRowEl.querySelector(".nm").textContent = stName;
+    subRowEl.querySelector(".sm").textContent = roleTextLong(stPos);
+    subRowEl.querySelector("img").setAttribute("src", stImg);
+  }
+
+  // -----------------------
+  // Double-click -> profil hráča
+  // -----------------------
+  function gotoProfile(el){
+    const url = el?.dataset?.profileUrl;
+    if(url) window.location.href = url;
+  }
+
+  // -----------------------
+  // Drag & Drop = SWAP (presné, 100%)
+  // -----------------------
+  const DRAG_THRESHOLD = 6;
+  let drag = null;
+  let rafPending = false;
+  let currentDropTarget = null;
+
+  function clearDropTarget(){
+    if(currentDropTarget){
+      currentDropTarget.classList.remove("drop-target");
+      currentDropTarget = null;
+    }
+  }
+
+  function findPlayerUnderPointer(clientX, clientY, draggedEl){
+    const prev = draggedEl.style.pointerEvents;
+    draggedEl.style.pointerEvents = "none";
+    const el = document.elementFromPoint(clientX, clientY);
+    draggedEl.style.pointerEvents = prev;
+
+    if(!el) return null;
+    const target = el.closest ? el.closest("#pitch .player") : null;
+    if(!target || target === draggedEl) return null;
+    return target;
+  }
+
+  function setDraggedTransform(el, dx, dy){
+    el.dataset.dragX = String(dx);
+    el.dataset.dragY = String(dy);
+    el.style.transform = `translate(-50%, -50%) translate3d(${dx}px, ${dy}px, 0)`;
+  }
+
+  function onPointerDown(el, e){
+    if(pendingSub) return;
+
+    const rect = el.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    drag = {
+      el,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      started: false,
+      offX: e.clientX - centerX,
+      offY: e.clientY - centerY,
+      originalSlot: el.dataset.slot,
+    };
+
+    el.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+
+  function onPointerMove(e){
+    if(!drag || e.pointerId !== drag.pointerId) return;
+
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+
+    if(!drag.started){
+      if(Math.hypot(dx,dy) < DRAG_THRESHOLD) return;
+      drag.started = true;
+      drag.el.classList.add("dragging");
+    }
+
+    const t = findPlayerUnderPointer(e.clientX, e.clientY, drag.el);
+    if(t !== currentDropTarget){
+      clearDropTarget();
+      if(t){
+        currentDropTarget = t;
+        currentDropTarget.classList.add("drop-target");
+      }
+    }
+
+    const moveX = dx - drag.offX;
+    const moveY = dy - drag.offY;
+
+    if(!rafPending){
+      rafPending = true;
+      requestAnimationFrame(() => {
+        setDraggedTransform(drag.el, moveX, moveY);
+        rafPending = false;
+      });
+    }
+  }
+
+  async function onPointerUp(e){
+    if(!drag || e.pointerId !== drag.pointerId) return;
+
+    const el = drag.el;
+    el.classList.remove("dragging");
+
+    if(!drag.started){
+      drag = null;
+      return;
+    }
+
+    const target = findPlayerUnderPointer(e.clientX, e.clientY, el);
+
+    try{
+      if(target){
+        const aId = parseInt(el.dataset.playerId, 10);
+        const bId = parseInt(target.dataset.playerId, 10);
+
+        await apiPost(`/api/team/${TEAM_ID}/lineup/swap-slots`, {a_id: aId, b_id: bId});
+
+        const tmp = el.dataset.slot;
+        el.dataset.slot = target.dataset.slot;
+        target.dataset.slot = tmp;
+
+        toast("Vymenené pozície v základe");
+      } else {
+        toast("Pusť hráča na iného hráča (swap)");
+      }
+    }catch(err){
+      toast("Chyba: " + err.message);
+    }
+
+    clearDropTarget();
+    applyFormation(document.getElementById("formationSelect").value, true);
+    drag = null;
+  }
+
+  function onPointerCancel(e){
+    if(!drag) return;
+    clearDropTarget();
+    applyFormation(document.getElementById("formationSelect").value, true);
+    drag = null;
+  }
+
+  // -----------------------
+  // INIT
+  // -----------------------
+  window.addEventListener("load", () => {
+    const select = document.getElementById("formationSelect");
+    const pitchPlayers = Array.from(document.querySelectorAll("#pitch .player"));
+
+    // 1) všetci začnú v strede (viditeľne)
+    pitchPlayers.forEach(p => {
+      p.style.left = "50%";
+      p.style.top  = "50%";
+      p.style.transform = "translate(-50%, -50%)";
+      p.dataset.dragX = "0";
+      p.dataset.dragY = "0";
+    });
+
+    // 2) v ďalšom frame animuj do pozícií
+    requestAnimationFrame(() => {
+      applyFormation(select.value, true);
+    });
+
+    select.addEventListener("change", async (e) => {
+      try{
+        await apiPost(`/api/team/${TEAM_ID}/lineup/formation`, {formation: e.target.value});
+        toast("Uložené rozostavenie");
+      }catch(err){
+        toast("Chyba: " + err.message);
+      }
+      applyFormation(e.target.value, true);
+    });
+
+    // náhradníci: klik = výmena, doubleclick = profil
+    document.querySelectorAll(".sub-item").forEach(sub => {
+      sub.addEventListener("dblclick", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        gotoProfile(sub);
+      });
+
+      sub.addEventListener("click", () => {
+        pendingSub = sub;
+        document.querySelectorAll(".sub-item").forEach(x => x.style.outline = "none");
+        sub.style.outline = "2px solid rgba(255,255,255,.22)";
+        sub.style.outlineOffset = "2px";
+        toast("Klikni na hráča v základe (ľubovoľného)");
+      });
+    });
+
+    // starter: click = swap with sub, dblclick = profil, drag
+    document.querySelectorAll("#pitch .player").forEach(starter => {
+
+      starter.addEventListener("dblclick", (e) => {
+        // ak práve draguješ, nerieš dblclick
+        if(drag && drag.el === starter && drag.started) return;
+        e.preventDefault();
+        e.stopPropagation();
+        gotoProfile(starter);
+      });
+
+      starter.addEventListener("click", async (e) => {
+        if(!pendingSub) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const subId = parseInt(pendingSub.dataset.playerId, 10);
+        const starterId = parseInt(starter.dataset.playerId, 10);
+
+        try{
+          await apiPost(`/api/team/${TEAM_ID}/lineup/swap`, {sub_id: subId, starter_id: starterId});
+          swapDomSubStarter(pendingSub, starter);
+          toast("Vymenené (náhradník ↔ základ)");
+          clearSubSelection();
+          applyFormation(select.value, true);
+        }catch(err){
+          toast("Chyba: " + err.message);
+          clearSubSelection();
+          applyFormation(select.value, true);
+        }
+      });
+
+      starter.addEventListener("pointerdown", (e) => onPointerDown(starter, e));
+    });
+
+    document.addEventListener("pointermove", onPointerMove, {passive:false});
+    document.addEventListener("pointerup", onPointerUp, {passive:false});
+    document.addEventListener("pointercancel", onPointerCancel, {passive:false});
+
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape"){
+        clearSubSelection();
+        onPointerCancel();
+        toast("Zrušené");
+      }
+    });
+  });
+</script>
 
 {% endblock content %}
