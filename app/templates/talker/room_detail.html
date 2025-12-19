@@ -548,7 +548,16 @@
   async function getPushConfig() {
     const res = await fetch("/talker/push/config", { credentials: "include" });
     if (!res.ok) throw new Error("push/config failed");
-    return await res.json();
+    const cfg = await res.json();
+
+    // compat: ak ešte niekde zostal starý kód, nech to nepadá
+    try {
+      window.__PUSH_CFG__ = cfg;
+      if (cfg?.vapidPublicKey) window.vapidPublicKey = cfg.vapidPublicKey;
+      if (cfg?.fcmVapidPublicKey) window.fcmVapidPublicKey = cfg.fcmVapidPublicKey;
+    } catch (_) {}
+
+    return cfg;
   }
 
   async function registerRootSW() {
@@ -560,8 +569,9 @@
 
   async function enableWebPushIOS() {
     const cfg = await getPushConfig();
-    const fcmVapidPublicKey = cfg.fcmVapidPublicKey;
-    if (!fcmVapidPublicKey) throw new Error("Missing VAPID public key");
+
+    const vapidKeyWebPush = cfg.vapidPublicKey || cfg.fcmVapidPublicKey;
+    if (!vapidKeyWebPush) throw new Error("Missing VAPID public key");
 
     if (!isIosPwaSafari()) {
       throw new Error("iOS vyžaduje Add to Home Screen (standalone) + Safari");
@@ -574,16 +584,17 @@
 
     const reg = await navigator.serviceWorker.ready;
 
-    const sub = await reg.pushManager.subscribe({
+    const existing = await reg.pushManager.getSubscription();
+    const sub = existing || await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      applicationServerKey: urlBase64ToUint8Array(vapidKeyWebPush),
     });
 
     const r = await fetch("/talker/webpush/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(sub),
+      body: JSON.stringify(sub.toJSON()),
     });
     if (!r.ok) throw new Error("webpush/subscribe failed: " + (await r.text()));
   }
@@ -595,6 +606,7 @@
     const perm = await Notification.requestPermission();
     if (perm !== "granted") throw new Error("Permission not granted");
 
+    // Ak firebase nie je naloadované na tejto stránke, aspoň neskončíme ticho.
     if (!window.firebase) throw new Error("firebase not loaded in page");
 
     const firebaseCfg = cfg.firebase || {};
@@ -603,7 +615,6 @@
     if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseCfg);
 
     const reg = await navigator.serviceWorker.ready;
-
     const messaging = firebase.messaging();
 
     const token = await messaging.getToken({
