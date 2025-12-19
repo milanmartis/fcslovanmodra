@@ -1,4 +1,6 @@
-(async () => {
+(() => {
+  "use strict";
+
   // -------------------------
   // Feature detect: iOS Safari PWA
   // -------------------------
@@ -76,11 +78,19 @@
   // Config + SW
   // -------------------------
   async function getPushConfig() {
-    // nechávam tvoj endpoint
     const res = await fetch("/talker/push/config", { credentials: "include" });
     if (!res.ok) throw new Error("push/config failed");
-    // očakávame { firebase:{...}, vapidPublicKey:"...", fcmVapidPublicKey:"..." }
-    return await res.json();
+    const cfg = await res.json();
+
+    // ✅ Compatibility: ak niekde ostal starý kód s holým "vapidPublicKey",
+    // Safari/iOS už nepadne na "Can't find variable".
+    try {
+      window.__PUSH_CFG__ = cfg;
+      if (cfg && cfg.vapidPublicKey) window.vapidPublicKey = cfg.vapidPublicKey;
+      if (cfg && cfg.fcmVapidPublicKey) window.fcmVapidPublicKey = cfg.fcmVapidPublicKey;
+    } catch (_) {}
+
+    return cfg;
   }
 
   async function registerRootSW() {
@@ -105,7 +115,6 @@
   // Universal WebPush subscribe (VAPID / PushSubscription)
   // -------------------------
   async function ensureWebPushSubscription(reg, vapidPublicKey) {
-    // ak už existuje subscription, nepýtaj znovu
     const existing = await reg.pushManager.getSubscription();
     if (existing) return existing;
 
@@ -119,8 +128,7 @@
   async function enableWebPushUniversal(opts = {}) {
     const cfg = await getPushConfig();
 
-    // Dôležité: pre WebPush používaj vapidPublicKey (nie "fcmVapidPublicKey")
-    const vapidPublicKey = cfg.vapidPublicKey;
+    const vapidPublicKey = cfg?.vapidPublicKey;
     if (!vapidPublicKey) throw new Error("Missing vapidPublicKey from /talker/push/config");
 
     if (opts.requireIosPwa && !isIosSafariPwa()) {
@@ -138,7 +146,7 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(sub.toJSON()), // ✅ čistý JSON
+      body: JSON.stringify(sub.toJSON()),
     });
     if (!r.ok) throw new Error("webpush/subscribe failed: " + (await r.text()));
 
@@ -152,14 +160,13 @@
   async function enableFcmNonIOS() {
     const cfg = await getPushConfig();
 
-    // ak firebase nie je dostupné, sprav fallback na webpush (aj na desktop)
+    // fallback -> webpush
     if (!window.firebase) {
       return await enableWebPushUniversal({ requireIosPwa: false });
     }
 
     const firebaseCfg = cfg.firebase || {};
     if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) {
-      // ak nemáš firebase config, fallback webpush
       return await enableWebPushUniversal({ requireIosPwa: false });
     }
 
@@ -172,10 +179,8 @@
 
     const messaging = firebase.messaging();
 
-    // ✅ pre FCM používaj fcmVapidPublicKey (ak máš), inak vapidPublicKey
     const vapidKey = cfg.fcmVapidPublicKey || cfg.vapidPublicKey;
     if (!vapidKey) {
-      // ak nemáš ani jeden, fallback webpush
       return await enableWebPushUniversal({ requireIosPwa: false });
     }
 
@@ -206,10 +211,10 @@
     if (!canPush()) return { ok: false, reason: "not_supported" };
     if (Notification.permission === "denied") return { ok: false, reason: "denied" };
 
-    // iOS PWA -> WebPush (PushSubscription)
+    // iOS PWA -> WebPush
     if (isIosSafariPwa()) return await enableWebPushUniversal({ requireIosPwa: true });
 
-    // ostatné -> FCM (fallback na WebPush ak treba)
+    // ostatné -> FCM (fallback WebPush)
     return await enableFcmNonIOS();
   }
 
