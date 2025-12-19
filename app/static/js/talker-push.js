@@ -4,7 +4,9 @@
   // -------------------------
   function isIosSafariPwa() {
     const ua = navigator.userAgent || "";
-    const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isIOS =
+      /iPhone|iPad|iPod/i.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const isSafari = /^((?!chrome|crios|fxios|android).)*safari/i.test(ua);
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
@@ -13,7 +15,7 @@
   }
 
   function canPush() {
-    return ("serviceWorker" in navigator) && ("Notification" in window);
+    return "serviceWorker" in navigator && "Notification" in window;
   }
 
   // -------------------------
@@ -54,7 +56,10 @@
     const el = document.getElementById("pushModal");
     if (!el) return null;
     if (!window.bootstrap || !window.bootstrap.Modal) return null;
-    return window.bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true });
+    return window.bootstrap.Modal.getOrCreateInstance(el, {
+      backdrop: true,
+      keyboard: true,
+    });
   }
 
   function openModal() {
@@ -71,13 +76,17 @@
   // Config + SW
   // -------------------------
   async function getPushConfig() {
+    // nechávam tvoj endpoint
     const res = await fetch("/talker/push/config", { credentials: "include" });
     if (!res.ok) throw new Error("push/config failed");
-    return await res.json(); // { firebase:{...}, vapidPublicKey:"..." }
+    // očakávame { firebase:{...}, vapidPublicKey:"...", fcmVapidPublicKey:"..." }
+    return await res.json();
   }
 
   async function registerRootSW() {
-    const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+    const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
+      scope: "/",
+    });
     await navigator.serviceWorker.ready;
     return reg;
   }
@@ -93,43 +102,28 @@
   }
 
   // -------------------------
-  // iOS PWA -> WebPush subscribe
+  // Universal WebPush subscribe (VAPID / PushSubscription)
   // -------------------------
-  async function enableWebPushUniversal() {
-    const cfg = await getPushConfig();
-    const vapidPublicKey = cfg.vapidPublicKey; // webpush VAPID
-    if (!vapidPublicKey) throw new Error("Missing VAPID public key");
-  
-    const reg = await registerRootSW();
-    const perm = await Notification.requestPermission();
-    if (perm !== "granted") return { ok: false, reason: "permission_not_granted" };
-  
+  async function ensureWebPushSubscription(reg, vapidPublicKey) {
+    // ak už existuje subscription, nepýtaj znovu
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) return existing;
+
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
     });
-  
-    const r = await fetch("/talker/webpush/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(sub),
-    });
-    if (!r.ok) throw new Error("webpush/subscribe failed: " + (await r.text()));
-  
-    await refreshBadgeFromBackend();
-    return { ok: true, mode: "webpush" };
+    return sub;
   }
 
-
-
-
-  async function enableWebPushIOS() {
+  async function enableWebPushUniversal(opts = {}) {
     const cfg = await getPushConfig();
-    const vapidPublicKey = cfg.fcmVapidPublicKey;
-    if (!vapidPublicKey) throw new Error("Missing VAPID public key");
 
-    if (!isIosSafariPwa()) {
+    // Dôležité: pre WebPush používaj vapidPublicKey (nie "fcmVapidPublicKey")
+    const vapidPublicKey = cfg.vapidPublicKey;
+    if (!vapidPublicKey) throw new Error("Missing vapidPublicKey from /talker/push/config");
+
+    if (opts.requireIosPwa && !isIosSafariPwa()) {
       throw new Error("iOS: funguje len v Safari PWA (Add to Home Screen).");
     }
 
@@ -138,16 +132,13 @@
     const perm = await Notification.requestPermission();
     if (perm !== "granted") return { ok: false, reason: "permission_not_granted" };
 
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-    });
+    const sub = await ensureWebPushSubscription(reg, vapidPublicKey);
 
     const r = await fetch("/talker/webpush/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(sub),
+      body: JSON.stringify(sub.toJSON()), // ✅ čistý JSON
     });
     if (!r.ok) throw new Error("webpush/subscribe failed: " + (await r.text()));
 
@@ -161,12 +152,16 @@
   async function enableFcmNonIOS() {
     const cfg = await getPushConfig();
 
+    // ak firebase nie je dostupné, sprav fallback na webpush (aj na desktop)
     if (!window.firebase) {
-      // fallback: použij webpush aj na non-iOS
-      return await enableWebPushIOS();
+      return await enableWebPushUniversal({ requireIosPwa: false });
     }
+
     const firebaseCfg = cfg.firebase || {};
-    if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) throw new Error("Missing firebase config");
+    if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) {
+      // ak nemáš firebase config, fallback webpush
+      return await enableWebPushUniversal({ requireIosPwa: false });
+    }
 
     if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseCfg);
 
@@ -177,9 +172,15 @@
 
     const messaging = firebase.messaging();
 
-    // ✅ nepoužívaj messaging.useServiceWorker(reg) (vie robiť bordel)
+    // ✅ pre FCM používaj fcmVapidPublicKey (ak máš), inak vapidPublicKey
+    const vapidKey = cfg.fcmVapidPublicKey || cfg.vapidPublicKey;
+    if (!vapidKey) {
+      // ak nemáš ani jeden, fallback webpush
+      return await enableWebPushUniversal({ requireIosPwa: false });
+    }
+
     const token = await messaging.getToken({
-      vapidKey: cfg.fcmVapidPublicKey || cfg.vapidPublicKey,
+      vapidKey,
       serviceWorkerRegistration: reg,
     });
 
@@ -189,7 +190,11 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ token, platform: "web", device: navigator.userAgent }),
+      body: JSON.stringify({
+        token,
+        platform: "web",
+        device: navigator.userAgent,
+      }),
     });
     if (!r.ok) throw new Error("push/register failed: " + (await r.text()));
 
@@ -201,7 +206,10 @@
     if (!canPush()) return { ok: false, reason: "not_supported" };
     if (Notification.permission === "denied") return { ok: false, reason: "denied" };
 
-    if (isIosSafariPwa()) return await enableWebPushIOS();
+    // iOS PWA -> WebPush (PushSubscription)
+    if (isIosSafariPwa()) return await enableWebPushUniversal({ requireIosPwa: true });
+
+    // ostatné -> FCM (fallback na WebPush ak treba)
     return await enableFcmNonIOS();
   }
 
@@ -221,11 +229,9 @@
   // UI hookup
   // -------------------------
   document.addEventListener("DOMContentLoaded", () => {
-    // manuálne otvorenie modalu (tlačidlo v sidebar-e)
     const openBtn = document.getElementById("openPushModalBtn");
     if (openBtn) openBtn.addEventListener("click", openModal);
 
-    // enable button v bootstrp modale
     const btn = document.getElementById("enablePushBtn");
     if (btn) {
       btn.addEventListener("click", async () => {
@@ -235,8 +241,11 @@
           const res = await enablePush();
           console.log("push enable result:", res);
 
-          if (res.ok) setStatus(res.mode === "webpush" ? "Zapnuté ✅ (iOS Web Push)" : "Zapnuté ✅ (FCM)");
-          else setStatus("Nepodarilo sa: " + (res.reason || "error"));
+          if (res.ok) {
+            setStatus(res.mode === "webpush" ? "Zapnuté ✅ (Web Push)" : "Zapnuté ✅ (FCM)");
+          } else {
+            setStatus("Nepodarilo sa: " + (res.reason || "error"));
+          }
         } catch (e) {
           console.error("enablePush error:", e);
           setStatus("Chyba: " + (e && e.message ? e.message : "error"));
@@ -246,7 +255,6 @@
       });
     }
 
-    // auto refresh badge
     refreshBadgeFromBackend().catch(() => {});
   });
 
