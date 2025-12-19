@@ -95,9 +95,38 @@
   // -------------------------
   // iOS PWA -> WebPush subscribe
   // -------------------------
+  async function enableWebPushUniversal() {
+    const cfg = await getPushConfig();
+    const vapidPublicKey = cfg.vapidPublicKey; // webpush VAPID
+    if (!vapidPublicKey) throw new Error("Missing VAPID public key");
+  
+    const reg = await registerRootSW();
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") return { ok: false, reason: "permission_not_granted" };
+  
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    });
+  
+    const r = await fetch("/talker/webpush/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(sub),
+    });
+    if (!r.ok) throw new Error("webpush/subscribe failed: " + (await r.text()));
+  
+    await refreshBadgeFromBackend();
+    return { ok: true, mode: "webpush" };
+  }
+
+
+
+
   async function enableWebPushIOS() {
     const cfg = await getPushConfig();
-    const vapidPublicKey = cfg.vapidPublicKey;
+    const vapidPublicKey = cfg.fcmVapidPublicKey;
     if (!vapidPublicKey) throw new Error("Missing VAPID public key");
 
     if (!isIosSafariPwa()) {
@@ -132,7 +161,10 @@
   async function enableFcmNonIOS() {
     const cfg = await getPushConfig();
 
-    if (!window.firebase) throw new Error("firebase not loaded in page");
+    if (!window.firebase) {
+      // fallback: použij webpush aj na non-iOS
+      return await enableWebPushIOS();
+    }
     const firebaseCfg = cfg.firebase || {};
     if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) throw new Error("Missing firebase config");
 
@@ -147,7 +179,7 @@
 
     // ✅ nepoužívaj messaging.useServiceWorker(reg) (vie robiť bordel)
     const token = await messaging.getToken({
-      vapidKey: cfg.vapidPublicKey,
+      vapidKey: cfg.fcmVapidPublicKey || cfg.vapidPublicKey,
       serviceWorkerRegistration: reg,
     });
 

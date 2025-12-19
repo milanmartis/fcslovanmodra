@@ -18,10 +18,9 @@ import base64
 import os
 import boto3
 from botocore.config import Config as BotoConfig
-
 # ✅ nevolaj init_firebase() pri importe modulu (môže to robiť side-effecty)
 # zober si ho až v create_app, keď je app pripravená
-from app.firebase_client import init_firebase
+# from app.firebase_client import init_firebase
 
 load_dotenv()
 
@@ -98,8 +97,7 @@ def create_app(config_class=None):
     # ------------------------------------------------------------
     @app.get("/firebase-messaging-sw.js")
     def firebase_messaging_sw_root():
-        # import až tu – aby nevznikol circular import
-        from app.talker.routes import firebase_messaging_sw
+        from app.talker.routes import firebase_messaging_sw  # lazy import (bez circular importu)
         return firebase_messaging_sw()
 
     # (voliteľné) ak chceš mať aj /service-worker.js, nepoužívaj ho ako ďalší SW
