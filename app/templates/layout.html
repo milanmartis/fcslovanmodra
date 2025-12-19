@@ -512,15 +512,192 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
 
 
 
-  <script defer src="/static/vendor/firebase/firebase-app-compat.js"></script>
-  <script defer src="/static/vendor/firebase/firebase-messaging-compat.js"></script>
-  
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
 
 <script src="/static/js/talker-push.js" defer></script>
 
 
-
-
+<script>
+  (() => {
+    // ----- guards: nebež to viackrát
+    if (window.__pushManagerLoaded) return;
+    window.__pushManagerLoaded = true;
+  
+    const MODAL = document.getElementById("pushModal");
+    const BTN_ENABLE = document.getElementById("pushEnable");
+    const BTN_LATER  = document.getElementById("pushLater");
+    const BTN_CLOSE  = document.getElementById("pushClose");
+    const MSG        = document.getElementById("pushMsg");
+  
+    const LS_DISMISS = "talker:pushModalDismissed";
+  
+    function log(...a){ console.log("[push]", ...a); }
+    function setMsg(t){ if (MSG) MSG.textContent = t || ""; }
+  
+    function isStandalone() {
+      return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    }
+    function isIOS() {
+      const ua = navigator.userAgent || "";
+      return /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    }
+    function isSafari() {
+      const ua = navigator.userAgent || "";
+      return /^((?!chrome|crios|fxios|android).)*safari/i.test(ua);
+    }
+    function isIosPwaSafari() {
+      return isIOS() && isSafari() && isStandalone();
+    }
+  
+    function canPush() {
+      return ("serviceWorker" in navigator) && ("Notification" in window);
+    }
+  
+    function showModal() {
+      if (!MODAL) return;
+      MODAL.hidden = false;
+      document.body.style.overflow = "hidden";
+    }
+    function hideModal() {
+      if (!MODAL) return;
+      MODAL.hidden = true;
+      document.body.style.overflow = "";
+    }
+  
+    async function getConfig() {
+      const r = await fetch("/talker/push/config", { credentials: "include" });
+      if (!r.ok) throw new Error("push/config failed");
+      return await r.json();
+    }
+  
+    async function registerRootSW() {
+      // Jediný SW pre všetko
+      const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+      await navigator.serviceWorker.ready;
+      return reg;
+    }
+  
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const rawData = atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+    }
+  
+    async function enableWebPushIOS(cfg) {
+      const vapid = cfg.vapidPublicKey;
+      if (!vapid) throw new Error("Missing VAPID public key");
+  
+      if (!isIosPwaSafari()) {
+        throw new Error("iOS vyžaduje Add to Home Screen (standalone) + Safari");
+      }
+  
+      await registerRootSW();
+  
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") throw new Error("Permission not granted");
+  
+      const reg = await navigator.serviceWorker.ready;
+  
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapid),
+      });
+  
+      const rr = await fetch("/talker/webpush/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(sub),
+      });
+      if (!rr.ok) throw new Error("webpush/subscribe failed: " + (await rr.text()));
+    }
+  
+    async function enableFcm(cfg) {
+      // FCM len ak si načítala firebase compat v layout-e (raz)
+      if (!window.firebase) throw new Error("firebase not loaded (missing scripts)");
+      const firebaseCfg = cfg.firebase || {};
+      if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) throw new Error("Missing firebase config");
+  
+      await registerRootSW();
+  
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") throw new Error("Permission not granted");
+  
+      if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseCfg);
+  
+      const reg = await navigator.serviceWorker.ready;
+      const messaging = firebase.messaging();
+  
+      const token = await messaging.getToken({
+        vapidKey: cfg.vapidPublicKey,
+        serviceWorkerRegistration: reg,
+      });
+  
+      if (!token) throw new Error("no_token");
+  
+      const rr = await fetch("/talker/push/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ token, platform: "web", device: navigator.userAgent }),
+      });
+      if (!rr.ok) throw new Error("push/register failed: " + (await rr.text()));
+    }
+  
+    async function enablePushFlow() {
+      setMsg("Zapínam…");
+      BTN_ENABLE && (BTN_ENABLE.disabled = true);
+  
+      try {
+        const cfg = await getConfig();
+  
+        // iOS PWA → WebPush
+        if (isIosPwaSafari()) {
+          await enableWebPushIOS(cfg);
+          setMsg("Hotovo ✅ (iOS Web Push)");
+        } else {
+          // ostatné → FCM (ak chceš úplne bez FCM, sem daj aj WebPush)
+          await enableFcm(cfg);
+          setMsg("Hotovo ✅ (FCM)");
+        }
+  
+        localStorage.removeItem(LS_DISMISS);
+        setTimeout(() => { hideModal(); setMsg(""); }, 900);
+      } catch (e) {
+        console.error(e);
+        setMsg("Nepodarilo sa: " + (e && e.message ? e.message : "error"));
+        BTN_ENABLE && (BTN_ENABLE.disabled = false);
+      }
+    }
+  
+    function shouldAsk() {
+      if (!canPush()) return false;
+      if (Notification.permission === "granted") return false;
+      if (localStorage.getItem(LS_DISMISS) === "1") return false;
+      return true;
+    }
+  
+    // bind
+    BTN_ENABLE && BTN_ENABLE.addEventListener("click", enablePushFlow);
+    BTN_LATER  && BTN_LATER.addEventListener("click", () => { localStorage.setItem(LS_DISMISS, "1"); hideModal(); });
+    BTN_CLOSE  && BTN_CLOSE.addEventListener("click", () => { localStorage.setItem(LS_DISMISS, "1"); hideModal(); });
+    MODAL && MODAL.addEventListener("click", (e) => {
+      if (e.target && e.target.classList && e.target.classList.contains("push-backdrop")) {
+        localStorage.setItem(LS_DISMISS, "1"); hideModal();
+      }
+    });
+  
+    // auto-show (len keď treba)
+    window.addEventListener("load", () => {
+      if (shouldAsk()) showModal();
+    });
+  
+  })();
+  </script>
   <script>
     async function preprocessImage(file, opts = {}) {
       const {
