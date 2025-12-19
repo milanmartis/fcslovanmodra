@@ -516,7 +516,7 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
   <script defer src="/static/vendor/firebase/firebase-messaging-compat.js"></script>
   
 
-<script src="/static/js/talker-push.js" defer></script>
+<script src="{{ url_for('static', filename='js/talker-push-v2.js') }}" defer></script>
 
 
 
