@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from flask import Blueprint, render_template, request, jsonify, abort, current_app, Response
-from flask_security import login_required, current_user
+# from flask_security import login_required, current_user
 from flask_socketio import join_room, emit
 from sqlalchemy.exc import IntegrityError
 from firebase_admin import messaging
@@ -98,13 +98,7 @@ def firebase_messaging_sw():
 // -------------------------
 // Firebase (FCM) SW
 // -------------------------
-try {{
-  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-  // SW build pre messaging
-  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-sw.js");
-}} catch (e) {{
-  console.error("FCM SW importScripts failed:", e);
-}}
+
 
 const FIREBASE_CONFIG = {cfg_json};
 
@@ -315,6 +309,8 @@ def push_config():
             "appId": current_app.config.get("FIREBASE_APP_ID"),
         },
         vapidPublicKey=current_app.config.get("VAPID_PUBLIC_KEY"),
+        fcmVapidPublicKey=current_app.config.get("FCM_VAPID_PUBLIC_KEY") or current_app.config.get("VAPID_PUBLIC_KEY"),
+
     )
 
 

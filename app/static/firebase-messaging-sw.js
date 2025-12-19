@@ -7,11 +7,11 @@
  * - Preto badge nastavujeme:
  *    1) cez showNotification({ badge: <int> })
  *    2) a sekundárne sa pokúsime aj o registration.setAppBadge (ak existuje)
- */
 
 importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
 
+*/
 // ------------------------------
 // Helpers
 // ------------------------------

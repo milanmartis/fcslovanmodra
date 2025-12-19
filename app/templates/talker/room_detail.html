@@ -2,10 +2,9 @@
 {% block content %}
 
 <style scoped>
-
   body{
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-font-size: 144%;
+    font-size: 144%;
   }
   :root{
     --bg: #070b14;
@@ -101,84 +100,79 @@ font-size: 144%;
     display:flex;
     align-items:center;
     gap: 10px;
-    flex-shrink: 0;
+    flex-shrink:0;
   }
+
+  .unread-pill{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    font-size: 12px;
+    color: rgba(255,255,255,.88);
+    user-select:none;
+    opacity:.85;
+    transition: opacity .2s ease, transform .1s ease, border-color .2s ease;
+  }
+  .unread-pill .unread-dot{
+    width:8px; height:8px; border-radius:99px;
+    background: rgba(255,255,255,.35);
+  }
+  .unread-pill.on{
+    opacity: 1;
+    border-color: rgba(92,159,255,.45);
+    background: rgba(92,159,255,.12);
+  }
+  .unread-pill.on .unread-dot{ background: rgba(92,159,255,1); }
+
+  .push-btn{
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.92);
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .08s ease, filter .2s ease, background .2s ease;
+    user-select:none;
+  }
+  .push-btn:active{ transform: scale(.98); }
+  .push-btn[disabled]{ opacity:.5; cursor:not-allowed; }
 
   .talker-badge{
     display:flex;
     align-items:center;
     gap: 8px;
-    font-size: 12px;
-    color: rgba(255,255,255,.86);
-    padding: 6px 10px;
+    padding: 7px 10px;
     border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12);
     background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.10);
-    flex-shrink: 0;
+    font-size: 12px;
+    opacity:.85;
+    user-select:none;
+    white-space:nowrap;
   }
   .dot{
-    width: 8px; height: 8px;
-    border-radius: 999px;
-    background: rgba(255,255,255,.45);
-    box-shadow: 0 0 0 3px rgba(255,255,255,.06);
+    width:8px; height:8px; border-radius:99px;
+    background: rgba(255,255,255,.35);
   }
-  .dot.on{
-    background: rgba(92,159,255,1);
-    box-shadow: 0 0 0 4px rgba(92,159,255,.18);
-  }
-
-  .push-btn{
-    height: 30px;
-    padding: 0 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.14);
-    background: rgba(255,255,255,.06);
-    color: rgba(255,255,255,.9);
-    font-weight: 800;
-    font-size: 12px;
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-  }
-  .push-btn:disabled{
-    opacity: .5;
-    cursor: not-allowed;
-  }
-
-  .unread-pill{
-    height: 30px;
-    padding: 0 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.14);
-    background: rgba(255,255,255,.06);
-    color: rgba(255,255,255,.9);
-    font-weight: 900;
-    font-size: 12px;
-    display: none;
-    align-items: center;
-    gap: 8px;
-  }
-  .unread-pill.on{ display:flex; }
-  .unread-dot{
-    width: 8px; height: 8px; border-radius: 999px;
-    background: rgba(255,110,110,1);
-    box-shadow: 0 0 0 4px rgba(255,110,110,.14);
-  }
+  .dot.on{ background: rgba(92,159,255,1); }
 
   .talker-messages{
-    flex:1;
+    flex: 1;
+    border-radius: var(--radius);
+    border: 1px solid var(--stroke);
+    background: rgba(255,255,255,.04);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow);
     display:flex;
     flex-direction: column;
-    min-height: 0;
-
-    border-radius: var(--radius);
-    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
-    border: 1px solid var(--stroke);
-    backdrop-filter: blur(12px);
-    box-shadow: var(--shadow);
-    overflow: hidden;
+    overflow:hidden;
   }
-
   .talker-page.is-embed .talker-messages{
     border-radius: 0;
     border-left: 0;
@@ -187,107 +181,59 @@ font-size: 144%;
   }
 
   .talker-scroll{
-    flex:1;
-    min-height:0;
-    overflow-y:auto;
-    padding: 14px 12px;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: auto;
+    flex: 1;
+    overflow: auto;
+    padding: 12px;
+    scroll-behavior: smooth;
   }
-
-  .talker-scroll::-webkit-scrollbar{ width: 10px; }
-  .talker-scroll::-webkit-scrollbar-thumb{
-    background: rgba(255,255,255,.12);
-    border-radius: 999px;
-    border: 3px solid rgba(0,0,0,0);
-    background-clip: padding-box;
-  }
-
-  .msg-row{
+  .bubble-row{
     display:flex;
     margin: 8px 0;
   }
-  .msg-row.me{ justify-content:flex-end; }
-  .msg-row.them{ justify-content:flex-start; }
-
+  .bubble-row.me{ justify-content: flex-end; }
   .bubble{
-    max-width: min(82%, 560px);
+    max-width: 76%;
     padding: 10px 12px;
     border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.10);
+    background: var(--them);
+    box-shadow: 0 10px 28px rgba(0,0,0,.20);
     line-height: 1.25;
-    background: rgba(255,255,255,.10);
-    border: 1px solid rgba(255,255,255,.08);
-    box-shadow: 0 10px 26px rgba(0,0,0,.22);
-    animation: pop .14s ease-out;
-  }
-  .msg-row.me .bubble{
-    background: linear-gradient(180deg, rgba(92,159,255,.30), rgba(92,159,255,.18));
-    border-color: rgba(92,159,255,.30);
-  }
-
-  @keyframes pop{
-    from{ transform: translateY(2px) scale(.99); opacity: .7; }
-    to{ transform: translateY(0) scale(1); opacity: 1; }
-  }
-
-  .meta{
-    display:flex;
-    gap: 8px;
-    align-items: baseline;
-    margin-bottom: 4px;
-  }
-  .name{
-    font-size: 12px;
-    font-weight: 800;
-    color: rgba(255,255,255,.86);
-  }
-  .time{
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .text{
     font-size: 14px;
-    color: var(--text);
     white-space: pre-wrap;
     word-break: break-word;
   }
+  .bubble-row.me .bubble{
+    background: var(--me);
+    border-color: rgba(92,159,255,.22);
+  }
+  .meta{
+    margin-top: 6px;
+    font-size: 11px;
+    opacity: .65;
+    display:flex;
+    gap: 8px;
+    align-items:center;
+  }
+  .meta .u{ font-weight: 800; opacity:.85; }
+  .meta .t{ opacity:.70; }
 
   .composer{
-    position: sticky;
-    bottom: 0;
-    z-index: 5;
-
-    padding: 10px 10px calc(10px + env(safe-area-inset-bottom) + var(--kb));
-    background: linear-gradient(to top,
-      rgba(7,11,20,.92),
-      rgba(7,11,20,.35),
-      rgba(7,11,20,0)
-    );
-    pointer-events: none;
-  }
-
-  .composer-bar{
-    pointer-events: auto;
-    display:flex;
-    gap: 10px;
-    align-items:flex-end;
-
+    border-top: 1px solid rgba(255,255,255,.10);
     padding: 10px;
-    border-radius: 16px;
-    background: rgba(0,0,0,.30);
-    border: 1px solid rgba(255,255,255,.10);
-    backdrop-filter: blur(14px);
-    box-shadow: 0 12px 34px rgba(0,0,0,.35);
+    background: rgba(0,0,0,.12);
   }
-
+  .composer-bar{
+    display:flex;
+    align-items:flex-end;
+    gap: 10px;
+  }
   .input{
-    flex:1;
+    flex: 1;
     min-height: 44px;
-    max-height: 160px;
+    max-height: 180px;
     resize: none;
-
-    padding: 11px 12px;
+    padding: 10px 12px;
     border-radius: 14px;
     border: 1px solid rgba(255,255,255,.12);
     background: rgba(255,255,255,.06);
@@ -302,11 +248,8 @@ font-size: 144%;
   }
 
   .send{
-    height: 80px;
-    position: relative;
-    top: 0px;
+    height: 44px;
     min-width: 44px;
-    margin-bottom: 8px;
     padding: 0 14px;
     border-radius: 999px;
     border: 1px solid rgba(92,159,255,.40);
@@ -317,7 +260,6 @@ font-size: 144%;
     transition: transform .08s ease, filter .2s ease, background .2s ease;
     display:flex;
     align-items:center;
-    justify-content:flex-start
     gap: 8px;
     user-select:none;
     box-shadow: 0 14px 32px rgba(92,159,255,.12);
@@ -405,10 +347,6 @@ font-size: 144%;
 <!-- Socket.IO -->
 <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
-<!-- Firebase compat (poradie je kritické) -->
-<script defer src="/static/vendor/firebase/firebase-app-compat.js"></script>
-<script defer src="/static/vendor/firebase/firebase-messaging-compat.js"></script>
-
 <script>
   const roomId = {{ room.id }};
   const myUserId = {{ current_user.id }};
@@ -477,7 +415,7 @@ font-size: 144%;
     localStorage.setItem(LS_UNREAD, String(v));
     if (unreadCountEl) unreadCountEl.textContent = String(v);
     if (unreadPill) unreadPill.classList.toggle("on", v > 0);
-    setBadge(v); // badge = unread v tejto room
+    setBadge(v);
   }
 
   function incUnread() { setUnread(getUnread() + 1); }
@@ -488,163 +426,114 @@ font-size: 144%;
   }
 
   // ---------------------------
-  // ---- VH + klávesnica (iOS/Android) ----
+  // VH fix (iOS / klávesnica)
+  // ---------------------------
   function setVH() {
     const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
     document.documentElement.style.setProperty("--vh", (h * 0.01) + "px");
   }
-
-  function setKeyboardVar() {
-    if (!window.visualViewport) {
-      document.documentElement.style.setProperty("--kb", "0px");
-      return;
-    }
-    const vv = window.visualViewport;
-    const keyboard = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
-    document.documentElement.style.setProperty("--kb", keyboard + "px");
-  }
-
-  function isNearBottom(px = 60) {
-    const delta = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
-    return delta <= px;
-  }
-
-  function scrollToBottomHard() {
-    requestAnimationFrame(() => {
-      scrollEl.scrollTop = scrollEl.scrollHeight;
-    });
-  }
-
-  function keepBottomIfWasAtBottom(wasAtBottom, prevScrollHeight) {
-    if (!wasAtBottom) return;
-    requestAnimationFrame(() => {
-      const newScrollHeight = scrollEl.scrollHeight;
-      const delta = newScrollHeight - prevScrollHeight;
-      if (delta !== 0) scrollEl.scrollTop += delta;
-    });
-  }
-
-  function onViewportChange() {
-    setVH();
-    setKeyboardVar();
-    const wasAtBottom = isNearBottom(120);
-    const prevScrollHeight = scrollEl.scrollHeight;
-    keepBottomIfWasAtBottom(wasAtBottom, prevScrollHeight);
-  }
-
   setVH();
-  setKeyboardVar();
-  window.addEventListener("resize", onViewportChange);
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", onViewportChange);
-    window.visualViewport.addEventListener("scroll", onViewportChange);
+  window.addEventListener("resize", setVH);
+  window.visualViewport && window.visualViewport.addEventListener("resize", setVH);
+
+  // ---------------------------
+  // UI helpers
+  // ---------------------------
+  function escapeHtml(s) {
+    return String(s || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
-
-  // Keď scrollneš naspäť úplne dole → považuj za prečítané
-  let scrollTick = null;
-  scrollEl.addEventListener("scroll", () => {
-    if (scrollTick) return;
-    scrollTick = setTimeout(() => {
-      scrollTick = null;
-      if (isNearBottom(40)) clearUnread();
-    }, 120);
-  }, { passive: true });
-
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && isNearBottom(80)) clearUnread();
-  });
-  window.addEventListener("focus", () => {
-    if (isNearBottom(80)) clearUnread();
-  });
 
   function fmtTime(iso) {
-    if (!iso) return "";
     try {
       const d = new Date(iso);
-      return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
     } catch { return ""; }
   }
 
+  function isNearBottom(px = 60) {
+    return (scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight) <= px;
+  }
+
+  function scrollToBottomHard() {
+    bottomEl && bottomEl.scrollIntoView({ block: "end" });
+  }
+
+  function focusNoScroll(){
+    try { inputEl.focus({ preventScroll: true }); } catch(e){ inputEl.focus(); }
+  }
+
+  function autoResize() {
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + "px";
+  }
+
+  function updateSendState() {
+    const ok = !!inputEl.value.trim();
+    sendBtn.disabled = !ok;
+  }
+
+  inputEl.addEventListener("input", () => {
+    autoResize();
+    updateSendState();
+  });
+
   function renderMessage(m) {
-    const row = document.createElement("div");
     const mine = (m.user_id === myUserId);
-    row.className = "msg-row " + (mine ? "me" : "them");
+    const row = document.createElement("div");
+    row.className = "bubble-row " + (mine ? "me" : "them");
 
     const bubble = document.createElement("div");
     bubble.className = "bubble";
+    bubble.innerHTML = escapeHtml(m.text || "");
 
     const meta = document.createElement("div");
     meta.className = "meta";
+    const u = document.createElement("span");
+    u.className = "u";
+    u.textContent = m.username || "";
+    const t = document.createElement("span");
+    t.className = "t";
+    t.textContent = fmtTime(m.created_at);
 
-    const name = document.createElement("div");
-    name.className = "name";
-    name.textContent = (m.username ?? "user").toString();
-
-    const time = document.createElement("div");
-    time.className = "time";
-    time.textContent = fmtTime(m.created_at);
-
-    meta.appendChild(name);
-    meta.appendChild(time);
-
-    const text = document.createElement("div");
-    text.className = "text";
-    text.textContent = (m.text ?? "").toString();
+    meta.appendChild(u);
+    meta.appendChild(t);
 
     bubble.appendChild(meta);
-    bubble.appendChild(text);
     row.appendChild(bubble);
 
     listEl.appendChild(row);
   }
 
-  function autoResize() {
-    const prev = inputEl.offsetHeight;
-    inputEl.style.height = "auto";
-    inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + "px";
-    const next = inputEl.offsetHeight;
-    return next - prev;
-  }
-
-  function updateSendState() {
-    sendBtn.disabled = inputEl.value.trim().length === 0;
-  }
-
-  inputEl.addEventListener("input", () => {
-    const wasAtBottom = isNearBottom(80);
-    const prevScrollHeight = scrollEl.scrollHeight;
-
-    autoResize();
-    updateSendState();
-
-    keepBottomIfWasAtBottom(wasAtBottom, prevScrollHeight);
-  });
-
-  inputEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (!sendBtn.disabled) formEl.requestSubmit();
-    }
-  });
-
-  function focusNoScroll() {
-    try { inputEl.focus({ preventScroll: true }); }
-    catch { inputEl.focus(); }
-  }
-
   // ---------------------------
-  // PUSH HELPERS (iOS WebPush / ostatné FCM)
+  // PUSH enable (iOS WebPush / non-iOS FCM)
   // ---------------------------
-  function isIosSafariPwa() {
+  function isStandalone() {
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  }
+  function isIOS() {
     const ua = navigator.userAgent || "";
-    const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const isSafari = /^((?!chrome|crios|fxios|android).)*safari/i.test(ua);
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-    return isIOS && isSafari && isStandalone;
+    return /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+  function isSafari() {
+    const ua = navigator.userAgent || "";
+    return /^((?!chrome|crios|fxios|android).)*safari/i.test(ua);
+  }
+  function isIosPwaSafari() {
+    return isIOS() && isSafari() && isStandalone();
   }
 
   function canUsePush() {
-    return ("serviceWorker" in navigator) && ("Notification" in window);
+    if (!("serviceWorker" in navigator)) return false;
+    if (!("Notification" in window)) return false;
+    // iOS Web Push potrebuje PushManager
+    if (isIosPwaSafari() && !("PushManager" in window)) return false;
+    return true;
   }
 
   function urlBase64ToUint8Array(base64String) {
@@ -663,14 +552,20 @@ font-size: 144%;
   }
 
   async function registerRootSW() {
-    // ROOT scope pre konzistentné push/offline
-    return await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+    // Jediný SW pre push + offline
+    const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
+    return reg;
   }
 
   async function enableWebPushIOS() {
     const cfg = await getPushConfig();
-    const vapidPublicKey = cfg.vapidPublicKey;
+    const vapidPublicKey = cfg.fcmVapidPublicKey;
     if (!vapidPublicKey) throw new Error("Missing VAPID public key");
+
+    if (!isIosPwaSafari()) {
+      throw new Error("iOS vyžaduje Add to Home Screen (standalone) + Safari");
+    }
 
     await registerRootSW();
 
@@ -711,26 +606,26 @@ font-size: 144%;
 
     const messaging = firebase.messaging();
 
-    // Spoľahlivejšie než messaging.useServiceWorker (niektoré verzie ho nemajú)
     const token = await messaging.getToken({
-      vapidKey: cfg.vapidPublicKey,
+      vapidKey: cfg.fcmVapidPublicKey,
       serviceWorkerRegistration: reg,
     });
 
     if (!token) throw new Error("no_token");
 
-    const r = await fetch("/talker/push/register", {
+    const rr = await fetch("/talker/push/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ token, platform: "web", device: navigator.userAgent }),
     });
-    if (!r.ok) throw new Error("push/register failed: " + (await r.text()));
+    if (!rr.ok) throw new Error("push/register failed: " + (await rr.text()));
   }
 
   async function enablePush() {
     if (!canUsePush()) {
       statusEl.textContent = "Push nie je podporovaný v tomto prehliadači.";
+      setTimeout(() => statusEl.textContent = "", 3500);
       return;
     }
 
@@ -738,18 +633,18 @@ font-size: 144%;
     statusEl.textContent = "Zapínam push…";
 
     try {
-      if (isIosSafariPwa()) {
+      if (isIosPwaSafari()) {
         await enableWebPushIOS();
-        statusEl.textContent = "Push zapnuté (iOS Web Push) ✅";
+        statusEl.textContent = "Hotovo ✅ (iOS Web Push)";
       } else {
         await enableFcmNonIOS();
-        statusEl.textContent = "Push zapnuté (FCM) ✅";
+        statusEl.textContent = "Hotovo ✅ (FCM)";
       }
-      setTimeout(() => statusEl.textContent = "", 2500);
+      setTimeout(() => statusEl.textContent = "", 4000);
     } catch (e) {
       console.error(e);
-      statusEl.textContent = "Push sa nepodarilo zapnúť.";
-      setTimeout(() => statusEl.textContent = "", 5000);
+      statusEl.textContent = "Nepodarilo sa: " + (e && e.message ? e.message : "error");
+      setTimeout(() => statusEl.textContent = "", 6000);
     } finally {
       pushBtn.disabled = false;
     }
@@ -764,7 +659,7 @@ font-size: 144%;
     try {
       setUnread(getUnread());
 
-      const r = await fetch(`/talker/rooms/${roomId}/messages`);
+      const r = await fetch(`/talker/rooms/${roomId}/messages`, { credentials: "include" });
       const list = await r.json();
 
       list.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
