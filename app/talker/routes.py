@@ -4,7 +4,6 @@ import json
 from typing import Any
 
 from flask import Blueprint, render_template, request, jsonify, abort, current_app, Response
-# from flask_security import login_required, current_user
 from flask_socketio import join_room, emit
 from sqlalchemy.exc import IntegrityError
 from firebase_admin import messaging
@@ -29,7 +28,8 @@ except Exception:  # pragma: no cover
 
 from flask_login import login_user, current_user, logout_user, login_required
 from functools import wraps
-from flask import abort
+from flask import abort as flask_abort
+from flask import request as flask_request
 
 
 def roles_required(*roles):
@@ -37,12 +37,12 @@ def roles_required(*roles):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated:
-                abort(401)
+                flask_abort(401)
 
             # ✅ robust: podporí has_role aj has_roles (aby to nepadalo podľa implementácie User)
             checker = getattr(current_user, "has_role", None) or getattr(current_user, "has_roles", None)
             if not checker or not checker(*roles):
-                abort(403)
+                flask_abort(403)
 
             return fn(*args, **kwargs)
         return wrapper
@@ -50,6 +50,9 @@ def roles_required(*roles):
 
 
 talker = Blueprint("talker", __name__, url_prefix="/talker")
+
+# SID -> user_id map pre "kto je online v room"
+_SID_TO_USER_ID: dict[str, int] = {}
 
 
 # ============================================================
@@ -132,15 +135,21 @@ try {{
   console.error("FCM SW init failed:", e);
 }}
 
+
 // Helper: parse int badge
 function toInt(v) {{
-  const n = Number(v);
-  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
+  try {{
+    if (v === null || v === undefined) return null;
+    const n = parseInt(String(v), 10);
+    return Number.isFinite(n) ? Math.max(0, n) : null;
+  }} catch (e) {{
+    return null;
+  }}
 }}
 
 function broadcastBadge(count) {{
   try {{
-    clients.matchAll({{ type: "window", includeUncontrolled: true }}).then((wins) => {{
+    self.clients.matchAll({{ type: "window", includeUncontrolled: true }}).then((wins) => {{
       for (const w of wins) {{
         try {{ w.postMessage({{ type: "badge", count }}); }} catch (e) {{}}
       }}
@@ -150,23 +159,34 @@ function broadcastBadge(count) {{
 
 function showNotif(title, body, data) {{
   try {{
-    const totalUnread = toInt(data && (data.totalUnread ?? data.total_unread ?? data.badge));
-    const roomId = data && (data.room_id || data.roomId);
-    const url = (data && data.url) || (roomId ? `/talker/rooms/${{roomId}}?embed=1` : "/talker/");
+    const d = data || {{}};
+    const dd = (d && typeof d === "object" && d.data && typeof d.data === "object") ? d.data : null;
+
+    const totalUnread =
+      toInt(d.totalUnread ?? d.total_unread ?? d.badge) ??
+      (dd ? toInt(dd.totalUnread ?? dd.total_unread ?? dd.badge) : null);
+
+    const roomIdRaw = d.room_id ?? d.roomId ?? (dd ? (dd.room_id ?? dd.roomId) : null);
+    const roomId = toInt(roomIdRaw);
+
+    const url =
+      (d.url || (dd ? dd.url : null)) ||
+      (roomId !== null ? `/talker/rooms/${{roomId}}?embed=1` : "/talker/");
 
     const opts = {{
       body: body || "",
-      icon: (data && data.icon) || "/static/main/ico.png",
-      tag: roomId ? `talker-room-${{roomId}}` : "talker",
+      icon: (d.icon || (dd ? dd.icon : null)) || "/static/main/ico.png",
+
+      // NotificationOptions.badge NIE JE číslo. Je to URL na badge ikonku.
+      badge: "/static/main/ico.png",
+
+      tag: roomId !== null ? `talker-room-${{roomId}}` : "talker",
       renotify: true,
-      data: Object.assign({{ url, roomId }}, data || {{}}),
+      data: Object.assign({{ url, roomId, totalUnread }}, d || {{}}),
     }};
 
-    // ✅ FIX:
-    // NotificationOptions.badge NIE JE číslo. Je to URL na badge ikonku.
     // Číselný badge riešime cez postMessage -> klient si zavolá navigator.setAppBadge().
     if (totalUnread !== null) {{
-      opts.badge = "/static/main/ico.png";
       broadcastBadge(totalUnread);
     }}
 
@@ -334,7 +354,6 @@ def push_config():
         },
         vapidPublicKey=current_app.config.get("VAPID_PUBLIC_KEY"),
         fcmVapidPublicKey=current_app.config.get("FCM_VAPID_PUBLIC_KEY") or current_app.config.get("VAPID_PUBLIC_KEY"),
-
     )
 
 
@@ -586,31 +605,7 @@ def push_status():
         has_webpush=bool(has_webpush),
     )
 
-def debug_broadcast_webpush(title: str, body: str, data: dict):
-    if WebPushSubscription is None or webpush is None:
-        return 0
 
-    # všetci users, ktorí majú subscription (aj mimo room)
-    subs = WebPushSubscription.query.all()
-    user_ids = sorted({int(s.user_id) for s in subs if getattr(s, "user_id", None)})
-
-    sent = 0
-    for uid in user_ids:
-        try:
-            badge = _total_unread_for_user(uid)
-            sent += int(_send_webpush_to_user(
-                user_id=uid,
-                title=title,
-                body=body,
-                url=str(data.get("url") or "/talker/"),
-                room_id=int(data.get("room_id") or data.get("roomId") or 0) or None,
-                total_unread=int(badge),
-                data=data,
-            ))
-        except Exception:
-            continue
-
-    return sent
 # -------------------------
 # SOCKET.IO EVENTS
 # -------------------------
@@ -628,8 +623,22 @@ def on_join(data: dict[str, Any]):
         emit("talker_error", {"error": "forbidden"})
         return
 
+    # map sid -> user pre offline filtering v room
+    try:
+        _SID_TO_USER_ID[flask_request.sid] = int(current_user.id)
+    except Exception:
+        pass
+
     join_room(str(room.id))
     emit("talker_joined", {"room_id": room.id})
+
+
+@socketio.on("disconnect")
+def on_disconnect():
+    try:
+        _SID_TO_USER_ID.pop(flask_request.sid, None)
+    except Exception:
+        pass
 
 
 @socketio.on("talker_send")
@@ -679,35 +688,46 @@ def on_send(data: dict[str, Any]):
         include_self=True,
     )
 
-    # push pre offline userov
-    # DEBUG BROADCAST: pošli push všetkým subscription + aj odosielateľovi
+    # push len pre OFFLINE userov danej room + nikdy nie odosielateľovi
     try:
-        preview = f"{username}: {msg.text[:120]}"
-        data_payload = {
-            "room_id": room.id,
-            "roomId": room.id,
-            "type": "talker_message",
-            "url": f"/talker/rooms/{room.id}?embed=1",
-        }
+        recipients = get_recipients_for_room(room)
 
-        # vždy pošli aj sebe (aby si hneď videl že to funguje)
-        send_push_to_users(
-            user_ids=[current_user.id],
-            title=room.name,
-            body=preview,
-            data=data_payload,
-        )
+        sender_id = int(current_user.id)
+        recipients = [int(uid) for uid in recipients if int(uid) != sender_id]
 
-        # a teraz broadcast všetkým, čo majú webpush subscription
-        sent = debug_broadcast_webpush(
-            title=room.name,
-            body=preview,
-            data=data_payload,
-        )
-        print("DEBUG broadcast webpush sent:", sent)
+        if recipients:
+            # kto je online v tejto socket room?
+            online_ids: set[int] = set()
+            try:
+                room_key = str(room.id)
+                ns = "/"
+                sids = set((socketio.server.manager.rooms.get(ns, {}).get(room_key, set())) or set())
+                for sid in sids:
+                    uid = _SID_TO_USER_ID.get(sid)
+                    if uid:
+                        online_ids.add(int(uid))
+            except Exception:
+                online_ids = set()
 
+            offline_ids = [uid for uid in recipients if int(uid) not in online_ids]
+
+            if offline_ids:
+                preview = f"{username}: {msg.text[:120]}"
+                data_payload = {
+                    "room_id": room.id,
+                    "roomId": room.id,
+                    "type": "talker_message",
+                    "url": f"/talker/rooms/{room.id}?embed=1",
+                }
+                send_push_to_users(
+                    user_ids=offline_ids,
+                    title=room.name,
+                    body=preview,
+                    data=data_payload,
+                )
     except Exception as e:
-        print("DEBUG push error:", e)
+        print("Talker push error:", e)
+
 
 # -------------------------
 # HELPERS
@@ -746,7 +766,6 @@ def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
     Bez current_user – aby sme vedeli počítať unread pre recipientov.
     """
     try:
-        # room without team: membership list
         if getattr(room, "team_id", None) is None:
             members = getattr(room, "members", None) or []
             for u in members:
@@ -754,7 +773,6 @@ def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
                     return True
             return False
 
-        # room with team: team membership list
         team = Team.query.get(room.team_id)
         if not team:
             return False
@@ -892,7 +910,6 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
         except Exception:
             room_id_int = None
 
-        # pošli per-user webpush len ak máme infra (model + pywebpush)
         if WebPushSubscription is not None and webpush is not None:
             for uid in user_ids:
                 try:
@@ -907,10 +924,8 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
                         data=data,
                     ))
                 except Exception:
-                    # nechceme zabiť celý send kvôli jednému userovi
                     continue
     except Exception:
-        # webpush vetvu nikdy nenecháme zhodiť celý send
         pass
 
     # -------------------------
@@ -919,12 +934,10 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
     if not user_ids:
         return sent_total
 
-    # init firebase admin app
     app = init_firebase()
     if not app:
         return sent_total
 
-    # vytiahni tokeny pre všetkých recipientov
     raw_tokens = PushToken.query.filter(PushToken.user_id.in_(user_ids)).all()
     tokens: list[str] = []
     seen = set()
@@ -939,7 +952,6 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
     if not tokens:
         return sent_total
 
-    # FCM data values musia byť string
     fcm_data: dict[str, str] = {}
     try:
         if isinstance(data, dict):
@@ -972,7 +984,6 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
         return sent_total
 
     except Exception:
-        # fallback per token (robust)
         results = []
         for tok in tokens:
             msg = messaging.Message(
@@ -996,9 +1007,6 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
 
         sent_total += sum(1 for _, ok, _ in results if ok)
         return sent_total
-
-
-
 
 
 @talker.get("/webpush/test")
@@ -1039,7 +1047,6 @@ def webpush_test():
         return jsonify(ok=True)
     except Exception as e:
         return jsonify(error="send_failed", detail=str(e)), 500
-
 
 
 @talker.get("/rooms/<int:room_id>/unread")
@@ -1100,9 +1107,6 @@ def unread_total():
         total += cnt
 
     return jsonify(total=total)
-
-
-
 
 
 @talker.post("/rooms/<int:room_id>/mark-read")

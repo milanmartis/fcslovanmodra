@@ -383,14 +383,28 @@
   // ---------------------------
   // Badge API (ak existuje)
   // ---------------------------
-  async function setBadge(count) {
-    if (!("setAppBadge" in navigator) || !("clearAppBadge" in navigator)) return;
+  function setBadge(count) {
+    count = Number(count) || 0;
+
+    // iOS/Android PWA badge API (ak existuje)
     try {
-      if (count > 0) await navigator.setAppBadge(count);
-      else await navigator.clearAppBadge();
-    } catch (e) {
-      console.log("Badge failed:", e);
-    }
+      if (navigator.setAppBadge) {
+        if (count > 0) navigator.setAppBadge(count);
+        else if (navigator.clearAppBadge) navigator.clearAppBadge();
+      }
+    } catch (e) {}
+  }
+
+  // príjem badge count zo Service Workera (iba raz – bez duplicít)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", (ev) => {
+      if (ev && ev.data && ev.data.type === "badge") {
+        setBadge(ev.data.count || 0);
+      }
+      if (ev && ev.data && ev.data.type === "open" && ev.data.url) {
+        // optional: môžeš spraviť navigáciu tu, ak chceš
+      }
+    });
   }
 
   // ---------------------------
@@ -537,11 +551,18 @@
   function canUsePush() {
     if (!("serviceWorker" in navigator)) return false;
     if (!("Notification" in window)) return false;
-    // ✅ PushManager je potrebný aj pre FCM WebPush (nie len iOS)
     if (!("PushManager" in window)) return false;
-    // iOS Web Push potrebuje PushManager
     if (isIosPwaSafari() && !("PushManager" in window)) return false;
     return true;
+  }
+
+  async function refreshTotalUnreadBadge() {
+    try {
+      const r = await fetch("/talker/unread/total", { credentials: "include" });
+      if (!r.ok) return;
+      const j = await r.json();
+      setBadge(j.total || 0);
+    } catch (e) {}
   }
 
   function urlBase64ToUint8Array(base64String) {
@@ -558,7 +579,6 @@
     if (!res.ok) throw new Error("push/config failed");
     const cfg = await res.json();
 
-    // compat: ak ešte niekde zostal starý kód, nech to nepadá
     try {
       window.__PUSH_CFG__ = cfg;
       if (cfg?.vapidPublicKey) window.vapidPublicKey = cfg.vapidPublicKey;
@@ -569,7 +589,6 @@
   }
 
   async function registerRootSW() {
-    // Jediný SW pre push + offline
     const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
     await navigator.serviceWorker.ready;
     return reg;
@@ -614,13 +633,11 @@
     const perm = await Notification.requestPermission();
     if (perm !== "granted") throw new Error("Permission not granted");
 
-    // Ak firebase nie je naloadované na tejto stránke, aspoň neskončíme ticho.
     if (!window.firebase) throw new Error("firebase not loaded in page");
 
     const firebaseCfg = cfg.firebase || {};
     if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) throw new Error("Missing firebase config");
 
-    // ✅ fallback: ak nemáš fcmVapidPublicKey, zober vapidPublicKey
     const vapidKey = cfg.fcmVapidPublicKey || cfg.vapidPublicKey;
     if (!vapidKey) throw new Error("Missing VAPID key (fcmVapidPublicKey/vapidPublicKey)");
 
@@ -664,7 +681,6 @@
       return;
     }
 
-    // UX: ak je iOS ale nie standalone
     if (isIOS() && isSafari() && !isStandalone()) {
       statusEl.textContent = "Na iOS musíš dať Add to Home Screen (PWA), až potom ide push.";
       setTimeout(() => statusEl.textContent = "", 6000);
@@ -718,6 +734,7 @@
         }
       }
 
+      await refreshTotalUnreadBadge();
       scrollToBottomHard();
       clearUnread();
     } catch (e) {
@@ -752,11 +769,7 @@
     setTimeout(() => statusEl.textContent = "", 3500);
   });
 
-  navigator.serviceWorker?.addEventListener("message", (ev) => {
-    if (ev?.data?.type === "badge") setBadge(ev.data.count || 0);
-  });
-
-  socket.on("talker_message", (m) => {
+  socket.on("talker_message", async (m) => {
     const atBottom = isNearBottom(80);
     const visible = !document.hidden;
 
@@ -765,6 +778,18 @@
     if (atBottom && visible) {
       scrollToBottomHard();
       clearUnread();
+
+      // keď si online a pri spodku, urob aj server mark-read a refresh badge
+      try {
+        await fetch(`/talker/rooms/${roomId}/mark-read`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+      } catch (e) {}
+      await refreshTotalUnreadBadge();
+
     } else {
       if (m.user_id !== myUserId) incUnread();
     }
