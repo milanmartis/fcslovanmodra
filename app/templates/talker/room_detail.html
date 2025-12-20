@@ -347,6 +347,10 @@
 <!-- Socket.IO -->
 <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
+<!-- ✅ Firebase (potrebné pre non-iOS FCM flow, lebo kód používa window.firebase) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+
 <script>
   const roomId = {{ room.id }};
   const myUserId = {{ current_user.id }};
@@ -531,6 +535,8 @@
   function canUsePush() {
     if (!("serviceWorker" in navigator)) return false;
     if (!("Notification" in window)) return false;
+    // ✅ PushManager je potrebný aj pre FCM WebPush (nie len iOS)
+    if (!("PushManager" in window)) return false;
     // iOS Web Push potrebuje PushManager
     if (isIosPwaSafari() && !("PushManager" in window)) return false;
     return true;
@@ -574,7 +580,7 @@
     if (!vapidKeyWebPush) throw new Error("Missing VAPID public key");
 
     if (!isIosPwaSafari()) {
-      throw new Error("iOS vyžaduje Add to Home Screen (standalone) + Safari");
+      throw new Error("iOS vyžaduje Safari + Add to Home Screen (standalone)");
     }
 
     await registerRootSW();
@@ -612,15 +618,31 @@
     const firebaseCfg = cfg.firebase || {};
     if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) throw new Error("Missing firebase config");
 
+    // ✅ fallback: ak nemáš fcmVapidPublicKey, zober vapidPublicKey
+    const vapidKey = cfg.fcmVapidPublicKey || cfg.vapidPublicKey;
+    if (!vapidKey) throw new Error("Missing VAPID key (fcmVapidPublicKey/vapidPublicKey)");
+
     if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseCfg);
 
     const reg = await navigator.serviceWorker.ready;
-    const messaging = firebase.messaging();
 
-    const token = await messaging.getToken({
-      vapidKey: cfg.fcmVapidPublicKey,
-      serviceWorkerRegistration: reg,
-    });
+    let messaging;
+    try {
+      messaging = firebase.messaging();
+    } catch (e) {
+      throw new Error("firebase.messaging() failed");
+    }
+
+    let token;
+    try {
+      token = await messaging.getToken({
+        vapidKey: vapidKey,
+        serviceWorkerRegistration: reg,
+      });
+    } catch (e) {
+      console.error("getToken error:", e);
+      throw new Error("FCM getToken failed");
+    }
 
     if (!token) throw new Error("no_token");
 
@@ -637,6 +659,13 @@
     if (!canUsePush()) {
       statusEl.textContent = "Push nie je podporovaný v tomto prehliadači.";
       setTimeout(() => statusEl.textContent = "", 3500);
+      return;
+    }
+
+    // UX: ak je iOS ale nie standalone
+    if (isIOS() && isSafari() && !isStandalone()) {
+      statusEl.textContent = "Na iOS musíš dať Add to Home Screen (PWA), až potom ide push.";
+      setTimeout(() => statusEl.textContent = "", 6000);
       return;
     }
 

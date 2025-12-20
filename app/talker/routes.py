@@ -30,14 +30,20 @@ except Exception:  # pragma: no cover
 from flask_login import login_user, current_user, logout_user, login_required
 from functools import wraps
 from flask import abort
+
+
 def roles_required(*roles):
     def deco(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated:
                 abort(401)
-            if not current_user.has_role(*roles):
+
+            # ✅ robust: podporí has_role aj has_roles (aby to nepadalo podľa implementácie User)
+            checker = getattr(current_user, "has_role", None) or getattr(current_user, "has_roles", None)
+            if not checker or not checker(*roles):
                 abort(403)
+
             return fn(*args, **kwargs)
         return wrapper
     return deco
@@ -132,6 +138,16 @@ function toInt(v) {{
   return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
 }}
 
+function broadcastBadge(count) {{
+  try {{
+    clients.matchAll({{ type: "window", includeUncontrolled: true }}).then((wins) => {{
+      for (const w of wins) {{
+        try {{ w.postMessage({{ type: "badge", count }}); }} catch (e) {{}}
+      }}
+    }});
+  }} catch (e) {{}}
+}}
+
 function showNotif(title, body, data) {{
   try {{
     const totalUnread = toInt(data && (data.totalUnread ?? data.total_unread ?? data.badge));
@@ -146,9 +162,12 @@ function showNotif(title, body, data) {{
       data: Object.assign({{ url, roomId }}, data || {{}}),
     }};
 
-    // iOS WebPush badge + modern browsers: používaj číselnú hodnotu
+    // ✅ FIX:
+    // NotificationOptions.badge NIE JE číslo. Je to URL na badge ikonku.
+    // Číselný badge riešime cez postMessage -> klient si zavolá navigator.setAppBadge().
     if (totalUnread !== null) {{
-      opts.badge = totalUnread;
+      opts.badge = "/static/main/ico.png";
+      broadcastBadge(totalUnread);
     }}
 
     return self.registration.showNotification(title || "Talker", opts);

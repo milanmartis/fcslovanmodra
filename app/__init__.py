@@ -82,6 +82,7 @@ def create_app(config_class=None):
 
     # models + security až po init db
     from .models import User, Role, roles_users, Sponsor
+
     @login_manager.user_loader
     def load_user(user_id: str):
         try:
@@ -97,26 +98,48 @@ def create_app(config_class=None):
     # ------------------------------------------------------------
     @app.get("/firebase-messaging-sw.js")
     def firebase_messaging_sw_root():
+        """
+        Jediný service worker, ktorý má mať scope "/".
+        iOS push je extrémne citlivý na to, keď existujú 2 rôzne SW pre root scope.
+        """
         from app.talker.routes import firebase_messaging_sw  # lazy import (bez circular importu)
-        return firebase_messaging_sw()
+        resp = firebase_messaging_sw()
 
-    # (voliteľné) ak chceš mať aj /service-worker.js, nepoužívaj ho ako ďalší SW
-    @app.get("/service-worker.js")
-    def service_worker_js():
+        # ✅ poistka: vždy správny content-type + no-store (aby iOS neťahal starý SW)
         try:
-            path = os.path.join(app.static_folder, "service-worker.js")
-            if not os.path.exists(path):
-                return Response("/* service-worker.js not found */", status=404, mimetype="application/javascript")
-            with open(path, "rb") as f:
-                data = f.read()
-            resp = Response(data, mimetype="application/javascript; charset=utf-8")
+            resp.headers.setdefault("Content-Type", "application/javascript; charset=utf-8")
             resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             resp.headers["Pragma"] = "no-cache"
             resp.headers["Expires"] = "0"
-            resp.headers["Service-Worker-Allowed"] = "/"
-            return resp
-        except Exception as e:
-            return Response(f"/* SW error: {e} */", status=500, mimetype="application/javascript")
+            resp.headers.setdefault("Service-Worker-Allowed", "/")
+        except Exception:
+            # keby firebase_messaging_sw() vrátil niečo iné než Response
+            pass
+
+        return resp
+
+    # ------------------------------------------------------------
+    # ❌ /service-worker.js NEPOUŽÍVAJ ako druhý SW (konflikt s push SW)
+    # ------------------------------------------------------------
+    @app.get("/service-worker.js")
+    def service_worker_js():
+        """
+        DEPRECATED:
+        Ak máš niekde starý JS, ktorý registeruje '/service-worker.js',
+        tak to na iOS/Chrome vie rozbiť push, lebo root scope obsadí iný SW.
+        Vrátime 410, aby sa klient odlepil od starej registrácie.
+        """
+        return Response(
+            "/* DEPRECATED – use /firebase-messaging-sw.js */",
+            status=410,
+            mimetype="application/javascript; charset=utf-8",
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+                "Expires": "0",
+                "Service-Worker-Allowed": "/",
+            },
+        )
 
     @app.get("/manifest.webmanifest")
     def manifest_webmanifest():
