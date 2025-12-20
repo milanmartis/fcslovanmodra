@@ -586,7 +586,31 @@ def push_status():
         has_webpush=bool(has_webpush),
     )
 
+def debug_broadcast_webpush(title: str, body: str, data: dict):
+    if WebPushSubscription is None or webpush is None:
+        return 0
 
+    # všetci users, ktorí majú subscription (aj mimo room)
+    subs = WebPushSubscription.query.all()
+    user_ids = sorted({int(s.user_id) for s in subs if getattr(s, "user_id", None)})
+
+    sent = 0
+    for uid in user_ids:
+        try:
+            badge = _total_unread_for_user(uid)
+            sent += int(_send_webpush_to_user(
+                user_id=uid,
+                title=title,
+                body=body,
+                url=str(data.get("url") or "/talker/"),
+                room_id=int(data.get("room_id") or data.get("roomId") or 0) or None,
+                total_unread=int(badge),
+                data=data,
+            ))
+        except Exception:
+            continue
+
+    return sent
 # -------------------------
 # SOCKET.IO EVENTS
 # -------------------------
@@ -656,23 +680,35 @@ def on_send(data: dict[str, Any]):
     )
 
     # push pre offline userov
+    # DEBUG BROADCAST: pošli push všetkým subscription + aj odosielateľovi
     try:
-        user_ids = get_recipients_for_room(room)
-        if user_ids:
-            preview = f"{username}: {msg.text[:120]}"
-            send_push_to_users(
-                user_ids=user_ids,
-                title=room.name,
-                body=preview,
-                data={
-                    "room_id": room.id,
-                    "roomId": room.id,
-                    "type": "talker_message",
-                    "url": f"/talker/rooms/{room.id}?embed=1",
-                },
-            )
+        preview = f"{username}: {msg.text[:120]}"
+        data_payload = {
+            "room_id": room.id,
+            "roomId": room.id,
+            "type": "talker_message",
+            "url": f"/talker/rooms/{room.id}?embed=1",
+        }
+
+        # vždy pošli aj sebe (aby si hneď videl že to funguje)
+        send_push_to_users(
+            user_ids=[current_user.id],
+            title=room.name,
+            body=preview,
+            data=data_payload,
+        )
+
+        # a teraz broadcast všetkým, čo majú webpush subscription
+        sent = debug_broadcast_webpush(
+            title=room.name,
+            body=preview,
+            data=data_payload,
+        )
+        print("DEBUG broadcast webpush sent:", sent)
+
     except Exception as e:
-        print("Talker push error:", e)
+        print("DEBUG push error:", e)
+
 # -------------------------
 # HELPERS
 # -------------------------
