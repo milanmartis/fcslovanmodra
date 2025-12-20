@@ -660,20 +660,47 @@ def on_send(data: dict[str, Any]):
         user_ids = get_recipients_for_room(room)
         if user_ids:
             preview = f"{username}: {msg.text[:120]}"
-            send_push_to_users(
-                user_ids=user_ids,
-                title=room.name,
-                body=preview,
-                data={
-                    "room_id": room.id,
-                    "roomId": room.id,
-                    "type": "talker_message",
-                    "url": f"/talker/rooms/{room.id}?embed=1",
-                },
-            )
+            url = f"/talker/rooms/{room.id}?embed=1"
+
+            data_payload = {
+                "room_id": room.id,
+                "roomId": room.id,
+                "type": "talker_message",
+                "url": url,
+            }
+
+            # 1) iOS/WEBPUSH per-user (kvôli badge = total_unread pre každého)
+            #    Toto je tá "istota", že iOS dostane správne notifikácie vždy.
+            try:
+                for uid in user_ids:
+                    badge = _total_unread_for_user(int(uid))
+                    _send_webpush_to_user(
+                        user_id=int(uid),
+                        title=room.name,
+                        body=preview,
+                        url=url,
+                        room_id=int(room.id),
+                        total_unread=int(badge),
+                        data=data_payload,
+                    )
+            except Exception as e:
+                print("Talker webpush error:", e)
+
+            # 2) FCM (Android/desktop) – môžeš nechať, alebo vypnúť, ak riešiš len iOS
+            try:
+                # toto pošle FCM tokenom, webpush už sme poslali vyššie
+                # ak chceš zabrániť duplicitám na webe, môžeš v send_push_to_users vypnúť webpush vetvu
+                send_push_to_users(
+                    user_ids=user_ids,
+                    title=room.name,
+                    body=preview,
+                    data=data_payload,
+                )
+            except Exception as e:
+                print("Talker fcm push error:", e)
+
     except Exception as e:
         print("Talker push error:", e)
-
 
 # -------------------------
 # HELPERS
