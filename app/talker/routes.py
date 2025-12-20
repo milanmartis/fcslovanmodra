@@ -740,22 +740,24 @@ def get_recipients_for_room(room: TalkRoom) -> list[int]:
 
     ids: list[int] = []
 
+    # room bez teamu: explicit members
     if getattr(room, "team_id", None) is None:
         members = getattr(room, "members", None) or []
         for u in members:
             uid = getattr(u, "id", None)
-            if uid and uid != me:
+            if uid and int(uid) != int(me):
                 ids.append(int(uid))
         return sorted(set(ids))
 
+    # team room: Team.members sú Users (id), nie join objekty (user_id)
     team = Team.query.get(room.team_id)
     if not team:
         return []
 
     members = getattr(team, "members", None) or []
-    for m in members:
-        uid = getattr(m, "user_id", None)
-        if uid and uid != me:
+    for u in members:
+        uid = getattr(u, "id", None)
+        if uid and int(uid) != int(me):
             ids.append(int(uid))
 
     return sorted(set(ids))
@@ -776,9 +778,10 @@ def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
         team = Team.query.get(room.team_id)
         if not team:
             return False
+
         members = getattr(team, "members", None) or []
-        for m in members:
-            if int(getattr(m, "user_id", 0) or 0) == int(user_id):
+        for u in members:
+            if int(getattr(u, "id", 0) or 0) == int(user_id):
                 return True
         return False
     except Exception:

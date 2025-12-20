@@ -214,6 +214,9 @@ def create_app(config_class=None):
 
             # ✅ TU je fix: Stripe connect endpoints (m.stripe.com/6 + stripe.com + api.stripe.com + m.stripe.network)
             "connect-src 'self' https: "
+            "https://fcm.googleapis.com "
+            "https://firebaseinstallations.googleapis.com "
+            "https://firebase.googleapis.com "
             "https://www.googleapis.com https://*.googleapis.com "
             "https://api.stripe.com https://stripe.com https://m.stripe.com https://m.stripe.network; "
         )
