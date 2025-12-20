@@ -936,6 +936,49 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
         return sent_total
 
 
+
+
+@talker.get("/webpush/test")
+@login_required
+def webpush_test():
+    if WebPushSubscription is None or webpush is None:
+        return jsonify(error="webpush_not_configured"), 501
+
+    vapid_private = (current_app.config.get("VAPID_PRIVATE_KEY") or "").strip()
+    vapid_subject = (current_app.config.get("VAPID_SUBJECT") or "mailto:admin@example.com").strip()
+    if not vapid_private:
+        return jsonify(error="missing_vapid_private"), 500
+
+    sub = WebPushSubscription.query.filter_by(user_id=current_user.id).order_by(WebPushSubscription.id.desc()).first()
+    if not sub:
+        return jsonify(error="no_subscription"), 404
+
+    payload = {
+        "title": "iOS TEST",
+        "body": "Ak toto vidíš, WebPush ide ✅",
+        "url": "/talker/",
+        "totalUnread": 1,
+        "data": {"type": "test"},
+    }
+
+    try:
+        webpush(
+            subscription_info={
+                "endpoint": sub.endpoint,
+                "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
+            },
+            data=json.dumps(payload, ensure_ascii=False),
+            vapid_private_key=vapid_private,
+            vapid_claims={"sub": vapid_subject},
+            ttl=60,
+            headers={"Urgency": "high"},
+        )
+        return jsonify(ok=True)
+    except Exception as e:
+        return jsonify(error="send_failed", detail=str(e)), 500
+
+
+
 @talker.get("/rooms/<int:room_id>/unread")
 @login_required
 def unread_for_room(room_id):
@@ -994,6 +1037,9 @@ def unread_total():
         total += cnt
 
     return jsonify(total=total)
+
+
+
 
 
 @talker.post("/rooms/<int:room_id>/mark-read")
