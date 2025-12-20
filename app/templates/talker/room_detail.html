@@ -752,6 +752,10 @@
     setTimeout(() => statusEl.textContent = "", 3500);
   });
 
+  navigator.serviceWorker?.addEventListener("message", (ev) => {
+    if (ev?.data?.type === "badge") setBadge(ev.data.count || 0);
+  });
+
   socket.on("talker_message", (m) => {
     const atBottom = isNearBottom(80);
     const visible = !document.hidden;
