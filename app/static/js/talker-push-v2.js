@@ -268,4 +268,5 @@
       refreshBadgeFromBackend().catch(() => {});
     }
   });
+  window.enablePush = enablePush;
 })();

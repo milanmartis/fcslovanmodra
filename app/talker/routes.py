@@ -93,6 +93,8 @@ def firebase_messaging_sw():
 
     js = f"""\
 /* /firebase-messaging-sw.js (ROOT) */
+importScripts("/static/vendor/firebase/firebase-app-compat.js");
+importScripts("/static/vendor/firebase/firebase-messaging-compat.js");
 "use strict";
 
 // -------------------------
