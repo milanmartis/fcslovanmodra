@@ -684,7 +684,7 @@ def on_send(data: dict[str, Any]):
     )
 
     # push pre offline userov
-    # DEBUG BROADCAST: pošli push všetkým subscription + aj odosielateľovi
+    # ✅ ZMENA: posielaj push iba recipientom danej room/team a nikdy nie odosielateľovi
     try:
         preview = f"{username}: {msg.text[:120]}"
         data_payload = {
@@ -694,24 +694,20 @@ def on_send(data: dict[str, Any]):
             "url": f"/talker/rooms/{room.id}?embed=1",
         }
 
-        # vždy pošli aj sebe (aby si hneď videl že to funguje)
-        send_push_to_users(
-            user_ids=[current_user.id],
-            title=room.name,
-            body=preview,
-            data=data_payload,
-        )
-
-        # a teraz broadcast všetkým, čo majú webpush subscription
-        sent = debug_broadcast_webpush(
-            title=room.name,
-            body=preview,
-            data=data_payload,
-        )
-        print("DEBUG broadcast webpush sent:", sent)
+        recipients = get_recipients_for_room(room)  # už vylučuje current_user a filtruje podľa team/room membership
+        if recipients:
+            sent = send_push_to_users(
+                user_ids=recipients,
+                title=room.name,
+                body=preview,
+                data=data_payload,
+            )
+            print("push sent:", sent, "recipients:", recipients)
+        else:
+            print("push: no recipients for room", room.id)
 
     except Exception as e:
-        print("DEBUG push error:", e)
+        print("push error:", e)
 
 # -------------------------
 # HELPERS

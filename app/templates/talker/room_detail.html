@@ -28,6 +28,39 @@
     --vh: 1vh;
   }
 
+  /* --- Minimal scrollbar (tvoj štýl) --- */
+  /* Firefox */
+  .talker-scroll{
+    scrollbar-width: thin;
+    scrollbar-color: rgba(92,159,255,.28) transparent;
+  }
+  /* Chromium / Safari */
+  .talker-scroll::-webkit-scrollbar{
+    width: 8px;
+    height: 8px;
+  }
+  .talker-scroll::-webkit-scrollbar-track{
+    background: transparent;
+  }
+  .talker-scroll::-webkit-scrollbar-thumb{
+    background: rgba(92,159,255,.18);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  .talker-scroll::-webkit-scrollbar-thumb:hover{
+    background: rgba(92,159,255,.32);
+  }
+  .talker-scroll::-webkit-scrollbar-thumb:active{
+    background: rgba(92,159,255,.45);
+  }
+  @media (pointer: coarse){
+    .talker-scroll::-webkit-scrollbar{
+      width: 6px;
+      height: 6px;
+    }
+  }
+
   .talker-page{
     min-height: calc(var(--vh) * 100);
     background:
@@ -137,11 +170,16 @@
     color: rgba(255,255,255,.92);
     font-weight: 800;
     cursor: pointer;
-    transition: transform .08s ease, filter .2s ease, background .2s ease;
+    transition: transform .08s ease, filter .2s ease, background .2s ease, border-color .2s ease;
     user-select:none;
+    white-space: nowrap;
   }
   .push-btn:active{ transform: scale(.98); }
   .push-btn[disabled]{ opacity:.5; cursor:not-allowed; }
+  .push-btn.on{
+    border-color: rgba(92,159,255,.45);
+    background: rgba(92,159,255,.12);
+  }
 
   .talker-badge{
     display:flex;
@@ -284,6 +322,7 @@
     font-size: 12px;
     color: var(--muted);
     padding: 6px 2px 0;
+    min-height: 18px;
   }
 
   @media (max-width: 520px){
@@ -304,11 +343,11 @@
 
     <div class="talker-header">
       <div class="talker-title">
-        <h2>{{ room.name }}</h2>
         <p class="talker-sub">Najnovšie správy sú dole</p>
       </div>
 
       <div class="talker-actions">
+        <!--
         <div class="unread-pill" id="unreadPill" title="Neprečítané v tejto miestnosti">
           <span class="unread-dot"></span>
           <span id="unreadCount">0</span>
@@ -316,7 +355,8 @@
         <a class="push-btn" href="/talker/webpush/test" style="text-decoration:none; display:inline-flex; align-items:center;">
           Test push
         </a>
-        <button class="push-btn" id="pushBtn" type="button">Zapnúť push</button>
+        -->
+        <button class="push-btn" id="pushBtn" type="button">Push…</button>
 
         <div class="talker-badge" id="conn">
           <span id="dot" class="dot"></span>
@@ -385,8 +425,6 @@
   // ---------------------------
   function setBadge(count) {
     count = Number(count) || 0;
-
-    // iOS/Android PWA badge API (ak existuje)
     try {
       if (navigator.setAppBadge) {
         if (count > 0) navigator.setAppBadge(count);
@@ -395,14 +433,13 @@
     } catch (e) {}
   }
 
-  // príjem badge count zo Service Workera (iba raz – bez duplicít)
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("message", (ev) => {
       if (ev && ev.data && ev.data.type === "badge") {
         setBadge(ev.data.count || 0);
       }
       if (ev && ev.data && ev.data.type === "open" && ev.data.url) {
-        // optional: môžeš spraviť navigáciu tu, ak chceš
+        // optional
       }
     });
   }
@@ -503,6 +540,23 @@
     updateSendState();
   });
 
+  // ✅ ENTER = send, SHIFT+ENTER = newline
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    if (e.isComposing) return;
+
+    // Shift+Enter -> nový riadok
+    if (e.shiftKey) return;
+
+    // Enter -> odoslať
+    e.preventDefault();
+    if (!sendBtn.disabled) {
+      // requestSubmit spustí form submit handler korektne
+      if (typeof formEl.requestSubmit === "function") formEl.requestSubmit();
+      else formEl.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+    }
+  });
+
   function renderMessage(m) {
     const mine = (m.user_id === myUserId);
     const row = document.createElement("div");
@@ -531,8 +585,10 @@
   }
 
   // ---------------------------
-  // PUSH enable (iOS WebPush / non-iOS FCM)
+  // PUSH enable/disable (iOS WebPush / non-iOS FCM)
   // ---------------------------
+  const LS_PUSH_ENABLED = "talker:pushEnabled"; // 1 / 0
+
   function isStandalone() {
     return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
   }
@@ -554,6 +610,20 @@
     if (!("PushManager" in window)) return false;
     if (isIosPwaSafari() && !("PushManager" in window)) return false;
     return true;
+  }
+
+  function setPushUiEnabled(enabled) {
+    pushBtn.classList.toggle("on", !!enabled);
+    pushBtn.textContent = enabled ? "Vypnúť push" : "Zapnúť push";
+  }
+
+  function getPushEnabled() {
+    return localStorage.getItem(LS_PUSH_ENABLED) === "1";
+  }
+
+  function setPushEnabledLocal(enabled) {
+    localStorage.setItem(LS_PUSH_ENABLED, enabled ? "1" : "0");
+    setPushUiEnabled(enabled);
   }
 
   async function refreshTotalUnreadBadge() {
@@ -665,6 +735,9 @@
 
     if (!token) throw new Error("no_token");
 
+    // uložiť si posledný FCM token lokálne, aby sa dal unregisternúť aj keď sa neskôr zmení stránka
+    try { localStorage.setItem("talker:lastFcmToken", token); } catch(e) {}
+
     const rr = await fetch("/talker/push/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -674,41 +747,132 @@
     if (!rr.ok) throw new Error("push/register failed: " + (await rr.text()));
   }
 
-  async function enablePush() {
+  async function enablePushFlow() {
     if (!canUsePush()) {
-      statusEl.textContent = "Push nie je podporovaný v tomto prehliadači.";
+      throw new Error("Push nie je podporovaný v tomto prehliadači.");
+    }
+
+    if (isIOS() && isSafari() && !isStandalone()) {
+      throw new Error("Na iOS musíš dať Add to Home Screen (PWA), až potom ide push.");
+    }
+
+    if (Notification.permission === "denied") {
+      throw new Error("Push sú zablokované v prehliadači. Povoľ ich v nastaveniach webu.");
+    }
+
+    if (isIosPwaSafari()) {
+      await enableWebPushIOS();
+    } else {
+      await enableFcmNonIOS();
+    }
+  }
+
+  async function disablePushFlow() {
+    // 1) Odhlás WebPush subscription (iOS flow)
+    try {
+      const reg = await navigator.serviceWorker.getRegistration("/") || await navigator.serviceWorker.getRegistration();
+      if (reg && reg.pushManager) {
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          // server-side cleanup (ak endpoint existuje)
+          try {
+            await fetch("/talker/webpush/unsubscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ endpoint: sub.endpoint }),
+            });
+          } catch (e) {}
+          await sub.unsubscribe();
+        }
+      }
+    } catch (e) {}
+
+    // 2) Zmaž FCM token
+    try {
+      const cfg = window.__PUSH_CFG__ || await getPushConfig();
+      const firebaseCfg = cfg.firebase || {};
+      const vapidKey = cfg.fcmVapidPublicKey || cfg.vapidPublicKey;
+
+      if (window.firebase && vapidKey && firebaseCfg && firebaseCfg.messagingSenderId && firebaseCfg.appId) {
+        if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseCfg);
+
+        const reg = await navigator.serviceWorker.ready;
+        const messaging = firebase.messaging();
+
+        // najprv skús deleteToken priamo (zmaže aktuálny token)
+        let deletedOk = false;
+        try {
+          deletedOk = await messaging.deleteToken();
+        } catch (e) {}
+
+        // server-side cleanup: pošli token (ak ho máme)
+        const lastTok = localStorage.getItem("talker:lastFcmToken");
+        if (lastTok) {
+          try {
+            await fetch("/talker/push/unregister", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ token: lastTok }),
+            });
+          } catch (e) {}
+          try { localStorage.removeItem("talker:lastFcmToken"); } catch(e) {}
+        }
+
+        // ak deleteToken zlyhá, stále sme serveru povedali unregister (ak endpoint existuje)
+        void(deletedOk);
+      }
+    } catch (e) {}
+  }
+
+  async function setPushEnabled(enabled) {
+    // UI + local flag
+    setPushEnabledLocal(!!enabled);
+
+    if (!enabled) {
+      statusEl.textContent = "Vypínam push…";
+      await disablePushFlow();
+      statusEl.textContent = "Push vypnuté.";
       setTimeout(() => statusEl.textContent = "", 3500);
       return;
     }
 
-    if (isIOS() && isSafari() && !isStandalone()) {
-      statusEl.textContent = "Na iOS musíš dať Add to Home Screen (PWA), až potom ide push.";
-      setTimeout(() => statusEl.textContent = "", 6000);
+    statusEl.textContent = "Zapínam push…";
+    await enablePushFlow();
+    statusEl.textContent = "Push zapnuté ✅";
+    setTimeout(() => statusEl.textContent = "", 4000);
+  }
+
+  async function initPushToggle() {
+    // default = OFF, ak nič nie je uložené
+    const saved = localStorage.getItem(LS_PUSH_ENABLED);
+    const enabled = (saved === "1");
+    setPushUiEnabled(enabled);
+
+    if (!canUsePush()) {
+      pushBtn.disabled = true;
+      statusEl.textContent = "Push nie je podporovaný v tomto prehliadači.";
       return;
     }
 
-    pushBtn.disabled = true;
-    statusEl.textContent = "Zapínam push…";
-
-    try {
-      if (isIosPwaSafari()) {
-        await enableWebPushIOS();
-        statusEl.textContent = "Hotovo ✅ (iOS Web Push)";
-      } else {
-        await enableFcmNonIOS();
-        statusEl.textContent = "Hotovo ✅ (FCM)";
+    pushBtn.addEventListener("click", async () => {
+      pushBtn.disabled = true;
+      try {
+        await setPushEnabled(!getPushEnabled());
+      } catch (e) {
+        console.error(e);
+        // ak zapínanie zlyhá, vráť toggle späť na OFF
+        setPushEnabledLocal(false);
+        statusEl.textContent = "Nepodarilo sa: " + (e && e.message ? e.message : "error");
+        setTimeout(() => statusEl.textContent = "", 6500);
+      } finally {
+        pushBtn.disabled = false;
       }
-      setTimeout(() => statusEl.textContent = "", 4000);
-    } catch (e) {
-      console.error(e);
-      statusEl.textContent = "Nepodarilo sa: " + (e && e.message ? e.message : "error");
-      setTimeout(() => statusEl.textContent = "", 6000);
-    } finally {
-      pushBtn.disabled = false;
-    }
+    });
   }
 
-  if (pushBtn) pushBtn.addEventListener("click", enablePush);
+  initPushToggle();
 
   // ---------------------------
   // initial load messages + unread bootstrap
@@ -779,7 +943,6 @@
       scrollToBottomHard();
       clearUnread();
 
-      // keď si online a pri spodku, urob aj server mark-read a refresh badge
       try {
         await fetch(`/talker/rooms/${roomId}/mark-read`, {
           method: "POST",
@@ -814,6 +977,12 @@
 
   autoResize();
   updateSendState();
+
+  if ("clearAppBadge" in navigator) {
+    navigator.clearAppBadge();
+  } else if ("setAppBadge" in navigator) {
+    navigator.setAppBadge(0);
+  }
 </script>
 
 {% endblock %}

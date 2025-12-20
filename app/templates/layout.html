@@ -586,5 +586,35 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
     }
     </script>
       
+    <script>
+      // App badge (PWA icon) – prijmi badge count zo Service Workera
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", async (event) => {
+    const msg = event?.data || {};
+    if (msg.type !== "badge") return;
+
+    const count = Number(msg.count);
+    try {
+      // Badging API: iOS Safari (PWA) podporuje od iOS/iPadOS 16.4; desktop tiež.
+      if ("setAppBadge" in navigator) {
+        if (Number.isFinite(count) && count > 0) {
+          await navigator.setAppBadge(count);
+        } else {
+          // vynulovanie
+          if ("clearAppBadge" in navigator) {
+            await navigator.clearAppBadge();
+          } else {
+            // fallback: setAppBadge(0) niekde robí "dot"; preto radšej clear ak existuje
+            await navigator.setAppBadge(0);
+          }
+        }
+      }
+    } catch (e) {
+      // ticho – nie všetky platformy to podporujú
+    }
+  });
+}
+    </script>
+
 </body>
 </html>
