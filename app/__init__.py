@@ -54,11 +54,11 @@ def create_app(config_class=None):
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=365)
     app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", DEFAULT_ENGINE_OPTIONS)
 
-    # ✅ Firebase init až tu (nie pri importe)
-    try:
-        init_firebase()
-    except Exception:
-        pass
+    # # ✅ Firebase init až tu (nie pri importe)
+    # try:
+    #     init_firebase()
+    # except Exception:
+    #     pass
 
     def safe_slug(value):
         try:

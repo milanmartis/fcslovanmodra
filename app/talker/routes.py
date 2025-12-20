@@ -93,14 +93,18 @@ def firebase_messaging_sw():
 
     js = f"""\
 /* /firebase-messaging-sw.js (ROOT) */
-importScripts("/static/vendor/firebase/firebase-app-compat.js");
-importScripts("/static/vendor/firebase/firebase-messaging-compat.js");
 "use strict";
 
 // -------------------------
 // Firebase (FCM) SW
 // -------------------------
-
+try {{
+  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
+  // SW build pre messaging
+  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-sw.js");
+}} catch (e) {{
+  console.error("FCM SW importScripts failed:", e);
+}}
 
 const FIREBASE_CONFIG = {cfg_json};
 
