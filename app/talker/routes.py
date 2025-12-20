@@ -99,9 +99,8 @@ def firebase_messaging_sw():
 // Firebase (FCM) SW
 // -------------------------
 try {{
-  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-  // SW build pre messaging
-  importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-sw.js");
+importScripts("https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js");
+importScripts("https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js");
 }} catch (e) {{
   console.error("FCM SW importScripts failed:", e);
 }}

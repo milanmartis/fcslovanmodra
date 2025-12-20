@@ -1,9 +1,8 @@
 /* /firebase-messaging-sw.js */
 
 // ✅ Firebase musí byť mimo komentára
-importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
-
+importScripts("https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js");
+importScripts("https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js");
 // ------------------------------
 // Helpers
 // ------------------------------

@@ -95,10 +95,25 @@ def create_app(config_class=None):
     # ------------------------------------------------------------
     # ✅ ROOT /firebase-messaging-sw.js – mapuje sa na talker.routes
     # ------------------------------------------------------------
-    @app.get("/firebase-messaging-sw.js")
-    def firebase_messaging_sw_root():
-        from app.talker.routes import firebase_messaging_sw  # lazy import (bez circular importu)
-        return firebase_messaging_sw()
+    from flask import make_response, send_from_directory
+
+    @app.route("/firebase-messaging-sw.js")
+    def service_worker():
+        resp = make_response(send_from_directory("static", "js/firebase-messaging-sw.js"))
+
+        # dôležité pre SW
+        resp.headers["Content-Type"] = "application/javascript; charset=utf-8"
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+
+        # ak máš globálny CSP, tu to prepíš tak, aby importScripts z gstatic prešiel
+        resp.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' https://www.gstatic.com; "
+            "connect-src 'self' https://fcm.googleapis.com https://firebaseinstallations.googleapis.com https://www.googleapis.com; "
+        )
+
+        return resp
 
     # (voliteľné) ak chceš mať aj /service-worker.js, nepoužívaj ho ako ďalší SW
     @app.get("/service-worker.js")
