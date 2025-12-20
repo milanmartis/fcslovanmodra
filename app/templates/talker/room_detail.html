@@ -510,19 +510,158 @@
     listEl.appendChild(row);
   }
 
-  if (pushBtn) {
-    pushBtn.addEventListener("click", async () => {
-      // talker-push-v2.js by mal mať globálnu funkciu
-      if (typeof window.enablePush === "function") {
-        await window.enablePush();
-      } else if (typeof window.talkerEnablePush === "function") {
-        await window.talkerEnablePush();
-      } else {
-        statusEl.textContent = "Push modul nie je načítaný (talker-push-v2.js).";
-        setTimeout(() => statusEl.textContent = "", 4000);
-      }
-    });
+  // ---------------------------
+  // PUSH enable (iOS WebPush / non-iOS FCM)
+  // ---------------------------
+  function isStandalone() {
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
   }
+  function isIOS() {
+    const ua = navigator.userAgent || "";
+    return /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+  function isSafari() {
+    const ua = navigator.userAgent || "";
+    return /^((?!chrome|crios|fxios|android).)*safari/i.test(ua);
+  }
+  function isIosPwaSafari() {
+    return isIOS() && isSafari() && isStandalone();
+  }
+
+  function canUsePush() {
+    if (!("serviceWorker" in navigator)) return false;
+    if (!("Notification" in window)) return false;
+    // iOS Web Push potrebuje PushManager
+    if (isIosPwaSafari() && !("PushManager" in window)) return false;
+    return true;
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  async function getPushConfig() {
+    const res = await fetch("/talker/push/config", { credentials: "include" });
+    if (!res.ok) throw new Error("push/config failed");
+    const cfg = await res.json();
+
+    // compat: ak ešte niekde zostal starý kód, nech to nepadá
+    try {
+      window.__PUSH_CFG__ = cfg;
+      if (cfg?.vapidPublicKey) window.vapidPublicKey = cfg.vapidPublicKey;
+      if (cfg?.fcmVapidPublicKey) window.fcmVapidPublicKey = cfg.fcmVapidPublicKey;
+    } catch (_) {}
+
+    return cfg;
+  }
+
+  async function registerRootSW() {
+    // Jediný SW pre push + offline
+    const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
+    return reg;
+  }
+
+  async function enableWebPushIOS() {
+    const cfg = await getPushConfig();
+
+    const vapidKeyWebPush = cfg.vapidPublicKey || cfg.fcmVapidPublicKey;
+    if (!vapidKeyWebPush) throw new Error("Missing VAPID public key");
+
+    if (!isIosPwaSafari()) {
+      throw new Error("iOS vyžaduje Add to Home Screen (standalone) + Safari");
+    }
+
+    await registerRootSW();
+
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") throw new Error("Permission not granted");
+
+    const reg = await navigator.serviceWorker.ready;
+
+    const existing = await reg.pushManager.getSubscription();
+    const sub = existing || await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKeyWebPush),
+    });
+
+    const r = await fetch("/talker/webpush/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(sub.toJSON()),
+    });
+    if (!r.ok) throw new Error("webpush/subscribe failed: " + (await r.text()));
+  }
+
+  async function enableFcmNonIOS() {
+    const cfg = await getPushConfig();
+    await registerRootSW();
+
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") throw new Error("Permission not granted");
+
+    // Ak firebase nie je naloadované na tejto stránke, aspoň neskončíme ticho.
+    if (!window.firebase) throw new Error("firebase not loaded in page");
+
+    const firebaseCfg = cfg.firebase || {};
+    if (!firebaseCfg.messagingSenderId || !firebaseCfg.appId) throw new Error("Missing firebase config");
+
+    if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseCfg);
+
+    const reg = await navigator.serviceWorker.ready;
+    const messaging = firebase.messaging();
+
+    const token = await messaging.getToken({
+      vapidKey: cfg.fcmVapidPublicKey,
+      serviceWorkerRegistration: reg,
+    });
+
+    if (!token) throw new Error("no_token");
+
+    const rr = await fetch("/talker/push/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ token, platform: "web", device: navigator.userAgent }),
+    });
+    if (!rr.ok) throw new Error("push/register failed: " + (await rr.text()));
+  }
+
+  async function enablePush() {
+    if (!canUsePush()) {
+      statusEl.textContent = "Push nie je podporovaný v tomto prehliadači.";
+      setTimeout(() => statusEl.textContent = "", 3500);
+      return;
+    }
+
+    pushBtn.disabled = true;
+    statusEl.textContent = "Zapínam push…";
+
+    try {
+      if (isIosPwaSafari()) {
+        await enableWebPushIOS();
+        statusEl.textContent = "Hotovo ✅ (iOS Web Push)";
+      } else {
+        await enableFcmNonIOS();
+        statusEl.textContent = "Hotovo ✅ (FCM)";
+      }
+      setTimeout(() => statusEl.textContent = "", 4000);
+    } catch (e) {
+      console.error(e);
+      statusEl.textContent = "Nepodarilo sa: " + (e && e.message ? e.message : "error");
+      setTimeout(() => statusEl.textContent = "", 6000);
+    } finally {
+      pushBtn.disabled = false;
+    }
+  }
+
+  if (pushBtn) pushBtn.addEventListener("click", enablePush);
 
   // ---------------------------
   // initial load messages + unread bootstrap
