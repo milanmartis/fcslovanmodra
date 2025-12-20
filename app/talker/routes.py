@@ -660,19 +660,48 @@ def on_send(data: dict[str, Any]):
         user_ids = get_recipients_for_room(room)
         if user_ids:
             preview = f"{username}: {msg.text[:120]}"
-            send_push_to_users(
-                user_ids=user_ids,
-                title=room.name,
-                body=preview,
-                data={
-                    "room_id": room.id,
-                    "roomId": room.id,
-                    "type": "talker_message",
-                    "url": f"/talker/rooms/{room.id}?embed=1",
-                },
-            )
+            url = f"/talker/rooms/{room.id}?embed=1"
+
+            data_payload = {
+                "room_id": room.id,
+                "roomId": room.id,
+                "type": "talker_message",
+                "url": url,
+            }
+
+            # 1) iOS/WEBPUSH per-user (kvôli badge = total_unread pre každého)
+            #    Toto je tá "istota", že iOS dostane správne notifikácie vždy.
+            try:
+                for uid in user_ids:
+                    badge = _total_unread_for_user(int(uid))
+                    _send_webpush_to_user(
+                        user_id=int(uid),
+                        title=room.name,
+                        body=preview,
+                        url=url,
+                        room_id=int(room.id),
+                        total_unread=int(badge),
+                        data=data_payload,
+                    )
+            except Exception as e:
+                print("Talker webpush error:", e)
+
+            # 2) FCM (Android/desktop) – môžeš nechať, alebo vypnúť, ak riešiš len iOS
+            try:
+                # toto pošle FCM tokenom, webpush už sme poslali vyššie
+                # ak chceš zabrániť duplicitám na webe, môžeš v send_push_to_users vypnúť webpush vetvu
+                send_push_to_users(
+                    user_ids=user_ids,
+                    title=room.name,
+                    body=preview,
+                    data=data_payload,
+                )
+            except Exception as e:
+                print("Talker fcm push error:", e)
+
     except Exception as e:
         print("Talker push error:", e)
+
 # -------------------------
 # HELPERS
 # -------------------------
@@ -829,70 +858,50 @@ def _send_webpush_to_user(user_id: int, title: str, body: str, url: str, room_id
 
 def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | None = None) -> int:
     """
-    Hybrid "jedno miesto pravdy":
-
-      1) WebPush per-user (iOS PWA) – kvôli badge (total_unread) musí byť per-user
-      2) FCM multicast (Android/desktop) – tokeny z PushToken
-
-    Poznámky:
-      - WebPush sa posiela aj keď user nemá FCM token
-      - FCM sa posiela aj keď user nemá WebPush subscription
-      - payload data musí byť string -> FCM vyžaduje string values
+    Hybrid:
+      - WebPush → WebPushSubscription (iOS PWA)  [per-user badge]
+      - FCM → PushToken (Android/desktop)
     """
     sent_total = 0
-    data = data or {}
 
     # -------------------------
-    # WebPush (iOS) – PER USER
+    # WebPush (iOS) – per-user
     # -------------------------
     try:
-        url = (data.get("url") or "/talker/") if isinstance(data, dict) else "/talker/"
-        room_id = data.get("room_id") if isinstance(data, dict) else None
-        if room_id is None and isinstance(data, dict):
-            room_id = data.get("roomId")
-
+        url = (data or {}).get("url") or "/talker/"
+        room_id = (data or {}).get("room_id") or (data or {}).get("roomId")
         try:
             room_id_int = int(room_id) if room_id is not None else None
         except Exception:
             room_id_int = None
 
-        # pošli per-user webpush len ak máme infra (model + pywebpush)
-        if WebPushSubscription is not None and webpush is not None:
-            for uid in user_ids:
-                try:
-                    badge = _total_unread_for_user(int(uid))
-                    sent_total += int(_send_webpush_to_user(
-                        user_id=int(uid),
-                        title=title,
-                        body=body,
-                        url=str(url),
-                        room_id=room_id_int,
-                        total_unread=int(badge),
-                        data=data,
-                    ))
-                except Exception:
-                    # nechceme zabiť celý send kvôli jednému userovi
-                    continue
+        for uid in user_ids:
+            badge = _total_unread_for_user(int(uid))
+            sent_total += int(_send_webpush_to_user(
+                user_id=int(uid),
+                title=title,
+                body=body,
+                url=str(url),
+                room_id=room_id_int,
+                total_unread=badge,
+                data=data,
+            ))
     except Exception:
-        # webpush vetvu nikdy nenecháme zhodiť celý send
         pass
 
     # -------------------------
-    # FCM (multicast) – tokeny
+    # FCM (spoločný multicast)
     # -------------------------
     if not user_ids:
         return sent_total
 
-    # init firebase admin app
     app = init_firebase()
     if not app:
         return sent_total
 
-    # vytiahni tokeny pre všetkých recipientov
     raw_tokens = PushToken.query.filter(PushToken.user_id.in_(user_ids)).all()
     tokens: list[str] = []
     seen = set()
-
     for t in raw_tokens:
         tok = (t.token or "").strip() if t else ""
         if not tok or tok in seen:
@@ -903,17 +912,9 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
     if not tokens:
         return sent_total
 
-    # FCM data values musia byť string
-    fcm_data: dict[str, str] = {}
-    try:
-        if isinstance(data, dict):
-            fcm_data = {str(k): str(v) for k, v in data.items()}
-    except Exception:
-        fcm_data = {}
-
     mm = messaging.MulticastMessage(
         notification=messaging.Notification(title=title, body=body),
-        data=fcm_data,
+        data={k: str(v) for k, v in (data or {}).items()},
         tokens=tokens,
     )
 
@@ -936,12 +937,12 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
         return sent_total
 
     except Exception:
-        # fallback per token (robust)
+        # fallback per token
         results = []
         for tok in tokens:
             msg = messaging.Message(
                 notification=messaging.Notification(title=title, body=body),
-                data=fcm_data,
+                data={k: str(v) for k, v in (data or {}).items()},
                 token=tok,
             )
             try:
@@ -960,7 +961,6 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
 
         sent_total += sum(1 for _, ok, _ in results if ok)
         return sent_total
-
 
 
 
