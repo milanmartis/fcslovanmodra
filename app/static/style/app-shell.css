@@ -1,0 +1,29 @@
+/* App content wrapper */
+.app-content {
+    padding: 10px;
+  }
+  
+  /* Calendar modal: nech sa správa ako "app screen" */
+  .calendar-modal-content {
+    max-height: 100vh;
+  }
+  
+  .calendar-modal-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fullscreen na mobile – Bootstrap trieda modal-fullscreen-md-down to spraví,
+     ale doplníme istotu pre výšku + safe-area */
+  @media (max-width: 768px) {
+    #calendarModal .modal-content {
+      height: 100vh;
+      border-radius: 0 !important;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  
+    #calendarModal .modal-body {
+      overflow-y: auto;
+    }
+  }
+  

@@ -1,6 +1,9 @@
-{% extends 'layout.html' %} 
+{% extends 'layout.html' %}
 {% block content %}
-{{ event.title }}
-{{ event.start_event }}
-{{ event.end_event }}
+  <h3>{{ event.title }}</h3>
+  <div>{{ event.start_event }} → {{ event.end_event }}</div>
+  <div>Tím: {{ event.team.name if event.team else event.event_team_id }}</div>
+  <div>Kategória: {{ event.category.name if event.category else event.event_category_id }}</div>
+  {% if event.address %}<div>Adresa: {{ event.address }}</div>{% endif %}
+  {% if event.link %}<div>Link: <a href="{{ event.link }}" target="_blank">{{ event.link }}</a></div>{% endif %}
 {% endblock %}

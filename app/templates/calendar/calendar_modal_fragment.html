@@ -1,0 +1,597 @@
+{# templates/calendar/calendar_modal_fragment.html #}
+
+<style>
+    /* jednotné pozadie kalendára */
+    #schedule-calendar,
+    #schedule-calendar .fc-view,
+    #schedule-calendar .fc-body,
+    #schedule-calendar .fc-bg,
+    #schedule-calendar .fc-bg table,
+    #schedule-calendar .fc-row,
+    #schedule-calendar .fc-content-skeleton,
+    #schedule-calendar .fc-day-grid,
+    #schedule-calendar .fc-day-grid-container {
+      background: #121212 !important;
+    }
+    #schedule-calendar .fc-other-month { background: #121212 !important; opacity: 1 !important; }
+    #schedule-calendar td.fc-today {
+      background: #121212 !important;
+      box-shadow: inset 0 0 0 2px rgba(109,155,255,0.35);
+    }
+  
+    @keyframes fadeInBounce {
+      0% { opacity: 0; transform: scale(0.5); }
+      50% { transform: scale(1.3); }
+      70% { transform: scale(0.7); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .fade-in-bounce-event { animation: fadeInBounce 0.5s ease-in-out; }
+  
+    @keyframes fadeOutBounce {
+      0% { opacity: 1; transform: scale(1); }
+      30% { transform: scale(1.3); }
+      50% { transform: scale(0.7); }
+      100% { opacity: 0; transform: scale(0.5); }
+    }
+    .fade-out-bounce-event { animation: fadeOutBounce 0.6s ease-in-out; }
+  
+    /* malé “chips” v evente */
+    .fc-event .ev-chip {
+      display:inline-block;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      margin-left: 6px;
+      border: 1px solid rgba(109,155,255,0.35);
+      background: rgba(109,155,255,0.12);
+      color: rgba(255,255,255,0.9);
+    }
+  
+    /* modaly (tvoje pôvodné farby) */
+    #schedule-add .modal-content,
+    #schedule-edit .modal-content,
+    #confirm-delete .modal-content {
+      background-color: #000;
+      border: 2px solid #6d9bff;
+    }
+  </style>
+  
+  <div class="calendar-fragment">
+    <div id="schedule-calendar"></div>
+  
+    <!-- Confirm delete modal -->
+    <div
+      class="modal fade"
+      id="confirm-delete"
+      tabindex="-1"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            Are you sure to delete this shedule?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-delete-confirm" id="delete-confirmed-submit">
+              Delete
+            </button>
+            <button type="button" class="btn btn-ok" data-bs-dismiss="modal">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Info modals -->
+    <div id="info-updated" class="modal fade" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <h1>Shedule updated successfully</h1>
+      </div>
+    </div>
+  
+    <div id="info-added" class="modal fade" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <h1>Shedule added</h1>
+      </div>
+    </div>
+  
+    {# --- Práva --- #}
+    {% set is_admin = (current_user.is_authenticated and (current_user.has_roles('Admin') or current_user.has_roles('WebAdmin'))) %}
+    {% set is_trener = (current_user.is_authenticated and current_user.has_roles('Trener')) %}
+    {% set editable_team_ids = editable_team_ids if editable_team_ids is defined else [] %}
+  
+    <!-- Add Modal -->
+    {% if current_user.is_authenticated %}
+    <div class="modal fade" id="schedule-add" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-fullscreen-md-down">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">Add New Schedule</h3>
+            <button type="button" class="btn btnclose" data-bs-dismiss="modal">X</button>
+          </div>
+  
+          <div class="modal-body">
+            <form action="javascript:;">
+              <input type="hidden" id="id" name="id" class="form-control" />
+  
+              <div class="form-group">
+                {{ form.title.label(class="form-control-label") }}
+                {{ form.title(class="form-control form-control-lg") }}
+              </div>
+  
+              <div class="form-group">
+                {{ form.category.label(class="form-control-label") }}
+                {{ form.category(class="form-control form-control-lg") }}
+              </div>
+  
+              <div class="form-group">
+                {{ form.team.label(class="form-control-label") }}
+                {{ form.team(class="form-control form-control-lg") }}
+              </div>
+  
+              <div class="row">
+                <div class="form-group col-6">
+                  {{ form.start.label(class="form-control-label") }}
+                  {{ form.start(readonly="readonly", class="form-control", type="datetime",
+                    style="text-align:center;background-color:aliceblue;color:#000;cursor:pointer;") }}
+                </div>
+  
+                <div class="form-group col-6">
+                  {{ form.end.label(class="form-control-label") }}
+                  {{ form.end(readonly="readonly", class="form-control", type="datetime",
+                    style="text-align:center;background-color:aliceblue;color:#000;cursor:pointer;") }}
+                </div>
+  
+                <div class="form-group col-6">
+                  {{ form.address.label(class="form-control-label") }}
+                  {{ form.address(class="form-control form-control-lg") }}
+                </div>
+  
+                <div class="form-group col-6">
+                  {{ form.link.label(class="form-control-label") }}
+                  {{ form.link(class="form-control form-control-lg") }}
+                </div>
+              </div>
+  
+              <div class="form-group" style="float:right;">
+                <submit id="add-submit" type="button" class="btn btn-ok">Save</submit>
+              </div>
+            </form>
+          </div>
+  
+          <div class="modal-footer"></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  
+    {# disable pre edit inputs #}
+    {% if is_admin or is_trener %}
+      {% set disable = '' %}
+    {% else %}
+      {% set disable = 'disabled' %}
+    {% endif %}
+  
+    <!-- Edit Modal -->
+    <div class="modal fade" id="schedule-edit" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-fullscreen-md-down">
+        <div class="modal-content">
+          <div class="modal-header">
+            {% if is_admin or is_trener %}
+              <h3 class="modal-title">Edit Your Schedule</h3>
+            {% else %}
+              <center>
+                <h3 class="modal-title">
+                  {{ form2.category2(disabled=True, class="title-calendar-h3") }} -
+                  {{ form2.team2(disabled=True, class="title-calendar-h3") }}
+                </h3>
+              </center>
+            {% endif %}
+  
+            <button type="button" class="btn btnclose" data-bs-dismiss="modal">X</button>
+          </div>
+  
+          <div class="modal-body">
+            <form action="javascript:;">
+              <div class="form-group">
+                <label>Schedule Name:</label>
+                <input {{disable}} type="text" id="title2" name="title2" class="form-control" value="" />
+              </div>
+  
+              <div class="form-group">
+                {{ form2.category2.label(class="form-control-label") }}
+                {{ form2.category2(class="form-control form-control-lg", id="category2") }}
+              </div>
+  
+              <div class="form-group">
+                {{ form2.team2.label(class="form-control-label") }}
+                {{ form2.team2(class="form-control form-control-lg", id="team2") }}
+              </div>
+  
+              <div class="row">
+                <div class="form-group col-6">
+                  <label>Start:</label>
+                  <input readonly {{disable}} type="datetime" id="start2" name="start2" class="form-control"
+                         style="text-align:center;background-color:aliceblue;color:#000;cursor:pointer;" />
+                </div>
+  
+                <div class="form-group col-6">
+                  <label>End:</label>
+                  <input readonly {{disable}} type="datetime" id="end2" name="end2" class="form-control"
+                         style="text-align:center;background-color:aliceblue;color:#000;cursor:pointer;" />
+                </div>
+              </div>
+  
+              <input type="hidden" id="id2" name="id2" class="form-control" />
+  
+              <div class="row">
+                <div class="form-group col-6">
+                  {{ form2.address2.label(class="form-control-label") }}
+                  {{ form2.address2(class="form-control form-control-lg", id="address2") }}
+                </div>
+  
+                <div class="form-group col-6">
+                  {{ form2.link2.label(class="form-control-label") }}
+                  {{ form2.link2(class="form-control form-control-lg", id="link2") }}
+                </div>
+              </div>
+            </form>
+          </div>
+  
+          {% if current_user.is_authenticated %}
+          <div class="modal-footer">
+            <button id="update-submit" type="button" class="btn btn-ok">Save</button>
+  
+            <!-- ✅ FIX: žiadne data-bs-toggle/data-bs-target (otvárame len cez JS) -->
+            <button id="delete-submit" type="button" class="btn btn-delete">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                   class="bi bi-trash" viewBox="0 0 16 14">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path fill-rule="evenodd"
+                      d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+              </svg>
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+  (function () {
+    // --- BS5 modal helpers + fix nested modals (modal-in-modal) ---
+    function ensureOnBody(id) {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      if (el.parentElement !== document.body) {
+        document.body.appendChild(el);
+      }
+      return el;
+    }
+  
+    function showModal(id) {
+      const el = ensureOnBody(id);
+      if (!el) return null;
+      const inst = bootstrap.Modal.getOrCreateInstance(el, { backdrop: "static", keyboard: false });
+      inst.show();
+      return inst;
+    }
+  
+    function hideModal(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const inst = bootstrap.Modal.getInstance(el);
+      if (inst) inst.hide();
+    }
+  
+    // presuň vnorené modaly mimo kalendár modal (inak blikajú a rozbijú backdrop)
+    ["schedule-add","schedule-edit","confirm-delete","info-added","info-updated"].forEach(ensureOnBody);
+  
+    // Mapy pre zobrazenie názvu tímu/kategórie v evente
+    const TEAM_NAME = {};
+    const CAT_NAME = {};
+  
+    {% if teams is defined %}
+      {% for t in teams %}
+        TEAM_NAME[{{ t.id }}] = {{ t.name|tojson }};
+      {% endfor %}
+    {% endif %}
+  
+    {% if cats is defined %}
+      {% for c in cats %}
+        CAT_NAME[{{ c.id }}] = {{ c.name|tojson }};
+      {% endfor %}
+    {% endif %}
+  
+    // práva (JS)
+    const IS_ADMIN = {{ "true" if is_admin else "false" }};
+    const IS_TRENER = {{ "true" if is_trener else "false" }};
+    const EDITABLE_TEAM_IDS = new Set({{ editable_team_ids|tojson }});
+  
+    function canEditEvent(ev) {
+      if (IS_ADMIN) return true;
+      if (IS_TRENER) {
+        const teamId = Number(ev.team || ev.event_team_id || ev.team_id);
+        return EDITABLE_TEAM_IDS.has(teamId);
+      }
+      return false;
+    }
+  
+    function addBounceEffectToEvent(eventId, inout) {
+      if (inout === 1) {
+        var eventElement = $("#schedule-calendar .fc-event[data-id='" + eventId + "']");
+        eventElement.addClass('fade-in-bounce-event');
+        eventElement.on('animationend', function() { eventElement.removeClass('fade-in-bounce-event'); });
+      }
+      if (inout === 2) {
+        var eventElement2 = $("#schedule-calendar .fc-event[data-id='" + eventId + "']");
+        eventElement2.addClass('fade-out-bounce-event');
+        eventElement2.on('animationend', function() { eventElement2.removeClass('fade-out-bounce-event'); });
+      }
+    }
+  
+    function openAddModal(startStr, endStr) {
+      $("#title").val("");
+      $("#start").val(startStr);
+      $("#end").val(endStr);
+      $("#address").val("");
+      $("#link").val("");
+      showModal("schedule-add");
+    }
+  
+    // Init len raz
+    const $cal = $("#schedule-calendar");
+    if ($cal.data("fc-init")) {
+      try { $cal.fullCalendar("render"); } catch(e) {}
+      return;
+    }
+    $cal.data("fc-init", "1");
+  
+    // datetimepicker (ak je dostupný – layout ho ťahá)
+    if ($.fn.datetimepicker) {
+      $("#start2, #end2, #start, #end").datetimepicker({
+        timeFormat: 'HH:mm:ss',
+        dateFormat: 'yy-mm-dd',
+        controlType: 'slider'
+      });
+    }
+  
+    // FullCalendar v3
+    $("#schedule-calendar").fullCalendar({
+      editable: true,
+      eventLimit: false,
+      droppable: true,
+      timezone: "local",
+      eventOrder: 'start, end',
+      timeFormat: 'H:mm',
+      header: { right: 'prev,next, today', left: 'title' },
+      firstDay: 1,
+  
+      // eventy z backendu
+      events: "/calendar/events",
+  
+      nextDayThreshold: "00:00:00",
+      selectable: (IS_ADMIN || IS_TRENER),
+      selectHelper: true,
+  
+      eventRender: function(event, element) {
+        element.attr("data-id", event.id);
+  
+        const tId = Number(event.team || event.event_team_id || event.team_id);
+        const cId = Number(event.category || event.event_category_id || event.category_id);
+        const tName = TEAM_NAME[tId] || "";
+        const cName = CAT_NAME[cId] || "";
+  
+        if (tName || cName) {
+          const chipText = (tName && cName) ? (tName + " • " + cName) : (tName || cName);
+          element.find(".fc-title").append(' <span class="ev-chip">' + chipText + "</span>");
+        }
+      },
+  
+      // Drag select (desktop + mobile long-press)
+      select: function(start, end) {
+        if (!(IS_ADMIN || IS_TRENER)) return;
+        const startStr = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
+        const endStr = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
+        openAddModal(startStr, endStr);
+        $("#schedule-calendar").fullCalendar("unselect");
+      },
+  
+      // Tap na deň (mobile)
+      dayClick: function(date) {
+        if (!(IS_ADMIN || IS_TRENER)) return;
+        const startStr = moment(date).format("YYYY-MM-DD") + " 08:00:00";
+        const endStr   = moment(date).format("YYYY-MM-DD") + " 09:00:00";
+        openAddModal(startStr, endStr);
+      },
+  
+      // Klik na event → edit modal
+      eventClick: function(event) {
+        if (!canEditEvent(event)) {
+          return;
+        }
+  
+        $("#id2").val(event.id);
+  
+        const start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
+        const end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
+  
+        $("#title2").val(event.title || "");
+        $("#start2").val(start);
+        $("#end2").val(end);
+        $("#address2").val(event.address || "");
+        $("#link2").val(event.link || "");
+        $("#team2").val(event.team || event.event_team_id || "");
+        $("#category2").val(event.category || event.event_category_id || "");
+  
+        showModal("schedule-edit");
+      },
+  
+      // Drag&drop eventu → update
+      eventDrop: function(event) {
+        if (!canEditEvent(event)) {
+          $("#schedule-calendar").fullCalendar("refetchEvents");
+          return;
+        }
+  
+        const payload = {
+          title2: event.title,
+          start2: $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss"),
+          end2: $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss"),
+          address2: event.address || "",
+          link2: event.link || "",
+          category2: event.category || event.event_category_id || "",
+          team2: event.team || event.event_team_id || "",
+          id2: event.id
+        };
+  
+        $.ajax({
+          url: "/calendar/update",
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(payload),
+          success: function() {
+            // ok
+          }
+        });
+      }
+    });
+  
+    // ADD
+    $("#add-submit").on("click", function(e) {
+      e.preventDefault();
+      AddNewSchedulle();
+    });
+  
+    async function AddNewSchedulle() {
+      if (!(IS_ADMIN || IS_TRENER)) return;
+  
+      const title = $("#title").val();
+      const team = $("#team").val();
+      const category = $("#category").val();
+      const start = $("#start").val();
+      const end = $("#end").val();
+      const address = $("#address").val();
+      const link = $("#link").val();
+  
+      if (!title) {
+        const inputText = document.getElementById("title");
+        if (inputText) inputText.placeholder = "required field";
+        return;
+      }
+  
+      if (!IS_ADMIN) {
+        const tId = Number(team);
+        if (!EDITABLE_TEAM_IDS.has(tId)) {
+          alert("Nemáš právo pridávať udalosti pre tento tím.");
+          return;
+        }
+      }
+  
+      if (category == 1 && (!address || !link)) {
+        const inputAddress = document.getElementById("address");
+        const inputLink = document.getElementById("link");
+        if (inputAddress) inputAddress.placeholder = "required field";
+        if (inputLink) inputLink.placeholder = "required field";
+        return;
+      }
+  
+      $.ajax({
+        url: "/calendar/insert",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ title, start, end, address, link, team, category }),
+        success: function(newId) {
+          $("#id").val(newId);
+          hideModal("schedule-add");
+  
+          $("#schedule-calendar").fullCalendar("refetchEvents");
+          addBounceEffectToEvent(newId, 1);
+        }
+      });
+    }
+  
+    // UPDATE
+    $("#update-submit").on("click", function(e) {
+      e.preventDefault();
+      UpdateSchedulle();
+    });
+  
+    async function UpdateSchedulle() {
+      if (!(IS_ADMIN || IS_TRENER)) return;
+  
+      const id2 = $("#id2").val();
+      const team2 = $("#team2").val();
+  
+      if (!IS_ADMIN) {
+        const tId = Number(team2);
+        if (!EDITABLE_TEAM_IDS.has(tId)) {
+          alert("Nemáš právo upravovať udalosti pre tento tím.");
+          return;
+        }
+      }
+  
+      const payload = {
+        title2: $("#title2").val(),
+        team2: $("#team2").val(),
+        category2: $("#category2").val(),
+        start2: $("#start2").val(),
+        end2: $("#end2").val(),
+        address2: $("#address2").val(),
+        link2: $("#link2").val(),
+        id2: id2
+      };
+  
+      if (payload.start2 >= payload.end2) {
+        alert("Start must be sooner");
+        return;
+      }
+  
+      $.ajax({
+        url: "/calendar/update",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(payload),
+        success: function() {
+          hideModal("schedule-edit");
+          $("#schedule-calendar").fullCalendar("refetchEvents");
+          addBounceEffectToEvent(id2, 1);
+        }
+      });
+    }
+  
+    // DELETE
+    $("#delete-submit").on("click", function() {
+      hideModal("schedule-edit");
+      showModal("confirm-delete");
+    });
+  
+    $("#delete-confirmed-submit").on("click", function(e) {
+      e.preventDefault();
+      const id2 = $("#id2").val();
+      if (!id2) return;
+  
+      $.ajax({
+        url: "/calendar/ajax_delete",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ id: id2 }),
+        success: function() {
+          hideModal("confirm-delete");
+          $("#schedule-calendar").fullCalendar("refetchEvents");
+        }
+      });
+    });
+  
+    // keď sa fragment vloží, FC potrebuje render
+    setTimeout(function() {
+      try { $("#schedule-calendar").fullCalendar("render"); } catch(e) {}
+    }, 120);
+  
+  })();
+  </script>
+  
