@@ -1496,3 +1496,25 @@ be a descendant of the grid when it is being dragged.
 	border: 2px solid #6d9bff;
   }
   
+
+  @media (max-width: 768px) {
+	#calenadrModal .modal-dialog {
+	  width: 100vw !important;
+	  max-width: 100vw !important;
+	  height: 100vh !important;
+	  margin: 0 !important;
+	  padding: 0 !important;
+	}
+  
+	#calenadrModal .modal-content {
+	  height: 100vh !important;
+	  border-radius: 0 !important;
+	  overflow-y: auto !important; /* toto chceš */
+	  -webkit-overflow-scrolling: touch;
+	}
+  
+	/* nech má modal-body tiež scroll ak máš veľa obsahu */
+	#calenadrModal .modal-body {
+	  overflow-y: auto;
+	}
+  }

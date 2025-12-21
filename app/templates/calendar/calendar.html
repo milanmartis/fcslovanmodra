@@ -26,11 +26,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='style/fullcalendar.css') }}"
     />
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="{{ url_for('static', filename='style/calendar.css') }}"
-    />
+
 
     <style scoped>
       body, html{
@@ -38,6 +34,45 @@
         color: #fff;
 
       }
+      /* Moderný tenký scrollbar len pre kalendár modal */
+#calenadrModal .modal-content,
+#calenadrModal .modal-body {
+  scrollbar-width: thin;                         /* Firefox */
+  scrollbar-color: rgba(255,255,255,0.22) transparent;
+}
+
+/* WebKit (Chrome, Edge, Safari, iOS) */
+#calenadrModal .modal-content::-webkit-scrollbar,
+#calenadrModal .modal-body::-webkit-scrollbar {
+  width: 8px;          /* tenký */
+  height: 8px;
+}
+
+#calenadrModal .modal-content::-webkit-scrollbar-track,
+#calenadrModal .modal-body::-webkit-scrollbar-track {
+  background: transparent;   /* nenápadné pozadie */
+}
+
+#calenadrModal .modal-content::-webkit-scrollbar-thumb,
+#calenadrModal .modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.18); /* prispôsob “glass” štýlu */
+  border-radius: 999px;
+  border: 2px solid transparent;      /* vytvorí “tenký” pill efekt */
+  background-clip: content-box;
+}
+
+#calenadrModal .modal-content::-webkit-scrollbar-thumb:hover,
+#calenadrModal .modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.28);
+  background-clip: content-box;
+}
+
+/* Voliteľné: nech scrollbar nelieta cez obsah pri macOS overlay scrollbars */
+#calenadrModal .modal-content,
+#calenadrModal .modal-body {
+  scrollbar-gutter: stable both-edges;
+}
+
         @keyframes fadeInBounce {
           0% { opacity: 0; transform: scale(0.5); }
           50% { transform: scale(1.3); }
@@ -654,6 +689,24 @@
         select: function(start, end, jsEvent, view) {
           var startStr = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
           var endStr = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
+          $('#schedule-add').modal('show');
+          $('#title').val('');
+          $('#start').val(startStr);
+          $('#end').val(endStr);
+          $('#address').val('');
+          $('#link').val('');
+        },
+
+        dayClick: function(date, jsEvent, view) {
+          // len Admin má mať možnosť pridávať
+          var isAdmin = {{ 'true' if (current_user.is_authenticated and current_user.has_roles('Admin')) else 'false' }};
+          if (!isAdmin) return;
+        
+          // Mobile tap = vytvor 1-hodinový slot (alebo si uprav časy)
+          var startStr = moment(date).format("Y-MM-DD") + " 08:00:00";
+          var endStr   = moment(date).format("Y-MM-DD") + " 09:00:00";
+        
+          // otvor Add modal a predvyplň
           $('#schedule-add').modal('show');
           $('#title').val('');
           $('#start').val(startStr);
