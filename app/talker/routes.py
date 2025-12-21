@@ -695,20 +695,23 @@ def on_send(data: dict[str, Any]):
         }
 
         # vždy pošli aj sebe (aby si hneď videl že to funguje)
-        send_push_to_users(
-            user_ids=[current_user.id],
-            title=room.name,
-            body=preview,
-            data=data_payload,
-        )
+        # send_push_to_users(
+        #     user_ids=[current_user.id],
+        #     title=room.name,
+        #     body=preview,
+        #     data=data_payload,
+        # )
 
         # a teraz broadcast všetkým, čo majú webpush subscription
-        sent = debug_broadcast_webpush(
-            title=room.name,
-            body=preview,
-            data=data_payload,
-        )
-        print("DEBUG broadcast webpush sent:", sent)
+        recipients = get_recipients_for_room(room)  # tu sa to spúšťa
+        if recipients:
+            send_push_to_users(
+                user_ids=recipients,               # len tím/členovia room, bez odosielateľa
+                title=room.name,
+                body=preview,
+                data=data_payload,
+            )
+        # print("DEBUG broadcast webpush sent:", sent)
 
     except Exception as e:
         print("DEBUG push error:", e)
