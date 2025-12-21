@@ -1,85 +1,232 @@
 {# templates/calendar/calendar_modal_fragment.html #}
 
 <style>
-    /* jednotné pozadie kalendára */
-    #schedule-calendar,
-    #schedule-calendar .fc-view,
-    #schedule-calendar .fc-body,
-    #schedule-calendar .fc-bg,
-    #schedule-calendar .fc-bg table,
-    #schedule-calendar .fc-row,
-    #schedule-calendar .fc-content-skeleton,
-    #schedule-calendar .fc-day-grid,
-    #schedule-calendar .fc-day-grid-container {
-      background: #121212 !important;
-    }
-    #schedule-calendar .fc-other-month { background: #121212 !important; opacity: 1 !important; }
-    #schedule-calendar td.fc-today {
-      background: #121212 !important;
-      box-shadow: inset 0 0 0 2px rgba(109,155,255,0.35);
+    /* ========== MODERN FULLCALENDAR THEME (v3) ========== */
+  
+    :root{
+      --fc-accent: #6d9bff;            /* tvoj accent */
+      --fc-bg: #030303;                /* tvoj background */
+      --fc-panel: rgba(255,255,255,.03);
+      --fc-panel2: rgba(255,255,255,.02);
+  
+      /* soft grid lines */
+      --fc-line: rgba(255,255,255,.07);
+      --fc-line2: rgba(109,155,255,.10);
     }
   
-    @keyframes fadeInBounce {
-      0% { opacity: 0; transform: scale(0.5); }
-      50% { transform: scale(1.3); }
-      70% { transform: scale(0.7); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-    .fade-in-bounce-event { animation: fadeInBounce 0.5s ease-in-out; }
-  
-    @keyframes fadeOutBounce {
-      0% { opacity: 1; transform: scale(1); }
-      30% { transform: scale(1.3); }
-      50% { transform: scale(0.7); }
-      100% { opacity: 0; transform: scale(0.5); }
-    }
-    .fade-out-bounce-event { animation: fadeOutBounce 0.6s ease-in-out; }
-  
-    /* malé “chips” v evente */
-    .fc-event .ev-chip {
-      display:inline-block;
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 999px;
-      margin-left: 6px;
-      border: 1px solid rgba(109,155,255,0.35);
-      background: rgba(109,155,255,0.12);
-      color: rgba(255,255,255,0.9);
+    /* Základ – zruš “tvrdé” border-y, ale nechaj jemné */
+    .fc-theme-standard .fc-scrollgrid,
+    .fc-theme-standard td,
+    .fc-theme-standard th{
+      border-color: var(--fc-line) !important;
     }
   
-    /* modaly (tvoje pôvodné farby) */
-    #schedule-add .modal-content,
-    #schedule-edit .modal-content,
-    #confirm-delete .modal-content {
-      background-color: #000;
-      border: 2px solid #6d9bff;
+    /* celé “telo” kalendára ako karta */
+    .fc .fc-view-harness{
+      border-radius: 14px;
+      overflow: hidden;
+      background:
+        radial-gradient(1200px 400px at 20% 0%, rgba(109,155,255,.10), transparent 55%),
+        radial-gradient(900px 380px at 80% 10%, rgba(109,155,255,.07), transparent 55%),
+        linear-gradient(180deg, rgba(255,255,255,.035), rgba(0,0,0,.35));
+      box-shadow:
+        0 18px 45px rgba(0,0,0,.65),
+        inset 0 1px 0 rgba(255,255,255,.05);
+    }
+  
+    /* “scrollgrid” rámiky – zjemni ich ešte viac */
+    .fc .fc-scrollgrid,
+    .fc .fc-scrollgrid-section > *{
+      border-color: var(--fc-line) !important;
+    }
+  
+    /* Header row (Mon Tue...) ako soft tab */
+    .fc .fc-col-header{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      box-shadow: inset 0 -1px 0 rgba(255,255,255,.06);
+    }
+  
+    .fc table, thead, tbody, tr, th, td { border-width: 0 !important; }
+  
+    h2{
+      font-size: 140%;
+      font-weight: 800;
+      margin-bottom: 12px;
+      line-height: 162%;
+    }
+  
+    .fc .fc-col-header-cell{ background: transparent !important; }
+  
+    .fc .fc-today{ background-color: var(--fc-panel2) !important; }
+  
+    .fc .fc-day{
+      border: 0.03rem solid rgba(255,255,255,.06) !important;
+      margin:2px;
+      padding: 4px;
+      cursor: pointer;
+      border: 0px;
+    }
+  
+    .fc .fc-day:hover,
+    .fc-day:hover:active,
+    .fc-day-top:hover,
+    .fc-day-top:hover:active{
+      background-color: var(--fc-panel2) !important;
+    }
+  
+    .fc .fc-col-header-cell-cushion{
+      display: block;
+      padding: 10px 0;
+      color: rgba(223,233,255,.85) !important;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+  
+    /* Cells – sprav “soft table” efekt */
+    .fc .fc-daygrid-day{
+      background: linear-gradient(180deg, rgba(255,255,255,.020), rgba(255,255,255,.010));
+    }
+  
+    /* jemné horizontálne pásy */
+    .fc .fc-daygrid-body tr:nth-child(odd) td{ background: rgba(0,0,0,.10); }
+    .fc .fc-daygrid-body tr:nth-child(even) td{ background: rgba(0,0,0,.18); }
+  
+    /* číslo dňa */
+    .fc .fc-daygrid-day-number{
+      padding: 6px 8px;
+      color: rgba(223,233,255,.78) !important;
+      font-weight: 800;
+    }
+  
+    /* Today */
+    .fc .fc-daygrid-day.fc-day-today{
+      background: linear-gradient(180deg, rgba(109,155,255,.16), rgba(109,155,255,.06)) !important;
+      box-shadow: inset 0 0 0 1px rgba(109,155,255,.18);
+    }
+  
+    .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number{
+      color: var(--fc-accent) !important;
+      opacity: 1;
+    }
+  
+    /* zníž kontrast čiar */
+    .fc-theme-standard td{ border-color: rgba(255,255,255,.06) !important; }
+    .fc-theme-standard th{ border-color: rgba(255,255,255,.08) !important; }
+  
+    /* Weekend */
+    .fc .fc-day-sat,
+    .fc .fc-day-sun{
+      background: rgba(255,255,255,.015);
+    }
+  
+    /* Buttons */
+    .fc .fc-button{
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      height: 36px !important;
+      line-height: 1 !important;
+  
+      padding: 8px 12px !important;
+      border-radius: 12px !important;
+  
+      background: var(--fc-bg) !important;
+      border: 2px solid var(--fc-accent) !important;
+      color: var(--fc-accent) !important;
+  
+      box-shadow:
+        0 10px 24px rgba(0,0,0,.45),
+        inset 0 1px 0 rgba(255,255,255,.05);
+  
+      font-weight: 800 !important;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      gap: 8px;
+    }
+  
+    .fc .fc-button:hover{
+      background: var(--fc-accent) !important;
+      color: #030303 !important;
+      border-color: var(--fc-accent) !important;
+    }
+  
+    .fc .fc-button:focus,
+    .fc .fc-button:active{
+      outline: none !important;
+      box-shadow: 0 0 0 3px rgba(109,155,255,.25), 0 10px 24px rgba(0,0,0,.45) !important;
+    }
+  
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active{
+      background: var(--fc-accent) !important;
+      color: #030303 !important;
+      border-color: var(--fc-accent) !important;
+      text-shadow: none !important;
+    }
+  
+    .fc .fc-button .fc-icon{
+      font-size: 0.69em;
+      line-height: 0.51 !important;
+      vertical-align: middle !important;
+      font-weight: 800;
+    }
+  
+    .fc .fc-toolbar-title{
+      color: var(--fc-accent) !important;
+      font-weight: 900 !important;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+  
+    .fc .fc-toolbar{ gap: 10px; }
+  
+    @media (max-width: 420px){
+      .fc .fc-button{
+        height: 34px !important;
+        padding: 7px 10px !important;
+        border-radius: 11px !important;
+      }
+      .fc .fc-toolbar-title{ font-size: 1.05rem !important; }
+    }
+  
+    /* =========================
+       Flatpickr – zachovaj tvoj input look
+       - užívateľ vidí: DD.MM.YYYY HH:mm (altInput)
+       - do hodnoty inputu sa ukladá: YYYY-MM-DD HH:mm (dateFormat)
+       ========================= */
+    .flatpickr-wrapper{ width: 100%; }
+  
+    /* viditeľný alt input */
+    .flatpickr-alt-input.form-control{
+      text-align: center !important;
+      background-color: aliceblue !important;
+      color: #000 !important;
+      cursor: pointer !important;
+    }
+  
+    /* “skrytý” origin input (flatpickr ho necháva v DOM) */
+    .flatpickr-input.form-control{
+      background-color: aliceblue !important;
+      color: #000 !important;
     }
   </style>
+  
+  <!-- Flatpickr (na EU formát v inpute) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   
   <div class="calendar-fragment">
     <div id="schedule-calendar"></div>
   
     <!-- Confirm delete modal -->
-    <div
-      class="modal fade"
-      id="confirm-delete"
-      tabindex="-1"
-      aria-hidden="true"
-      data-bs-backdrop="static"
-      data-bs-keyboard="false"
-    >
+    <div class="modal fade" id="confirm-delete" tabindex="-1" aria-hidden="true"
+         data-bs-backdrop="static" data-bs-keyboard="false">
       <div class="modal-dialog">
         <div class="modal-content">
-          <div class="modal-header">
-            Are you sure to delete this shedule?
-          </div>
+          <div class="modal-header">Are you sure to delete this shedule?</div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-delete-confirm" id="delete-confirmed-submit">
-              Delete
-            </button>
-            <button type="button" class="btn btn-ok" data-bs-dismiss="modal">
-              Cancel
-            </button>
+            <button type="button" class="btn btn-delete-confirm" id="delete-confirmed-submit">Delete</button>
+            <button type="button" class="btn btn-ok" data-bs-dismiss="modal">Cancel</button>
           </div>
         </div>
       </div>
@@ -87,15 +234,11 @@
   
     <!-- Info modals -->
     <div id="info-updated" class="modal fade" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-sm">
-        <h1>Shedule updated successfully</h1>
-      </div>
+      <div class="modal-dialog modal-sm"><h1>Shedule updated successfully</h1></div>
     </div>
   
     <div id="info-added" class="modal fade" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-sm">
-        <h1>Shedule added</h1>
-      </div>
+      <div class="modal-dialog modal-sm"><h1>Shedule added</h1></div>
     </div>
   
     {# --- Práva --- #}
@@ -135,21 +278,19 @@
               <div class="row">
                 <div class="form-group col-6">
                   {{ form.start.label(class="form-control-label") }}
-                  {{ form.start(readonly="readonly", class="form-control", type="datetime",
+                  {# IMPORTANT: type="text" kvôli EU formátu v inpute #}
+                  {{ form.start(class="form-control", type="text", autocomplete="off",
                     style="text-align:center;background-color:aliceblue;color:#000;cursor:pointer;") }}
                 </div>
-  
                 <div class="form-group col-6">
                   {{ form.end.label(class="form-control-label") }}
-                  {{ form.end(readonly="readonly", class="form-control", type="datetime",
+                  {{ form.end(class="form-control", type="text", autocomplete="off",
                     style="text-align:center;background-color:aliceblue;color:#000;cursor:pointer;") }}
                 </div>
-  
                 <div class="form-group col-6">
                   {{ form.address.label(class="form-control-label") }}
                   {{ form.address(class="form-control form-control-lg") }}
                 </div>
-  
                 <div class="form-group col-6">
                   {{ form.link.label(class="form-control-label") }}
                   {{ form.link(class="form-control form-control-lg") }}
@@ -214,13 +355,16 @@
               <div class="row">
                 <div class="form-group col-6">
                   <label>Start:</label>
-                  <input readonly {{disable}} type="datetime" id="start2" name="start2" class="form-control"
+                  {# IMPORTANT: type="text" kvôli EU formátu v inpute #}
+                  <input {{disable}} type="text" id="start2" name="start2" class="form-control"
+                         autocomplete="off"
                          style="text-align:center;background-color:aliceblue;color:#000;cursor:pointer;" />
                 </div>
   
                 <div class="form-group col-6">
                   <label>End:</label>
-                  <input readonly {{disable}} type="datetime" id="end2" name="end2" class="form-control"
+                  <input {{disable}} type="text" id="end2" name="end2" class="form-control"
+                         autocomplete="off"
                          style="text-align:center;background-color:aliceblue;color:#000;cursor:pointer;" />
                 </div>
               </div>
@@ -245,11 +389,10 @@
           <div class="modal-footer">
             <button id="update-submit" type="button" class="btn btn-ok">Save</button>
   
-            <!-- ✅ FIX: žiadne data-bs-toggle/data-bs-target (otvárame len cez JS) -->
             <button id="delete-submit" type="button" class="btn btn-delete">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                    class="bi bi-trash" viewBox="0 0 16 14">
-                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6a.5.5 0 0 0 1 0V6z"/>
                 <path fill-rule="evenodd"
                       d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
               </svg>
@@ -259,25 +402,66 @@
         </div>
       </div>
     </div>
+  
+    <!-- View Modal (read-only) -->
+    <div class="modal fade" id="schedule-view" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-fullscreen-md-down">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title" id="v_cat"></h3>
+            <button type="button" class="btn btnclose" data-bs-dismiss="modal">X</button>
+          </div>
+  
+          <div class="modal-body">
+            <div><h2 id="v_title"></h2></div>
+            <div class="mb-2"><b>Začiatok:</b> <span id="v_start"></span></div>
+            <div class="mb-2"><b>Koniec:</b> <span id="v_end"></span></div>
+            <div class="mb-2"><b>Tím:</b> <span id="v_team"></span></div>
+            <div class="mb-2"><b>Kategória:</b> <span id="v_cat"></span></div>
+            <div class="mb-2"><b>Adresa:</b> <span id="v_address"></span></div>
+            <div class="mb-2"><b>Link:</b> <a id="v_link" href="#" target="_blank" rel="noopener"></a></div>
+          </div>
+  
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ok" data-bs-dismiss="modal">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   
   <script>
   (function () {
-    // --- BS5 modal helpers + fix nested modals (modal-in-modal) ---
     function ensureOnBody(id) {
       const el = document.getElementById(id);
       if (!el) return null;
-      if (el.parentElement !== document.body) {
-        document.body.appendChild(el);
-      }
+      if (el.parentElement !== document.body) document.body.appendChild(el);
       return el;
+    }
+  
+    function calendarBackdropSetHidden(hidden) {
+      const backdrops = Array.from(document.querySelectorAll(".modal-backdrop"));
+      if (!backdrops.length) return;
+      const calBd = backdrops[0];
+      if (!calBd) return;
+      calBd.style.opacity = hidden ? "0" : "";
+      calBd.style.pointerEvents = hidden ? "none" : "";
     }
   
     function showModal(id) {
       const el = ensureOnBody(id);
       if (!el) return null;
-      const inst = bootstrap.Modal.getOrCreateInstance(el, { backdrop: "static", keyboard: false });
+  
+      const inst = bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: false });
       inst.show();
+  
+      setTimeout(() => {
+        const bds = Array.from(document.querySelectorAll(".modal-backdrop"));
+        const top = bds[bds.length - 1];
+        if (top) top.classList.add("nested-backdrop");
+        calendarBackdropSetHidden(true);
+      }, 0);
+  
       return inst;
     }
   
@@ -288,10 +472,31 @@
       if (inst) inst.hide();
     }
   
-    // presuň vnorené modaly mimo kalendár modal (inak blikajú a rozbijú backdrop)
-    ["schedule-add","schedule-edit","confirm-delete","info-added","info-updated"].forEach(ensureOnBody);
+    function hardCleanupOrphans() {
+      document.body.classList.remove("modal-open");
+      document.body.style.removeProperty("padding-right");
+      const openModals = Array.from(document.querySelectorAll(".modal.show"));
+      if (openModals.length === 0) {
+        document.querySelectorAll(".modal-backdrop").forEach(b => b.remove());
+      }
+    }
   
-    // Mapy pre zobrazenie názvu tímu/kategórie v evente
+    ["schedule-add","schedule-edit","schedule-view","confirm-delete","info-added","info-updated"].forEach(ensureOnBody);
+  
+    ["schedule-add","schedule-edit","schedule-view","confirm-delete"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("hidden.bs.modal", function() {
+        try {
+          calendarBackdropSetHidden(false);
+          hardCleanupOrphans();
+          if (window.jQuery && jQuery("#schedule-calendar").length) {
+            jQuery("#schedule-calendar").fullCalendar("render");
+          }
+        } catch (e) {}
+      });
+    });
+  
     const TEAM_NAME = {};
     const CAT_NAME = {};
   
@@ -307,7 +512,6 @@
       {% endfor %}
     {% endif %}
   
-    // práva (JS)
     const IS_ADMIN = {{ "true" if is_admin else "false" }};
     const IS_TRENER = {{ "true" if is_trener else "false" }};
     const EDITABLE_TEAM_IDS = new Set({{ editable_team_ids|tojson }});
@@ -321,62 +525,171 @@
       return false;
     }
   
-    function addBounceEffectToEvent(eventId, inout) {
-      if (inout === 1) {
-        var eventElement = $("#schedule-calendar .fc-event[data-id='" + eventId + "']");
-        eventElement.addClass('fade-in-bounce-event');
-        eventElement.on('animationend', function() { eventElement.removeClass('fade-in-bounce-event'); });
+    /* =========================
+       TIME HELPERS
+       - ak príde "YYYY-MM-DD HH:mm:ss" -> zoberie sa lokálne
+       - ak príde ISO so Z/offset -> prekonvertuje do lokálu
+       ========================= */
+    function parseAnyDate(dt) {
+      if (!dt) return null;
+  
+      if (dt && dt._isAMomentObject) return dt.clone();
+      if (dt instanceof Date) return moment(dt);
+  
+      if (typeof dt === "string") {
+        let s = dt.trim();
+        if (!s) return null;
+  
+        // "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
+        if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(s)) {
+          s = s.replace(/\s+/, "T");
+        }
+  
+        // ISO so Z alebo +hh:mm / -hh:mm
+        if (/[zZ]$/.test(s) || /[+\-]\d{2}:\d{2}$/.test(s)) {
+          const m = moment.parseZone(s);
+          return m.isValid() ? m.local() : moment(s);
+        }
+  
+        const m = moment(s);
+        return m.isValid() ? m : null;
       }
-      if (inout === 2) {
-        var eventElement2 = $("#schedule-calendar .fc-event[data-id='" + eventId + "']");
-        eventElement2.addClass('fade-out-bounce-event');
-        eventElement2.on('animationend', function() { eventElement2.removeClass('fade-out-bounce-event'); });
+  
+      const m = moment(dt);
+      return m.isValid() ? m : null;
+    }
+  
+    // hodnota do inputu / payloadu: "YYYY-MM-DD HH:mm"
+    function toServerValue(dt) {
+      const m = parseAnyDate(dt);
+      return (m && m.isValid()) ? m.format("YYYY-MM-DD HH:mm") : "";
+    }
+  
+    // text do view modalu: "DD.MM.YYYY HH:mm"
+    function formatCET(dt) {
+      const m = parseAnyDate(dt);
+      return (m && m.isValid()) ? m.format("DD.MM.YYYY HH:mm") : "-";
+    }
+  
+    /* =========================
+       Flatpickr init – EU zobrazenie v inpute
+       - user vidí: DD.MM.YYYY HH:mm
+       - hodnota inputu: YYYY-MM-DD HH:mm
+       ========================= */
+    function initCzSkDatePickers() {
+      const opts = {
+        enableTime: true,
+        time_24hr: true,
+        dateFormat: "Y-m-d H:i",  // hodnota inputu
+        altInput: true,
+        altFormat: "d.m.Y H:i",   // čo vidí user
+        allowInput: true,
+        minuteIncrement: 5
+      };
+  
+      const ids = ["start", "end", "start2", "end2"];
+      ids.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el._flatpickr) return;
+        try { flatpickr(el, opts); } catch (e) {}
+      });
+    }
+  
+    function setPickerValue(id, valueStr) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      // flatpickr preferuje setDate
+      if (el._flatpickr) {
+        // valueStr je "YYYY-MM-DD HH:mm"
+        el._flatpickr.setDate(valueStr, true, "Y-m-d H:i");
+      } else {
+        el.value = valueStr || "";
       }
     }
   
-    function openAddModal(startStr, endStr) {
+    // Init pickery hneď (aj po vložení fragmentu)
+    setTimeout(initCzSkDatePickers, 0);
+  
+    function openAddModal(startDt, endDt) {
       $("#title").val("");
-      $("#start").val(startStr);
-      $("#end").val(endStr);
+      setPickerValue("start", toServerValue(startDt));
+      setPickerValue("end", toServerValue(endDt));
       $("#address").val("");
       $("#link").val("");
       showModal("schedule-add");
     }
   
-    // Init len raz
-    const $cal = $("#schedule-calendar");
-    if ($cal.data("fc-init")) {
-      try { $cal.fullCalendar("render"); } catch(e) {}
-      return;
-    }
-    $cal.data("fc-init", "1");
+    // destroy safety
+    try {
+      if ($("#schedule-calendar").hasClass("fc") || $("#schedule-calendar").find(".fc").length) {
+        $("#schedule-calendar").fullCalendar("destroy");
+      }
+    } catch (e) {}
   
-    // datetimepicker (ak je dostupný – layout ho ťahá)
-    if ($.fn.datetimepicker) {
-      $("#start2, #end2, #start, #end").datetimepicker({
-        timeFormat: 'HH:mm:ss',
-        dateFormat: 'yy-mm-dd',
-        controlType: 'slider'
-      });
-    }
-  
-    // FullCalendar v3
     $("#schedule-calendar").fullCalendar({
-      editable: true,
+      editable: (IS_ADMIN || IS_TRENER),
       eventLimit: false,
       droppable: true,
       timezone: "local",
-      eventOrder: 'start, end',
-      timeFormat: 'H:mm',
-      header: { right: 'prev,next, today', left: 'title' },
+      eventOrder: "start, end",
+  
+      // čas v evente
+      displayEventTime: true,
+      timeFormat: "H:mm",
+  
+      header: { right: "prev,next today", left: "title" },
       firstDay: 1,
-  
-      // eventy z backendu
       events: "/calendar/events",
-  
       nextDayThreshold: "00:00:00",
       selectable: (IS_ADMIN || IS_TRENER),
       selectHelper: true,
+  
+      viewRender: function(){
+        try {
+          const root = document.getElementById("schedule-calendar");
+          if (!root) return;
+  
+          root.querySelectorAll(".fc-button").forEach((b) => {
+            b.classList.add("btn");
+            b.classList.add("btn-sm");
+          });
+  
+          root.querySelectorAll(".fc-button-group .fc-button").forEach((b) => {
+            b.style.borderRadius = "9px";
+          });
+        } catch (e) {}
+      },
+  
+      // normalizácia eventu (aby FC nespravil allDay)
+      eventDataTransform: function(raw) {
+        const e = Object.assign({}, raw);
+  
+        const ms = parseAnyDate(e.start);
+        const me = parseAnyDate(e.end);
+  
+        if (ms && ms.isValid()) {
+          e.start = ms.toDate();
+          const hasTime = !(ms.hour() === 0 && ms.minute() === 0 && ms.second() === 0);
+          if (hasTime) e.allDay = false;
+        }
+  
+        if (me && me.isValid()) {
+          e.end = me.toDate();
+          const hasTimeEnd = !(me.hour() === 0 && me.minute() === 0 && me.second() === 0);
+          if (hasTimeEnd) e.allDay = false;
+        }
+  
+        if (!e.end && ms && ms.isValid()) {
+          const hasTime = !(ms.hour() === 0 && ms.minute() === 0 && ms.second() === 0);
+          if (hasTime) {
+            e.allDay = false;
+            e.end = ms.clone().add(60, "minutes").toDate();
+          }
+        }
+  
+        return e;
+      },
   
       eventRender: function(event, element) {
         element.attr("data-id", event.id);
@@ -387,61 +700,104 @@
         const cName = CAT_NAME[cId] || "";
   
         if (tName || cName) {
-          const chipText = (tName && cName) ? (tName + " • " + cName) : (tName || cName);
-          element.find(".fc-title").append(' <span class="ev-chip">' + chipText + "</span>");
+          const chipText = tName;
+          element.find(".fc-title").append('<span class="ev-chip">iii' + chipText + '</span>');
         }
+  
+        // poistka: ak by FC skryl time, dopln ho do title (len ak timed)
+        try {
+          if (event && event.start && event.allDay !== true) {
+            const m = moment(event.start);
+            if (m.isValid()) {
+              const timeTxt = m.format("H:mm");
+              const hasFcTime = element.find(".fc-time").length > 0;
+              if (!hasFcTime) {
+                const $title = element.find(".fc-title");
+                if ($title.length && $title.find(".force-time").length === 0) {
+                  $title.prepend('<span class="force-time" style="margin-right:6px;font-weight:900;">' + timeTxt + '</span>');
+                }
+              } else {
+                element.find(".fc-time").css({ display: "inline", visibility: "visible" });
+              }
+            }
+          }
+        } catch (e) {}
       },
   
-      // Drag select (desktop + mobile long-press)
       select: function(start, end) {
         if (!(IS_ADMIN || IS_TRENER)) return;
-        const startStr = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
-        const endStr = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
-        openAddModal(startStr, endStr);
+        openAddModal(start, end);
         $("#schedule-calendar").fullCalendar("unselect");
       },
   
-      // Tap na deň (mobile)
       dayClick: function(date) {
         if (!(IS_ADMIN || IS_TRENER)) return;
-        const startStr = moment(date).format("YYYY-MM-DD") + " 08:00:00";
-        const endStr   = moment(date).format("YYYY-MM-DD") + " 09:00:00";
-        openAddModal(startStr, endStr);
+        const start = moment(date).hour(8).minute(0);
+        const end = moment(date).hour(9).minute(0);
+        openAddModal(start, end);
       },
   
-      // Klik na event → edit modal
       eventClick: function(event) {
-        if (!canEditEvent(event)) {
+        const tId = Number(event.team || event.event_team_id || event.team_id);
+        const cId = Number(event.category || event.event_category_id || event.category_id);
+  
+        const tName = TEAM_NAME[tId] || (tId ? ("#" + tId) : "");
+        const cName = CAT_NAME[cId] || (cId ? ("#" + cId) : "");
+  
+        if (canEditEvent(event)) {
+          $("#id2").val(event.id);
+          $("#title2").val(event.title || "");
+  
+          // nastav do pickerov "YYYY-MM-DD HH:mm"
+          setPickerValue("start2", toServerValue(event.start));
+          setPickerValue("end2", toServerValue(event.end));
+  
+          $("#address2").val(event.address || "");
+          $("#link2").val(event.link || "");
+          $("#team2").val(event.team || event.event_team_id || "");
+          $("#category2").val(event.category || event.event_category_id || "");
+  
+          // istota – ak by sa modal otvoril pred initom pickerov
+          setTimeout(initCzSkDatePickers, 0);
+  
+          showModal("schedule-edit");
           return;
         }
   
-        $("#id2").val(event.id);
+        $("#v_title").text(event.title || "");
+        $("#v_start").text(formatCET(event.start));
+        $("#v_end").text(formatCET(event.end));
+        $("#v_team").text(tName);
+        $("#v_cat").text(cName);
   
-        const start = $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss");
-        const end = $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss");
+        const addr = (event.address || "").trim();
+        $("#v_address").text(addr ? addr : "-");
   
-        $("#title2").val(event.title || "");
-        $("#start2").val(start);
-        $("#end2").val(end);
-        $("#address2").val(event.address || "");
-        $("#link2").val(event.link || "");
-        $("#team2").val(event.team || event.event_team_id || "");
-        $("#category2").val(event.category || event.event_category_id || "");
+        const link = (event.link || "").trim();
+        const a = document.getElementById("v_link");
+        if (link) {
+          a.textContent = link;
+          a.href = link;
+          a.style.display = "";
+        } else {
+          a.textContent = "";
+          a.href = "#";
+          a.style.display = "none";
+        }
   
-        showModal("schedule-edit");
+        showModal("schedule-view");
       },
   
-      // Drag&drop eventu → update
-      eventDrop: function(event) {
+      eventDrop: function(event, delta, revertFunc) {
         if (!canEditEvent(event)) {
-          $("#schedule-calendar").fullCalendar("refetchEvents");
+          try { revertFunc(); } catch (e) {}
           return;
         }
   
         const payload = {
-          title2: event.title,
-          start2: $.fullCalendar.formatDate(event.start, "Y-MM-DD HH:mm:ss"),
-          end2: $.fullCalendar.formatDate(event.end, "Y-MM-DD HH:mm:ss"),
+          title2: event.title || "",
+          start2: toServerValue(event.start),
+          end2: event.end ? toServerValue(event.end) : toServerValue(moment(event.start).add(1, "hours")),
           address2: event.address || "",
           link2: event.link || "",
           category2: event.category || event.event_category_id || "",
@@ -455,7 +811,41 @@
           contentType: "application/json",
           data: JSON.stringify(payload),
           success: function() {
-            // ok
+            try { $("#schedule-calendar").fullCalendar("refetchEvents"); } catch (e) {}
+          },
+          error: function() {
+            try { revertFunc(); } catch (e) {}
+          }
+        });
+      },
+  
+      eventResize: function(event, delta, revertFunc) {
+        if (!canEditEvent(event)) {
+          try { revertFunc(); } catch (e) {}
+          return;
+        }
+  
+        const payload = {
+          title2: event.title || "",
+          start2: toServerValue(event.start),
+          end2: event.end ? toServerValue(event.end) : toServerValue(moment(event.start).add(1, "hours")),
+          address2: event.address || "",
+          link2: event.link || "",
+          category2: event.category || event.event_category_id || "",
+          team2: event.team || event.event_team_id || "",
+          id2: event.id
+        };
+  
+        $.ajax({
+          url: "/calendar/update",
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(payload),
+          success: function() {
+            try { $("#schedule-calendar").fullCalendar("refetchEvents"); } catch (e) {}
+          },
+          error: function() {
+            try { revertFunc(); } catch (e) {}
           }
         });
       }
@@ -464,39 +854,23 @@
     // ADD
     $("#add-submit").on("click", function(e) {
       e.preventDefault();
-      AddNewSchedulle();
-    });
-  
-    async function AddNewSchedulle() {
-      if (!(IS_ADMIN || IS_TRENER)) return;
   
       const title = $("#title").val();
       const team = $("#team").val();
       const category = $("#category").val();
+  
+      // Flatpickr: hodnota inputu je "YYYY-MM-DD HH:mm"
       const start = $("#start").val();
       const end = $("#end").val();
+  
       const address = $("#address").val();
       const link = $("#link").val();
   
-      if (!title) {
-        const inputText = document.getElementById("title");
-        if (inputText) inputText.placeholder = "required field";
-        return;
-      }
-  
-      if (!IS_ADMIN) {
-        const tId = Number(team);
-        if (!EDITABLE_TEAM_IDS.has(tId)) {
-          alert("Nemáš právo pridávať udalosti pre tento tím.");
-          return;
-        }
-      }
-  
+      if (!title) { $("#title").attr("placeholder","required field"); return; }
+      if (!IS_ADMIN && !EDITABLE_TEAM_IDS.has(Number(team))) { alert("Nemáš právo pre tento tím."); return; }
       if (category == 1 && (!address || !link)) {
-        const inputAddress = document.getElementById("address");
-        const inputLink = document.getElementById("link");
-        if (inputAddress) inputAddress.placeholder = "required field";
-        if (inputLink) inputLink.placeholder = "required field";
+        $("#address").attr("placeholder","required");
+        $("#link").attr("placeholder","required");
         return;
       }
   
@@ -505,51 +879,33 @@
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify({ title, start, end, address, link, team, category }),
-        success: function(newId) {
-          $("#id").val(newId);
+        success: function() {
           hideModal("schedule-add");
-  
           $("#schedule-calendar").fullCalendar("refetchEvents");
-          addBounceEffectToEvent(newId, 1);
         }
       });
-    }
+    });
   
     // UPDATE
     $("#update-submit").on("click", function(e) {
       e.preventDefault();
-      UpdateSchedulle();
-    });
-  
-    async function UpdateSchedulle() {
-      if (!(IS_ADMIN || IS_TRENER)) return;
-  
-      const id2 = $("#id2").val();
-      const team2 = $("#team2").val();
-  
-      if (!IS_ADMIN) {
-        const tId = Number(team2);
-        if (!EDITABLE_TEAM_IDS.has(tId)) {
-          alert("Nemáš právo upravovať udalosti pre tento tím.");
-          return;
-        }
-      }
   
       const payload = {
         title2: $("#title2").val(),
         team2: $("#team2").val(),
         category2: $("#category2").val(),
+  
+        // Flatpickr: hodnoty sú "YYYY-MM-DD HH:mm"
         start2: $("#start2").val(),
         end2: $("#end2").val(),
+  
         address2: $("#address2").val(),
         link2: $("#link2").val(),
-        id2: id2
+        id2: $("#id2").val()
       };
   
-      if (payload.start2 >= payload.end2) {
-        alert("Start must be sooner");
-        return;
-      }
+      if (!IS_ADMIN && !EDITABLE_TEAM_IDS.has(Number(payload.team2))) { alert("Nemáš právo pre tento tím."); return; }
+      if (payload.start2 >= payload.end2) { alert("Start must be sooner"); return; }
   
       $.ajax({
         url: "/calendar/update",
@@ -559,12 +915,11 @@
         success: function() {
           hideModal("schedule-edit");
           $("#schedule-calendar").fullCalendar("refetchEvents");
-          addBounceEffectToEvent(id2, 1);
         }
       });
-    }
+    });
   
-    // DELETE
+    // DELETE flow
     $("#delete-submit").on("click", function() {
       hideModal("schedule-edit");
       showModal("confirm-delete");
@@ -587,9 +942,10 @@
       });
     });
   
-    // keď sa fragment vloží, FC potrebuje render
+    // render po vložení fragmentu
     setTimeout(function() {
       try { $("#schedule-calendar").fullCalendar("render"); } catch(e) {}
+      try { initCzSkDatePickers(); } catch(e) {}
     }, 120);
   
   })();

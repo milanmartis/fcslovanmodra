@@ -15,7 +15,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FC Slovan Modra">
-
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <!-- Manifest -->
   <link rel="manifest" href="/manifest.webmanifest">
 
@@ -356,11 +357,11 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
        aria-hidden="true"
        data-bs-backdrop="static"
        data-bs-keyboard="false"
-       style="z-index: 999999999999999;">
+       style="z-index: 999;">
     <!-- zmenené: fullscreen na mobile + bez inline overflow/height -->
     <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down" role="document">
       <div class="modal-content card-glass">
-        <button type="button" class="btn btnclose" data-bs-dismiss="modal">X</button>
+        <button type="button" class="btn btnclose" style="font-size: 90%;" data-bs-dismiss="modal">X</button>
 
         <!-- zmenené: žiadny iframe, sem sa načíta fragment -->
         <div class="modal-body" style="padding: 12px;">
@@ -475,34 +476,56 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
 
   <!-- ✅ Calendar modal HTMX loader (FIX – bez iframe, bez glitch) -->
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const modalEl = document.getElementById('calenadrModal');
-      if (!modalEl) return;
-
-      // keď sa modal otvorí, triggerni HTMX fetch fragmentu
-      modalEl.addEventListener('shown.bs.modal', function () {
+    (function () {
+      function destroyFullCalendarIfAny() {
         try {
-          document.body.dispatchEvent(new Event('calendar:load'));
-        } catch (e) {}
-
-        // FullCalendar často potrebuje render po zobrazení
-        try {
-          if (window.jQuery && jQuery("#schedule-calendar").length) {
-            jQuery("#schedule-calendar").fullCalendar("render");
+          if (window.jQuery && jQuery.fn && jQuery.fn.fullCalendar) {
+            const $el = jQuery("#schedule-calendar");
+            if ($el.length) {
+              // FC v3: ak už je inicializovaný, má v sebe .fc
+              if ($el.find(".fc").length || $el.hasClass("fc")) {
+                try { $el.fullCalendar("destroy"); } catch (e) {}
+              }
+            }
           }
         } catch (e) {}
-      });
-
-      // ✅ HARD CLEANUP: aby nikdy nezostal backdrop a neblokoval kliky
-      modalEl.addEventListener('hidden.bs.modal', function () {
+      }
+  
+      function hardCleanupBackdrops() {
         try {
-          document.body.classList.remove('modal-open');
-          document.body.style.removeProperty('padding-right');
-          document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+          document.body.classList.remove("modal-open");
+          document.body.style.removeProperty("padding-right");
+          document.querySelectorAll(".modal-backdrop").forEach(b => b.remove());
         } catch (e) {}
+      }
+  
+      document.addEventListener("DOMContentLoaded", function () {
+        const modalEl = document.getElementById("calenadrModal");
+        const bodyInner = document.getElementById("calendar-modal-body-inner");
+        if (!modalEl || !bodyInner) return;
+  
+        // ✅ pred tým, než HTMX vymení HTML (2. otvorenie), znič FC
+        bodyInner.addEventListener("htmx:beforeSwap", function () {
+          destroyFullCalendarIfAny();
+        });
+  
+        // ✅ keď sa modal otvorí, vždy fetchni fragment
+        modalEl.addEventListener("shown.bs.modal", function () {
+          try { document.body.dispatchEvent(new Event("calendar:load")); } catch (e) {}
+        });
+  
+        // ✅ keď sa modal zavrie, znič FC + cleanup backdrops + vyčisti obsah
+        modalEl.addEventListener("hidden.bs.modal", function () {
+          destroyFullCalendarIfAny();
+          hardCleanupBackdrops();
+  
+          // voliteľné: vynúť čistý stav pri ďalšom open
+          bodyInner.innerHTML = '<div class="text-center p-4" style="opacity:.8;">Načítavam…</div>';
+        });
       });
-    });
+    })();
   </script>
+  
 
   <!-- Carousel touch swipe -->
   <script>
