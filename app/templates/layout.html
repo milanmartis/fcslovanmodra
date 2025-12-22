@@ -66,8 +66,10 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
   {% else %}
     <title>FC Slovan Modra</title>
   {% endif %}
-
+ 
+  
   <style>
+    
     /* Moderný tenký scrollbar len pre kalendár modal */
 #calenadrModal .modal-content,
 #calenadrModal .modal-body {
@@ -241,6 +243,70 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
       opacity: 0.9;
       margin-top: 10px;
       min-height: 22px;
+    }
+
+    
+  </style>
+  <style>
+    /* Badge v menu (zvonček) */
+    .nav-unread-badge{
+      position:absolute;
+      top: -5px;
+      right: -2px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #ff3b30;
+      color:#fff;
+      font-weight:700;
+      font-size: 11px;
+      line-height: 18px;
+      text-align:center;
+      box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    }
+  
+    .nav-unread-menu{
+      width: min(360px, 92vw);
+      max-height: min(420px, 70vh);
+      overflow:auto;
+    }
+  
+    .nav-unread-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      white-space: normal;
+    }
+  
+    .nav-unread-room{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+  
+    .nav-unread-room b{
+      font-size:.92rem;
+    }
+  
+    .nav-unread-room small{
+      opacity:.75;
+      font-size:.78rem;
+    }
+  
+    .nav-unread-pill{
+      min-width: 28px;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(255,59,48,.14);
+      border: 1px solid rgba(255,59,48,.25);
+      color: #ff3b30;
+      font-weight: 800;
+      font-size: 12px;
+      line-height: 20px;
+      text-align:center;
     }
   </style>
 </head>
@@ -475,7 +541,18 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
   <script src="{{ url_for('static', filename='js/stripe-script-no-ajax.js') }}"></script>
 
   <!-- ✅ Calendar modal HTMX loader (FIX – bez iframe, bez glitch) -->
+  
+  
   <script>
+
+    function getCsrfToken() {
+      const el = document.querySelector('meta[name="csrf-token"]');
+      return el ? (el.getAttribute("content") || "") : "";
+    }
+
+
+
+
     (function () {
       function destroyFullCalendarIfAny() {
         try {
@@ -643,6 +720,130 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
       });
     }
   </script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <script>
+  const socket = io({ transports: ["websocket", "polling"] });
 
+  socket.on("connect", () => {
+    // nič netreba, server ta joinne do user:<id>
+  });
+
+  socket.on("unread_update", (data) => {
+    // data.total_unread_count
+    // data.unread_counts
+
+    setBadge(data.total_unread_count);
+    renderUnreadList(data.unread_counts);
+  });
+</script>
+<script>
+  /**
+   * Global unread UI helpers for navbar badge + dropdown list.
+   * Make them available everywhere: window.setBadge(), window.renderUnreadList()
+   */
+  (function () {
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (m) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[m]));
+    }
+  
+    window.setBadge = function setBadge(count) {
+      const badge = document.getElementById("navUnreadBadge");
+      if (!badge) return;
+  
+      const n = Number(count || 0);
+      if (Number.isFinite(n) && n > 0) {
+        badge.textContent = n > 99 ? "99+" : String(n);
+        badge.style.display = "inline-block";
+      } else {
+        badge.textContent = "0";
+        badge.style.display = "none";
+      }
+    };
+  
+    window.renderUnreadList = function renderUnreadList(unreadCounts) {
+      const listEl = document.getElementById("navUnreadList");
+      const loadingEl = document.getElementById("navUnreadLoading");
+      if (!listEl) return;
+  
+      if (loadingEl) loadingEl.style.display = "none";
+  
+      const items = (Array.isArray(unreadCounts) ? unreadCounts : [])
+        .filter(x => Number(x.unread_count || 0) > 0)
+        .sort((a,b) => Number(b.unread_count||0) - Number(a.unread_count||0))
+        .slice(0, 12);
+  
+      if (!items.length) {
+        listEl.innerHTML = `
+          <li class="px-3 py-2" style="opacity:.75;font-size:.9rem;">
+            Žiadne neprečítané správy 🎉
+          </li>
+        `;
+        return;
+      }
+  
+      const html = items.map((it) => {
+        const rid = Number(it.room_id);
+        const cnt = Number(it.unread_count || 0);
+        const name = it.room_name ? String(it.room_name) : `Room #${rid}`;
+  
+        return `
+          <li>
+            <a class="dropdown-item nav-unread-item"
+               href="/talker/rooms/${rid}?embed=1"
+               data-room-id="${rid}">
+              <span class="nav-unread-room">
+                <b>${escapeHtml(name)}</b>
+                <small>Klikni pre otvorenie</small>
+              </span>
+              <span class="nav-unread-pill">${cnt}</span>
+            </a>
+          </li>
+        `;
+      }).join("");
+  
+      listEl.innerHTML = html;
+  
+      // reset unread best-effort pri kliknutí
+      listEl.querySelectorAll("a[data-room-id]").forEach((a) => {
+        a.addEventListener("click", async () => {
+          const rid = Number(a.getAttribute("data-room-id"));
+          try {
+            const csrf = (document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")) || "";
+            await fetch(`/talker/reset-unread-count/${rid}`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrf
+              },
+              body: "{}",
+              credentials: "same-origin"
+            });
+          } catch (e) {}
+        }, { passive: true });
+      });
+    };
+  })();
+  </script>
+  
+  <script>
+  /**
+   * Socket.IO realtime unread updates
+   */
+  (function () {
+    if (!window.io) return; // socket.io client must be loaded
+    const socket = io({ transports: ["websocket", "polling"] });
+  
+    socket.on("unread_update", (data) => {
+      try {
+        window.setBadge?.(data?.total_unread_count || 0);
+        window.renderUnreadList?.(data?.unread_counts || []);
+      } catch (e) {}
+    });
+  })();
+  </script>
+  
+    
 </body>
 </html>

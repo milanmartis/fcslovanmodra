@@ -6,7 +6,6 @@
       <img
         src="{{ url_for('static', filename='main/logo-slovan-modra-biele.png') }}"
         alt="FC Slovan Modra logo"
-
       >
       <span class="club-name">FC Slovan Modra</span>
     </a>
@@ -108,6 +107,48 @@
       <!-- Pravá strana – user menu -->
       {% if current_user.is_authenticated %}
       <ul class="navbar-nav user-menu">
+
+        <!-- ✅ Správy (badge + dropdown) -->
+        <li class="nav-item dropdown club-unread-btn">
+          <a
+            class="nav-link dropdown-toggle d-flex align-items-center"
+            href="#"
+            id="unreadDropdown"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            aria-label="Neprečítané správy"
+            style="position:relative;"
+          >
+            <i class="fas fa-bell" style="font-size: 1.05rem;"></i>
+            <span id="navUnreadBadge" class="nav-unread-badge" style="display:none;">0</span>
+          </a>
+
+          <ul class="dropdown-menu dropdown-menu-end nav-unread-menu" aria-labelledby="unreadDropdown">
+            <li class="px-3 pt-2 pb-1" style="opacity:.75;font-size:.85rem;">
+              Neprečítané správy
+            </li>
+
+            <li><hr class="dropdown-divider"></li>
+
+            <li id="navUnreadLoading" class="px-3 py-2" style="opacity:.75;font-size:.9rem;">
+              Načítavam…
+            </li>
+
+            <!-- sem sa renderuje zoznam -->
+            <div id="navUnreadList"></div>
+
+            <li><hr class="dropdown-divider"></li>
+
+            <li class="px-2 pb-2">
+              <a class="dropdown-item" href="{{ url_for('talker.index') }}">
+                Otvoriť Talker
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Avatar + dropdown -->
         <li class="nav-item dropdown club-avatar-btn">
           <a
             class="nav-link dropdown-toggle d-flex align-items-center"
@@ -117,12 +158,12 @@
             data-bs-toggle="dropdown"
             aria-expanded="false"
           >
-          <img
-          id="nav-user-avatar"
-          src="{{ url_for('static', filename='profile_pics/' ~ current_user.image_file) }}"
-          alt="User"
-          style="width:34px;height:34px;border-radius:999px;object-fit:cover;"
-        >
+            <img
+              id="nav-user-avatar"
+              src="{{ url_for('static', filename='profile_pics/' ~ current_user.image_file) }}"
+              alt="User"
+              style="width:34px;height:34px;border-radius:999px;object-fit:cover;"
+            >
           </a>
 
           {% if current_user.has_roles('Admin') %}
