@@ -1,3 +1,4 @@
+# app/talker/routes.py
 from __future__ import annotations
 
 import json
@@ -31,6 +32,15 @@ from flask_login import login_user, current_user, logout_user, login_required
 from functools import wraps
 from flask import abort
 
+
+
+# def api_login_required(fn):
+#     @wraps(fn)
+#     def wrapper(*args, **kwargs):
+#         if not current_user.is_authenticated:
+#             return jsonify(error="unauthorized"), 401
+#         return fn(*args, **kwargs)
+#     return wrapper
 
 def roles_required(*roles):
     def deco(fn):
@@ -274,8 +284,8 @@ const PRECACHE = [
 
 self.addEventListener("install", (event) => {{
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).catch(() => {{}})
-  );
+    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).catch(() => {{}}
+  ));
   self.skipWaiting();
 }});
 
@@ -615,9 +625,33 @@ def debug_broadcast_webpush(title: str, body: str, data: dict):
             continue
 
     return sent
+
+
+@talker.get("/unread/menu")
+@login_required
+def unread_menu():
+    payload = _build_unread_payload_for_user(int(current_user.id))
+    return jsonify(
+        unread_counts=payload.get("unread_counts", []),
+        total_unread_count=payload.get("total_unread_count", 0),
+    ), 200
+
+
+
+
 # -------------------------
 # SOCKET.IO EVENTS
 # -------------------------
+
+@socketio.on("connect", namespace="/")
+def on_socket_connect():
+    if not current_user.is_authenticated:
+        return False
+    try:
+        join_room(f"user:{current_user.id}", namespace="/")
+    except Exception:
+        pass
+
 
 @socketio.on("talker_join")
 def on_join(data: dict[str, Any]):
@@ -668,7 +702,7 @@ def on_send(data: dict[str, Any]):
         emit("talker_error", {"error": "db_error", "detail": str(e)})
         return
 
-    # realtime pre online userov
+    # realtime pre online userov v room
     emit(
         "talker_message",
         {
@@ -683,8 +717,18 @@ def on_send(data: dict[str, Any]):
         include_self=True,
     )
 
-    # push pre offline userov
-    # DEBUG BROADCAST: pošli push všetkým subscription + aj odosielateľovi
+    # ✅ recipients (bez odosielateľa)
+    recipient_user_ids = get_recipients_for_room(room)
+
+    # ✅ realtime badge+dropdown update pre každého recipienta (osobná room user:<id>)
+    try:
+        for uid in recipient_user_ids:
+            payload = _build_unread_payload_for_user(int(uid))
+            socketio.emit("unread_update", payload, room=f"user:{int(uid)}", namespace="/")
+    except Exception:
+        pass
+
+    # push pre offline userov (len recipienti)
     try:
         preview = f"{username}: {msg.text[:120]}"
         data_payload = {
@@ -694,24 +738,18 @@ def on_send(data: dict[str, Any]):
             "url": f"/talker/rooms/{room.id}?embed=1",
         }
 
-        # vždy pošli aj sebe (aby si hneď videl že to funguje)
-        send_push_to_users(
-            user_ids=[current_user.id],
-            title=room.name,
-            body=preview,
-            data=data_payload,
-        )
-
-        # a teraz broadcast všetkým, čo majú webpush subscription
-        sent = debug_broadcast_webpush(
-            title=room.name,
-            body=preview,
-            data=data_payload,
-        )
-        print("DEBUG broadcast webpush sent:", sent)
+        # ✅ posielaj len recipientom (nie odosielateľovi)
+        if recipient_user_ids:
+            send_push_to_users(
+                user_ids=recipient_user_ids,
+                title=room.name,
+                body=preview,
+                data=data_payload,
+            )
 
     except Exception as e:
-        print("DEBUG push error:", e)
+        print("push error:", e)
+
 
 # -------------------------
 # HELPERS
@@ -769,6 +807,104 @@ def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
         return False
     except Exception:
         return False
+
+
+def _unread_counts_for_user(user_id: int) -> list[dict]:
+    """
+    Per-user zoznam unread per room s room_name (pre dropdown).
+    """
+    try:
+        from app.models import TalkRoomReadState  # local import
+
+        rooms = TalkRoom.query.all()
+        unread_counts: list[dict] = []
+
+        for room in rooms:
+            if not _user_can_access_room_for_user(user_id, room):
+                continue
+
+            state = TalkRoomReadState.query.filter_by(user_id=user_id, room_id=room.id).first()
+            last_id = int(getattr(state, "last_read_message_id", 0) or 0)
+
+            cnt = (
+                TalkMessage.query
+                .filter(
+                    TalkMessage.room_id == room.id,
+                    TalkMessage.id > last_id,
+                    TalkMessage.user_id != user_id
+                )
+                .count()
+            )
+            cnt = int(cnt or 0)
+            if cnt > 0:
+                unread_counts.append({
+                    "room_id": int(room.id),
+                    "room_name": str(getattr(room, "name", "") or f"Room #{room.id}"),
+                    "unread_count": cnt
+                })
+
+        unread_counts.sort(key=lambda x: int(x.get("unread_count", 0)), reverse=True)
+        return unread_counts
+    except Exception:
+        return []
+
+
+def _build_unread_payload_for_user(user_id: int) -> dict:
+    """
+    Payload pre Socket.IO event 'unread_update' (badge + dropdown).
+    """
+    unread_counts = _unread_counts_for_user(int(user_id))
+    total = sum(int(x.get("unread_count", 0) or 0) for x in unread_counts)
+    return {
+        "total_unread_count": int(total),
+        "unread_counts": unread_counts,
+    }
+
+
+@talker.route("/update-unread-count/<int:room_id>", methods=["GET", "POST"])
+@csrf.exempt
+@login_required
+def update_unread_count(room_id):
+    payload = _build_unread_payload_for_user(int(current_user.id))
+    return jsonify(
+        user_id=int(current_user.id),
+        user_email=getattr(current_user, "email", None),
+        unread_counts=payload.get("unread_counts", []),
+        total_unread_count=payload.get("total_unread_count", 0),
+    ), 200
+
+@talker.post("/reset-unread-count/<int:room_id>")
+@csrf.exempt
+@login_required
+def reset_unread_count(room_id):
+    if not current_user.is_authenticated:
+        return jsonify({"error": "unauthorized"}), 401
+
+    room = TalkRoom.query.get_or_404(room_id)
+    if not user_can_access_room(room) and not is_admin_user():
+        return jsonify({"error": "forbidden"}), 403
+
+    from app.models import TalkMessage, TalkRoomReadState
+
+    last_msg = (
+        TalkMessage.query
+        .filter_by(room_id=room_id)
+        .order_by(TalkMessage.id.desc())
+        .first()
+    )
+
+    if not last_msg:
+        return jsonify(ok=True, updated=False), 200
+
+    state = TalkRoomReadState.query.filter_by(user_id=current_user.id, room_id=room_id).first()
+    if not state:
+        state = TalkRoomReadState(user_id=current_user.id, room_id=room_id, last_read_message_id=last_msg.id)
+        db.session.add(state)
+    else:
+        state.last_read_message_id = last_msg.id
+
+    db.session.commit()
+    return jsonify(ok=True, updated=True), 200
 
 
 def _total_unread_for_user(user_id: int) -> int:
@@ -1002,9 +1138,6 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
         return sent_total
 
 
-
-
-
 @talker.get("/webpush/test")
 @login_required
 def webpush_test():
@@ -1043,7 +1176,6 @@ def webpush_test():
         return jsonify(ok=True)
     except Exception as e:
         return jsonify(error="send_failed", detail=str(e)), 500
-
 
 
 @talker.get("/rooms/<int:room_id>/unread")
@@ -1104,9 +1236,6 @@ def unread_total():
         total += cnt
 
     return jsonify(total=total)
-
-
-
 
 
 @talker.post("/rooms/<int:room_id>/mark-read")

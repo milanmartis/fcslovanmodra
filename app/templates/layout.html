@@ -1,3 +1,4 @@
+<!-- layout.html -->
 <!DOCTYPE html>
 <html lang="sk">
 <head>
@@ -721,129 +722,133 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
     }
   </script>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-  <script>
-  const socket = io({ transports: ["websocket", "polling"] });
+    <script>
+      /**
+       * Global unread UI helpers for navbar badge + dropdown list.
+       * Make them available everywhere: window.setBadge(), window.renderUnreadList()
+       */
+      (function () {
+        function escapeHtml(s) {
+          return String(s ?? "").replace(/[&<>"']/g, (m) => ({
+            "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+          }[m]));
+        }
+      
+        window.setBadge = function setBadge(count) {
+          const badge = document.getElementById("navUnreadBadge");
+          if (!badge) return;
+      
+          const n = Number(count || 0);
+          if (Number.isFinite(n) && n > 0) {
+            badge.textContent = n > 99 ? "99+" : String(n);
+            badge.style.display = "inline-block";
+          } else {
+            badge.textContent = "0";
+            badge.style.display = "none";
+          }
+        };
+      
+        window.renderUnreadList = function renderUnreadList(unreadCounts) {
+          const listEl = document.getElementById("navUnreadList");
+          const loadingEl = document.getElementById("navUnreadLoading");
+          if (!listEl) return;
+      
+          if (loadingEl) loadingEl.style.display = "none";
+      
+          const activeRid = Number(window.__ACTIVE_TALKER_ROOM_ID || 0) || 0;
 
-  socket.on("connect", () => {
-    // nič netreba, server ta joinne do user:<id>
-  });
+          const items = (Array.isArray(unreadCounts) ? unreadCounts : [])
+            .filter(x => Number(x.unread_count || 0) > 0)
+            .filter(x => Number(x.room_id || 0) !== activeRid)   // neukazuj aktívnu room
+            .sort((a,b) => Number(b.unread_count||0) - Number(a.unread_count||0))
+            .slice(0, 12);
+      
+          if (!items.length) {
+            listEl.innerHTML = `
+              <li class="px-3 py-2" style="opacity:.75;font-size:.9rem;">
+                Žiadne neprečítané správy 🎉
+              </li>
+            `;
+            return;
+          }
+      
+          const html = items.map((it) => {
+            const rid = Number(it.room_id);
+            const cnt = Number(it.unread_count || 0);
+            const name = it.room_name ? String(it.room_name) : `Room #${rid}`;
+      
+            return `
+              <li>
+                <a class="dropdown-item nav-unread-item"
+                   href="/talker/rooms/${rid}?embed=1"
+                   data-room-id="${rid}">
+                  <span class="nav-unread-room">
+                    <b>${escapeHtml(name)}</b>
+                    <small>Klikni pre otvorenie</small>
+                  </span>
+                  <span class="nav-unread-pill">${cnt}</span>
+                </a>
+              </li>
+            `;
+          }).join("");
+      
+          listEl.innerHTML = html;
+      
+          // reset unread best-effort pri kliknutí
+          listEl.querySelectorAll("a[data-room-id]").forEach((a) => {
+            a.addEventListener("click", async () => {
+              const rid = Number(a.getAttribute("data-room-id"));
+              try {
+                const csrf = (document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")) || "";
+                await fetch(`/talker/reset-unread-count/${rid}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+                  body: "{}",
+                  credentials: "same-origin"
+                });
+              } catch (e) {}
+            });
+          });
+        };
 
-  socket.on("unread_update", (data) => {
-    // data.total_unread_count
-    // data.unread_counts
-
-    setBadge(data.total_unread_count);
-    renderUnreadList(data.unread_counts);
-  });
-</script>
-<script>
-  /**
-   * Global unread UI helpers for navbar badge + dropdown list.
-   * Make them available everywhere: window.setBadge(), window.renderUnreadList()
-   */
-  (function () {
-    function escapeHtml(s) {
-      return String(s ?? "").replace(/[&<>"']/g, (m) => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-      }[m]));
-    }
-  
-    window.setBadge = function setBadge(count) {
-      const badge = document.getElementById("navUnreadBadge");
-      if (!badge) return;
-  
-      const n = Number(count || 0);
-      if (Number.isFinite(n) && n > 0) {
-        badge.textContent = n > 99 ? "99+" : String(n);
-        badge.style.display = "inline-block";
-      } else {
-        badge.textContent = "0";
-        badge.style.display = "none";
-      }
-    };
-  
-    window.renderUnreadList = function renderUnreadList(unreadCounts) {
-      const listEl = document.getElementById("navUnreadList");
-      const loadingEl = document.getElementById("navUnreadLoading");
-      if (!listEl) return;
-  
-      if (loadingEl) loadingEl.style.display = "none";
-  
-      const items = (Array.isArray(unreadCounts) ? unreadCounts : [])
-        .filter(x => Number(x.unread_count || 0) > 0)
-        .sort((a,b) => Number(b.unread_count||0) - Number(a.unread_count||0))
-        .slice(0, 12);
-  
-      if (!items.length) {
-        listEl.innerHTML = `
-          <li class="px-3 py-2" style="opacity:.75;font-size:.9rem;">
-            Žiadne neprečítané správy 🎉
-          </li>
-        `;
-        return;
-      }
-  
-      const html = items.map((it) => {
-        const rid = Number(it.room_id);
-        const cnt = Number(it.unread_count || 0);
-        const name = it.room_name ? String(it.room_name) : `Room #${rid}`;
-  
-        return `
-          <li>
-            <a class="dropdown-item nav-unread-item"
-               href="/talker/rooms/${rid}?embed=1"
-               data-room-id="${rid}">
-              <span class="nav-unread-room">
-                <b>${escapeHtml(name)}</b>
-                <small>Klikni pre otvorenie</small>
-              </span>
-              <span class="nav-unread-pill">${cnt}</span>
-            </a>
-          </li>
-        `;
-      }).join("");
-  
-      listEl.innerHTML = html;
-  
-      // reset unread best-effort pri kliknutí
-      listEl.querySelectorAll("a[data-room-id]").forEach((a) => {
-        a.addEventListener("click", async () => {
-          const rid = Number(a.getAttribute("data-room-id"));
+        (async function () {
           try {
             const csrf = (document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")) || "";
-            await fetch(`/talker/reset-unread-count/${rid}`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrf
-              },
-              body: "{}",
+            const r = await fetch("/talker/update-unread-count/0", {
+              method: "GET",
               credentials: "same-origin"
             });
+            if (!r.ok) { console.error("unread fetch failed", r.status); return; }
+            const ct = (r.headers.get("content-type") || "").toLowerCase();
+            if (!ct.includes("application/json")) { console.error("unread fetch not json", ct); return; }
+
+            const data = await r.json();
+            window.setBadge?.(data?.total_unread_count || 0);
+            window.renderUnreadList?.(data?.unread_counts || []);
           } catch (e) {}
-        }, { passive: true });
-      });
-    };
-  })();
-  </script>
-  
-  <script>
-  /**
-   * Socket.IO realtime unread updates
-   */
-  (function () {
-    if (!window.io) return; // socket.io client must be loaded
-    const socket = io({ transports: ["websocket", "polling"] });
-  
-    socket.on("unread_update", (data) => {
-      try {
-        window.setBadge?.(data?.total_unread_count || 0);
-        window.renderUnreadList?.(data?.unread_counts || []);
-      } catch (e) {}
-    });
-  })();
-  </script>
-  
+        })();
+
+      })();
+      </script>
+      
+      <script>
+      /**
+       * Socket.IO realtime unread updates
+       */
+       (function () {
+        if (!window.io) return;
+        if (window.__IS_AUTH !== true) return;  // ✅ len pre prihlásených
+        const socket = io({ transports: ["websocket", "polling"], withCredentials: true });
+        window.__UNREAD_SOCKET = socket;
+
+        socket.on("unread_update", (data) => {
+          try {
+            window.setBadge?.(data?.total_unread_count || 0);
+            window.renderUnreadList?.(data?.unread_counts || []);
+          } catch (e) {}
+        });
+      })();
+      </script>
     
 </body>
 </html>

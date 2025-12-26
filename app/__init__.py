@@ -39,7 +39,7 @@ bcrypt = Bcrypt()
 # login_manager = LoginManager()
 mail = Mail()
 csrf = CSRFProtect()
-socketio = SocketIO(cors_allowed_origins="*")
+socketio = SocketIO()
 
 
 def create_app(config_class=None):
@@ -73,7 +73,16 @@ def create_app(config_class=None):
     bcrypt.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
-    socketio.init_app(app)
+    
+    socketio.init_app(
+        app,
+        cors_allowed_origins=[
+            "http://127.0.0.1:5000",
+            "http://localhost:5000",
+            # "https://tvoja-domena.sk",
+        ],
+        cors_credentials=True,  # ✅ kľúčové: povoľ cookies/credentials
+    )
 
     login_manager = LoginManager()
     login_manager.login_view = "users.login"  # tvoj endpoint
