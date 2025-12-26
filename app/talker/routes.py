@@ -787,10 +787,29 @@ def get_recipients_for_room(room: TalkRoom) -> list[int]:
 
 def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
     try:
+        # ✅ ADMIN vidí všetko → aj unread počítaj pre všetky rooms
+        u = None
+        try:
+            # ak je to práve prihlásený user, môžeš použiť current_user
+            if current_user.is_authenticated and int(getattr(current_user, "id", 0) or 0) == int(user_id):
+                u = current_user
+        except Exception:
+            u = None
+
+        if u is not None:
+            # podľa toho, čo používaš: has_role / role / is_admin flag
+            if getattr(u, "is_admin", False) is True:
+                return True
+            if getattr(u, "has_role", None) and u.has_role("admin"):
+                return True
+            if getattr(u, "has_roles", None) and u.has_roles("admin"):
+                return True
+
+        # (ďalej nechaj pôvodnú logiku membership)
         if getattr(room, "team_id", None) is None:
             members = getattr(room, "members", None) or []
-            for u in members:
-                if int(getattr(u, "id", 0) or 0) == int(user_id):
+            for m in members:
+                if int(getattr(m, "id", 0) or 0) == int(user_id):
                     return True
             return False
 
@@ -804,6 +823,7 @@ def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
         return False
     except Exception:
         return False
+
 
 
 def _unread_counts_for_user(user_id: int) -> list[dict]:

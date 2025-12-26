@@ -124,76 +124,76 @@ self.addEventListener("message", (event) => {
 // ------------------------------
 // FCM background (Android/desktop)
 // ------------------------------
-try {
-  if (self.firebase && firebase.messaging) {
-    const messaging = firebase.messaging();
+// try {
+//   if (self.firebase && firebase.messaging) {
+//     const messaging = firebase.messaging();
 
-    messaging.onBackgroundMessage((payload) => {
-      const title = payload?.notification?.title || "Talker";
-      const body = payload?.notification?.body || "";
-      const data = payload?.data || {};
+//     messaging.onBackgroundMessage((payload) => {
+//       const title = payload?.notification?.title || "Talker";
+//       const body = payload?.notification?.body || "";
+//       const data = payload?.data || {};
 
-      const url = data.url || "/";
-      const roomId = data.roomId || null;
+//       const url = data.url || "/";
+//       const roomId = data.roomId || null;
 
-      const totalUnread =
-        data.totalUnread ?? data.total_unread ?? data.badge ?? null;
+//       const totalUnread =
+//         data.totalUnread ?? data.total_unread ?? data.badge ?? null;
 
-      return showTalkerNotification({
-        title,
-        body,
-        url,
-        roomId,
-        totalUnread,
-      });
-    });
-  }
-} catch {
-  // ignore
-}
+//       return showTalkerNotification({
+//         title,
+//         body,
+//         url,
+//         roomId,
+//         totalUnread,
+//       });
+//     });
+//   }
+// } catch {
+//   // ignore
+// }
 
-// ------------------------------
-// WebPush (iOS PWA Safari + všeobecný WebPush)
-// ------------------------------
-self.addEventListener("push", (event) => {
-  event.waitUntil(
-    (async () => {
-      const payload = await parsePushPayload(event);
+// // ------------------------------
+// // WebPush (iOS PWA Safari + všeobecný WebPush)
+// // ------------------------------
+// self.addEventListener("push", (event) => {
+//   event.waitUntil(
+//     (async () => {
+//       const payload = await parsePushPayload(event);
 
-      const title =
-        payload.title ||
-        payload?.notification?.title ||
-        "Talker";
+//       const title =
+//         payload.title ||
+//         payload?.notification?.title ||
+//         "Talker";
 
-      const body =
-        payload.body ||
-        payload?.notification?.body ||
-        "";
+//       const body =
+//         payload.body ||
+//         payload?.notification?.body ||
+//         "";
 
-      const data = payload.data || payload?.notification?.data || {};
+//       const data = payload.data || payload?.notification?.data || {};
 
-      const url = payload.url || data.url || "/";
-      const roomId = payload.roomId || data.roomId || null;
+//       const url = payload.url || data.url || "/";
+//       const roomId = payload.roomId || data.roomId || null;
 
-      const totalUnread =
-        payload.totalUnread ??
-        payload.total_unread ??
-        payload.badge ??
-        data.totalUnread ??
-        data.total_unread ??
-        data.badge ??
-        null;
+//       const totalUnread =
+//         payload.totalUnread ??
+//         payload.total_unread ??
+//         payload.badge ??
+//         data.totalUnread ??
+//         data.total_unread ??
+//         data.badge ??
+//         null;
 
-      await showTalkerNotification({
-        title,
-        body,
-        url,
-        roomId,
-        totalUnread,
-      });
-    })()
-  );
-});
+//       await showTalkerNotification({
+//         title,
+//         body,
+//         url,
+//         roomId,
+//         totalUnread,
+//       });
+//     })()
+//   );
+// });
 
 // ------------------------------
 // Click handling

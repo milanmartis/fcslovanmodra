@@ -357,6 +357,7 @@
           Test push
         </a>
         -->
+        <button class="push-btn" id="backBtn"  type="button">Back</button>
         <button class="push-btn" id="pushBtn" type="button">Push…</button>
 
         <div class="talker-badge" id="conn">
@@ -409,6 +410,7 @@
   const dotEl = document.getElementById("dot");
   const statusEl = document.getElementById("status");
   const pushBtn = document.getElementById("pushBtn");
+  const backBtn = document.getElementById("backBtn");
 
   // zachované (bolo v súbore)
   const unreadPill = document.getElementById("unreadPill");
@@ -844,7 +846,16 @@
       return;
     }
 
-    pushBtn.addEventListener("click", async () => {
+
+    backBtn.addEventListener("click", () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("embed") === "1" && window.history.length > 1) {
+        window.history.back();
+      }
+    });
+
+
+      pushBtn.addEventListener("click", async () => {
       pushBtn.disabled = true;
       try {
         await setPushEnabled(!getPushEnabled());
