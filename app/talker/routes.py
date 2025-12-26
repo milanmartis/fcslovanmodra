@@ -5,7 +5,6 @@ import json
 from typing import Any
 
 from flask import Blueprint, render_template, request, jsonify, abort, current_app, Response
-# from flask_security import login_required, current_user
 from flask_socketio import join_room, emit
 from sqlalchemy.exc import IntegrityError
 from firebase_admin import messaging
@@ -28,19 +27,9 @@ try:
 except Exception:  # pragma: no cover
     WebPushSubscription = None  # type: ignore
 
-from flask_login import login_user, current_user, logout_user, login_required
+from flask_login import current_user, login_required
 from functools import wraps
-from flask import abort
 
-
-
-# def api_login_required(fn):
-#     @wraps(fn)
-#     def wrapper(*args, **kwargs):
-#         if not current_user.is_authenticated:
-#             return jsonify(error="unauthorized"), 401
-#         return fn(*args, **kwargs)
-#     return wrapper
 
 def roles_required(*roles):
     def deco(fn):
@@ -49,7 +38,6 @@ def roles_required(*roles):
             if not current_user.is_authenticated:
                 abort(401)
 
-            # ✅ robust: podporí has_role aj has_roles (aby to nepadalo podľa implementácie User)
             checker = getattr(current_user, "has_role", None) or getattr(current_user, "has_roles", None)
             if not checker or not checker(*roles):
                 abort(403)
@@ -115,8 +103,8 @@ def firebase_messaging_sw():
 // Firebase (FCM) SW
 // -------------------------
 try {{
-importScripts("https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js");
-importScripts("https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js");
+  importScripts("https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js");
+  importScripts("https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js");
 }} catch (e) {{
   console.error("FCM SW importScripts failed:", e);
 }}
@@ -127,21 +115,14 @@ let messaging = null;
 
 try {{
   if (typeof firebase !== "undefined" && FIREBASE_CONFIG && FIREBASE_CONFIG.messagingSenderId) {{
-    try {{
-      firebase.initializeApp(FIREBASE_CONFIG);
-    }} catch (e) {{
-      // ignore already-initialized
-    }}
-    try {{
-      messaging = firebase.messaging();
-    }} catch (e) {{
+    try {{ firebase.initializeApp(FIREBASE_CONFIG); }} catch (e) {{}}
+    try {{ messaging = firebase.messaging(); }} catch (e) {{
       console.error("FCM SW firebase.messaging() failed:", e);
     }}
   }}
 }} catch (e) {{
   console.error("FCM SW init failed:", e);
 }}
-
 
 function toInt(v) {{
   try {{
@@ -210,9 +191,8 @@ async function parsePushPayload(event) {{
   try {{
     payload = event.data ? event.data.json() : {{}};
     return payload || {{}};
-  }} catch {{
-    // ignore
-  }}
+  }} catch {{}}
+
   try {{
     const txt = event.data && event.data.text ? await event.data.text() : "";
     if (!txt) return {{}};
@@ -347,8 +327,8 @@ def push_config():
             "appId": current_app.config.get("FIREBASE_APP_ID"),
         },
         vapidPublicKey=current_app.config.get("VAPID_PUBLIC_KEY"),
-        fcmVapidPublicKey=current_app.config.get("FCM_VAPID_PUBLIC_KEY") or current_app.config.get("VAPID_PUBLIC_KEY"),
-
+        fcmVapidPublicKey=current_app.config.get("FCM_VAPID_PUBLIC_KEY")
+        or current_app.config.get("VAPID_PUBLIC_KEY"),
     )
 
 
@@ -491,15 +471,6 @@ def room_detail(room_id):
 @talker.get("/rooms/<int:room_id>/messages")
 @login_required
 def load_messages(room_id: int):
-    """
-    Podporuje:
-      - ?limit=50
-      - ?after_id=123  -> vráti len správy s id > after_id
-
-    Dôležité:
-      - keď after_id NIE JE, chceme "posledných N" správ
-      - UI typicky chce poradie od najstaršej po najnovšiu
-    """
     room = TalkRoom.query.get_or_404(room_id)
     if not user_can_access_room(room):
         abort(403)
@@ -513,8 +484,6 @@ def load_messages(room_id: int):
     after_id = request.args.get("after_id", None)
     q = TalkMessage.query.filter_by(room_id=room.id)
 
-    msgs: list[TalkMessage]
-
     if after_id:
         try:
             after_id_int = int(after_id)
@@ -525,18 +494,10 @@ def load_messages(room_id: int):
                  .all()
             )
         except Exception:
-            msgs = (
-                q.order_by(TalkMessage.id.desc())
-                 .limit(limit)
-                 .all()
-            )
+            msgs = q.order_by(TalkMessage.id.desc()).limit(limit).all()
             msgs = list(reversed(msgs))
     else:
-        msgs = (
-            q.order_by(TalkMessage.id.desc())
-             .limit(limit)
-             .all()
-        )
+        msgs = q.order_by(TalkMessage.id.desc()).limit(limit).all()
         msgs = list(reversed(msgs))
 
     return jsonify([
@@ -583,11 +544,6 @@ def register_push_token():
 @talker.get("/push/status")
 @login_required
 def push_status():
-    """
-    Vraciame oboje:
-      - FCM token (PushToken)
-      - WebPush subscription (WebPushSubscription)
-    """
     has_fcm = PushToken.query.filter_by(user_id=current_user.id).first() is not None
 
     has_webpush = False
@@ -600,32 +556,10 @@ def push_status():
         has_webpush=bool(has_webpush),
     )
 
-def debug_broadcast_webpush(title: str, body: str, data: dict):
-    if WebPushSubscription is None or webpush is None:
-        return 0
 
-    # všetci users, ktorí majú subscription (aj mimo room)
-    subs = WebPushSubscription.query.all()
-    user_ids = sorted({int(s.user_id) for s in subs if getattr(s, "user_id", None)})
-
-    sent = 0
-    for uid in user_ids:
-        try:
-            badge = _total_unread_for_user(uid)
-            sent += int(_send_webpush_to_user(
-                user_id=uid,
-                title=title,
-                body=body,
-                url=str(data.get("url") or "/talker/"),
-                room_id=int(data.get("room_id") or data.get("roomId") or 0) or None,
-                total_unread=int(badge),
-                data=data,
-            ))
-        except Exception:
-            continue
-
-    return sent
-
+# -------------------------
+# UNREAD (menu + badge)
+# -------------------------
 
 @talker.get("/unread/menu")
 @login_required
@@ -637,6 +571,77 @@ def unread_menu():
     ), 200
 
 
+@talker.route("/update-unread-count/<int:room_id>", methods=["GET", "POST"])
+@csrf.exempt
+@login_required
+def update_unread_count(room_id):
+    payload = _build_unread_payload_for_user(int(current_user.id))
+    return jsonify(
+        user_id=int(current_user.id),
+        user_email=getattr(current_user, "email", None),
+        unread_counts=payload.get("unread_counts", []),
+        total_unread_count=payload.get("total_unread_count", 0),
+    ), 200
+
+
+@talker.post("/reset-unread-count/<int:room_id>")
+@csrf.exempt
+@login_required
+def reset_unread_count(room_id):
+    room = TalkRoom.query.get_or_404(room_id)
+    if not user_can_access_room(room) and not is_admin_user():
+        return jsonify({"error": "forbidden"}), 403
+
+    from app.models import TalkRoomReadState
+
+    last_msg = (
+        TalkMessage.query
+        .filter_by(room_id=room_id)
+        .order_by(TalkMessage.id.desc())
+        .first()
+    )
+    if not last_msg:
+        return jsonify(ok=True, updated=False), 200
+
+    state = TalkRoomReadState.query.filter_by(user_id=current_user.id, room_id=room_id).first()
+    if not state:
+        state = TalkRoomReadState(user_id=current_user.id, room_id=room_id, last_read_message_id=last_msg.id)
+        db.session.add(state)
+    else:
+        state.last_read_message_id = last_msg.id
+
+    db.session.commit()
+    return jsonify(ok=True, updated=True), 200
+
+
+@talker.post("/rooms/<int:room_id>/mark-read")
+@login_required
+@csrf.exempt
+def mark_room_read(room_id):
+    from app.models import TalkRoomReadState
+
+    last_msg = (
+        TalkMessage.query
+        .filter_by(room_id=room_id)
+        .order_by(TalkMessage.id.desc())
+        .first()
+    )
+    if not last_msg:
+        return jsonify(ok=True)
+
+    state = TalkRoomReadState.query.filter_by(user_id=current_user.id, room_id=room_id).first()
+    if not state:
+        state = TalkRoomReadState(
+            user_id=current_user.id,
+            room_id=room_id,
+            last_read_message_id=last_msg.id
+        )
+        db.session.add(state)
+    else:
+        state.last_read_message_id = last_msg.id
+
+    db.session.commit()
+    return jsonify(ok=True)
 
 
 # -------------------------
@@ -702,7 +707,7 @@ def on_send(data: dict[str, Any]):
         emit("talker_error", {"error": "db_error", "detail": str(e)})
         return
 
-    # realtime pre online userov v room
+    # realtime správa pre online userov v room (vrátane odosielateľa)
     emit(
         "talker_message",
         {
@@ -720,7 +725,7 @@ def on_send(data: dict[str, Any]):
     # ✅ recipients (bez odosielateľa)
     recipient_user_ids = get_recipients_for_room(room)
 
-    # ✅ realtime badge+dropdown update pre každého recipienta (osobná room user:<id>)
+    # ✅ realtime badge+dropdown update (osobná room user:<id>)
     try:
         for uid in recipient_user_ids:
             payload = _build_unread_payload_for_user(int(uid))
@@ -728,7 +733,7 @@ def on_send(data: dict[str, Any]):
     except Exception:
         pass
 
-    # push pre offline userov (len recipienti)
+    # ✅ push pre offline userov (len recipienti)
     try:
         preview = f"{username}: {msg.text[:120]}"
         data_payload = {
@@ -737,8 +742,6 @@ def on_send(data: dict[str, Any]):
             "type": "talker_message",
             "url": f"/talker/rooms/{room.id}?embed=1",
         }
-
-        # ✅ posielaj len recipientom (nie odosielateľovi)
         if recipient_user_ids:
             send_push_to_users(
                 user_ids=recipient_user_ids,
@@ -746,7 +749,6 @@ def on_send(data: dict[str, Any]):
                 body=preview,
                 data=data_payload,
             )
-
     except Exception as e:
         print("push error:", e)
 
@@ -784,11 +786,7 @@ def get_recipients_for_room(room: TalkRoom) -> list[int]:
 
 
 def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
-    """
-    Bez current_user – aby sme vedeli počítať unread pre recipientov.
-    """
     try:
-        # room without team: membership list
         if getattr(room, "team_id", None) is None:
             members = getattr(room, "members", None) or []
             for u in members:
@@ -796,7 +794,6 @@ def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
                     return True
             return False
 
-        # room with team: team membership list
         team = Team.query.get(room.team_id)
         if not team:
             return False
@@ -810,9 +807,6 @@ def _user_can_access_room_for_user(user_id: int, room: TalkRoom) -> bool:
 
 
 def _unread_counts_for_user(user_id: int) -> list[dict]:
-    """
-    Per-user zoznam unread per room s room_name (pre dropdown).
-    """
     try:
         from app.models import TalkRoomReadState  # local import
 
@@ -850,9 +844,6 @@ def _unread_counts_for_user(user_id: int) -> list[dict]:
 
 
 def _build_unread_payload_for_user(user_id: int) -> dict:
-    """
-    Payload pre Socket.IO event 'unread_update' (badge + dropdown).
-    """
     unread_counts = _unread_counts_for_user(int(user_id))
     total = sum(int(x.get("unread_count", 0) or 0) for x in unread_counts)
     return {
@@ -861,56 +852,7 @@ def _build_unread_payload_for_user(user_id: int) -> dict:
     }
 
 
-@talker.route("/update-unread-count/<int:room_id>", methods=["GET", "POST"])
-@csrf.exempt
-@login_required
-def update_unread_count(room_id):
-    payload = _build_unread_payload_for_user(int(current_user.id))
-    return jsonify(
-        user_id=int(current_user.id),
-        user_email=getattr(current_user, "email", None),
-        unread_counts=payload.get("unread_counts", []),
-        total_unread_count=payload.get("total_unread_count", 0),
-    ), 200
-
-@talker.post("/reset-unread-count/<int:room_id>")
-@csrf.exempt
-@login_required
-def reset_unread_count(room_id):
-    if not current_user.is_authenticated:
-        return jsonify({"error": "unauthorized"}), 401
-
-    room = TalkRoom.query.get_or_404(room_id)
-    if not user_can_access_room(room) and not is_admin_user():
-        return jsonify({"error": "forbidden"}), 403
-
-    from app.models import TalkMessage, TalkRoomReadState
-
-    last_msg = (
-        TalkMessage.query
-        .filter_by(room_id=room_id)
-        .order_by(TalkMessage.id.desc())
-        .first()
-    )
-
-    if not last_msg:
-        return jsonify(ok=True, updated=False), 200
-
-    state = TalkRoomReadState.query.filter_by(user_id=current_user.id, room_id=room_id).first()
-    if not state:
-        state = TalkRoomReadState(user_id=current_user.id, room_id=room_id, last_read_message_id=last_msg.id)
-        db.session.add(state)
-    else:
-        state.last_read_message_id = last_msg.id
-
-    db.session.commit()
-    return jsonify(ok=True, updated=True), 200
-
-
 def _total_unread_for_user(user_id: int) -> int:
-    """
-    Spočíta celkové unread naprieč roomami (podľa TalkRoomReadState).
-    """
     try:
         from app.models import TalkRoomReadState  # local import
 
@@ -940,10 +882,15 @@ def _total_unread_for_user(user_id: int) -> int:
         return 0
 
 
-def _send_webpush_to_user(user_id: int, title: str, body: str, url: str, room_id: int | None, total_unread: int, data: dict | None = None) -> int:
-    """
-    WebPush pre jedného usera (kvôli per-user badge).
-    """
+def _send_webpush_to_user(
+    user_id: int,
+    title: str,
+    body: str,
+    url: str,
+    room_id: int | None,
+    total_unread: int,
+    data: dict | None = None
+) -> int:
     if WebPushSubscription is None or webpush is None:
         return 0
 
@@ -980,7 +927,7 @@ def _send_webpush_to_user(user_id: int, title: str, body: str, url: str, room_id
                 data=payload_json,
                 vapid_private_key=vapid_private,
                 vapid_claims={"sub": vapid_subject},
-                ttl=60 * 60,  # 1h
+                ttl=60 * 60,
                 headers={"Urgency": "high"},
             )
             ok += 1
@@ -1005,22 +952,14 @@ def _send_webpush_to_user(user_id: int, title: str, body: str, url: str, room_id
 
 def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | None = None) -> int:
     """
-    Hybrid "jedno miesto pravdy":
-
-      1) WebPush per-user (iOS PWA) – kvôli badge (total_unread) musí byť per-user
+    Hybrid:
+      1) WebPush per-user (iOS PWA) – badge total_unread musí byť per-user
       2) FCM multicast (Android/desktop) – tokeny z PushToken
-
-    Poznámky:
-      - WebPush sa posiela aj keď user nemá FCM token
-      - FCM sa posiela aj keď user nemá WebPush subscription
-      - payload data musí byť string -> FCM vyžaduje string values
     """
     sent_total = 0
     data = data or {}
 
-    # -------------------------
     # WebPush (iOS) – PER USER
-    # -------------------------
     try:
         url = (data.get("url") or "/talker/") if isinstance(data, dict) else "/talker/"
         room_id = data.get("room_id") if isinstance(data, dict) else None
@@ -1032,7 +971,6 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
         except Exception:
             room_id_int = None
 
-        # pošli per-user webpush len ak máme infra (model + pywebpush)
         if WebPushSubscription is not None and webpush is not None:
             for uid in user_ids:
                 try:
@@ -1047,28 +985,21 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
                         data=data,
                     ))
                 except Exception:
-                    # nechceme zabiť celý send kvôli jednému userovi
                     continue
     except Exception:
-        # webpush vetvu nikdy nenecháme zhodiť celý send
         pass
 
-    # -------------------------
-    # FCM (multicast) – tokeny
-    # -------------------------
+    # FCM (multicast)
     if not user_ids:
         return sent_total
 
-    # init firebase admin app
-    app = init_firebase()
-    if not app:
+    fb_app = init_firebase()
+    if not fb_app:
         return sent_total
 
-    # vytiahni tokeny pre všetkých recipientov
     raw_tokens = PushToken.query.filter(PushToken.user_id.in_(user_ids)).all()
     tokens: list[str] = []
     seen = set()
-
     for t in raw_tokens:
         tok = (t.token or "").strip() if t else ""
         if not tok or tok in seen:
@@ -1079,7 +1010,6 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
     if not tokens:
         return sent_total
 
-    # FCM data values musia byť string
     fcm_data: dict[str, str] = {}
     try:
         if isinstance(data, dict):
@@ -1094,7 +1024,7 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
     )
 
     try:
-        resp = messaging.send_each_for_multicast(mm, app=app)
+        resp = messaging.send_each_for_multicast(mm, app=fb_app)
 
         bad_tokens = []
         for i, r in enumerate(resp.responses):
@@ -1110,9 +1040,8 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
 
         sent_total += int(resp.success_count or 0)
         return sent_total
-
     except Exception:
-        # fallback per token (robust)
+        # fallback per token
         results = []
         for tok in tokens:
             msg = messaging.Message(
@@ -1121,7 +1050,7 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
                 token=tok,
             )
             try:
-                messaging.send(msg, app=app)
+                messaging.send(msg, app=fb_app)
                 results.append((tok, True, None))
             except Exception as ex:
                 results.append((tok, False, ex))
@@ -1136,138 +1065,3 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
 
         sent_total += sum(1 for _, ok, _ in results if ok)
         return sent_total
-
-
-@talker.get("/webpush/test")
-@login_required
-def webpush_test():
-    if WebPushSubscription is None or webpush is None:
-        return jsonify(error="webpush_not_configured"), 501
-
-    vapid_private = (current_app.config.get("VAPID_PRIVATE_KEY") or "").strip()
-    vapid_subject = (current_app.config.get("VAPID_SUBJECT") or "mailto:admin@example.com").strip()
-    if not vapid_private:
-        return jsonify(error="missing_vapid_private"), 500
-
-    sub = WebPushSubscription.query.filter_by(user_id=current_user.id).order_by(WebPushSubscription.id.desc()).first()
-    if not sub:
-        return jsonify(error="no_subscription"), 404
-
-    payload = {
-        "title": "iOS TEST",
-        "body": "Ak toto vidíš, WebPush ide ✅",
-        "url": "/talker/",
-        "totalUnread": 1,
-        "data": {"type": "test"},
-    }
-
-    try:
-        webpush(
-            subscription_info={
-                "endpoint": sub.endpoint,
-                "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
-            },
-            data=json.dumps(payload, ensure_ascii=False),
-            vapid_private_key=vapid_private,
-            vapid_claims={"sub": vapid_subject},
-            ttl=60,
-            headers={"Urgency": "high"},
-        )
-        return jsonify(ok=True)
-    except Exception as e:
-        return jsonify(error="send_failed", detail=str(e)), 500
-
-
-@talker.get("/rooms/<int:room_id>/unread")
-@login_required
-def unread_for_room(room_id):
-    from app.models import TalkMessage, TalkRoomReadState
-
-    state = TalkRoomReadState.query.filter_by(
-        user_id=current_user.id,
-        room_id=room_id
-    ).first()
-
-    last_id = state.last_read_message_id if state else 0
-
-    unread = (
-        TalkMessage.query
-        .filter(
-            TalkMessage.room_id == room_id,
-            TalkMessage.id > last_id,
-            TalkMessage.user_id != current_user.id
-        )
-        .count()
-    )
-
-    return jsonify(room_id=room_id, unread=unread)
-
-
-@talker.get("/unread/total")
-@login_required
-def unread_total():
-    from app.models import TalkMessage, TalkRoomReadState, TalkRoom
-
-    total = 0
-
-    rooms = TalkRoom.query.all()
-
-    for room in rooms:
-        if not user_can_access_room(room):
-            continue
-
-        state = TalkRoomReadState.query.filter_by(
-            user_id=current_user.id,
-            room_id=room.id
-        ).first()
-
-        last_id = state.last_read_message_id if state else 0
-
-        cnt = (
-            TalkMessage.query
-            .filter(
-                TalkMessage.room_id == room.id,
-                TalkMessage.id > last_id,
-                TalkMessage.user_id != current_user.id
-            )
-            .count()
-        )
-
-        total += cnt
-
-    return jsonify(total=total)
-
-
-@talker.post("/rooms/<int:room_id>/mark-read")
-@login_required
-@csrf.exempt
-def mark_room_read(room_id):
-    from app.models import TalkMessage, TalkRoomReadState
-
-    last_msg = (
-        TalkMessage.query
-        .filter_by(room_id=room_id)
-        .order_by(TalkMessage.id.desc())
-        .first()
-    )
-
-    if not last_msg:
-        return jsonify(ok=True)
-
-    state = TalkRoomReadState.query.filter_by(
-        user_id=current_user.id,
-        room_id=room_id
-    ).first()
-
-    if not state:
-        state = TalkRoomReadState(
-            user_id=current_user.id,
-            room_id=room_id,
-            last_read_message_id=last_msg.id
-        )
-        db.session.add(state)
-    else:
-        state.last_read_message_id = last_msg.id
-
-    db.session.commit()
-    return jsonify(ok=True)
