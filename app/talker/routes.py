@@ -171,17 +171,17 @@ function showNotif(title, body, data) {{
   }}
 }}
 
-if (messaging) {{
-  messaging.onBackgroundMessage((payload) => {{
-    try {{
-      const notif = payload?.notification || {{}};
-      const data  = payload?.data || {{}};
-      return showNotif(notif.title || "Talker", notif.body || "", data);
-    }} catch (e) {{
-      console.error("FCM SW onBackgroundMessage error:", e);
-    }}
-  }});
-}}
+//if (messaging) {{
+ // messaging.onBackgroundMessage((payload) => {{
+ //   try {{
+ //     const notif = payload?.notification || {{}};
+  //    const data  = payload?.data || {{}};
+  //    return showNotif(notif.title || "Talker", notif.body || "", data);
+//    }} catch (e) {{
+ //     console.error("FCM SW onBackgroundMessage error:", e);
+  //  }}
+  //}});
+//}}
 
 // -------------------------
 // WebPush (iOS PWA) – "push" event
