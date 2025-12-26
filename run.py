@@ -47,28 +47,19 @@
 
 
 
-# import os
-# from app import create_app, socketio  # <-- pridaj socketio
-
-# app = create_app()
-
-# if __name__ == "__main__":
-#     port = int(os.environ.get("PORT", 5000))
-
-#     socketio.run(
-#         app,
-#         host="0.0.0.0",
-#         port=port,
-#         debug=True,
-#         use_reloader=True,
-#         allow_unsafe_werkzeug=True  # ak máš novší Flask/Werkzeug a lokálne ti to vypisuje warning
-#     )
-
-
-
-from app import create_app, socketio
+import os
+from app import create_app, socketio  # <-- pridaj socketio
 
 app = create_app()
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        debug=True,
+        use_reloader=True,
+        allow_unsafe_werkzeug=True  # ak máš novší Flask/Werkzeug a lokálne ti to vypisuje warning
+    )
