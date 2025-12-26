@@ -79,7 +79,7 @@ def create_app(config_class=None):
         cors_allowed_origins=[
             "http://127.0.0.1:5000",
             "http://localhost:5000",
-            # "https://tvoja-domena.sk",
+            "https://fcman-37884cffcf78.herokuapp.com",
         ],
         cors_credentials=True,  # ✅ kľúčové: povoľ cookies/credentials
     )

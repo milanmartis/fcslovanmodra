@@ -1,3 +1,4 @@
+<!-- app/talker/room_detail.html -->
 {% extends base_template %}
 {% block content %}
 
@@ -395,7 +396,7 @@
 
 <script>
   const roomId = {{ room.id }};
-  //window.__ACTIVE_TALKER_ROOM_ID = roomId;
+  window.__ACTIVE_TALKER_ROOM_ID = roomId;   // ✅ aby menu vedelo odfiltrovať aktívnu room
   const myUserId = {{ current_user.id }};
 
   const scrollEl = document.getElementById("scroll");
@@ -409,6 +410,7 @@
   const statusEl = document.getElementById("status");
   const pushBtn = document.getElementById("pushBtn");
 
+  // zachované (bolo v súbore)
   const unreadPill = document.getElementById("unreadPill");
   const unreadCountEl = document.getElementById("unreadCount");
 
@@ -422,7 +424,7 @@
   });
 
   // ---------------------------
-  // Badge API (ak existuje)
+  // Badge API (best-effort)
   // ---------------------------
   function setBadge(count) {
     count = Number(count) || 0;
@@ -434,6 +436,7 @@
     } catch (e) {}
   }
 
+  // SW badge broadcast (ponechané)
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("message", (ev) => {
       if (ev && ev.data && ev.data.type === "badge") {
@@ -446,44 +449,6 @@
         });
       }
     });
-  }
-
-  // ---------------------------
-  // Unread per-room (frontend)
-  // ---------------------------
-  const LS_LAST_READ = `talker:lastReadAt:${roomId}`;
-  const LS_UNREAD = `talker:unread:${roomId}`;
-
-  function nowIso() { return new Date().toISOString(); }
-
-  function getLastReadMs() {
-    const v = localStorage.getItem(LS_LAST_READ);
-    const ms = v ? Date.parse(v) : 0;
-    return Number.isFinite(ms) ? ms : 0;
-  }
-
-  function setLastReadNow() {
-    localStorage.setItem(LS_LAST_READ, nowIso());
-  }
-
-  function getUnread() {
-    const v = parseInt(localStorage.getItem(LS_UNREAD) || "0", 10);
-    return Number.isFinite(v) ? Math.max(0, v) : 0;
-  }
-
-  function setUnread(n) {
-    const v = Math.max(0, parseInt(String(n), 10) || 0);
-    localStorage.setItem(LS_UNREAD, String(v));
-    if (unreadCountEl) unreadCountEl.textContent = String(v);
-    if (unreadPill) unreadPill.classList.toggle("on", v > 0);
-    setBadge(v);
-  }
-
-  function incUnread() { setUnread(getUnread() + 1); }
-
-  function clearUnread() {
-    setUnread(0);
-    setLastReadNow();
   }
 
   // ---------------------------
@@ -555,7 +520,6 @@
     // Enter -> odoslať
     e.preventDefault();
     if (!sendBtn.disabled) {
-      // requestSubmit spustí form submit handler korektne
       if (typeof formEl.requestSubmit === "function") formEl.requestSubmit();
       else formEl.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
     }
@@ -630,12 +594,34 @@
     setPushUiEnabled(enabled);
   }
 
-  async function refreshTotalUnreadBadge() {
+  // ✅ SERVER-DRIVEN: refresh badge+menu z /talker/update-unread-count/0
+  async function refreshUnreadFromServer() {
     try {
-      const r = await fetch("/talker/unread/total", { credentials: "include" });
-      if (!r.ok) return;
+      const r = await fetch("/talker/update-unread-count/0", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      // ak by server omylom vrátil HTML (redirect/login), nič nerozbíjaj:
+      const ct = (r.headers.get("content-type") || "").toLowerCase();
+      if (!ct.includes("application/json")) {
+        console.error("Unread fetch not JSON:", r.status, ct);
+        return;
+      }
+
       const j = await r.json();
-      setBadge(j.total || 0);
+
+      const total = Number(j.total_unread_count || 0);
+      setBadge(total);
+
+      // ak layout/menu má renderUnreadList, aktualizuj dropdown
+      try {
+        if (typeof window.renderUnreadList === "function") {
+          window.renderUnreadList(j.unread_counts || []);
+        }
+      } catch (e) {}
     } catch (e) {}
   }
 
@@ -824,7 +810,6 @@
           try { localStorage.removeItem("talker:lastFcmToken"); } catch(e) {}
         }
 
-        // ak deleteToken zlyhá, stále sme serveru povedali unregister (ak endpoint existuje)
         void(deletedOk);
       }
     } catch (e) {}
@@ -849,7 +834,6 @@
   }
 
   async function initPushToggle() {
-    // default = OFF, ak nič nie je uložené
     const saved = localStorage.getItem(LS_PUSH_ENABLED);
     const enabled = (saved === "1");
     setPushUiEnabled(enabled);
@@ -866,7 +850,6 @@
         await setPushEnabled(!getPushEnabled());
       } catch (e) {
         console.error(e);
-        // ak zapínanie zlyhá, vráť toggle späť na OFF
         setPushEnabledLocal(false);
         statusEl.textContent = "Nepodarilo sa: " + (e && e.message ? e.message : "error");
         setTimeout(() => statusEl.textContent = "", 6500);
@@ -879,11 +862,13 @@
   initPushToggle();
 
   // ---------------------------
-  // initial load messages + unread bootstrap
+  // initial load messages + server unread bootstrap
   // ---------------------------
   (async () => {
     try {
-      setUnread(getUnread());
+      // per-room UI pill nechávame disabled/hidden (z tvojho HTML je zakomentované)
+      if (unreadCountEl) unreadCountEl.textContent = "0";
+      if (unreadPill) unreadPill.classList.remove("on");
 
       const r = await fetch(`/talker/rooms/${roomId}/messages`, { credentials: "include" });
       const list = await r.json();
@@ -891,20 +876,23 @@
       list.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
       listEl.innerHTML = "";
 
-      const lastReadMs = getLastReadMs();
-      let computedUnread = 0;
-
       for (const m of list) {
         renderMessage(m);
-        const ms = Date.parse(m.created_at || "");
-        if (lastReadMs && Number.isFinite(ms) && ms > lastReadMs && m.user_id !== myUserId) {
-          computedUnread++;
-        }
       }
 
-      await refreshTotalUnreadBadge();
       scrollToBottomHard();
-      clearUnread();
+
+      // ✅ server truth: po otvorení room označ ako prečítané a refreshni badge/menu
+      try {
+        await fetch(`/talker/rooms/${roomId}/mark-read`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+      } catch (e) {}
+
+      await refreshUnreadFromServer();
     } catch (e) {
       console.error(e);
       statusEl.textContent = "Nepodarilo sa načítať správy.";
@@ -914,12 +902,24 @@
   // ---------------------------
   // socket
   // ---------------------------
-  socket.on("connect", () => {
+  socket.on("connect", async () => {
     connTextEl.textContent = "Online";
     dotEl.classList.add("on");
+
     socket.emit("talker_join", { room_id: roomId });
     scrollToBottomHard();
-    clearUnread();
+
+    // ✅ server truth: mark read + refresh
+    try {
+      await fetch(`/talker/rooms/${roomId}/mark-read`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+    } catch (e) {}
+
+    await refreshUnreadFromServer();
   });
 
   socket.on("talker_joined", (d) => {
@@ -943,9 +943,9 @@
 
     renderMessage(m);
 
+    // ✅ server-driven: keď som pri dne + tabu vidím, označ prečítané
     if (atBottom && visible) {
       scrollToBottomHard();
-      clearUnread();
 
       try {
         await fetch(`/talker/rooms/${roomId}/mark-read`, {
@@ -955,14 +955,13 @@
           body: JSON.stringify({}),
         });
       } catch (e) {}
-      await refreshTotalUnreadBadge();
 
-    } else {
-      if (m.user_id !== myUserId) incUnread();
+      await refreshUnreadFromServer();
     }
+    // ❌ už nerátame lokálne unread (žiadne incUnread)
   });
 
-  formEl.addEventListener("submit", (e) => {
+  formEl.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const text = inputEl.value.trim();
@@ -976,19 +975,28 @@
     focusNoScroll();
 
     scrollToBottomHard();
-    clearUnread();
+
+    // po odoslaní (som v roome) označ read + refresh global badge/menu
+    try {
+      await fetch(`/talker/rooms/${roomId}/mark-read`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+    } catch (e) {}
+
+    await refreshUnreadFromServer();
   });
 
   autoResize();
   updateSendState();
 
-  if ("clearAppBadge" in navigator) {
-    navigator.clearAppBadge();
-  } else if ("setAppBadge" in navigator) {
-    navigator.setAppBadge(0);
-  }
+  // best-effort clear badge
+  try {
+    if ("clearAppBadge" in navigator) navigator.clearAppBadge();
+    else if ("setAppBadge" in navigator) navigator.setAppBadge(0);
+  } catch (e) {}
 </script>
-<script>
-  window.__ACTIVE_TALKER_ROOM_ID = {{ room.id }};
-</script>
+
 {% endblock %}
