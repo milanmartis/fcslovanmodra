@@ -248,6 +248,8 @@ self.addEventListener("notificationclick", (event) => {{
             try {{ await w.navigate(url); }} catch (e) {{}}
           }}
           try {{ w.postMessage({{ type: "open", url }}); }} catch (e) {{}}
+          try {{ w.postMessage({{ type: "FORCE_BADGE_SYNC" }}); }} catch (e) {{}}
+
           return;
         }} catch (e) {{}}
       }}

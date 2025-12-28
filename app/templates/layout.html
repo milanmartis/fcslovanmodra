@@ -848,7 +848,63 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
           } catch (e) {}
         });
       })();
-      </script>
+
+
+    </script>
+    <script>
+      async function refreshUnreadAndBadge() {
+        try {
+          const res = await fetch("/talker/unread/menu", { credentials: "include" });
+          const ct = (res.headers.get("content-type") || "").toLowerCase();
+          if (!res.ok || !ct.includes("application/json")) return;
+    
+          const data = await res.json();
+          const total = Number(data.total_unread_count || 0);
+    
+          // App icon badge (PWA)
+          if ("setAppBadge" in navigator) {
+            if (total > 0) await navigator.setAppBadge(total);
+            else if ("clearAppBadge" in navigator) await navigator.clearAppBadge();
+          }
+    
+          // (voliteľné) aktualizuj UI v menu, ak máš renderer
+          if (typeof window.renderUnreadList === "function") {
+            window.renderUnreadList(data.unread_counts || []);
+          }
+        } catch (e) {}
+      }
+    
+      // SW → window messages
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.addEventListener("message", (e) => {
+          const d = e?.data;
+          if (!d) return;
+    
+          // SW poslal nové číslo (push pri otvorenej appke)
+          if (d.type === "SET_BADGE") {
+            const n = Number(d.count || 0);
+            if ("setAppBadge" in navigator) {
+              if (n > 0) navigator.setAppBadge(n);
+              else if ("clearAppBadge" in navigator) navigator.clearAppBadge();
+            }
+          }
+    
+          // user klikol notifikáciu → donúť server-sync (self-heal)
+          if (d.type === "FORCE_BADGE_SYNC") {
+            refreshUnreadAndBadge();
+          }
+        });
+      }
+    
+      // Self-heal pri otvorení / návrate do appky
+      document.addEventListener("DOMContentLoaded", () => {
+        refreshUnreadAndBadge();
+      });
+    
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") refreshUnreadAndBadge();
+      });
+    </script>
     
 </body>
 </html>

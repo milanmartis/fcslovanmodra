@@ -899,7 +899,7 @@
         });
       } catch (e) {}
 
-      await refreshUnreadFromServer();
+      await refreshUnreadAndBadge();
     } catch (e) {
       console.error(e);
       statusEl.textContent = "Nepodarilo sa načítať správy.";
@@ -1006,7 +1006,7 @@
       });
     } catch (e) {}
 
-    await refreshUnreadFromServer();
+    await refreshUnreadAndBadge();
   });
 
   autoResize();
@@ -1018,6 +1018,7 @@
     else if ("setAppBadge" in navigator) navigator.setAppBadge(0);
   } catch (e) {}
 
+/*
   document.addEventListener("DOMContentLoaded", () => {
     refreshUnreadAndBadge();
   });
@@ -1025,6 +1026,7 @@
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") refreshUnreadAndBadge();
   });
+  */
 </script>
 
 {% endblock %}
