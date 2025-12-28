@@ -438,34 +438,25 @@
     } catch (e) {}
   }
 
-  // SW badge broadcast (ponechané)
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.addEventListener("message", (ev) => {
-      if (ev && ev.data && ev.data.type === "badge") {
-        setBadge(ev.data.count || 0);
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      const d = event?.data;
+      if (!d) return;
+  
+      // podpor oba typy, kým to celé neprejde na SET_BADGE
+      if (d.type === "SET_BADGE" || d.type === "badge") {
+        setBadge(d.count || 0);
       }
-      if (ev && ev.data && ev.data.type === "open" && ev.data.url) {
-        // optional
+  
+      if (d.type === "open" && d.url) {
+        // optional (tvoje)
         window.addEventListener("beforeunload", () => {
           try { window.__ACTIVE_TALKER_ROOM_ID = null; } catch(e) {}
         });
       }
     });
   }
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.addEventListener("message", (event) => {
-      if (!event?.data) return;
   
-      if (event.data.type === "SET_BADGE") {
-        const count = Number(event.data.count || 0);
-  
-        if ("setAppBadge" in navigator) {
-          if (count > 0) navigator.setAppBadge(count);
-          else if ("clearAppBadge" in navigator) navigator.clearAppBadge();
-        }
-      }
-    });
-  }
   // ---------------------------
   // VH fix (iOS / klávesnica)
   // ---------------------------
@@ -610,28 +601,19 @@
   }
 
   // ✅ SERVER-DRIVEN: refresh badge+menu z /talker/update-unread-count/0
-  async function refreshUnreadFromServer() {
+  async function refreshUnreadAndBadge() {
     try {
-      const r = await fetch("/talker/update-unread-count/0", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-
-      // ak by server omylom vrátil HTML (redirect/login), nič nerozbíjaj:
+      const r = await fetch("/talker/unread/menu", { credentials: "include" });
+  
       const ct = (r.headers.get("content-type") || "").toLowerCase();
-      if (!ct.includes("application/json")) {
-        console.error("Unread fetch not JSON:", r.status, ct);
-        return;
-      }
-
+      if (!r.ok || !ct.includes("application/json")) return;
+  
       const j = await r.json();
-
+  
       const total = Number(j.total_unread_count || 0);
       setBadge(total);
-
-      // ak layout/menu má renderUnreadList, aktualizuj dropdown
+  
+      // ak máš globálne menu renderer:
       try {
         if (typeof window.renderUnreadList === "function") {
           window.renderUnreadList(j.unread_counts || []);
@@ -639,6 +621,7 @@
       } catch (e) {}
     } catch (e) {}
   }
+  
 
   function urlBase64ToUint8Array(base64String) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -943,8 +926,21 @@
       });
     } catch (e) {}
 
-    await refreshUnreadFromServer();
+    await refreshUnreadAndBadge();
   });
+
+  socket.on("unread_update", (payload) => {
+    try {
+      const total = Number(payload?.total_unread_count || 0);
+      setBadge(total);
+  
+      // ak máš globálne menu renderer:
+      if (typeof window.renderUnreadList === "function") {
+        window.renderUnreadList(payload.unread_counts || []);
+      }
+    } catch (e) {}
+  });
+
 
   socket.on("talker_joined", (d) => {
     console.log("joined:", d.room_id);
@@ -980,7 +976,7 @@
         });
       } catch (e) {}
 
-      await refreshUnreadFromServer();
+      await refreshUnreadAndBadge();
     }
     // ❌ už nerátame lokálne unread (žiadne incUnread)
   });
@@ -1021,6 +1017,14 @@
     if ("clearAppBadge" in navigator) navigator.clearAppBadge();
     else if ("setAppBadge" in navigator) navigator.setAppBadge(0);
   } catch (e) {}
+
+  document.addEventListener("DOMContentLoaded", () => {
+    refreshUnreadAndBadge();
+  });
+  
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshUnreadAndBadge();
+  });
 </script>
 
 {% endblock %}
