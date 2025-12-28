@@ -137,22 +137,27 @@ function toInt(v) {{
 async function setBadgeEverywhere(count) {{
   const n = Number(count || 0);
 
+  // 1) Nastav badge priamo v SW (funguje aj keď je appka zavretá), ak je podporované
   try {{
-    if (self.navigator && "setAppBadge" in self.navigator) {{
-      if (n > 0) await self.navigator.setAppBadge(n);
-      else if ("clearAppBadge" in self.navigator) await self.navigator.clearAppBadge();
+    if (self.registration && "setAppBadge" in self.registration) {{
+      if (n > 0) await self.registration.setAppBadge(n);
+      else if ("clearAppBadge" in self.registration) await self.registration.clearAppBadge();
     }}
   }} catch (e) {{
-    // ignoruj – nie všade to ide
+    // ignore
   }}
 
+  // 2) Ak sú otvorené okná, pošli im to (UI si môže zosúladiť aj vlastné počítadlá)
   try {{
     const wins = await self.clients.matchAll({{ type: "window", includeUncontrolled: true }});
     for (const w of wins) {{
-      w.postMessage({{ type: "SET_BADGE", count: n }});
-    
-  }} catch (e) {{}}
-}}
+      try {{
+        w.postMessage({{ type: "SET_BADGE", count: n }});
+      }} catch (e) {{}}
+    }}
+  }} catch (e) {{
+    // ignore
+  }}
 }}
 
 function showNotif(title, body, data) {{
@@ -173,26 +178,14 @@ function showNotif(title, body, data) {{
       data: Object.assign({{ url, roomId, totalUnread }}, data || {{}}),
     }};
 
-    // pošli count do klienta -> ten si zavolá navigator.setAppBadge()
-    if (totalUnread !== null) await setBadgeEverywhere(totalUnread);
+    // nastav badge aj keď je appka zavretá + pošli to oknám, ak sú otvorené
+    if (totalUnread !== null) setBadgeEverywhere(totalUnread);
 
     return self.registration.showNotification(title || "Talker", opts);
   }} catch (e) {{
     console.error("showNotif error:", e);
   }}
 }}
-
-//if (messaging) {{
- // messaging.onBackgroundMessage((payload) => {{
- //   try {{
- //     const notif = payload?.notification || {{}};
-  //    const data  = payload?.data || {{}};
-  //    return showNotif(notif.title || "Talker", notif.body || "", data);
-//    }} catch (e) {{
- //     console.error("FCM SW onBackgroundMessage error:", e);
-  //  }}
-  //}});
-//}}
 
 // -------------------------
 // WebPush (iOS PWA) – "push" event
@@ -202,17 +195,17 @@ async function parsePushPayload(event) {{
   try {{
     payload = event.data ? event.data.json() : {{}};
     return payload || {{}};
-  }} catch {{}}
+  }} catch (e) {{ /* ignore */ }}
 
   try {{
     const txt = event.data && event.data.text ? await event.data.text() : "";
     if (!txt) return {{}};
     try {{
       return JSON.parse(txt);
-    }} catch {{
+    }} catch (e) {{
       return {{ body: txt }};
     }}
-  }} catch {{
+  }} catch (e) {{
     return {{}};
   }}
 }}
@@ -275,8 +268,8 @@ const PRECACHE = [
 
 self.addEventListener("install", (event) => {{
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).catch(() => {{}}
-  ));
+    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).catch(() => {{}})
+  );
   self.skipWaiting();
 }});
 
