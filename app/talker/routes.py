@@ -134,13 +134,25 @@ function toInt(v) {{
   }}
 }}
 
-function broadcastBadge(count) {{
+async function setBadgeEverywhere(count) {{
+  const n = Number(count || 0);
+
+  // 1) nastav badge priamo v SW (funguje aj keď je appka zavretá), ak platforma podporuje
   try {{
-    self.clients.matchAll({{ type: "window", includeUncontrolled: true }}).then((wins) => {{
-      for (const w of wins) {{
-        try {{ w.postMessage({{ type: "SET_BADGE", count }}); }} catch (e) {{}}
-      }}
-    }});
+    if (self.navigator && "setAppBadge" in self.navigator) {{
+      if (n > 0) await self.navigator.setAppBadge(n);
+      else if ("clearAppBadge" in self.navigator) await self.navigator.clearAppBadge();
+    }}
+  }} catch (e) {{
+    // ignoruj – nie všade to ide
+  }}
+
+  // 2) ak je appka otvorená, pošli aj do okien (aby sa UI zosúladilo)
+  try {{
+    const wins = await self.clients.matchAll({{ type: "window", includeUncontrolled: true }});
+    for (const w of wins) {{
+      w.postMessage({{ type: "SET_BADGE", count: n }});
+    }}
   }} catch (e) {{}}
 }}
 
@@ -163,7 +175,7 @@ function showNotif(title, body, data) {{
     }};
 
     // pošli count do klienta -> ten si zavolá navigator.setAppBadge()
-    if (totalUnread !== null) broadcastBadge(totalUnread);
+    if (totalUnread !== null) await setBadgeEverywhere(totalUnread);
 
     return self.registration.showNotification(title || "Talker", opts);
   }} catch (e) {{
