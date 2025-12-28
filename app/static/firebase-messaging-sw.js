@@ -36,7 +36,7 @@ async function broadcastBadge(count) {
       type: "window",
       includeUncontrolled: true,
     });
-    for (const c of clientsList) c.postMessage({ type: "badge", count: n });
+    for (const c of clientsList) c.postMessage({ type: "SET_BADGE", count: n });
   } catch {
     // ignore
   }

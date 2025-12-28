@@ -452,7 +452,20 @@
       }
     });
   }
-
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (!event?.data) return;
+  
+      if (event.data.type === "SET_BADGE") {
+        const count = Number(event.data.count || 0);
+  
+        if ("setAppBadge" in navigator) {
+          if (count > 0) navigator.setAppBadge(count);
+          else if ("clearAppBadge" in navigator) navigator.clearAppBadge();
+        }
+      }
+    });
+  }
   // ---------------------------
   // VH fix (iOS / klávesnica)
   // ---------------------------

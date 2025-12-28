@@ -138,7 +138,7 @@ function broadcastBadge(count) {{
   try {{
     self.clients.matchAll({{ type: "window", includeUncontrolled: true }}).then((wins) => {{
       for (const w of wins) {{
-        try {{ w.postMessage({{ type: "badge", count }}); }} catch (e) {{}}
+        try {{ w.postMessage({{ type: "SET_BADGE", count }}); }} catch (e) {{}}
       }}
     }});
   }} catch (e) {{}}
