@@ -153,6 +153,7 @@ async function setBadgeEverywhere(count) {{
     
   }} catch (e) {{}}
 }}
+}}
 
 function showNotif(title, body, data) {{
   try {{
