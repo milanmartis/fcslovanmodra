@@ -82,7 +82,9 @@ def create_app(config_class=None):
             "https://fcman-37884cffcf78.herokuapp.com",
         ],
         cors_credentials=True,  # ✅ kľúčové: povoľ cookies/credentials
-    )
+        async_mode="gevent",
+        message_queue=os.environ.get("REDIS_URL")
+        )
 
     login_manager = LoginManager()
     login_manager.login_view = "users.login"  # tvoj endpoint
