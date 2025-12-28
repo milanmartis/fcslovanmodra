@@ -150,7 +150,7 @@ async function setBadgeEverywhere(count) {{
     const wins = await self.clients.matchAll({{ type: "window", includeUncontrolled: true }});
     for (const w of wins) {{
       w.postMessage({{ type: "SET_BADGE", count: n }});
-    }}
+    
   }} catch (e) {{}}
 }}
 
