@@ -137,7 +137,6 @@ function toInt(v) {{
 async function setBadgeEverywhere(count) {{
   const n = Number(count || 0);
 
-  // 1) nastav badge priamo v SW (funguje aj keď je appka zavretá), ak platforma podporuje
   try {{
     if (self.navigator && "setAppBadge" in self.navigator) {{
       if (n > 0) await self.navigator.setAppBadge(n);
@@ -147,7 +146,6 @@ async function setBadgeEverywhere(count) {{
     // ignoruj – nie všade to ide
   }}
 
-  // 2) ak je appka otvorená, pošli aj do okien (aby sa UI zosúladilo)
   try {{
     const wins = await self.clients.matchAll({{ type: "window", includeUncontrolled: true }});
     for (const w of wins) {{

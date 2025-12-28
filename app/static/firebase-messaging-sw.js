@@ -29,19 +29,27 @@ async function swSetBadge(count) {
   }
 }
 
-async function broadcastBadge(count) {
-  const n = toInt(count, 0);
-  try {
-    const clientsList = await self.clients.matchAll({
-      type: "window",
-      includeUncontrolled: true,
-    });
-    for (const c of clientsList) c.postMessage({ type: "SET_BADGE", count: n });
-  } catch {
-    // ignore
-  }
-}
+async function setBadgeEverywhere(count) {
+  const n = Number(count || 0);
 
+  // 1) nastav badge priamo v SW (funguje aj keď je appka zavretá), ak platforma podporuje
+  try {
+    if (self.navigator && "setAppBadge" in self.navigator) {
+      if (n > 0) await self.navigator.setAppBadge(n);
+      else if ("clearAppBadge" in self.navigator) await self.navigator.clearAppBadge();
+    }
+  } catch (e) {
+    // ignoruj – nie všade to ide
+  }
+
+  // 2) ak je appka otvorená, pošli aj do okien (aby sa UI zosúladilo)
+  try {
+    const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const w of wins) {
+      w.postMessage({ type: "SET_BADGE", count: n });
+    }
+  } catch (e) {}
+}
 async function showTalkerNotification({ title, body, url, roomId, totalUnread }) {
   const badgeInt = toInt(totalUnread, null);
 
@@ -66,7 +74,7 @@ async function showTalkerNotification({ title, body, url, roomId, totalUnread })
 
   if (badgeInt !== null) {
     await swSetBadge(badgeInt);
-    await broadcastBadge(badgeInt);
+    await setBadgeEverywhere(badgeInt);
   }
 }
 
@@ -114,7 +122,7 @@ self.addEventListener("message", (event) => {
       event.waitUntil(
         (async () => {
           await swSetBadge(n);
-          await broadcastBadge(n);
+          await setBadgeEverywhere(n);
         })()
       );
     }
