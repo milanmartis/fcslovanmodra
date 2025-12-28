@@ -160,7 +160,7 @@ async function setBadgeEverywhere(count) {{
   }}
 }}
 
-function showNotif(title, body, data) {{
+async function showNotif(title, body, data) {{
   try {{
     const totalUnread = toInt(data && (data.totalUnread ?? data.total_unread ?? data.badge));
     const roomId = data && (data.room_id || data.roomId);
@@ -169,23 +169,22 @@ function showNotif(title, body, data) {{
     const opts = {{
       body: body || "",
       icon: (data && data.icon) || "/static/main/ico.png",
-
-      // badge v NotificationOptions je IKONKA (nie číslo)
       badge: "/static/main/ico.png",
-
       tag: roomId ? `talker-room-${{roomId}}` : "talker",
       renotify: true,
       data: Object.assign({{ url, roomId, totalUnread }}, data || {{}}),
-    }};
+  }};
 
-    // nastav badge aj keď je appka zavretá + pošli to oknám, ak sú otvorené
-    if (totalUnread !== null) setBadgeEverywhere(totalUnread);
+    if (totalUnread !== null) {{
+      await setBadgeEverywhere(totalUnread);
+    }}
 
-    return self.registration.showNotification(title || "Talker", opts);
+    return await self.registration.showNotification(title || "Talker", opts);
   }} catch (e) {{
     console.error("showNotif error:", e);
   }}
 }}
+
 
 // -------------------------
 // WebPush (iOS PWA) – "push" event
