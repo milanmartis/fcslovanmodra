@@ -91,7 +91,7 @@ class User(db.Model, UserMixin):
     uuid = db.Column(db.String(36), default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    image_file = db.Column(db.String(20), nullable=False, default='default.jpg')
+    image_file = db.Column(db.String(255), nullable=False, default='default.jpg')
     password = db.Column(db.String(60), nullable=False)
     confirm = db.Column(db.Boolean(), default=False)
     active = db.Column(db.Boolean, default=True)

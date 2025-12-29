@@ -239,7 +239,8 @@ def account():
         form.address.data = member.address
         form.psc.data = member.psc
         form.city.data = member.city
-    image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
+    image_file = presign_user_avatar(current_user.id, current_user.image_file) \
+        or url_for('static', filename='profile_pics/default.jpg')
     return render_template('users/account.html', title='Account',
                            image_file=image_file, form=form, current_date=datetime.now(), next22=Next.next(), teamz=RightColumn.main_menu(), next_match=RightColumn.next_match(), score_table=RightColumn.score_table())
 
@@ -732,6 +733,32 @@ def mail_test():
     return "ok"  
 
         
+from io import BytesIO
+from PIL import Image, ImageOps
+
+
+def make_user_key(user_id: int, filename: str) -> str:
+    return f"users/{user_id}/{filename}"
+
+def presign_user_avatar(user_id: int, filename: str) -> str | None:
+    if not filename:
+        return None
+    if filename in ("default.jpg", "default.png", "default.webp"):
+        return None
+    try:
+        return s3_presign(make_user_key(user_id, filename))
+    except Exception as e:
+        current_app.logger.warning("user avatar presign failed: %s", e)
+        return None
+
+@users.app_context_processor
+def inject_nav_avatar():
+    if current_user.is_authenticated:
+        return {
+            "nav_avatar_url": presign_user_avatar(current_user.id, current_user.image_file)
+        }
+    return {"nav_avatar_url": None}
+
 @users.route("/account/photo", methods=["POST"])
 @login_required
 @csrf.exempt
@@ -741,19 +768,69 @@ def upload_account_photo():
         return jsonify({"error": "Missing file"}), 400
 
     filename = secure_filename(file.filename).lower()
-    if not (filename.endswith(".jpg") or filename.endswith(".jpeg") or filename.endswith(".png")):
-        return jsonify({"error": "Only jpg/jpeg/png allowed"}), 400
+    if not (filename.endswith(".jpg") or filename.endswith(".jpeg") or filename.endswith(".png") or filename.endswith(".webp")):
+        return jsonify({"error": "Only jpg/jpeg/png/webp allowed"}), 400
 
     try:
-        picture_file = save_picture(file)
-        current_user.image_file = picture_file
+        # 1) vyrob krátky názov súboru (už máš VARCHAR(255), takže môže byť aj dlhší)
+        _, ext = os.path.splitext(filename)
+        new_filename = f"{uuid.uuid4().hex}{ext}"
+
+        # 2) otvor obrázok, oprav EXIF otočenie, zmenši na rozumný max rozmer
+        img = Image.open(file)
+        img = ImageOps.exif_transpose(img)
+
+        # odporúčam max 768px (ostré, nie obrie)
+        img.thumbnail((768, 768))
+
+        # 3) ulož do pamäte a pošli do S3
+        buf = BytesIO()
+        if ext in (".jpg", ".jpeg"):
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            img.save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
+            content_type = "image/jpeg"
+        elif ext == ".png":
+            img.save(buf, format="PNG", optimize=True)
+            content_type = "image/png"
+        elif ext == ".webp":
+            img.save(buf, format="WEBP", quality=85, method=6)
+            content_type = "image/webp"
+        else:
+            # fallback
+            img.save(buf)
+            content_type = "application/octet-stream"
+
+        buf.seek(0)
+
+        # (voliteľné) zmaž starú fotku z S3
+        old = current_user.image_file
+        if old and old not in ("default.jpg", "default.png", "default.webp"):
+            try:
+                s3_client().delete_object(Bucket=BUCKET_NAME, Key=make_user_key(current_user.id, old))
+            except Exception as e:
+                current_app.logger.warning("Old user avatar delete failed: %s", e)
+
+        # upload
+        s3_client().upload_fileobj(
+            buf,
+            BUCKET_NAME,
+            make_user_key(current_user.id, new_filename),
+            ExtraArgs={
+                **s3_extra_args(file),
+                "ContentType": content_type,
+                "CacheControl": "public, max-age=31536000, immutable",
+            },
+        )
+
+        current_user.image_file = new_filename
         db.session.commit()
 
-        img_url = url_for("static", filename=f"profile_pics/{picture_file}", _external=False)
-        return jsonify({"ok": True, "image_url": img_url + f"?v={uuid.uuid4().hex}"})
+        # vráť presigned url (rovnako ako members)
+        img_url = s3_presign(make_user_key(current_user.id, new_filename))
+        return jsonify({"ok": True, "image_url": img_url + f"&v={uuid.uuid4().hex}"})
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception("upload_account_photo error: %s", e)
         return jsonify({"error": "Upload failed"}), 500
-    # finally:
-    #     db.session.remove()

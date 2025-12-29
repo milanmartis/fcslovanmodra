@@ -161,12 +161,12 @@
             data-bs-toggle="dropdown"
             aria-expanded="false"
           >
-            <img
-              id="nav-user-avatar"
-              src="{{ url_for('static', filename='profile_pics/' ~ current_user.image_file) }}"
-              alt="User"
-              style="width:34px;height:34px;border-radius:999px;object-fit:cover;"
-            >
+          <img
+            id="nav-user-avatar"
+            src="{{ nav_avatar_url or url_for('static', filename='profile_pics/default.jpg') }}"
+            alt="User"
+            style="width:34px;height:34px;border-radius:999px;object-fit:cover;"
+          >
           </a>
 
           {% if current_user.has_roles('Admin') %}
