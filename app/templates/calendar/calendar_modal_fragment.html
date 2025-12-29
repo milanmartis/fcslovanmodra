@@ -1,8 +1,61 @@
 {# templates/calendar/calendar_modal_fragment.html #}
-
+<style>
+    /* skry čas vždy */
+  /* legenda */
+.calendar-legend{
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .legend-item{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: 13px;
+    font-weight: 700;
+    color: #e9eefc;
+  }
+  
+  .legend-dot{
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    display: inline-block;
+  }
+  
+  /* dot farby musia sedieť s .fc-event.cat-* */
+  .legend-dot.cat-match    { background: #e74c3c; }
+  .legend-dot.cat-training { background: #3498db; }
+  .legend-dot.cat-camp     { background: #f39c12; }
+  .legend-dot.cat-retreat  { background: #9b59b6; }
+  .legend-dot.cat-other    { background: #2ecc71; }     
+    /* základ eventu */
+    .fc-event {
+      border: none !important;
+      border-radius: 10px !important;
+      padding: 2px 6px !important;
+      font-weight: 800 !important;
+    }
+    .fc-event, .fc-event .fc-title { color: #fff !important; }
+  
+    /* farby podľa kategórie */
+    .fc-event.cat-match    { background: #e74c3c !important; }   /* zápas */
+    .fc-event.cat-training { background: #3498db !important; }   /* tréning */
+    .fc-event.cat-camp     { background: #f39c12 !important; }   /* camp */
+    .fc-event.cat-retreat  { background: #9b59b6 !important; }   /* sústredenie */
+    .fc-event.cat-other    { background: #2ecc71 !important; }   /* iné */
+  </style>
 <style>
     /* ========== MODERN FULLCALENDAR THEME (v3) ========== */
-  
+
     :root{
       --fc-accent: #6d9bff;            /* tvoj accent */
       --fc-bg: #030303;                /* tvoj background */
@@ -402,7 +455,33 @@
         </div>
       </div>
     </div>
-  
+    <div class="calendar-legend" aria-label="Legenda kategórií udalostí">
+        <div class="legend-item">
+          <span class="legend-dot cat-match"></span>
+          <span class="legend-text">Zápas</span>
+        </div>
+      
+        <div class="legend-item">
+          <span class="legend-dot cat-training"></span>
+          <span class="legend-text">Tréning</span>
+        </div>
+      
+        <div class="legend-item">
+          <span class="legend-dot cat-camp"></span>
+          <span class="legend-text">Camp</span>
+        </div>
+      
+        <div class="legend-item">
+          <span class="legend-dot cat-retreat"></span>
+          <span class="legend-text">Sústredenie</span>
+        </div>
+      
+        <div class="legend-item">
+          <span class="legend-dot cat-other"></span>
+          <span class="legend-text">Iné</span>
+        </div>
+      </div>
+      
     <!-- View Modal (read-only) -->
     <div class="modal fade" id="schedule-view" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-fullscreen-md-down">
@@ -511,7 +590,8 @@
         CAT_NAME[{{ c.id }}] = {{ c.name|tojson }};
       {% endfor %}
     {% endif %}
-  
+    window.TEAM_NAME = TEAM_NAME;
+    window.CAT_NAME = CAT_NAME;
     const IS_ADMIN = {{ "true" if is_admin else "false" }};
     const IS_TRENER = {{ "true" if is_trener else "false" }};
     const EDITABLE_TEAM_IDS = new Set({{ editable_team_ids|tojson }});
@@ -635,7 +715,7 @@
       eventOrder: "start, end",
   
       // čas v evente
-      displayEventTime: true,
+      displayEventTime: false,
       timeFormat: "H:mm",
   
       header: { right: "prev,next today", left: "title" },
@@ -692,37 +772,33 @@
       },
   
       eventRender: function(event, element) {
-        element.attr("data-id", event.id);
-  
-        const tId = Number(event.team || event.event_team_id || event.team_id);
-        const cId = Number(event.category || event.event_category_id || event.category_id);
-        const tName = TEAM_NAME[tId] || "";
-        const cName = CAT_NAME[cId] || "";
-  
-        if (tName || cName) {
-          const chipText = tName;
-          element.find(".fc-title").append('<span class="ev-chip">iii' + chipText + '</span>');
-        }
-  
-        // poistka: ak by FC skryl time, dopln ho do title (len ak timed)
-        try {
-          if (event && event.start && event.allDay !== true) {
-            const m = moment(event.start);
-            if (m.isValid()) {
-              const timeTxt = m.format("H:mm");
-              const hasFcTime = element.find(".fc-time").length > 0;
-              if (!hasFcTime) {
-                const $title = element.find(".fc-title");
-                if ($title.length && $title.find(".force-time").length === 0) {
-                  $title.prepend('<span class="force-time" style="margin-right:6px;font-weight:900;">' + timeTxt + '</span>');
-                }
-              } else {
-                element.find(".fc-time").css({ display: "inline", visibility: "visible" });
-              }
-            }
-          }
-        } catch (e) {}
+        // --- vytiahni team a category (podľa toho, ako to posiela backend) ---
+        const tId = Number(event.team || event.event_team_id || event.team_id || 0);
+        const cId = Number(event.category || event.event_category_id || event.category_id || 0);
+      
+        // TEAM_NAME a CAT_NAME sú mapy id->name (ak ich už máš v page, použijú sa)
+        const tName = (window.TEAM_NAME && window.TEAM_NAME[tId]) ? window.TEAM_NAME[tId] : "";
+        const cNameRaw = (window.CAT_NAME && window.CAT_NAME[cId]) ? window.CAT_NAME[cId] : "";
+      
+        const cName = String(cNameRaw || "").trim().toLowerCase();
+      
+        // ✅ text v kalendári = iba názov tímu
+        const $title = element.find(".fc-title");
+        if ($title.length) $title.text(tName || event.title || "");  // ✅ keď nemá tím, zobraz aspoň title
+
+      
+        // ✅ farba podľa kategórie (uprav stringy podľa reálnych názvov v DB)
+        let cls = "cat-other";
+        if (cName.includes("zápas") || cName.includes("zapas") || cName.includes("match")) cls = "cat-match";
+        else if (cName.includes("tréning") || cName.includes("trening") || cName.includes("training")) cls = "cat-training";
+        else if (cName.includes("camp")) cls = "cat-camp";
+        else if (cName.includes("sústredenie") || cName.includes("sustredenie")) cls = "cat-retreat";
+      
+        element.addClass(cls);
+      
+        return true;
       },
+      
   
       select: function(start, end) {
         if (!(IS_ADMIN || IS_TRENER)) return;
