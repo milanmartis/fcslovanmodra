@@ -285,6 +285,8 @@ class TalkRoomReadState(db.Model):
 
 
 
+from sqlalchemy.sql import func
+
 class Post(db.Model):
     __tablename__ = 'post'
 
@@ -292,20 +294,24 @@ class Post(db.Model):
     title = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(255), nullable=False, unique=True, index=True)
 
+    # pôvodné:
     date_posted = db.Column(db.DateTime(timezone=True), nullable=False, default=func.now())
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
 
-    # PÔVODNÝ názov si necháme kvôli spätnej kompatibilite:
+    # NOVÉ podľa zadania:
+    views = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    is_featured = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
+    priority = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    published_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
+
     gallery = db.relationship('PostGallery', backref='post', lazy='select', cascade="all, delete-orphan")
 
-    # Preferovaný alias pre šablóny a eager loading:
     @property
     def galleries(self):
         return self.gallery
 
-    # Pomocná vlastnosť – nájde cover (orderz == 0), inak prvý
     def cover(self):
         if not self.gallery:
             return None
@@ -314,6 +320,7 @@ class Post(db.Model):
 
     def __repr__(self):
         return f"Post('{self.title}', '{self.date_posted}')"
+
 
 
 class PostGallery(db.Model):

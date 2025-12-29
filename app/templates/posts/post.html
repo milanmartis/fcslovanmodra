@@ -1,5 +1,195 @@
 {% extends "layout.html" %}
 {% block content %}
+<style>
+  .mr-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  @media (min-width: 768px) {
+    .mr-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1200px) {
+    .mr-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .mr-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    transform: translateY(0);
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    position: relative;
+    isolation: isolate;
+  }
+
+  .mr-card::before {
+    content: "";
+    position: absolute;
+    inset: -40% -60%;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.20), rgba(255,255,255,0) 55%);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .22s ease, transform .22s ease;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .mr-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 46px rgba(0,0,0,0.14);
+    border-color: rgba(255,255,255,0.16);
+  }
+  .mr-card:hover::before {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .mr-media {
+    width: 100%;
+    height: 170px;
+    background: rgba(0,0,0,0.06);
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mr-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scale(1);
+    transition: transform .35s ease;
+    will-change: transform;
+  }
+
+  .mr-card:hover .mr-media img {
+    transform: scale(1.05);
+  }
+
+  .mr-body {
+    padding: 12px 14px 14px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mr-meta {
+    font-size: 12px;
+    opacity: .75;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mr-title {
+    font-weight: 800;
+    line-height: 1.25;
+    font-size: 15px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 38px;
+  }
+
+  .mr-noimg {
+    display: grid;
+    place-items: center;
+    height: 170px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    color: rgba(255,255,255,0.65);
+    font-weight: 700;
+    letter-spacing: .2px;
+  }
+
+  /* ===== Prepínač (tabs) ===== */
+  .post-tabs-wrap{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    width:100%;
+  }
+
+  /* mobile: centrovanie + zalomenie */
+  @media (max-width: 576px){
+    .post-tabs-wrap{
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+    }
+    .post-tabs-wrap h3{
+      width: 100%;
+      margin: 0;
+      text-align: center;
+    }
+  }
+
+  .post-tabs{
+    display:inline-flex;
+    gap:6px;
+    padding:6px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+  }
+
+  @media (max-width: 576px){
+    .post-tabs{
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      flex-wrap: wrap;
+    }
+  }
+
+  .post-tab{
+    border:0;
+    background:transparent;
+    color: rgba(255,255,255,0.86);
+    padding:8px 12px;
+    border-radius:999px;
+    cursor:pointer;
+    font-weight:800;
+    font-size:13px;
+    transition: background .15s ease, transform .15s ease, color .15s ease;
+    user-select:none;
+  }
+
+  .post-tab:hover{
+    transform: translateY(-1px);
+    background: rgba(255,255,255,0.06);
+  }
+
+  .post-tab.is-active{
+    background: rgba(109,155,255,0.16);
+    color: rgba(255,255,255,0.96);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.14);
+  }
+  .post-panel { display:none; }
+  .post-panel.is-active {
+    display:block;
+    animation: fadeUp .18s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
 <article class="media content-section">
   <div class="media-body">
 
@@ -21,7 +211,6 @@
     {% endif %}
 
     <div>
-      {# titulný obrázok len hore #}
       {% if title_image_url %}
         <img width="100%" src="{{ title_image_url }}" alt="{{ post.title }}">
       {% endif %}
@@ -46,7 +235,8 @@
 
 <!-- Delete modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog"
-     aria-labelledby="deleteModalLabel" aria-hidden="true" style="z-index: 99999999999999999999999999999999999999999999999999999;">
+     aria-labelledby="deleteModalLabel" aria-hidden="true"
+     style="z-index: 99999999999999999999999999999999999999999999999999999;">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -64,34 +254,106 @@
   </div>
 </div>
 
-<!-- Galéria (bez prvého/titulného obrázka) -->
+<!-- Galéria -->
 <div class="content">
   <div class="container">
     <div class="row">
 
-      {# Preferovane: vynechať všetko s orderz == 0 #}
       {% if galleries and galleries[0] is defined and galleries[0].orderz is defined %}
         {% for pic in galleries if pic.orderz != 0 %}
-          {% set pic_url = (pic.image_url if pic.image_url is defined and pic.image_url
-                            else s3_presign('posts/' ~ post.id ~ '/gallery/' ~ pic.image_file2)) %}
+          {% set fn = pic.image_file2 %}
+          {% set key_new = 'posts/' ~ post.id ~ '/gallery/' ~ fn %}
+          {% set key_old = 'posts/' ~ post.id ~ '/' ~ fn %}
+
+          {% set pic_url_new = (
+              pic.url if pic.url is defined and pic.url
+              else (
+                pic.image_url if pic.image_url is defined and pic.image_url
+                else s3_presign(key_new)
+              )
+          ) %}
+          {% set pic_url_old = s3_presign(key_old) %}
+
+          {% set is_video = (
+              (pic.media_type is defined and pic.media_type == "video")
+              or (fn and fn.lower().endswith(".mp4"))
+          ) %}
+
           <div class="col-sm-4">
-            <a href="{{ pic_url }}" data-lightbox="example-set" data-title="{{ post.title }}">
-              <img class="w-100" style="padding-bottom: 12px;"
-                   src="{{ pic_url }}" alt="{{ post.title }}">
-            </a>
+            {% if is_video %}
+              <div class="w-100" style="padding-bottom:12px;">
+                <video class="w-100"
+                       controls
+                       preload="metadata"
+                       playsinline
+                       style="background:#000;border-radius:12px;">
+                  <source src="{{ pic_url_new }}" type="video/mp4">
+                  <source src="{{ pic_url_old }}" type="video/mp4">
+                </video>
+              </div>
+            {% else %}
+              <a class="js-lightbox-link"
+                 href="{{ pic_url_new }}"
+                 data-fallback-href="{{ pic_url_old }}"
+                 data-lightbox="example-set"
+                 data-title="{{ post.title }}">
+                <img class="w-100 js-gallery-img"
+                     style="padding-bottom: 12px;"
+                     src="{{ pic_url_new }}"
+                     data-fallback="{{ pic_url_old }}"
+                     alt="{{ post.title }}"
+                     onerror="this.onerror=null; this.src=this.dataset.fallback;">
+              </a>
+            {% endif %}
           </div>
         {% endfor %}
       {% else %}
-        {# Fallback: ak orderz nie je k dispozícii, preskoč prvý cez index #}
         {% for pic in galleries %}
           {% if not loop.first %}
-            {% set pic_url = (pic.image_url if pic.image_url is defined and pic.image_url
-                              else s3_presign('posts/' ~ post.id ~ '/gallery/' ~ pic.image_file2)) %}
+            {% set fn = pic.image_file2 %}
+            {% set key_new = 'posts/' ~ post.id ~ '/gallery/' ~ fn %}
+            {% set key_old = 'posts/' ~ post.id ~ '/' ~ fn %}
+
+            {% set pic_url_new = (
+                pic.url if pic.url is defined and pic.url
+                else (
+                  pic.image_url if pic.image_url is defined and pic.image_url
+                  else s3_presign(key_new)
+                )
+            ) %}
+            {% set pic_url_old = s3_presign(key_old) %}
+
+            {% set is_video = (
+                (pic.media_type is defined and pic.media_type == "video")
+                or (fn and fn.lower().endswith(".mp4"))
+            ) %}
+
             <div class="col-sm-4">
-              <a href="{{ pic_url }}" data-lightbox="example-set" data-title="{{ post.title }}">
-                <img class="w-100" style="padding-bottom: 12px;"
-                     src="{{ pic_url }}" alt="{{ post.title }}">
-              </a>
+              {% if is_video %}
+                <div class="w-100" style="padding-bottom:12px;">
+                  <video class="w-100"
+                         controls
+                         preload="metadata"
+                         playsinline
+                         style="background:#000;border-radius:12px;">
+                    <source src="{{ pic_url_new }}" type="video/mp4">
+                    <source src="{{ pic_url_old }}" type="video/mp4">
+                  </video>
+                </div>
+              {% else %}
+                <a class="js-lightbox-link"
+                   href="{{ pic_url_new }}"
+                   data-fallback-href="{{ pic_url_old }}"
+                   data-lightbox="example-set"
+                   data-title="{{ post.title }}">
+                  <img class="w-100 js-gallery-img"
+                       style="padding-bottom: 12px;"
+                       src="{{ pic_url_new }}"
+                       data-fallback="{{ pic_url_old }}"
+                       alt="{{ post.title }}"
+                       onerror="this.onerror=null; this.src=this.dataset.fallback;">
+                </a>
+              {% endif %}
             </div>
           {% endif %}
         {% endfor %}
@@ -100,5 +362,114 @@
     </div>
   </div>
 </div>
+
+<br><br>
+
+{# ===== Prepínateľné sekcie ===== #}
+{% set has_most = (most_read is defined and most_read and most_read|length > 0) %}
+{% set has_latest = (latest_posts is defined and latest_posts and latest_posts|length > 0) %}
+
+{% if has_most or has_latest %}
+  <section class="content-section" style="margin-top:18px;" id="postLists">
+    <div class="post-tabs-wrap">
+      <h3 style="margin:0;">Ďalšie články</h3>
+
+      <div class="post-tabs" role="tablist">
+        {% if has_most %}
+          <button type="button" class="post-tab is-active" data-tab="most">Najčítanejšie</button>
+        {% endif %}
+        {% if has_latest %}
+          <button type="button" class="post-tab {% if not has_most %}is-active{% endif %}" data-tab="latest">Najnovšie</button>
+        {% endif %}
+      </div>
+    </div>
+
+    <br>
+
+    {% if has_most %}
+      <div class="post-panel is-active" data-panel="most">
+        <div class="mr-grid">
+          {% for p in most_read %}
+            {% set cover_url = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
+            <a class="mr-card" href="{{ url_for('posts.post', post_id=p.id) }}" aria-label="{{ p.title }}">
+              <div class="mr-media">
+                {% if cover_url %}<img src="{{ cover_url }}" alt="{{ p.title }}">{% else %}<div class="mr-noimg">Článok</div>{% endif %}
+              </div>
+              <div class="mr-body">
+                <div class="mr-meta"><span>{{ (p.published_at or p.date_posted).strftime('%d. %m. %Y') }}</span></div>
+                <div class="mr-title">{{ p.title }}</div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if has_latest %}
+      <div class="post-panel {% if not has_most %}is-active{% endif %}" data-panel="latest">
+        <div class="mr-grid">
+          {% for p in latest_posts %}
+            {% set cover_url = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
+            <a class="mr-card" href="{{ url_for('posts.post', post_id=p.id) }}" aria-label="{{ p.title }}">
+              <div class="mr-media">
+                {% if cover_url %}<img src="{{ cover_url }}" alt="{{ p.title }}">{% else %}<div class="mr-noimg">Článok</div>{% endif %}
+              </div>
+              <div class="mr-body">
+                <div class="mr-meta"><span>{{ (p.published_at or p.date_posted).strftime('%d. %m. %Y') }}</span></div>
+                <div class="mr-title">{{ p.title }}</div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <script>
+    // FIX: prepínač musí byť "blocking" (nie passive), inak v niektorých setupoch s overlay / pointer event
+    (function () {
+      const root = document.getElementById("postLists");
+      if (!root) return;
+
+      const tabs = Array.from(root.querySelectorAll(".post-tab"));
+      const panels = Array.from(root.querySelectorAll(".post-panel"));
+
+      function setActive(key) {
+        tabs.forEach(btn => btn.classList.toggle("is-active", btn.dataset.tab === key));
+        panels.forEach(p => p.classList.toggle("is-active", p.dataset.panel === key));
+      }
+
+      tabs.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setActive(btn.dataset.tab);
+        }); // <-- bez {passive:true}
+      });
+
+      // default: most ak existuje, inak latest
+      const def = (tabs.find(b => b.dataset.tab === "most") || tabs[0]);
+      if (def) setActive(def.dataset.tab);
+    })();
+  </script>
+{% endif %}
+
+<script>
+  // Keď img spadne na fallback src, prepni aj lightbox href na fallback, aby klik otvoril správny obrázok.
+  (function () {
+    try {
+      document.querySelectorAll("img.js-gallery-img").forEach(function (img) {
+        img.addEventListener("error", function () {
+          try {
+            var a = img.closest("a.js-lightbox-link");
+            if (!a) return;
+            var fb = img.dataset.fallback;
+            if (fb) a.href = fb;
+          } catch (e) {}
+        }, { passive: true });
+      });
+    } catch (e) {}
+  })();
+</script>
 
 {% endblock content %}

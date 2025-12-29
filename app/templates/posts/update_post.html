@@ -2,189 +2,188 @@
 {% block content %}
 
 <style scoped>
-    .upload-btn-wrapper {
-        position: relative;
-        overflow: hidden;
-        display: inline-block;
-      }
+  .col .gallery-media{
+    margin-bottom: 9px;
+    display: block;
+    width: 100%;
+    max-width: 390px;
+    height: 200px;
+    background: #000;
+    border-radius: 12px;
+  }
 
+  .col img.gallery-media{
+    object-fit: cover;
+  }
 
-      .upload-btn-wrapper input[type=file] {
-        font-size: 100px;
-        position: absolute;
-        left: 0;
-        top: 0;
-        opacity: 0;
-      }
+  .col video.gallery-media{
+    object-fit: contain; /* video nech sa nezrezáva */
+  }
 
-    .draggable { cursor: grab; }
-    .draggable::drag { cursor: grabbing; }
+  .upload-btn-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+  }
 
-    .dragging {}
+  .upload-btn-wrapper input[type=file] {
+    font-size: 100px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+  }
 
-    .position{
-      position:relative;
-      margin-right:*10px;
-      margin-top:-415px;
-      padding-top: 0px;
-      padding-bottom: 4px;
-      padding-left: 4px;
-      padding-right: 4px;
-      line-height: 90%;
-      z-index: 99999999999;
-      opacity: 1;
-    }
+  .draggable { cursor: grab; }
+  .draggable::drag { cursor: grabbing; }
 
-    .col img{
-      margin-bottom: 9px;
-      display: grid;
-      width: 390px;
-      height: 200px;
-      object-fit: cover;
-    }
+  .position{
+    position:relative;
+    margin-right:*10px;
+    margin-top:-415px;
+    padding-top: 0px;
+    padding-bottom: 4px;
+    padding-left: 4px;
+    padding-right: 4px;
+    line-height: 90%;
+    z-index: 99999999999;
+    opacity: 1;
+  }
 
-    select .form-control{ cursor: pointer; }
-    select option .form-control:hover { color: black; cursor: pointer; }
+  select .form-control{ cursor: pointer; }
+  select option .form-control:hover { color: black; cursor: pointer; }
 
-    /* ✅ LOADER */
-    .btn-upload-loading { opacity: .75; pointer-events: none; }
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid currentColor;
-      border-right-color: transparent;
-      border-radius: 50%;
-      display: inline-block;
-      vertical-align: middle;
-      margin-right: 8px;
-      animation: spin .8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+  /* ✅ LOADER */
+  .btn-upload-loading { opacity: .75; pointer-events: none; }
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* malý grid spacing */
+  #image-gallery2 .col { margin-bottom: 10px; }
 </style>
 
 <div class="content-section">
-    <form action="" method="post" class="form" role="form" enctype="multipart/form-data" id="postForm">
-        {{ form.hidden_tag() }}
-        <fieldset class="form-group">
-            <h3>{{ title }}</h3>
+  <form action="" method="post" class="form" role="form" enctype="multipart/form-data" id="postForm">
+    {{ form.hidden_tag() }}
+    <fieldset class="form-group">
+      <h3>{{ title }}</h3>
 
-            <div class="form-group">
-                {{ form.category.label(class="form-control-label") }}
-                {% if form.category.errors %}
-                    {{ form.category(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.category.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.category(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                {{ form.title.label(class="form-control-label") }}
-                {% if form.title.errors %}
-                    {{ form.title(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.title.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.title(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                {{ form.content.label(class="form-control-label") }}
-                {% if form.content.errors %}
-                    {{ form.content(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.content.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.content(rows='13',class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                {{ form.date_posted.label(class="form-control-label") }}
-                {% if form.date_posted.errors %}
-                    {{ form.date_posted(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.date_posted.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                {{ form.date_posted(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-
-            <br>
-
-            <center><h3>Post Image Gallery</h3></center>
-            <br>
-
-            <center>
-                <div id="image-gallery2" class="row">
-                    <!-- Galéria obrázkov sa bude aktualizovať pomocou JavaScriptu -->
-                </div>
-            </center>
-
-            <br><br>
-            <center><h3>New Images</h3></center>
-
-            <div class="form-group">
-                <div class="row">
-                    <div class="col-sm-8">
-                        <input type="hidden" name="title" placeholder="Image Title" class="form-control">
-                    </div>
-
-                    <div class="col-sm-12">
-                        <center>
-                          <div class="upload-btn-wrapper">
-                                <button type="button" class="btn" id="uploadBtn">
-                                  <span id="uploadBtnText">Upload a file</span>
-                                </button>
-                                <input type="file" id="image_file2" name="image_file2"/>
-                          </div>
-                          <div id="uploadHint" style="margin-top:8px;opacity:.7;font-size:90%;display:none;">
-                            Nahrávam obrázok…
-                          </div>
-                        </center>
-                    </div>
-                </div>
-            </div>
-
-            <br><br>
-
-        </fieldset>
-
-        <center>
-          <div class="form-group">
-              {{ form.submit(class="btn-reverse") }}
+      <div class="form-group">
+        {{ form.category.label(class="form-control-label") }}
+        {% if form.category.errors %}
+          {{ form.category(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.category.errors %}<span>{{ error }}</span>{% endfor %}
           </div>
-        </center>
+        {% else %}
+          {{ form.category(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
 
-    </form>
+      <div class="form-group">
+        {{ form.title.label(class="form-control-label") }}
+        {% if form.title.errors %}
+          {{ form.title(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.title.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% else %}
+          {{ form.title(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
 
-    {% set post_id = '1' %}
+      <div class="form-group">
+        {{ form.content.label(class="form-control-label") }}
+        {% if form.content.errors %}
+          {{ form.content(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.content.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% else %}
+          {{ form.content(rows='13',class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.date_posted.label(class="form-control-label") }}
+        {% if form.date_posted.errors %}
+          {{ form.date_posted(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.date_posted.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% else %}
+          {{ form.date_posted(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+
+      <br>
+
+      <center><h3>Post Image Gallery</h3></center>
+      <br>
+
+      <center>
+        <div id="image-gallery2" class="row">
+          <!-- Galéria sa renderuje cez refreshTable() -->
+        </div>
+      </center>
+
+      <br><br>
+      <center><h3>New Images</h3></center>
+
+      <div class="form-group">
+        <div class="row">
+          <div class="col-sm-8">
+            <input type="hidden" name="title" placeholder="Image Title" class="form-control">
+          </div>
+
+          <div class="col-sm-12">
+            <center>
+              <div class="upload-btn-wrapper">
+                <button type="button" class="btn" id="uploadBtn">
+                  <span id="uploadBtnText">Upload a file</span>
+                </button>
+                <input type="file" id="image_file2" name="image_file2" accept="image/*,video/mp4" />
+              </div>
+              <div id="uploadHint" style="margin-top:8px;opacity:.7;font-size:90%;display:none;">
+                Nahrávam…
+              </div>
+            </center>
+          </div>
+        </div>
+      </div>
+
+      <br><br>
+    </fieldset>
+
     <center>
-      <button onclick="javascript:location.href='{{ url_for('posts.list_posts') }}';" class="btn btn-sm" />Back</button>
+      <div class="form-group">
+        {{ form.submit(class="btn-reverse") }}
+      </div>
     </center>
+  </form>
 
+  <center>
+    <button onclick="javascript:location.href='{{ url_for('posts.list_posts') }}';" class="btn btn-sm">Back</button>
+  </center>
 </div>
-
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
 <script>
-  // ✅ Upload + loader (správne posielame len 1 file)
+  // ===========
+  // Upload + loader
+  // ===========
   const uploadBtn = document.getElementById("uploadBtn");
   const uploadBtnText = document.getElementById("uploadBtnText");
   const uploadHint = document.getElementById("uploadHint");
@@ -206,30 +205,35 @@
   }
 
   async function uploadOneFile(file) {
-    // ✅ preprocess (PNG ostáva PNG, ostatné -> WebP + resize)
-    const processed = await preprocessImage(file, {
-      maxW: 1600,
-      maxH: 1600,
-      quality: 0.82,
-      keepPng: true,
-    });
-  
+    const isMp4 = (file.type === "video/mp4") || (file.name && file.name.toLowerCase().endsWith(".mp4"));
     const fd = new FormData();
-    fd.append("image_file2", processed);
-  
+
+    if (isMp4) {
+      fd.append("image_file2", file, file.name);
+    } else {
+      // preprocessImage musí existovať globálne (ako u teba doteraz)
+      const processed = await preprocessImage(file, {
+        maxW: 1600,
+        maxH: 1600,
+        quality: 0.82,
+        keepPng: true,
+      });
+      fd.append("image_file2", processed, processed.name || file.name);
+    }
+
     setUploading(true);
     try {
       const response = await fetch(`/posts/images/{{post.id|string}}/upload`, {
-        method: 'PUT',
+        method: "PUT",
         body: fd,
       });
-  
+
       if (!response.ok) {
         console.error("Upload error:", await response.text());
         return;
       }
-  
-      await refreshTable();
+
+      await refreshTable(true);  // ✅ po uploade vždy prerender + reinit sortable
       fileInput.value = "";
     } catch (e) {
       console.error("Upload failed:", e);
@@ -238,7 +242,6 @@
     }
   }
 
-  
   fileInput.addEventListener("change", async (e) => {
     const file = e.target.files?.[0];
     if (file) await uploadOneFile(file);
@@ -246,232 +249,109 @@
 </script>
 
 <script>
-    // JavaScript kód pre asynchrónne zobrazenie obrázkov, pridávanie a mazanie
-    // ✅ FIX: používaš image-gallery2, nie image-gallery
-    const imageGallery = document.getElementById('image-gallery2');
-    const imageForm = document.getElementById('postForm');
-    const uploadImageButton = document.getElementById('uploadImageButton'); // (neexistuje v HTML, nechávam ako máš)
+  // ===========
+  // Gallery render + delete + sortable (JEDNA implementácia)
+  // ===========
+  const imageGallery = document.getElementById("image-gallery2");
 
-    // Funkcia na zobrazenie obrázkov z galérie
-    async function showImages() {
-        const response = await fetch(`/posts/images/{{post.id|string}}`);
-        const images = await response.json();
-
-        imageGallery.innerHTML = '';
-
-        images.forEach(image => {
-           const div = document.createElement('div');
-           div.classList.add('col-6','draggable');
-           div.setAttribute('data-image-id', image.id);
-
-           const img = document.createElement('img');
-            img.src = image.image_url;
-            img.alt = image.title;
-            img.orderz = image.orderz;
-            img.style.width = '100%';
-            img.style.height = '200px';
-            img.style.objectFit = 'cover';
-            img.style.margin = '5px';
-
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'X';
-            deleteButton.classList.add('btn');
-            deleteButton.style.position = 'relative';
-            deleteButton.style.float = 'right';
-            deleteButton.style.right = '1%';
-            deleteButton.style.bottom = '82%';
-            deleteButton.type = 'button';
-
-            deleteButton.addEventListener('click', () => deleteImage(image.id));
-            imageGallery.appendChild(div);
-            div.appendChild(img);
-            div.appendChild(deleteButton);
-        });
-
-        const draggableElements = document.querySelectorAll('.draggable');
-        draggableElements.forEach((element) => {
-            element.addEventListener('dragstart', handleDragStart);
-            element.addEventListener('dragover', handleDragOver);
-            element.addEventListener('drop', handleDrop);
-        });
-
-        if(images.length==0){
-            imageGallery.innerHTML='<h4>NO IMAGES</h4>';
-        }
-    }
-
-    async function addImages(formData) {
-        try {
-            const response = await fetch(`/posts/images/{{post.id|string}}/upload`, {
-                method: 'PUT',
-                body: formData,
-            });
-
-            if (response.status === 200) {
-                refreshTable();
-            }
-        } catch (error) {
-            console.error('Chyba:', error);
-        }
-    }
-
-    async function removeImage(imageId) {
-        const imageToRemove = document.querySelector(`[data-image-id="${imageId}"]`);
-        const imageToRemove2 = document.querySelector(`[data-image-id2="${imageId}"]`);
-        if (imageToRemove) {
-            imageToRemove.style.transition = 'opacity 0.5s ease-in-out';
-            imageToRemove.style.opacity = '0';
-            if (imageToRemove2) {
-              imageToRemove2.style.transition = 'opacity 0.5s ease-in-out';
-              imageToRemove2.style.opacity = '0';
-            }
-            await new Promise(resolve => setTimeout(resolve, 200));
-            imageGallery.removeChild(imageToRemove);
-            if (imageToRemove2) imageGallery.removeChild(imageToRemove2);
-        }
-        showImages();
-    }
-
-    async function deleteImage(imageId) {
-        try {
-            const response = await fetch(`/posts/{{post.id|string}}/gallery/delete/${imageId}`, {
-                method: 'DELETE'
-            });
-
-            if (response.status === 200) {
-                removeImage(imageId);
-                refreshTable();
-            }
-        } catch (error) {
-            console.error('Chyba:', error);
-        }
-    }
-
-    function handleDragStart(event) {
-        event.dataTransfer.setData('text/plain', event.target.dataset.imageId);
-        event.target.classList.add('dragging');
-        event.target.style.border = '4px solid red';
-        draggingElement = event.target;
-        const offsetX = event.clientX - event.target.getBoundingClientRect().left;
-        const offsetY = event.clientY - event.target.getBoundingClientRect().top;
-        event.dataTransfer.setDragImage(event.target, offsetX, offsetY);
-    }
-
-    function handleDragOver(event) {
-        event.target.style.border = 'none';
-        event.preventDefault();
-    }
-
-    function handleDrop(event) {
-        event.preventDefault();
-        const sourceImageId = event.dataTransfer.getData('text/plain');
-        const targetImageId = event.target.dataset.imageId;
-
-        const sourceImage = document.querySelector(`[data-image-id="${sourceImageId}"]`);
-        const targetImage = document.querySelector(`[data-image-id="${targetImageId}"]`);
-
-        if (sourceImage && targetImage && sourceImage.parentNode === imageGallery && targetImage.parentNode === imageGallery) {
-          imageGallery.insertBefore(sourceImage, targetImage);
-        }
-
-        if (draggingElement) {
-          draggingElement.classList.remove('dragging');
-          draggingElement = null;
-        }
-
-        saveImageOrder();
-    }
-
-    showImages();
-
-    async function saveImageOrder() {
-        // POZN: tu si mal newOrder nedefinovaný - nechávam, ale sortable rieši order nižšie v refreshTable()
-        try {
-          // nič
-        } catch (error) {
-          console.error('Error:', error);
-        }
-    }
-
-    if (uploadImageButton) {
-      uploadImageButton.addEventListener('click', (e) => {
-          e.preventDefault();
-          const formData = new FormData(imageForm);
-          addImages(formData);
+  async function deleteImage(imageId) {
+    try {
+      const response = await fetch(`/posts/{{post.id|string}}/gallery/delete/${imageId}`, {
+        method: "DELETE"
       });
+
+      if (!response.ok) {
+        console.error("Delete error:", await response.text());
+        return;
+      }
+      await refreshTable(true);
+    } catch (e) {
+      console.error("Delete failed:", e);
     }
+  }
 
-    $('div').on('update', function () {
-      var data = [];
-      $(this).find('div').each(function (index) {
-        data.push({
-          image_id: $(this).data('image-id'),
-          post_id: $(this).data('post-id'),
-          orderz: index
-        });
+  function renderItem(item) {
+    const u = item.url || item.image_url;
+    const isVideo = (item.media_type === "video") || (item.filename && item.filename.toLowerCase().endsWith(".mp4"));
+
+    const media = isVideo
+      ? `<video class="gallery-media" controls preload="metadata" playsinline>
+           <source src="${u}" type="video/mp4">
+         </video>`
+      : `<img class="gallery-media" src="${u}" alt="">`;
+
+    return `<div class="col col-6 col-sm-4 draggable" data-image-id="${item.id}" data-post-id="${item.post_id}">
+              ${media}
+              <button type="button" class="btn btn-close position" onclick="deleteImage(${item.id})">x</button>
+            </div>`;
+  }
+
+  async function refreshTable(reinitSortable=false) {
+    try {
+      const res = await fetch(`/posts/images/{{post.id|string}}`, { method: "GET" });
+      if (!res.ok) {
+        console.error("Gallery fetch error:", await res.text());
+        return;
+      }
+
+      const data = await res.json();
+      imageGallery.innerHTML = "";
+
+      if (!Array.isArray(data) || data.length === 0) {
+        imageGallery.innerHTML = "<h4>NO IMAGES</h4>";
+        return;
+      }
+
+      // render
+      const frag = document.createDocumentFragment();
+      data.forEach((item) => {
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = renderItem(item);
+        frag.appendChild(wrapper.firstElementChild);
       });
-      $.ajax({
-        type: 'POST',
-        url: '/posts/{{post.id|string}}/gallery/update_order',
-        data: JSON.stringify(data),
-        contentType: 'application/json',
-        dataType: 'json',
-        success: function (response) {
-          console.log(response);
-          refreshTable();
-        }
-      });
-    });
-</script>
+      imageGallery.appendChild(frag);
 
-<script>
-    async function refreshTable() {
-        var classs='';
-        $.get('/posts/images/{{post.id|string}}', function(data) {
-            var tbody = $("#image-gallery2");
-            tbody.empty();
+      // sortable (zruš starý a init znovu len keď treba)
+      if (reinitSortable) {
+        try { $(imageGallery).sortable("destroy"); } catch (e) {}
+      }
 
-            data.forEach(function(item) {
-                if(item.orderz % 5 === 0){classs="draggable-row";}else{classs="draggable-row";}
-                var row = `<div class="col draggable" data-image-id="${item.id}" data-post-id="${item.post_id}" >
-                  <img src="${item.image_url}">
-                  <button type="button" onclick="deleteImage(${item.id})" class="btn btn-close position">x</button>
-                </div>`;
-
-                var newRow = $(row);
-                newRow.hide();
-                tbody.append(newRow);
-                newRow.fadeIn();
+      // init sortable (ak ešte nie je)
+      $(imageGallery).sortable({
+        update: function() {
+          const payload = [];
+          $(imageGallery).find("> div").each(function(index) {
+            payload.push({
+              image_id: $(this).data("image-id"),
+              post_id: $(this).data("post-id"),
+              orderz: index
             });
+          });
 
-            tbody.sortable({
-                update: function(event, ui) {
-                    var data = [];
-                    tbody.find("div").each(function(index) {
-                        data.push({
-                            image_id: $(this).data("image-id"),
-                            post_id: $(this).data("post-id"),
-                            orderz: index
-                        });
-                    });
+          $.ajax({
+            type: "POST",
+            url: "/posts/{{post.id|string}}/gallery/update_order",
+            data: JSON.stringify(payload),
+            contentType: "application/json",
+            dataType: "json",
+            success: function() {
+              // po uložení poradia refreshni (bez destroy)
+              refreshTable(false);
+            },
+            error: function(xhr) {
+              console.error("Order update failed:", xhr.responseText || xhr.status);
+            }
+          });
+        }
+      }).disableSelection();
 
-                    $.ajax({
-                        type: 'POST',
-                        url: '/posts/{{post.id|string}}/gallery/update_order',
-                        data: JSON.stringify(data),
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        success: function(response) {
-                            console.log(response);
-                            refreshTable();
-                        }
-                    });
-                }
-            }).disableSelection();
-        });
+    } catch (e) {
+      console.error("refreshTable failed:", e);
     }
+  }
 
-    refreshTable();
+  // prvé načítanie: render + init sortable
+  refreshTable(true);
 </script>
 
 {% endblock content %}

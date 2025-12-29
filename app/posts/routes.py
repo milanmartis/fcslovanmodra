@@ -3,7 +3,7 @@ import re
 import uuid
 from datetime import datetime
 import mimetypes
-from sqlalchemy.orm import subqueryload
+from sqlalchemy.orm import subqueryload, joinedload
 from app import csrf
 from slugify import slugify
 import boto3
@@ -25,7 +25,7 @@ from app.models import Category, Post, PostGallery
 from app.posts.forms import PostForm, CategoryForm
 from flask_login import login_user, current_user, logout_user, login_required
 from functools import wraps
-from flask import abort
+
 def roles_required(*roles):
     def deco(fn):
         @wraps(fn)
@@ -53,24 +53,27 @@ if not _BUCKET_RE.match(BUCKET_NAME):
 _S3 = None
 _S3_REGION = None
 
-def s3_extra_args(file) -> dict:
-    """
-    Nastaví správny ContentType podľa súboru (jpg/png/webp/...)
-    + dlhú cache.
-    """
-    content_type = getattr(file, "mimetype", None)
+import mimetypes
 
-    # ak Flask nedal rozumný mimetype, skúsime podľa názvu súboru
-    if not content_type or content_type == "application/octet-stream":
-        content_type, _ = mimetypes.guess_type(getattr(file, "filename", ""))
+def s3_extra_args(file):
+    content_type, _ = mimetypes.guess_type(getattr(file, "filename", "") or "")
 
-    # fallback – keby sa nič neuhádlo
     if not content_type:
-        content_type = "image/jpeg"
+        fn = (getattr(file, "filename", "") or "").lower()
+        if fn.endswith(".mp4"):
+            content_type = "video/mp4"
+        elif fn.endswith(".webp"):
+            content_type = "image/webp"
+        elif fn.endswith(".png"):
+            content_type = "image/png"
+        elif fn.endswith(".gif"):
+            content_type = "image/gif"
+        else:
+            content_type = "image/jpeg"
 
     return {
-        "CacheControl": "public, max-age=31536000",
         "ContentType": content_type,
+        "CacheControl": "public, max-age=31536000, immutable",
     }
     
 def s3_client():
@@ -96,17 +99,17 @@ def s3_client():
 
 
 def s3_presign(key: str, expires: int = 3600) -> str:
-    """Vygeneruje pre-signed URL na čítanie objektu."""
     return s3_client().generate_presigned_url(
         "get_object",
         Params={"Bucket": BUCKET_NAME, "Key": key},
+        
         ExpiresIn=expires,
     )
 
 
 # ---------- Helpers ----------
 
-ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4'}
 
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -256,12 +259,21 @@ def post(post_id):
     if not post_obj:
         abort(404)
 
+    # ===== Views +1 (pre Najčítanejšie) =====
+    db.session.query(Post).filter(Post.id == post_id).update({
+        Post.views: Post.views + 1
+    })
+    db.session.commit()
+    db.session.refresh(post_obj)
+
+    # ===== Titulný obrázok + galéria (tvoj kód) =====
     title_image = (
         PostGallery.query
         .filter_by(post_id=post_id)
         .order_by(PostGallery.orderz.asc())
         .first()
     )
+
     galleries = (
         PostGallery.query
         .filter_by(post_id=post_id)
@@ -269,31 +281,81 @@ def post(post_id):
         .all()
     )
 
-    # Pre šablóny: pripravíme pre-signed URL pre titulku aj pre celú galériu
     title_image_url = None
     if title_image:
-        title_image_url = s3_presign(make_gallery_key(post_id, title_image.image_file2))
+        title_image_url = s3_presign(
+            make_gallery_key(post_id, title_image.image_file2)
+        )
 
     galleries_with_urls = []
     for g in galleries:
+        ext = (os.path.splitext(g.image_file2 or "")[1] or "").lower()
+        media_type = "video" if ext == ".mp4" else "image"
+
         galleries_with_urls.append({
             "id": g.id,
             "title": g.title,
             "orderz": g.orderz,
+            "media_type": media_type,
+            "url": s3_presign(make_gallery_key(post_id, g.image_file2)),
             "image_file2": g.image_file2,
-            "image_url": s3_presign(make_gallery_key(post_id, g.image_file2)),
         })
 
     category = Category.query.all()
 
+    # =====================================================
+    # 🔥 NAJČÍTANEJŠIE – PRE TVOJ EXISTUJÚCI BLOK
+    # =====================================================
+    most_read = (
+        Post.query
+        .filter(Post.id != post_id)
+        .order_by(Post.views.desc(), Post.date_posted.desc())
+        .limit(6)
+        .all()
+    )
+
+    # ===== Cover obrázky pre Najčítanejšie =====
+    most_read_ids = [p.id for p in most_read]
+    most_read_covers = {}
+
+    if most_read_ids:
+        cover_rows = (
+            PostGallery.query
+            .filter(PostGallery.post_id.in_(most_read_ids))
+            .order_by(PostGallery.post_id.asc(), PostGallery.orderz.asc())
+            .all()
+        )
+
+        # prvý obrázok podľa orderz = titulný
+        for g in cover_rows:
+            if g.post_id not in most_read_covers and g.image_file2:
+                most_read_covers[g.post_id] = s3_presign(
+                    make_gallery_key(g.post_id, g.image_file2)
+                )
+
+    # (voliteľné – pripravené do budúcna)
+    latest_posts = (
+        Post.query
+        .filter(Post.id != post_id)
+        .order_by(Post.date_posted.desc())
+        .limit(6)
+        .all()
+    )
+
     return render_template(
-        'posts/post.html',
+        "posts/post.html",
         title_image=title_image,
-        title_image_url=title_image_url,   # použiteľné v šablóne ako <img src="{{ title_image_url }}">
+        title_image_url=title_image_url,
         title=post_obj.title,
         post=post_obj,
-        galleries=galleries_with_urls,     # každý item má .image_url = presign
+        galleries=galleries_with_urls,
         category=category,
+
+        # 👇 PRESNE TOTO TVOJA ŠABLÓNA POTREBUJE
+        most_read=most_read,
+        most_read_covers=most_read_covers,
+        latest_posts=latest_posts,  # zatiaľ nepoužívaš, ale je ready
+
         current_date=datetime.now(),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
@@ -343,11 +405,15 @@ def get_images_by_post(post_id):
     image_list = []
     for img in images:
         key = make_gallery_key(post_id, img.image_file2)
+        ext = (os.path.splitext(img.image_file2 or "")[1] or "").lower()
+        media_type = "video" if ext == ".mp4" else "image"
         image_list.append({
-            'id': img.id,
-            'title': img.title,
-            'orderz': img.orderz,
-            'image_url': s3_presign(key)
+              "id": img.id,
+              "title": img.title,
+              "orderz": img.orderz,
+              "media_type": media_type,
+              "url": s3_presign(key),     # ✅ neutrálny názov
+              "filename": img.image_file2
         })
 
     return jsonify(image_list)
