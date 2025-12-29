@@ -404,6 +404,7 @@ def delete_image(post_id, image_id):
 
 
 @posts.route('/posts/<int:post_id>/gallery/update_order', methods=['POST'])
+@csrf.exempt
 def update_image_order(post_id):
     data = request.json or []
     # očakáva zoznam dictov: {"image_id": X, "orderz": Y}
