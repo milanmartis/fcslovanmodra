@@ -290,6 +290,8 @@ class Post(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(255), nullable=False, unique=True, index=True)
+
     date_posted = db.Column(db.DateTime(timezone=True), nullable=False, default=func.now())
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

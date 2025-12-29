@@ -5,7 +5,7 @@ from datetime import datetime
 import mimetypes
 from sqlalchemy.orm import subqueryload
 from app import csrf
-
+from slugify import slugify
 import boto3
 from botocore.config import Config as BotoConfig
 from botocore.exceptions import NoCredentialsError
@@ -154,8 +154,17 @@ def new_post():
     if form.validate_on_submit():
         try:
             # 1) vytvor Post (napojenie cez relationship 'author', nie author_id)
+            base_slug = slugify(form.title.data)
+            slug = base_slug
+            i = 1
+
+            while Post.query.filter_by(slug=slug).first():
+                slug = f"{base_slug}-{i}"
+                i += 1
+
             post = Post(
                 title=form.title.data,
+                slug=slug,
                 content=form.content.data,
                 date_posted=form.date_posted.data,
                 author=current_user,
