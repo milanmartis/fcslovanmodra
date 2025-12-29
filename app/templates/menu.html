@@ -33,31 +33,11 @@
       <!-- Ľavé hlavné menu -->
       <ul class="navbar-nav main-menu">
 
-        <!-- Klub -->
-        <li class="nav-item dropdown">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            id="clubDropdown"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            Klub
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="clubDropdown">
-            <li>
-              <a class="dropdown-item" href="{{ url_for('main.about') }}">O klube</a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="{{ url_for('main.dokumenty') }}">Dokumenty</a>
-            </li>
-          </ul>
-        </li>
+    
 
         <!-- Články -->
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('posts.list_posts') }}">Články</a>
+          <a class="nav-link" href="{{ url_for('main.home') }}">Home</a>
         </li>
 
         <!-- A tím -->
@@ -103,6 +83,28 @@
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('products.list_products') }}">FunShop</a>
         </li>
+
+            <!-- Klub -->
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="clubDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Kontakt
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="clubDropdown">
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('main.about') }}">O klube</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('main.dokumenty') }}">Dokumenty</a>
+                </li>
+              </ul>
+            </li>
       </ul>
 
       <!-- Pravá strana – user menu -->

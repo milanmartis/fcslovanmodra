@@ -223,28 +223,53 @@ def tabz():
 @main.route("/")
 @main.route("/home")
 def home():
-    page = request.args.get('page', 1, type=int)
+    page = request.args.get("page", 1, type=int)
 
-    posts = (
+    # NEW: filter + search
+    q = (request.args.get("q", "", type=str) or "").strip()
+    cat_id = request.args.get("category", None, type=int)
+
+    base_q = (
         db.session.query(Post)
         .options(subqueryload(Post.gallery))
+    )
+
+    # Filter: category
+    if cat_id:
+        base_q = base_q.filter(Post.category_id == cat_id)
+
+    # Search: title + content (case-insensitive)
+    if q:
+        like = f"%{q}%"
+        base_q = base_q.filter(
+            (Post.title.ilike(like)) | (Post.content.ilike(like))
+        )
+
+    posts = (
+        base_q
         .order_by(Post.date_posted.desc())
         .paginate(page=page, per_page=5, error_out=False)
     )
 
-    category = db.session.query(Category).all()
+    category = db.session.query(Category).order_by(Category.name.asc()).all()
 
     return render_template(
-        'home.html',
-        title='',
+        "home.html",
+        title="",
         posts=posts,
+
+        # NEW: state pre UI
+        q=q,
+        selected_category=cat_id,
+        category=category,
+
         current_date=datetime.now(timezone.utc),
         next22=Next.next(),
-        category=category,
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table(),
     )
+
 
 
 @main.route("/oklube")

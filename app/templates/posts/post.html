@@ -362,8 +362,19 @@
     </div>
   </div>
 </div>
+<div class="club-navbar navbar">
 
-<br><br>
+  <a href="#" id="shareLink" title="Zdieľať">
+    <i class="fas fa-share-alt" style="color:#e0e0e0;padding-right:10px;"></i>
+  </a>
+
+  <a href="#" id="openModalLink">
+    <i class="fas fa-user-alt" style="color:#e0e0e0;padding-right:6px;"></i>
+  </a>
+</div>
+
+
+<br>
 
 {# ===== Prepínateľné sekcie ===== #}
 {% set has_most = (most_read is defined and most_read and most_read|length > 0) %}
@@ -469,6 +480,97 @@
         }, { passive: true });
       });
     } catch (e) {}
+  })();
+</script>
+<script>
+  (function () {
+    const shareBtn = document.getElementById("shareLink");
+    if (!shareBtn) return;
+
+    function buildShareUrl() {
+      // Zdieľaj konkrétnu miestnosť (konvenčne: deep-link)
+      // U teba je aktuálna room v sessionvalue.
+      const rid = "{{ sessionvalue }}";
+      const base = window.location.origin;
+
+      // Ak máš route, ktorá vie otvoriť room priamo, použi ju.
+      // Keďže v tvojom kóde nastavuješ session cez /set-room-session/<id>,
+      // najbezpečnejší share link je napr. /main?room=<id> (ak si to doplníš),
+      // ALE minimálne vieš zdieľať tento chat URL:
+      return window.location.href;
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) {}
+
+      // fallback pre staršie prehliadače
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "absolute";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function doShare(e) {
+      e.preventDefault();
+
+      const url = buildShareUrl();
+      const title = document.title || "Talker";
+      const text = `Pozri toto v Talker: ${title}`;
+
+      // Konvenčné: ak je Web Share API dostupné, použi share sheet
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, text, url });
+          return;
+        } catch (err) {
+          // user cancel alebo fail => fallback na copy
+        }
+      }
+
+      // fallback: copy link
+      const ok = await copyToClipboard(url);
+
+      // ľahký “toast” bez závislostí (nezasahuje do UI veľmi)
+      let bar = document.getElementById("notificationBar");
+      if (!bar) {
+        bar = document.createElement("div");
+        bar.id = "notificationBar";
+        bar.style.display = "none";
+        document.body.appendChild(bar);
+      }
+
+      bar.textContent = ok ? "Link skopírovaný ✅" : "Nepodarilo sa skopírovať link ❌";
+      bar.style.display = "block";
+      bar.style.position = "fixed";
+      bar.style.left = "50%";
+      bar.style.bottom = "90px";
+      bar.style.transform = "translateX(-50%)";
+      bar.style.padding = "10px 14px";
+      bar.style.borderRadius = "12px";
+      bar.style.background = "rgba(0,0,0,0.75)";
+      bar.style.color = "#fff";
+      bar.style.zIndex = "99999";
+      bar.style.fontSize = "14px";
+
+      setTimeout(() => (bar.style.display = "none"), 1600);
+    }
+
+    shareBtn.addEventListener("click", doShare, { passive: false });
   })();
 </script>
 

@@ -1,7 +1,234 @@
 {% extends "layout.html" %}
 {% block content %}
 
+<style>
+  /* ===== Floating Filter Button ===== */
+  .filter-fab{
+    position: fixed;
+    right: 14px;
+    bottom: 18px;
+    z-index: 9999;
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(109,155,255,0.18);
+    color: rgba(255,255,255,0.96);
+    border-radius: 999px;
+    padding: 12px 14px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 16px 46px rgba(0,0,0,0.28);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    user-select:none;
+  }
+  .filter-fab:hover{ transform: translateY(-1px); }
+  .filter-fab .dot{
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.30);
+    box-shadow: 0 0 0 3px rgba(109,155,255,0);
+    transition: background .15s ease, box-shadow .15s ease;
+  }
+  .filter-fab.is-active .dot{
+    background: rgba(109,155,255,0.95);
+    box-shadow: 0 0 0 3px rgba(109,155,255,0.18);
+  }
+
+  /* ===== Bottom sheet ===== */
+  .sheet-backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.52);
+    z-index: 9998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+  }
+  .sheet-backdrop.is-open{
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sheet{
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    transform: translateY(110%);
+    transition: transform .22s ease;
+    padding: 10px 10px calc(14px + env(safe-area-inset-bottom));
+  }
+  .sheet.is-open{ transform: translateY(0); }
+
+  .sheet-card{
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(17,17,17,0.80);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+  }
+
+  .sheet-handle{
+    width: 44px; height: 5px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.22);
+    margin: 10px auto 8px;
+  }
+
+  .sheet-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    padding: 10px 14px 12px;
+  }
+  .sheet-title{
+    margin: 0;
+    font-weight: 900;
+    font-size: 16px;
+  }
+  .sheet-close{
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.9);
+    border-radius: 12px;
+    padding: 8px 10px;
+    cursor:pointer;
+    font-weight: 900;
+  }
+
+  .sheet-body{
+    padding: 0 14px 14px;
+  }
+
+  .sheet-search{
+    display:flex;
+    gap: 10px;
+    align-items:center;
+    margin-bottom: 12px;
+  }
+  .sheet-search input[type="search"]{
+    width: 100%;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.92);
+    padding: 11px 14px;
+    outline: none;
+  }
+  .sheet-search input[type="search"]::placeholder{ color: rgba(255,255,255,0.55); }
+
+  .sheet-actions{
+    display:flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .sheet-btn{
+    flex: 1 1 auto;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.92);
+    padding: 10px 12px;
+    cursor:pointer;
+    font-weight: 900;
+    transition: background .12s ease, border-color .12s ease, transform .12s ease;
+  }
+  .sheet-btn:hover{ transform: translateY(-1px); }
+  .sheet-btn.primary{
+    border-color: rgba(109,155,255,0.35);
+    background: rgba(109,155,255,0.18);
+  }
+
+  /* ===== Kategórie: wrap grid (žiadny overflow-x) ===== */
+  .cats-grid{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .cat-pill{
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.88);
+    padding: 9px 12px;
+    font-weight: 900;
+    font-size: 13px;
+    cursor: pointer;
+    user-select:none;
+    transition: background .12s ease, border-color .12s ease, transform .12s ease;
+    white-space: nowrap;
+  }
+  .cat-pill:hover{ transform: translateY(-1px); }
+  .cat-pill.is-active{
+    border-color: rgba(109,155,255,0.45);
+    background: rgba(109,155,255,0.18);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.14);
+  }
+
+  /* Desktop: nech je filter skôr inline (FAB môže ostať, ale menší) */
+  @media (min-width: 992px){
+    .filter-fab{ right: 18px; bottom: 22px; padding: 11px 13px; }
+  }
+</style>
+
+
 <main id="app-content" hx-push-url="true">
+
+ {# ===== Hidden filter state inputs (už ich používaš v route) ===== #}
+<form id="postsFilterForm" method="GET" action="{{ url_for('main.home') }}" style="display:none;">
+  <input type="hidden" name="q" id="postsQHidden" value="{{ q or '' }}">
+  <input type="hidden" name="category" id="postsCatHidden" value="{{ selected_category or '' }}">
+  <input type="hidden" name="page" id="postsPageHidden" value="1">
+</form>
+
+<button id="filterFab" class="filter-fab" type="button" aria-controls="filterSheet" aria-expanded="false">
+  <span class="dot" aria-hidden="true"></span>
+  Filter
+</button>
+
+<div id="sheetBackdrop" class="sheet-backdrop" aria-hidden="true"></div>
+
+<div id="filterSheet" class="sheet" role="dialog" aria-modal="true" aria-label="Filter článkov">
+  <div class="sheet-card">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h3 class="sheet-title">Filtrovanie</h3>
+      <button class="sheet-close" type="button" data-close-sheet>✕</button>
+    </div>
+
+    <div class="sheet-body">
+      <div class="sheet-search">
+        <input id="sheetSearchInput" type="search" placeholder="Vyhľadať v článkoch…" value="{{ q or '' }}" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="sheet-actions">
+        <button id="applyFiltersBtn" class="sheet-btn primary" type="button">Použiť</button>
+        <button id="clearFiltersBtn" class="sheet-btn" type="button">Vymazať</button>
+      </div>
+
+      <div class="cats-grid" id="catsGrid" aria-label="Kategórie">
+        <div class="cat-pill {% if not selected_category %}is-active{% endif %}" data-cat="">Všetko</div>
+        {% for cat in category %}
+          <div class="cat-pill {% if selected_category and cat.id == selected_category %}is-active{% endif %}" data-cat="{{ cat.id }}">
+            {{ cat.name }}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  {# ===== Posts list ===== #}
+  {% if posts.items|length == 0 %}
+    <div class="posts-empty">
+      Nenašli sa žiadne články{% if q %} pre “<b>{{ q }}</b>”{% endif %}{% if selected_category %} v tejto kategórii{% endif %}.
+    </div>
+    <br>
+  {% endif %}
+
   {% for post in posts %}
     <article class="media content-section">
       <div class="media-body">
@@ -18,9 +245,8 @@
         {% if cover %}
           {% set cover_url = s3_presign('posts/' ~ post.id ~ '/gallery/' ~ cover.image_file2) %}
           <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
-            <img class="post-title-image"  loading="lazy"
-            decoding="async"
-            fetchpriority="low" src="{{ cover_url }}" alt="{{ post.title }}">
+            <img class="post-title-image" loading="lazy" decoding="async" fetchpriority="low"
+                 src="{{ cover_url }}" alt="{{ post.title }}">
           </a>
         {% endif %}
 
@@ -28,7 +254,7 @@
           {% for cat in category %}
             {% if cat.id == post.category_id %}
               <span>
-                <a class="mt-10 mr-2" href="{{ url_for('posts.category_posts', category=cat.id) }}">
+                <a class="mt-10 mr-2" href="{{ url_for('main.home', category=cat.id, q=q or '', page=1) }}">
                   {{ cat.name }}
                 </a>
               </span>
@@ -49,17 +275,150 @@
     <br>
   {% endfor %}
 
-  {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-    {% if page_num %}
-      {% if posts.page == page_num %}
-        <a class="btn btn-active mb-4" href="{{ url_for('main.home', page=page_num) }}">{{ page_num }}</a>
+  {# ===== Pagination (preserve q + category) ===== #}
+  {% if posts.pages > 1 %}
+    {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if page_num %}
+        {% if posts.page == page_num %}
+          <a class="btn btn-active mb-4"
+             href="{{ url_for('main.home', page=page_num, q=q or '', category=selected_category or None) }}">
+            {{ page_num }}
+          </a>
+        {% else %}
+          <a class="btn btn-outline-info mb-4"
+             href="{{ url_for('main.home', page=page_num, q=q or '', category=selected_category or None) }}">
+            {{ page_num }}
+          </a>
+        {% endif %}
       {% else %}
-        <a class="btn btn-outline-info mb-4" href="{{ url_for('main.home', page=page_num) }}">{{ page_num }}</a>
+        <span style="color:#6d9bff; letter-spacing:2px; font-weight:800;">…</span>
       {% endif %}
-    {% else %}
-      <span style="color:#6d9bff; letter-spacing:2px; font-weight:800;">…</span>
-    {% endif %}
-  {% endfor %}
+    {% endfor %}
+  {% endif %}
 </main>
+
+<script>
+  (function(){
+    const KEY = "posts_sheet_open";
+    const fab = document.getElementById("filterFab");
+    const sheet = document.getElementById("filterSheet");
+    const backdrop = document.getElementById("sheetBackdrop");
+    const closeBtn = sheet ? sheet.querySelector("[data-close-sheet]") : null;
+
+    const form = document.getElementById("postsFilterForm");
+    const qH = document.getElementById("postsQHidden");
+    const cH = document.getElementById("postsCatHidden");
+    const pH = document.getElementById("postsPageHidden");
+
+    const qInput = document.getElementById("sheetSearchInput");
+    const catsGrid = document.getElementById("catsGrid");
+    const applyBtn = document.getElementById("applyFiltersBtn");
+    const clearBtn = document.getElementById("clearFiltersBtn");
+
+    if (!fab || !sheet || !backdrop || !form || !qH || !cH || !pH || !qInput || !catsGrid) return;
+
+    function hasActive(){
+      const q = (qH.value || "").trim();
+      const c = (cH.value || "").trim();
+      return q.length > 0 || c.length > 0;
+    }
+
+    function setFabActive(){
+      fab.classList.toggle("is-active", hasActive());
+    }
+
+    function openSheet(){
+      sheet.classList.add("is-open");
+      backdrop.classList.add("is-open");
+      fab.setAttribute("aria-expanded","true");
+      try { localStorage.setItem(KEY,"1"); } catch(e){}
+      setFabActive();
+      // focus input
+      setTimeout(() => { try { qInput.focus(); } catch(e){} }, 30);
+    }
+
+    function closeSheet(){
+      sheet.classList.remove("is-open");
+      backdrop.classList.remove("is-open");
+      fab.setAttribute("aria-expanded","false");
+      try { localStorage.setItem(KEY,"0"); } catch(e){}
+      setFabActive();
+    }
+
+    // default: sheet zatvorené, ale FAB ukáže active dot ak sú filtre
+    setFabActive();
+
+    fab.addEventListener("click", () => {
+      if (sheet.classList.contains("is-open")) closeSheet();
+      else openSheet();
+    });
+
+    backdrop.addEventListener("click", closeSheet);
+    if (closeBtn) closeBtn.addEventListener("click", closeSheet);
+
+    // ESC close
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && sheet.classList.contains("is-open")) closeSheet();
+    });
+
+    // click kategórie: len nastav active (neodosielaj hneď, nech user môže zmeniť aj text)
+    catsGrid.addEventListener("click", (e) => {
+      const pill = e.target.closest(".cat-pill[data-cat]");
+      if (!pill) return;
+      const id = pill.getAttribute("data-cat") || "";
+      cH.value = id;
+      // UI active
+      catsGrid.querySelectorAll(".cat-pill").forEach(x => x.classList.toggle("is-active", x === pill));
+      setFabActive();
+      // keď user zvolí kategóriu, nech si to pamätá otvorené
+      try { localStorage.setItem(KEY,"1"); } catch(e){}
+    });
+
+    // apply: sync inputs + submit
+    function apply(){
+      qH.value = (qInput.value || "").trim();
+      pH.value = "1";
+      setFabActive();
+      form.submit();
+    }
+
+    // clear: reset + submit
+    function clearAll(){
+      qInput.value = "";
+      qH.value = "";
+      cH.value = "";
+      pH.value = "1";
+      // UI reset kategórie
+      const all = catsGrid.querySelector('.cat-pill[data-cat=""]');
+      if (all){
+        catsGrid.querySelectorAll(".cat-pill").forEach(x => x.classList.toggle("is-active", x === all));
+      }
+      setFabActive();
+      form.submit();
+    }
+
+    if (applyBtn) applyBtn.addEventListener("click", apply);
+    if (clearBtn) clearBtn.addEventListener("click", clearAll);
+
+    // enter v search -> apply
+    qInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        apply();
+      }
+    });
+
+    // ak má user aktívne filtre, nech je FAB active (už je), sheet default nechávam zatvorený
+    // ak chceš auto-open podľa posledného stavu:
+    try {
+      const saved = localStorage.getItem(KEY) === "1";
+      if (saved) {
+        // len ak chceš, aby sa pri návrate otvorilo:
+        // openSheet();
+      }
+    } catch(e){}
+  })();
+</script>
+
 
 {% endblock content %}
