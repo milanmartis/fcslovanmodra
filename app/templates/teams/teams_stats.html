@@ -479,6 +479,33 @@
   </div>
 </div>
 
+<br><br>
+
+
+
+{% if teamz and teamz|length > 0 %}
+  {% if selected_team_id is not none %}
+    {% set active_team = (teamz | selectattr('id', 'equalto', selected_team_id) | list | first) %}
+  {% else %}
+    {% set active_team = (teamz | first) %}
+  {% endif %}
+
+  {% if active_team %}
+    <h3>
+      <a
+        id="lineupBtn"
+        class="btn"
+        href="{{ url_for('team.team_name', team_name=active_team.name) }}"
+        data-base="{{ url_for('team.team_name', team_name='__TEAM__') }}"
+      >
+        Zostavy
+      </a>
+    </h3>
+  {% endif %}
+{% endif %}
+
+
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const tabButtons = document.querySelectorAll(".team-tab-btn222");
@@ -502,6 +529,14 @@
           const url = new URL(window.location.href);
           url.searchParams.set("team", teamName);
           window.history.replaceState({}, "", url);
+        }
+
+        const lineupBtn = document.getElementById("lineupBtn");
+        if (lineupBtn && teamName) {
+          // postav URL na zostavy pre zvolený tím
+          const base = lineupBtn.getAttribute("data-base"); // .../__TEAM__
+          const newHref = base.replace("__TEAM__", encodeURIComponent(teamName));
+          lineupBtn.setAttribute("href", newHref);
         }
       });
     });

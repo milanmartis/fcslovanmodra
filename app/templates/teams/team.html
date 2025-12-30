@@ -355,6 +355,14 @@
   </div>
 {% endif %}
 
+
+<br>
+<br>
+
+<h3><a class="btn" href="{{ url_for('main.stats', team=team.name|urlencode) }}">Tabuľka, výsledky a program</a></h3>
+
+
+
 <script>
   const TEAM_ID = {{ team.id }};
   const CAN_EDIT = {{ 'true' if can_edit_lineup else 'false' }};
