@@ -503,13 +503,13 @@ def _load_starters_subs_with_slots(lineup: TeamLineup, ordered_players: list[Pla
     for s in starter_slots:
         p = players_by_id.get(s.player_id)
         if p:
-            starters.append({"player": p, "slot": int(s.order_index), "pos": int(s.position)})
+            starters.append({"player": p, "slot": int(s.order_index), "pos": int(getattr(p, "position", 0) or 0)})
 
     subs = []
     for s in sub_slots:
         p = players_by_id.get(s.player_id)
         if p:
-            subs.append({"player": p, "pos": int(s.position)})
+            subs.append({"player": p, "pos": int(getattr(p, "position", 0) or 0)})
 
     if len(starters) < 11:
         used_ids = {x["player"].id for x in starters} | {x["player"].id for x in subs}
