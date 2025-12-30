@@ -961,6 +961,7 @@ def update_team(team_id):
 
 
 @team_bp.route("/teams/<int:team_id>/delete", methods=["GET", "POST"])
+@csrf.exempt
 @login_required
 def delete_team(team_id):
     team_obj = Team.query.get_or_404(team_id)
