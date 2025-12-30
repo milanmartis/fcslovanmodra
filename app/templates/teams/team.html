@@ -220,7 +220,7 @@
 
 <h3 class="headline">{{ team.name }}</h3>
 <br>
-{% set fallback = url_for('static', filename='img/avatar.svg') %}
+{% set fallback = url_for('static', filename='profile_pics/4fcc7846e3660f38.png') %}
 
 <div class="lineup-wrap">
 
@@ -309,9 +309,55 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<br>
+
+<br>
+
+{% if coach_cards %}
+  <div style="margin-top:40px;">
+    <h2 style="margin-bottom:12px;">Tréner</h2>
+
+    <div class="side">
+      <div class="side-body">
+        <div class="list">
+          {% for c in coach_cards %}
+            <div class="row-item" style="cursor:default;">
+              <div class="mini">
+                <img
+                  src="{{ c.image_url }}"
+                  alt="{{ c.name }}"
+                  onerror="this.onerror=null;this.src='{{ url_for('static', filename='profile_pics/4fcc7846e3660f38.png') }}';"
+                >
+              </div>
+
+              <div class="meta">
+                <p class="nm">{{ c.name }}</p>
+
+                <p class="sm">
+                  {% if c.positions and c.positions|length > 0 %}
+                    {{ c.positions|join(', ') }}
+                  {% else %}
+                    Tréner
+                  {% endif %}
+                </p>
+
+                <p class="sm">
+                  <a href="tel:{{ c.phone|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}">
+                    {{ c.phone }}
+                  </a>
+                </p>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
 
 <script>
   const TEAM_ID = {{ team.id }};
+  const CAN_EDIT = {{ 'true' if can_edit_lineup else 'false' }};
 
   const FORMATIONS = {
     "4-4-2": [4,4,2],
@@ -365,10 +411,8 @@
 
   // formation coords
   function lineX(count){
-    // IMPORTANT: keď sú 2 hráči v línii (napr. 4-4-2 útočníci),
-    // nech sú viac "dnu" (nie úplne na krajoch).
     if(count === 1) return [50];
-    if(count === 2) return [28, 72]; // ako na obrázku
+    if(count === 2) return [28, 72];
 
     const left = 14, right = 86;
     const step = (right - left) / (count - 1);
@@ -537,6 +581,7 @@
   }
 
   function onPointerDown(el, e){
+    if(!CAN_EDIT) return;
     if(pendingSub) return;
 
     const rect = el.getBoundingClientRect();
@@ -559,6 +604,7 @@
   }
 
   function onPointerMove(e){
+    if(!CAN_EDIT) return;
     if(!drag || e.pointerId !== drag.pointerId) return;
 
     const dx = e.clientX - drag.startX;
@@ -592,6 +638,7 @@
   }
 
   async function onPointerUp(e){
+    if(!CAN_EDIT) return;
     if(!drag || e.pointerId !== drag.pointerId) return;
 
     const el = drag.el;
@@ -642,6 +689,17 @@
     const select = document.getElementById("formationSelect");
     const pitchPlayers = Array.from(document.querySelectorAll("#pitch .player"));
 
+    // UI režim
+    if(!CAN_EDIT){
+      select.disabled = true;
+      select.style.opacity = "0.6";
+      select.style.cursor = "not-allowed";
+
+      // statický režim - žiadne grab cursors
+      pitchPlayers.forEach(p => p.style.cursor = "default");
+      document.querySelectorAll(".sub-item").forEach(s => s.style.cursor = "default");
+    }
+
     // 1) všetci začnú v strede (viditeľne)
     pitchPlayers.forEach(p => {
       p.style.left = "50%";
@@ -656,7 +714,14 @@
       applyFormation(select.value, true);
     });
 
+    // Zmena formácie: iba ak CAN_EDIT posielaj na server
     select.addEventListener("change", async (e) => {
+      if(!CAN_EDIT){
+        // len prekresli (aj keď je disabled, je to safe)
+        applyFormation(e.target.value, true);
+        return;
+      }
+
       try{
         await apiPost(`/api/team/${TEAM_ID}/lineup/formation`, {formation: e.target.value});
         toast("Uložené rozostavenie");
@@ -666,7 +731,7 @@
       applyFormation(e.target.value, true);
     });
 
-    // náhradníci: klik = výmena, doubleclick = profil
+    // náhradníci: dblclick = profil vždy, click swap len ak CAN_EDIT
     document.querySelectorAll(".sub-item").forEach(sub => {
       sub.addEventListener("dblclick", (e) => {
         e.preventDefault();
@@ -675,6 +740,8 @@
       });
 
       sub.addEventListener("click", () => {
+        if(!CAN_EDIT) return;
+
         pendingSub = sub;
         document.querySelectorAll(".sub-item").forEach(x => x.style.outline = "none");
         sub.style.outline = "2px solid rgba(255,255,255,.22)";
@@ -683,11 +750,10 @@
       });
     });
 
-    // starter: click = swap with sub, dblclick = profil, drag
+    // starter: dblclick = profil vždy, click swap + drag len ak CAN_EDIT
     document.querySelectorAll("#pitch .player").forEach(starter => {
 
       starter.addEventListener("dblclick", (e) => {
-        // ak práve draguješ, nerieš dblclick
         if(drag && drag.el === starter && drag.started) return;
         e.preventDefault();
         e.stopPropagation();
@@ -695,6 +761,7 @@
       });
 
       starter.addEventListener("click", async (e) => {
+        if(!CAN_EDIT) return;
         if(!pendingSub) return;
 
         e.preventDefault();
@@ -716,18 +783,24 @@
         }
       });
 
-      starter.addEventListener("pointerdown", (e) => onPointerDown(starter, e));
+      if(CAN_EDIT){
+        starter.addEventListener("pointerdown", (e) => onPointerDown(starter, e));
+      }
     });
 
-    document.addEventListener("pointermove", onPointerMove, {passive:false});
-    document.addEventListener("pointerup", onPointerUp, {passive:false});
-    document.addEventListener("pointercancel", onPointerCancel, {passive:false});
+    if(CAN_EDIT){
+      document.addEventListener("pointermove", onPointerMove, {passive:false});
+      document.addEventListener("pointerup", onPointerUp, {passive:false});
+      document.addEventListener("pointercancel", onPointerCancel, {passive:false});
+    }
 
     document.addEventListener("keydown", (e) => {
       if(e.key === "Escape"){
-        clearSubSelection();
-        onPointerCancel();
-        toast("Zrušené");
+        if(CAN_EDIT){
+          clearSubSelection();
+          onPointerCancel();
+          toast("Zrušené");
+        }
       }
     });
   });

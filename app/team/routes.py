@@ -1,5 +1,6 @@
 from __future__ import annotations
-
+from app.posts.routes import s3_presign
+from app.users.routes import make_member_key 
 import json
 import re
 import time
@@ -30,11 +31,11 @@ from app.team.forms import TeamForm
 from app.models import (
     Team, ScoreTable, User, Player, Position, Member, Role,
     Event, EventCategory,
-    teams_members,
+    teams_members, roles_users,
     TeamLineup, TeamLineupSlot,
 )
 
-team = Blueprint("team", __name__)
+team_bp = Blueprint("team", __name__)
 
 
 def _is_ajax() -> bool:
@@ -521,7 +522,7 @@ def _load_starters_subs_with_slots(lineup: TeamLineup, ordered_players: list[Pla
 
 # ------------------------- Routes -------------------------
 
-@team.route("/info")
+@team_bp.route("/info")
 def team_youth():
     return render_template(
         "teams/youth.html",
@@ -533,7 +534,7 @@ def team_youth():
     )
 
 
-@team.route("/teams")
+@team_bp.route("/teams")
 def list_teams():
     teams = Team.query.order_by(Team.id.asc()).all()
     return render_template(
@@ -547,7 +548,7 @@ def list_teams():
     )
 
 
-@team.route("/teams/new", methods=["GET", "POST"])
+@team_bp.route("/teams/new", methods=["GET", "POST"])
 @login_required
 @roles_required_compat("Admin", "WebAdmin")
 def new_team():
@@ -574,7 +575,7 @@ def new_team():
     )
 
 
-@team.route("/team/<team_name>")
+@team_bp.route("/team/<team_name>")
 def team_name(team_name):
     trener = (
         Member.query
@@ -589,7 +590,7 @@ def team_name(team_name):
     )
 
     team_obj = Team.query.filter(Team.name.like(team_name)).first_or_404()
-
+    can_edit = team_obj.can_edit_lineup(current_user)
     members = (
         Player.query.filter(Team.id == Player.team_id)
         .filter(Team.name.like(team_name))
@@ -603,6 +604,38 @@ def team_name(team_name):
 
     lineup = _ensure_lineup(team_obj.id, ordered_players)
     starters, subs = _load_starters_subs_with_slots(lineup, ordered_players)
+    
+    coaches = (
+        Member.query
+        .join(User)
+        .join(roles_users)
+        .join(Role)
+        .join(teams_members)
+        .filter(
+            teams_members.c.team_id == team_obj.id,
+            Role.name == "Coach"
+        )
+        .all()
+    )
+
+
+    fallback = url_for('static', filename='img/avatar.svg')
+
+    coach_cards = []
+    for m in coaches:
+        img = None
+        if m.image_file and m.image_file != "default.png":
+            try:
+                img = s3_presign(make_member_key(m.id, m.image_file))
+            except Exception:
+                img = None
+
+        coach_cards.append({
+            "name": m.name,
+            "phone": m.phone,
+            "positions": [p.name for p in (m.position or [])],  # Tréner / Asistent trénera
+            "image_url": img or fallback,
+        })
 
     return render_template(
         "teams/team.html",
@@ -616,10 +649,13 @@ def team_name(team_name):
         next22=Next.next(),
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table(),
+        can_edit_lineup=can_edit,
+        coaches=coaches,
+        coach_cards=coach_cards,
     )
 
 
-@team.route("/teams/<int:team_id>/update", methods=["GET", "POST"])
+@team_bp.route("/teams/<int:team_id>/update", methods=["GET", "POST"])
 @csrf.exempt
 @login_required
 @roles_required_compat("Admin", "WebAdmin")
@@ -924,7 +960,7 @@ def update_team(team_id):
     )
 
 
-@team.route("/teams/<int:team_id>/delete", methods=["GET", "POST"])
+@team_bp.route("/teams/<int:team_id>/delete", methods=["GET", "POST"])
 @login_required
 def delete_team(team_id):
     team_obj = Team.query.get_or_404(team_id)
@@ -946,7 +982,7 @@ def delete_team(team_id):
 # ------------------------- Lineup API -------------------------
 # (fetch z JS bez CSRF tokenu -> preto exempt)
 
-@team.route("/api/team/<int:team_id>/lineup/formation", methods=["POST"])
+@team_bp.route("/api/team/<int:team_id>/lineup/formation", methods=["POST"])
 @csrf.exempt
 def save_formation(team_id):
     data = request.get_json(force=True)
@@ -962,7 +998,7 @@ def save_formation(team_id):
     return jsonify({"ok": True, "formation": lineup.formation})
 
 
-@team.route("/api/team/<int:team_id>/lineup/swap", methods=["POST"])
+@team_bp.route("/api/team/<int:team_id>/lineup/swap", methods=["POST"])
 @csrf.exempt
 def swap_players(team_id):
     data = request.get_json(force=True)
@@ -993,7 +1029,7 @@ def swap_players(team_id):
     return jsonify({"ok": True})
 
 
-@team.route("/api/team/<int:team_id>/lineup/swap-slots", methods=["POST"])
+@team_bp.route("/api/team/<int:team_id>/lineup/swap-slots", methods=["POST"])
 @csrf.exempt
 def swap_starter_slots(team_id):
     data = request.get_json(force=True)

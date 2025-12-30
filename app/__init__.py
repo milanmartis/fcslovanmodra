@@ -82,7 +82,7 @@ def create_app(config_class=None):
             "https://fcman-37884cffcf78.herokuapp.com",
         ],
         cors_credentials=True,  # ✅ kľúčové: povoľ cookies/credentials
-        async_mode="gevent",
+        async_mode="threading",
         message_queue=os.environ.get("REDIS_URL")
         )
 
@@ -174,7 +174,7 @@ def create_app(config_class=None):
     from app.products.routes import products
     from app.main.routes import main, Next, RightColumn
     from app.calendar.routes import calendar
-    from app.team.routes import team
+    from app.team.routes import team_bp
     from app.errors.handlers import errors
     from app.talker.routes import talker
     from app.talker_admin.routes import talker_admin
@@ -184,7 +184,7 @@ def create_app(config_class=None):
     app.register_blueprint(products)
     app.register_blueprint(main)
     app.register_blueprint(calendar)
-    app.register_blueprint(team)
+    app.register_blueprint(team_bp)
     app.register_blueprint(errors)
     app.register_blueprint(sponsors_bp)
     app.register_blueprint(talker)

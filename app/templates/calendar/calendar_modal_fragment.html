@@ -14,44 +14,68 @@
   .legend-item{
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
+    gap: 4px;
+    padding: 4px 8px;
     border-radius: 999px;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.08);
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     color: #e9eefc;
   }
   
   .legend-dot{
-    width: 12px;
-    height: 12px;
+    width: 8px;
+    height: 8px;
     border-radius: 999px;
     display: inline-block;
   }
   
   /* dot farby musia sedieť s .fc-event.cat-* */
-  .legend-dot.cat-match    { background: #e74c3c; }
-  .legend-dot.cat-training { background: #3498db; }
+  .legend-dot.cat-match    { background: #3498db; }
+  .legend-dot.cat-training { background: #2ecc71; }
   .legend-dot.cat-camp     { background: #f39c12; }
   .legend-dot.cat-retreat  { background: #9b59b6; }
-  .legend-dot.cat-other    { background: #2ecc71; }     
+  .legend-dot.cat-other    { background: #e74c3c; }     
     /* základ eventu */
     .fc-event {
-      border: none !important;
-      border-radius: 10px !important;
-      padding: 2px 6px !important;
-      font-weight: 800 !important;
-    }
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 2px 4px !important;
+        font-weight: 600 !important;
+        font-size: 90%;
+        text-align: center;
+        cursor: pointer;
+      
+        /* animácia */
+        transition:
+          transform 160ms cubic-bezier(.34,1.56,.64,1),
+          box-shadow 160ms ease;
+        will-change: transform;
+      }
+      
+      /* hover = jemný bounce OUT */
+      .fc-event:hover {
+        transform: scale(1.06);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+        z-index: 5;
+      }
+      
+      /* klik = jemný bounce IN */
+      .fc-event:active {
+        transform: scale(0.96);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      }
+
+
     .fc-event, .fc-event .fc-title { color: #fff !important; }
   
     /* farby podľa kategórie */
-    .fc-event.cat-match    { background: #e74c3c !important; }   /* zápas */
-    .fc-event.cat-training { background: #3498db !important; }   /* tréning */
+    .fc-event.cat-match    { background: #3498db !important; }   /* zápas */
+    .fc-event.cat-training { background: #2ecc71 !important; }   /* tréning */
     .fc-event.cat-camp     { background: #f39c12 !important; }   /* camp */
     .fc-event.cat-retreat  { background: #9b59b6 !important; }   /* sústredenie */
-    .fc-event.cat-other    { background: #2ecc71 !important; }   /* iné */
+    .fc-event.cat-other    { background: #e74c3c !important; }   /* iné */
   </style>
 <style>
     /* ========== MODERN FULLCALENDAR THEME (v3) ========== */
@@ -468,13 +492,9 @@
       
         <div class="legend-item">
           <span class="legend-dot cat-camp"></span>
-          <span class="legend-text">Camp</span>
+          <span class="legend-text">Kemp</span>
         </div>
-      
-        <div class="legend-item">
-          <span class="legend-dot cat-retreat"></span>
-          <span class="legend-text">Sústredenie</span>
-        </div>
+
       
         <div class="legend-item">
           <span class="legend-dot cat-other"></span>

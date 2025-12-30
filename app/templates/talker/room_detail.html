@@ -346,6 +346,9 @@
       <div class="talker-title">
         <p class="talker-sub">Najnovšie správy sú dole</p>
       </div>
+      <div class="talker-title">
+        <h2>{{ room.name }}</h2>
+      </div>
 
       <div class="talker-actions">
         <!--
@@ -357,7 +360,7 @@
           Test push
         </a>
         -->
-        <button class="push-btn" id="backBtn"  type="button">Back</button>
+        <button class="push-btn" id="backBtn" type="button">Back</button>
         <button class="push-btn" id="pushBtn" type="button">Push…</button>
 
         <div class="talker-badge" id="conn">
@@ -847,6 +850,9 @@
       const params = new URLSearchParams(window.location.search);
       if (params.get("embed") === "1" && window.history.length > 1) {
         window.history.back();
+      }
+      if (params.get("embed") === "2") {
+        window.location.href = "../talker/rooms";
       }
     });
 

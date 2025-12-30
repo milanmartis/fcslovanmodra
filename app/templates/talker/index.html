@@ -147,14 +147,16 @@
 <div class="rooms">
   <center><h1>Talker rooms</h1></center>
 
+  {% set embed = request.args.get('embed') %}
+
   {% for r in rooms %}
-    <a class="btn9 roomLink"
-       href="{{ url_for('talker.room_detail', room_id=r.id) }}"
-       data-room-id="{{ r.id }}"
-       data-room-name="{{ r.name|e }}">
-      {{ r.name }}
-    </a>
-  {% endfor %}
+  <a class="btn9 roomLink"
+     href="{{ url_for('talker.create_room', room_id=r.id, embed=2) }}"
+     data-room-id="{{ r.id }}"
+     data-room-name="{{ r.name|e }}">
+    {{ r.name }}
+  </a>
+{% endfor %}
 </div>
 
 <!-- Modal overlay -->

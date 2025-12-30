@@ -3,7 +3,7 @@ from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 from flask import current_app
 from app import db
 # from flask_security import RoleMixin, UserMixin
-from flask_login import UserMixin
+from flask_login import UserMixin, AnonymousUserMixin
 
 from sqlalchemy.sql import func
 import uuid
@@ -421,6 +421,7 @@ class EventCategory(db.Model):
 # ========
 # Teams etc
 # ========
+
 class Team(db.Model):
     __tablename__ = 'team'
     id = db.Column(db.Integer, primary_key=True)
@@ -428,9 +429,28 @@ class Team(db.Model):
     main_league = db.Column(db.String(300), nullable=False)
     score_scrap = db.Column(db.String(250), nullable=False)
     player_list_scrap = db.Column(db.String(250), nullable=False)
-    
-    events_results_scrap = db.Column(db.String(550))  
-    events_program_scrap = db.Column(db.String(550)) 
+    events_results_scrap = db.Column(db.String(550))
+
+    def can_edit_lineup(self, user) -> bool:
+        # 1) neprihlásený user -> len read-only
+        if not user or isinstance(user, AnonymousUserMixin) or not getattr(user, "is_authenticated", False):
+            return False
+
+        # 2) Admin/WebAdmin vždy
+        if getattr(user, "has_role", None) and user.has_role("Admin", "WebAdmin"):
+            return True
+
+        # 3) musí mať rolu Coach
+        if not (getattr(user, "has_role", None) and user.has_role("Coach")):
+            return False
+
+        # 4) musí patriť do tohto tímu cez Member ↔ teams_members ↔ Team
+        return db.session.query(teams_members.c.team_id).join(
+            Member, Member.id == teams_members.c.member_id
+        ).filter(
+            teams_members.c.team_id == self.id,
+            Member.user_id == user.id
+        ).first() is not None
 
 
 class Position(db.Model):
