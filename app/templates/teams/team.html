@@ -221,7 +221,7 @@
 <h3 class="headline">{{ team.name }}</h3>
 <br>
 {% set fallback = url_for('static', filename='profile_pics/4fcc7846e3660f38.png') %}
-
+{% if current_user.is_authenticated %}
 <div class="lineup-wrap">
 
   <div>
@@ -308,6 +308,208 @@
 
 </div>
 
+{% else %}
+ 
+  {# --- PUBLIC: zoznam hráčov podľa pozície + foto z Player.photo_url, inak fallback png --- #}
+
+  <style>
+    .public-players{
+      max-width: 980px;
+      margin: 10px auto 30px;
+      padding: 0 12px;
+      text-align: center;
+    }
+
+    .public-players .pos{
+      margin: 18px 0;
+      padding: 14px 12px;
+      border-radius: 16px;
+      background: rgba(9,17,29,.65);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .public-players h4{
+      margin: 0 0 12px;
+      font-weight: 900;
+      font-size: 1.05rem;
+      color: rgba(255,255,255,.92);
+    }
+
+    /* ✅ viac hráčov v riadku podľa šírky */
+    .public-players ul{
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+
+    .public-players a.playerCard{
+      text-decoration: none;
+      color: rgba(255,255,255,.92);
+      font-weight: 800;
+      padding: 12px 10px;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      max-width: 220px;
+    }
+    /*
+    .public-players a.playerCard:hover{
+      background: rgba(255,255,255,.09);
+    }
+*/
+    .public-players img.avatar{
+      width: 156px;
+      height: 156px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+    }
+
+    .public-players .pname{
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: .98rem;
+      line-height: 1.15;
+    }
+
+    .public-players .empty{ opacity:.75; font-weight:600; }
+
+    @media (max-width: 360px){
+      .public-players ul{
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
+      .public-players img.avatar{
+        width: 48px;
+        height: 48px;
+      }
+    }
+  </style>
+
+  {# spojíme starters + subs do jedného listu slotov #}
+  {% set all_slots = starters + subs %}
+
+  {# roztriedenie podľa pos: 4 FWD, 3 MID, 2 DEF, 1 GK #}
+  {% set ns = namespace(gk=[], def=[], mid=[], fwd=[]) %}
+  {% for s in all_slots %}
+    {% if s.pos == 1 %}
+      {% set _ = ns.gk.append(s) %}
+    {% elif s.pos == 2 %}
+      {% set _ = ns.def.append(s) %}
+    {% elif s.pos == 3 %}
+      {% set _ = ns.mid.append(s) %}
+    {% elif s.pos == 4 %}
+      {% set _ = ns.fwd.append(s) %}
+    {% endif %}
+  {% endfor %}
+
+  <div class="public-players">
+
+    <div class="pos">
+      <h4>Útočníci</h4>
+      {% if ns.fwd|length %}
+        <ul>
+          {% for s in ns.fwd %}
+            {% set p = s.player %}
+            {% set photo = p.photo_url if p.photo_url else fallback %}
+            <li>
+              <a class="playerCard" href="{{ url_for('users.member', member_id=p.id) }}">
+                <img class="avatar"
+                     src="{{ photo }}"
+                     alt="{{ p.name|e }}"
+                     onerror="this.onerror=null;this.src='{{ fallback }}';">
+                <div class="pname">{{ p.name }}</div>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty">—</div>
+      {% endif %}
+    </div>
+
+    <div class="pos">
+      <h4>Stredopoliari</h4>
+      {% if ns.mid|length %}
+        <ul>
+          {% for s in ns.mid %}
+            {% set p = s.player %}
+            {% set photo = p.photo_url if p.photo_url else fallback %}
+            <li>
+              <a class="playerCard" href="{{ url_for('users.member', member_id=p.id) }}">
+                <img class="avatar"
+                     src="{{ photo }}"
+                     alt="{{ p.name|e }}"
+                     onerror="this.onerror=null;this.src='{{ fallback }}';">
+                <div class="pname">{{ p.name }}</div>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty">—</div>
+      {% endif %}
+    </div>
+
+    <div class="pos">
+      <h4>Obrancovia</h4>
+      {% if ns.def|length %}
+        <ul>
+          {% for s in ns.def %}
+            {% set p = s.player %}
+            {% set photo = p.photo_url if p.photo_url else fallback %}
+            <li>
+              <a class="playerCard" href="{{ url_for('users.member', member_id=p.id) }}">
+                <img class="avatar"
+                     src="{{ photo }}"
+                     alt="{{ p.name|e }}"
+                     onerror="this.onerror=null;this.src='{{ fallback }}';">
+                <div class="pname">{{ p.name }}</div>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty">—</div>
+      {% endif %}
+    </div>
+
+    <div class="pos">
+      <h4>Brankári</h4>
+      {% if ns.gk|length %}
+        <ul>
+          {% for s in ns.gk %}
+            {% set p = s.player %}
+            {% set photo = p.photo_url if p.photo_url else fallback %}
+            <li>
+              <a class="playerCard" href="{{ url_for('users.member', member_id=p.id) }}">
+                <img class="avatar"
+                     src="{{ photo }}"
+                     alt="{{ p.name|e }}"
+                     onerror="this.onerror=null;this.src='{{ fallback }}';">
+                <div class="pname">{{ p.name }}</div>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty">—</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+
+{% endif %}
 <div class="toast" id="toast"></div>
 <br>
 
