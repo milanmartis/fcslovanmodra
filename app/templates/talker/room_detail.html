@@ -287,10 +287,11 @@
   }
 
   .send{
-    height: 44px;
+
+    height: 84px;
     min-width: 44px;
     padding: 0 14px;
-    border-radius: 999px;
+    border-radius: 19px;
     border: 1px solid rgba(92,159,255,.40);
     background: linear-gradient(180deg, rgba(92,159,255,.34), rgba(92,159,255,.18));
     color: rgba(255,255,255,.95);
@@ -343,9 +344,11 @@
   <div class="talker-shell">
 
     <div class="talker-header">
-      <div class="talker-title">
-        <p class="talker-sub">Najnovšie správy sú dole</p>
-      </div>
+      <!--
+        <div class="talker-title">
+          <p class="talker-sub">Najnovšie správy sú dole</p>
+        </div>
+      -->
       <div class="talker-title">
         <h2>{{ room.name }}</h2>
       </div>
@@ -360,7 +363,7 @@
           Test push
         </a>
         -->
-        <button class="push-btn" id="backBtn" type="button">Back</button>
+        <button class="push-btn" onclick="javascript:location.href='/talker'" type="button">Back</button>
         <button class="push-btn" id="pushBtn" type="button">Push…</button>
 
         <div class="talker-badge" id="conn">
