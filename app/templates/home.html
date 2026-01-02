@@ -4,9 +4,10 @@
 <style>
   /* ===== Floating Filter Button ===== */
   .filter-fab{
-    position: fixed;
+    position: relative;
     right: 14px;
-    bottom: 18px;
+    bottom: 8px;
+    float: right;
     z-index: 9999;
     border: 1px solid rgba(255,255,255,0.16);
     background: rgba(109,155,255,0.18);
@@ -183,10 +184,7 @@
   <input type="hidden" name="page" id="postsPageHidden" value="1">
 </form>
 
-<button id="filterFab" class="filter-fab" type="button" aria-controls="filterSheet" aria-expanded="false">
-  <span class="dot" aria-hidden="true"></span>
-  Filter
-</button>
+
 
 <div id="sheetBackdrop" class="sheet-backdrop" aria-hidden="true"></div>
 
@@ -295,7 +293,13 @@
       {% endif %}
     {% endfor %}
   {% endif %}
+
+
 </main>
+<button id="filterFab" class="filter-fab" type="button" aria-controls="filterSheet" aria-expanded="false">
+  <span class="dot" aria-hidden="true"></span>
+  Filter
+</button>
 
 <script>
   (function(){
