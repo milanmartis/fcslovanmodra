@@ -929,6 +929,44 @@ def on_send(data: dict[str, Any]):
         room=str(room.id),
         include_self=True,
     )
+    
+      # ✅ PUSH: pošli všetkým v room okrem odosielateľa
+    try:
+        recipients = get_recipients_for_room(room)  # už exclude "me" robí inside :contentReference[oaicite:1]{index=1}
+        if recipients:
+            # text do notifikácie podľa typu
+            if msg.msg_type == "text":
+                body = (msg.text or "").strip()
+            elif msg.msg_type == "image":
+                body = "📷 Obrázok"
+                if msg.text:
+                    body += f" — {msg.text.strip()}"
+            elif msg.msg_type == "video":
+                body = "🎬 Video"
+                if msg.text:
+                    body += f" — {msg.text.strip()}"
+            elif msg.msg_type == "poll":
+                body = "📊 Anketa: " + (poll.question if poll else "Nová anketa")
+            else:
+                body = "Nová správa"
+
+            # fallback aby notifikácia nebola prázdna
+            if not body:
+                body = "Nová správa"
+
+            send_push_to_users(
+                user_ids=recipients,
+                title=f"{room.name}",
+                body=f"{username}: {body}",
+                data={
+                    "type": "talker_message",
+                    "room_id": str(room.id),
+                    "roomId": str(room.id),  # kompatibilita so SW payloadom
+                    "url": f"/talker/rooms/{room.id}?embed=1",
+                },
+            )
+    except Exception:
+        current_app.logger.exception("push send failed")
 
 
 @talker.get("/poll/<int:poll_id>")
