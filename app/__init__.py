@@ -35,9 +35,6 @@ DEFAULT_ENGINE_OPTIONS = {
 }
 
 salt = base64.b64encode(os.urandom(32)).decode("utf-8")
-redis_url = os.getenv("SOCKETIO_REDIS_URL") or os.getenv("REDIS_URL")
-
-mgr = RedisManager(redis_url, ssl_cert_reqs=None) if redis_url else None
 
 
 db = SQLAlchemy()
@@ -108,6 +105,8 @@ def create_app(config_class=None):
     mail.init_app(app)
     csrf.init_app(app)
     
+    socket_redis = (os.getenv("SOCKETIO_REDIS_URL") or os.getenv("REDIS_URL") or "").strip() or None
+    mgr = RedisManager(socket_redis, ssl_cert_reqs=None) if socket_redis else None
     
     socketio.init_app(
         app,
