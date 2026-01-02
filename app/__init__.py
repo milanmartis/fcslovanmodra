@@ -44,7 +44,7 @@ socketio = SocketIO()
 rds = None
 
 def _make_redis():
-    url = os.environ.get("REDIS_URL")  # Heroku addon
+    url = os.environ.get("CACHE_REDIS_URL")  # Heroku addon
     if not url:
         return None
     # Heroku môže dávať rediss:// (TLS), redis-py to zvládne cez from_url
@@ -113,7 +113,7 @@ def create_app(config_class=None):
         cors_credentials=True,  # ✅ kľúčové: povoľ cookies/credentials
         # async_mode="threading",
         async_mode="gevent",
-        message_queue=os.environ.get("REDIS_URL")
+        message_queue=os.environ.get("SOCKETIO_REDIS_URL")
         )
 
     login_manager = LoginManager()
