@@ -613,7 +613,74 @@
     -webkit-user-drag: none;
     pointer-events: none; /* aby swipe fungoval aj keď prst ide po img */
   }
-  
+  .swipebox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.92);
+    z-index: 999999999; /* nech je nad všetkým */
+    display: none;
+    touch-action: none; /* aby swipe nescrolloval page */
+  }
+  .swipebox.is-open { display: block; }
+
+
+
+  .swipebox__topbar{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    pointer-events: none;
+  }
+  .swipebox__btn{
+    pointer-events: auto;
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .swipebox__counter{
+    pointer-events: auto;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .swipebox__nav{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    pointer-events:none;
+  }
+  .swipebox__nav button{
+    pointer-events:auto;
+    margin: 0 10px;
+    border: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    font-size: 20px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  @media (max-width: 768px){
+    .swipebox__nav button{ display:none; } /* na mobile nech je to čisté – swipe stačí */
+  }
 </style>
 
 <div id="swipebox" class="swipebox" aria-hidden="true">
