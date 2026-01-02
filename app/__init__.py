@@ -105,8 +105,8 @@ def create_app(config_class=None):
     mail.init_app(app)
     csrf.init_app(app)
     
-    socket_redis = (os.getenv("SOCKETIO_REDIS_URL") or os.getenv("REDIS_URL") or "").strip() or None
-    mgr = RedisManager(socket_redis, ssl_cert_reqs=None) if socket_redis else None
+    # socket_redis = (os.getenv("SOCKETIO_REDIS_URL") or os.getenv("REDIS_URL") or "").strip() or None
+    # mgr = RedisManager(socket_redis, ssl_cert_reqs=None) if socket_redis else None
     
     socketio.init_app(
         app,
@@ -117,7 +117,6 @@ def create_app(config_class=None):
         ],
         cors_credentials=True,
         async_mode="gevent",
-        client_manager=mgr,
     )
 
     login_manager = LoginManager()
