@@ -8,10 +8,12 @@ from sqlalchemy.orm import subqueryload
 
 from app.aws_utils import make_sponsor_key, s3_presign
 from app import db
-from app.models import Post, Category, Team, Event, ScoreTable, Sponsor
+from app.models import Post, Category, Team, Event, ScoreTable, Sponsor, PostGallery
+
 from flask_login import login_user, current_user, logout_user, login_required
 from functools import wraps
 from flask import abort
+
 def roles_required(*roles):
     def deco(fn):
         @wraps(fn)
@@ -25,6 +27,9 @@ def roles_required(*roles):
     return deco
 
 main = Blueprint('main', __name__)
+
+def make_gallery_key(post_id: int, filename: str) -> str:
+    return f'posts/{post_id}/gallery/{filename}'
 
 
 def get_current_season() -> str:
@@ -253,6 +258,46 @@ def home():
 
     category = db.session.query(Category).order_by(Category.name.asc()).all()
 
+        # =====================================================
+    # 🔥 NAJČÍTANEJŠIE – PRE TVOJ EXISTUJÚCI BLOK
+    # =====================================================
+    most_read = (
+        Post.query
+        .order_by(Post.views.desc(), Post.date_posted.desc())
+        .limit(6)
+        .all()
+    )
+
+    # ===== Cover obrázky pre Najčítanejšie =====
+    most_read_ids = [p.id for p in most_read]
+    most_read_covers = {}
+
+    if most_read_ids:
+        cover_rows = (
+            PostGallery.query
+            .filter(PostGallery.post_id.in_(most_read_ids))
+            .order_by(PostGallery.post_id.asc(), PostGallery.orderz.asc())
+            .all()
+        )
+
+        # prvý obrázok podľa orderz = titulný
+        for g in cover_rows:
+            if g.post_id not in most_read_covers and g.image_file2:
+                most_read_covers[g.post_id] = s3_presign(
+                    make_gallery_key(g.post_id, g.image_file2)
+                )
+
+    # (voliteľné – pripravené do budúcna)
+    latest_posts = (
+        Post.query
+        .order_by(Post.date_posted.desc())
+        .limit(6)
+        .all()
+    )
+
+
+
+
     return render_template(
         "home.html",
         title="",
@@ -268,6 +313,9 @@ def home():
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table(),
+        most_read=most_read,
+        most_read_covers=most_read_covers,
+        latest_posts=latest_posts,  # zatiaľ nepoužívaš, ale je ready
     )
 
 
