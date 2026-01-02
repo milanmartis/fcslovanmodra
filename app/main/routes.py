@@ -9,6 +9,7 @@ from sqlalchemy.orm import subqueryload
 from app.aws_utils import make_sponsor_key, s3_presign
 from app import db
 from app.models import Post, Category, Team, Event, ScoreTable, Sponsor, PostGallery
+from app.utils import cdn_url
 
 from flask_login import login_user, current_user, logout_user, login_required
 from functools import wraps
@@ -28,9 +29,9 @@ def roles_required(*roles):
 
 main = Blueprint('main', __name__)
 
+
 def make_gallery_key(post_id: int, filename: str) -> str:
     return f'posts/{post_id}/gallery/{filename}'
-
 
 def get_current_season() -> str:
     """
@@ -270,7 +271,7 @@ def home():
 
     category = db.session.query(Category).order_by(Category.name.asc()).all()
 
-        # =====================================================
+    # =====================================================
     # 🔥 NAJČÍTANEJŠIE – PRE TVOJ EXISTUJÚCI BLOK
     # =====================================================
     most_read = (
@@ -295,7 +296,8 @@ def home():
         # prvý obrázok podľa orderz = titulný
         for g in cover_rows:
             if g.post_id not in most_read_covers and g.image_file2:
-                most_read_covers[g.post_id] = s3_presign(
+                # ✅ CloudFront URL (bez presign)
+                most_read_covers[g.post_id] = cdn_url(
                     make_gallery_key(g.post_id, g.image_file2)
                 )
 
@@ -307,9 +309,6 @@ def home():
         .all()
     )
 
-
-
-
     return render_template(
         "home.html",
         title="",
@@ -319,7 +318,8 @@ def home():
         q=q,
         selected_category=cat_id,
         category=category,
-
+        cdn_url=cdn_url,
+        make_gallery_key=make_gallery_key,
         current_date=datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
@@ -329,7 +329,6 @@ def home():
         most_read_covers=most_read_covers,
         latest_posts=latest_posts,  # zatiaľ nepoužívaš, ale je ready
     )
-
 
 
 @main.route("/oklube")

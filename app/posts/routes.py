@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import uuid
 from datetime import datetime
 import mimetypes
@@ -17,7 +18,7 @@ from flask import (
 # from flask_security import roles_required
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
-
+from app.utils import cdn_url
 from app import db
 from app.config import Config
 from app.main.routes import Next, RightColumn
@@ -25,6 +26,8 @@ from app.models import Category, Post, PostGallery
 from app.posts.forms import PostForm, CategoryForm
 from flask_login import login_user, current_user, logout_user, login_required
 from functools import wraps
+from app import rds, cache_get_json, cache_set_json
+
 
 def roles_required(*roles):
     def deco(fn):
@@ -127,6 +130,12 @@ def make_gallery_key(post_id: int, filename: str) -> str:
 def list_posts():
     page = request.args.get('page', 1, type=int)
 
+    cache_key = f"html:posts:list:p:{page}"
+    if rds:
+        cached_html = rds.get(cache_key)
+        if cached_html:
+            return cached_html
+
     posts_paginated = (
         db.session.query(Post)
         .options(joinedload(Post.gallery))
@@ -139,7 +148,7 @@ def list_posts():
 
     category = Category.query.all()
 
-    return render_template(
+    html = render_template(
         'home.html',
         posts=posts_paginated,
         category=category,
@@ -149,6 +158,10 @@ def list_posts():
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table()
     )
+    
+    if rds:
+        rds.setex(cache_key, 30, html)  # 30s TTL (daj 15-60s)
+    return html
 
 
 @posts.route("/post/new", methods=['GET', 'POST'])
@@ -269,41 +282,140 @@ def post(post_id):
     db.session.commit()
     db.session.refresh(post_obj)
 
-    # ===== Titulný obrázok + galéria (tvoj kód) =====
-    title_image = (
-        PostGallery.query
-        .filter_by(post_id=post_id)
-        .order_by(PostGallery.orderz.asc())
-        .first()
-    )
+    # =====================================================
+    # CACHE: title_image + galleries (DB) + presigned URL
+    # =====================================================
+    # DB cache (stabilné, nemá expiráciu)
+    db_cache_key = f"cache:post:gallery_db:{post_id}"
+    # URL cache (musí mať TTL < expires presign)
+    url_cache_key = f"cache:post:gallery_urls:{post_id}"
 
-    galleries = (
-        PostGallery.query
-        .filter_by(post_id=post_id)
-        .order_by(PostGallery.orderz.asc())
-        .all()
-    )
-
-    title_image_url = None
-    if title_image:
-        title_image_url = s3_presign(
-            make_gallery_key(post_id, title_image.image_file2)
-        )
-
+    title_image = None
     galleries_with_urls = []
-    for g in galleries:
-        ext = (os.path.splitext(g.image_file2 or "")[1] or "").lower()
-        media_type = "video" if ext == ".mp4" else "image"
+    title_image_url = None
 
-        galleries_with_urls.append({
-            "id": g.id,
-            "title": g.title,
-            "orderz": g.orderz,
-            "media_type": media_type,
-            "url": s3_presign(make_gallery_key(post_id, g.image_file2)),
-            "image_file2": g.image_file2,
-        })
+    # 1) skús natiahnuť už hotové presigned URL (platné len krátko)
+    url_payload = None
+    if rds:
+        try:
+            raw = rds.get(url_cache_key)
+            if raw:
+                url_payload = json.loads(raw)
+        except Exception:
+            url_payload = None
 
+    if url_payload:
+        # hotovo – url sú už v cache
+        title_image_url = cdn_url(make_gallery_key(post_id, title_image.image_file2))
+        galleries_with_urls = url_payload.get("galleries_with_urls") or []
+
+        # title_image objekt šablóna možno potrebuje → dotiahni z DB cache alebo DB
+        db_payload = None
+        if rds:
+            try:
+                raw2 = rds.get(db_cache_key)
+                if raw2:
+                    db_payload = json.loads(raw2)
+            except Exception:
+                db_payload = None
+
+        if db_payload:
+            # vrátime aspoň "title_image" ako dict kompatibilný pre template (má atribúty?)
+            # Ak tvoja šablóna používa title_image.image_file2 atď.,
+            # tak ti stačí dict + v template používať ['image_file2'].
+            # Ak šablóna očakáva ORM objekt, musíš ho dotiahnuť z DB.
+            title_image_id = db_payload.get("title_image_id")
+            title_image = PostGallery.query.get(title_image_id) if title_image_id else None
+        else:
+            title_image = (
+                PostGallery.query
+                .filter_by(post_id=post_id)
+                .order_by(PostGallery.orderz.asc())
+                .first()
+            )
+
+    else:
+        # 2) presigned URL cache nemáme → načítaj DB (ideálne z DB cache)
+        db_payload = None
+        if rds:
+            try:
+                raw2 = rds.get(db_cache_key)
+                if raw2:
+                    db_payload = json.loads(raw2)
+            except Exception:
+                db_payload = None
+
+        if db_payload:
+            title_image_id = db_payload.get("title_image_id")
+            gallery_ids = db_payload.get("gallery_ids") or []
+
+            title_image = PostGallery.query.get(title_image_id) if title_image_id else None
+            galleries = []
+            if gallery_ids:
+                galleries = PostGallery.query.filter(PostGallery.id.in_(gallery_ids)).all()
+                # zachovať poradie podľa uložených id
+                order_map = {gid: i for i, gid in enumerate(gallery_ids)}
+                galleries.sort(key=lambda g: order_map.get(g.id, 9999))
+        else:
+            title_image = (
+                PostGallery.query
+                .filter_by(post_id=post_id)
+                .order_by(PostGallery.orderz.asc())
+                .first()
+            )
+
+            galleries = (
+                PostGallery.query
+                .filter_by(post_id=post_id)
+                .order_by(PostGallery.orderz.asc())
+                .all()
+            )
+
+            # ulož DB cache na 10 min (stabilné)
+            if rds:
+                try:
+                    payload = {
+                        "title_image_id": title_image.id if title_image else None,
+                        "gallery_ids": [g.id for g in galleries],
+                    }
+                    rds.setex(db_cache_key, 600, json.dumps(payload, ensure_ascii=False))
+                except Exception:
+                    pass
+
+        # 3) sprav presigned URL (expires 3600s) a ulož do cache na 55 min
+        PRESIGN_EXPIRES = 3600          # 1h
+        URL_CACHE_TTL = 55 * 60         # 55 min (menej ako expires)
+
+        if title_image and title_image.image_file2:
+            title_image_url = cdn_url(
+        make_gallery_key(post_id, title_image.image_file2)
+            )
+
+        galleries_with_urls = []
+        for g in galleries:
+            ext = (os.path.splitext(g.image_file2 or "")[1] or "").lower()
+            media_type = "video" if ext == ".mp4" else "image"
+
+            galleries_with_urls.append({
+                "id": g.id,
+                "title": g.title,
+                "orderz": g.orderz,
+                "media_type": media_type,
+                "url": cdn_url(make_gallery_key(post_id, g.image_file2)),
+                "image_file2": g.image_file2,
+            })
+
+        if rds:
+            try:
+                url_payload = {
+                    "title_image_url": title_image_url,
+                    "galleries_with_urls": galleries_with_urls,
+                }
+                rds.setex(url_cache_key, URL_CACHE_TTL, json.dumps(url_payload, ensure_ascii=False))
+            except Exception:
+                pass
+
+    # ===== Categories (môžeš tiež cacheovať separátne) =====
     category = Category.query.all()
 
     # =====================================================
@@ -329,12 +441,9 @@ def post(post_id):
             .all()
         )
 
-        # prvý obrázok podľa orderz = titulný
         for g in cover_rows:
             if g.post_id not in most_read_covers and g.image_file2:
-                most_read_covers[g.post_id] = s3_presign(
-                    make_gallery_key(g.post_id, g.image_file2)
-                )
+                most_read_covers[g.post_id] = cdn_url(make_gallery_key(g.post_id, g.image_file2))
 
     # (voliteľné – pripravené do budúcna)
     latest_posts = (
@@ -354,10 +463,9 @@ def post(post_id):
         galleries=galleries_with_urls,
         category=category,
 
-        # 👇 PRESNE TOTO TVOJA ŠABLÓNA POTREBUJE
         most_read=most_read,
         most_read_covers=most_read_covers,
-        latest_posts=latest_posts,  # zatiaľ nepoužívaš, ale je ready
+        latest_posts=latest_posts,
 
         current_date=datetime.now(),
         next22=Next.next(),
@@ -365,6 +473,7 @@ def post(post_id):
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table()
     )
+
 
 
 @posts.route("/posts/category/<int:category>")

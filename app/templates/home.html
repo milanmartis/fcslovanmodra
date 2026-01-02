@@ -429,7 +429,7 @@
         {% endif %}
 
         {% if cover %}
-          {% set cover_url = s3_presign('posts/' ~ post.id ~ '/gallery/' ~ cover.image_file2) %}
+        {% set cover_url = cdn_url(make_gallery_key(post.id, cover.image_file2)) %}
           <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
             <img class="post-title-image" loading="lazy" decoding="async" fetchpriority="low"
                  src="{{ cover_url }}" alt="{{ post.title }}">

@@ -10,7 +10,8 @@ from slugify import slugify as _slugify
 from datetime import timedelta, datetime
 from werkzeug.exceptions import NotFound
 from sqlalchemy.exc import OperationalError
-
+import json
+import redis
 
 from sqlalchemy.pool import QueuePool
 from dotenv import load_dotenv
@@ -40,6 +41,30 @@ bcrypt = Bcrypt()
 mail = Mail()
 csrf = CSRFProtect()
 socketio = SocketIO()
+rds = None
+
+def _make_redis():
+    url = os.environ.get("REDIS_URL")  # Heroku addon
+    if not url:
+        return None
+    # Heroku môže dávať rediss:// (TLS), redis-py to zvládne cez from_url
+    return redis.from_url(url, decode_responses=True)
+
+def cache_get_json(key: str):
+    if not rds:
+        return None
+    raw = rds.get(key)
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
+
+def cache_set_json(key: str, value, ttl_seconds: int):
+    if not rds:
+        return
+    rds.setex(key, ttl_seconds, json.dumps(value, ensure_ascii=False))
 
 
 def create_app(config_class=None):
@@ -49,6 +74,10 @@ def create_app(config_class=None):
 
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    global rds
+    rds = _make_redis()
+    app.extensions["redis_cache"] = rds
 
     # cache pre static súbory ok, ale SW/manifest budeme no-store
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=365)
