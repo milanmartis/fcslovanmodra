@@ -574,4 +574,231 @@
   })();
 </script>
 
+<style>
+  .swipebox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.92);
+    z-index: 999999999; /* nech je nad všetkým */
+    display: none;
+    touch-action: none; /* aby swipe nescrolloval page */
+  }
+  .swipebox.is-open { display: block; }
+
+  .swipebox__stage {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+  }
+
+  .swipebox__img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 14px;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .swipebox__topbar{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    pointer-events: none;
+  }
+  .swipebox__btn{
+    pointer-events: auto;
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .swipebox__counter{
+    pointer-events: auto;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .swipebox__nav{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    pointer-events:none;
+  }
+  .swipebox__nav button{
+    pointer-events:auto;
+    margin: 0 10px;
+    border: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    font-size: 20px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  @media (max-width: 768px){
+    .swipebox__nav button{ display:none; } /* na mobile nech je to čisté – swipe stačí */
+  }
+</style>
+
+<div id="swipebox" class="swipebox" aria-hidden="true">
+  <div class="swipebox__topbar">
+    <button id="swipeboxClose" class="swipebox__btn" type="button">✕</button>
+    <div id="swipeboxCounter" class="swipebox__counter">1 / 1</div>
+  </div>
+
+  <div class="swipebox__stage">
+    <img id="swipeboxImg" class="swipebox__img" alt="">
+  </div>
+
+  <div class="swipebox__nav">
+    <button id="swipeboxPrev" type="button" aria-label="Predchádzajúci">‹</button>
+    <button id="swipeboxNext" type="button" aria-label="Ďalší">›</button>
+  </div>
+</div>
+
+
+<script>
+  (function () {
+    const links = Array.from(document.querySelectorAll("a.js-lightbox-link"));
+    if (!links.length) return;
+
+    // poskladaj si URL list (preferuj aktuálne href; fallback je v data-fallback-href)
+    const items = links.map(a => ({
+      main: a.getAttribute("href"),
+      fallback: a.getAttribute("data-fallback-href")
+    }));
+
+    const box = document.getElementById("swipebox");
+    const img = document.getElementById("swipeboxImg");
+    const counter = document.getElementById("swipeboxCounter");
+    const btnClose = document.getElementById("swipeboxClose");
+    const btnPrev = document.getElementById("swipeboxPrev");
+    const btnNext = document.getElementById("swipeboxNext");
+
+    let index = 0;
+
+    function setCounter() {
+      counter.textContent = `${index + 1} / ${items.length}`;
+    }
+
+    function show(i) {
+      index = (i + items.length) % items.length;
+      setCounter();
+
+      // najprv skús main, keď failne, prepni na fallback
+      const { main, fallback } = items[index];
+
+      img.onerror = null;
+      img.src = main;
+
+      img.onerror = function () {
+        if (fallback && img.src !== fallback) img.src = fallback;
+      };
+    }
+
+    function openAt(i) {
+      box.classList.add("is-open");
+      box.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      show(i);
+    }
+
+    function close() {
+      box.classList.remove("is-open");
+      box.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      img.src = "";
+    }
+
+    function next() { show(index + 1); }
+    function prev() { show(index - 1); }
+
+    // klik na thumbnail -> otvor overlay (a zruš pôvodný lightbox)
+    links.forEach((a, i) => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openAt(i);
+      }, { passive: false });
+    });
+
+    // UI buttons
+    btnClose.addEventListener("click", close, { passive: true });
+    btnNext.addEventListener("click", next, { passive: true });
+    btnPrev.addEventListener("click", prev, { passive: true });
+
+    // klik na pozadie (mimo obrázka) -> close
+    box.addEventListener("click", (e) => {
+      const stage = e.target.closest(".swipebox__stage");
+      const clickedImg = e.target === img;
+      if (stage && !clickedImg) close();
+      if (!stage) close();
+    }, { passive: true });
+
+    // ESC, šípky
+    document.addEventListener("keydown", (e) => {
+      if (!box.classList.contains("is-open")) return;
+      if (e.key === "Escape") close();
+      if (e.key === "ArrowRight") next();
+      if (e.key === "ArrowLeft") prev();
+    });
+
+    // SWIPE
+    let startX = 0, startY = 0, dx = 0, dy = 0, moved = false;
+
+    box.addEventListener("touchstart", (e) => {
+      if (!box.classList.contains("is-open")) return;
+      if (!e.touches || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+      dx = dy = 0;
+      moved = false;
+    }, { passive: true });
+
+    box.addEventListener("touchmove", (e) => {
+      if (!box.classList.contains("is-open")) return;
+      if (!e.touches || e.touches.length !== 1) return;
+
+      const t = e.touches[0];
+      dx = t.clientX - startX;
+      dy = t.clientY - startY;
+
+      // keď ide o horizontálny swipe, zablokuj scroll
+      if (Math.abs(dx) > Math.abs(dy)) {
+        moved = true;
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    box.addEventListener("touchend", () => {
+      if (!box.classList.contains("is-open")) return;
+      if (!moved) return;
+
+      const threshold = 40; // px
+      if (dx <= -threshold) next();
+      else if (dx >= threshold) prev();
+    }, { passive: true });
+  })();
+</script>
+
 {% endblock content %}
