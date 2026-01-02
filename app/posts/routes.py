@@ -101,7 +101,6 @@ def s3_public_url(key: str) -> str:
     region = _S3_REGION or "us-east-1"
     return f"https://{BUCKET_NAME}.s3.{region}.amazonaws.com/{key}"
 
-
 def s3_presign(key: str, expires: int = 3600) -> str:
     return s3_client().generate_presigned_url(
         "get_object",
@@ -287,7 +286,7 @@ def post(post_id):
 
     title_image_url = None
     if title_image:
-        title_image_url = s3_public_url(
+        title_image_url = s3_presign(
             make_gallery_key(post_id, title_image.image_file2)
         )
 
@@ -301,7 +300,7 @@ def post(post_id):
             "title": g.title,
             "orderz": g.orderz,
             "media_type": media_type,
-            "url": s3_public_url(make_gallery_key(post_id, g.image_file2)),
+            "url": s3_presign(make_gallery_key(post_id, g.image_file2)),
             "image_file2": g.image_file2,
         })
 
@@ -333,7 +332,7 @@ def post(post_id):
         # prvý obrázok podľa orderz = titulný
         for g in cover_rows:
             if g.post_id not in most_read_covers and g.image_file2:
-                most_read_covers[g.post_id] = s3_public_url(
+                most_read_covers[g.post_id] = s3_presign(
                     make_gallery_key(g.post_id, g.image_file2)
                 )
 
@@ -416,7 +415,7 @@ def get_images_by_post(post_id):
               "title": img.title,
               "orderz": img.orderz,
               "media_type": media_type,
-              "url": s3_public_url(key),     # ✅ neutrálny názov
+              "url": s3_presign(key),     # ✅ neutrálny názov
               "filename": img.image_file2
         })
 
@@ -510,7 +509,7 @@ def update_post(post_id):
         .filter_by(post_id=post_id, orderz=0)
         .first()
     )
-    image_url = s3_public_url(make_gallery_key(post_id, image.image_file2)) if image else ''
+    image_url = s3_presign(make_gallery_key(post_id, image.image_file2)) if image else ''
 
     if post.author != current_user:
         abort(403)
