@@ -24,11 +24,11 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
     SQLALCHEMY_EXPIRE_ON_COMMIT = False
     # SQLAlchemy pool (nechaj len config hodnoty; engine nevytváraj v import time!)
-    SQSQLALCHEMY_ENGINE_OPTIONS = {
+    SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
         "pool_recycle": 1800,     # napr. 30 min
         "pool_size": 5,
-        "max_overflow": 10,
+        "max_overflow": 5,
         "pool_timeout": 30,
     }
 

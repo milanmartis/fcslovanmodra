@@ -97,6 +97,10 @@ def s3_client():
     )
     return _S3
 
+def s3_public_url(key: str) -> str:
+    region = _S3_REGION or "us-east-1"
+    return f"https://{BUCKET_NAME}.s3.{region}.amazonaws.com/{key}"
+
 
 def s3_presign(key: str, expires: int = 3600) -> str:
     return s3_client().generate_presigned_url(
@@ -283,7 +287,7 @@ def post(post_id):
 
     title_image_url = None
     if title_image:
-        title_image_url = s3_presign(
+        title_image_url = s3_public_url(
             make_gallery_key(post_id, title_image.image_file2)
         )
 
@@ -297,7 +301,7 @@ def post(post_id):
             "title": g.title,
             "orderz": g.orderz,
             "media_type": media_type,
-            "url": s3_presign(make_gallery_key(post_id, g.image_file2)),
+            "url": s3_public_url(make_gallery_key(post_id, g.image_file2)),
             "image_file2": g.image_file2,
         })
 
@@ -329,7 +333,7 @@ def post(post_id):
         # prvý obrázok podľa orderz = titulný
         for g in cover_rows:
             if g.post_id not in most_read_covers and g.image_file2:
-                most_read_covers[g.post_id] = s3_presign(
+                most_read_covers[g.post_id] = s3_public_url(
                     make_gallery_key(g.post_id, g.image_file2)
                 )
 
@@ -412,7 +416,7 @@ def get_images_by_post(post_id):
               "title": img.title,
               "orderz": img.orderz,
               "media_type": media_type,
-              "url": s3_presign(key),     # ✅ neutrálny názov
+              "url": s3_public_url(key),     # ✅ neutrálny názov
               "filename": img.image_file2
         })
 
@@ -491,6 +495,11 @@ def update_image_order(post_id):
 
 # ---------- Update / Upload file (single) ----------
 
+from app.posts.utils import upload_post_file_to_s3  # <-- NOVÉ
+
+
+# ---------- Update / Upload file (single) ----------
+
 @posts.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
 @login_required
 @roles_required('Admin', 'WebAdmin')
@@ -501,7 +510,7 @@ def update_post(post_id):
         .filter_by(post_id=post_id, orderz=0)
         .first()
     )
-    image_url = s3_presign(make_gallery_key(post_id, image.image_file2)) if image else ''
+    image_url = s3_public_url(make_gallery_key(post_id, image.image_file2)) if image else ''
 
     if post.author != current_user:
         abort(403)
@@ -556,25 +565,31 @@ def upload_file(post_id):
         flash('File type not allowed')
         return redirect(request.url)
 
-    original = secure_filename(file.filename)
-    base, ext = os.path.splitext(original)
-    new_filename = f'{uuid.uuid4().hex}_{base}{ext.lower()}'
-    s3_key = make_gallery_key(post_id, new_filename)
-    s3_client().upload_fileobj(
-        file,
-        BUCKET_NAME,
-        s3_key,
-        ExtraArgs=s3_extra_args(file),
-
+    # Upload do S3 (obrázky zmenší + webp, iné nechá pôvodne)
+    new_filename, s3_key = upload_post_file_to_s3(
+        file=file,
+        post_id=post_id,
+        bucket_name=BUCKET_NAME,
+        make_gallery_key=make_gallery_key,
+        s3_client=s3_client,
+        s3_extra_args=s3_extra_args,
+        max_size=(1600, 1600),   # <- nastav si (napr. 1200,1200 pre cover)
+        quality=82
     )
 
     post = Post.query.get_or_404(post_id)
     postgal = PostGallery.query.filter_by(post_id=post_id, orderz=0).first()
     if not postgal:
-        postgal = PostGallery(title=post.title or '', image_file2=new_filename, orderz=0, post_id=post_id)
+        postgal = PostGallery(
+            title=post.title or '',
+            image_file2=new_filename,
+            orderz=0,
+            post_id=post_id
+        )
         db.session.add(postgal)
     else:
         postgal.image_file2 = new_filename
+
     db.session.commit()
 
     return jsonify(message="File uploaded successfully", image_file2=new_filename)

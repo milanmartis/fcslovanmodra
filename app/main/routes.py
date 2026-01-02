@@ -225,6 +225,18 @@ def tabz():
     )
 
 
+@main.route("/stari-pani")
+def old_boys():
+    return render_template(
+        'stari_pani.html',
+        current_date=datetime.now(timezone.utc),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
+
+
 @main.route("/")
 @main.route("/home")
 def home():
