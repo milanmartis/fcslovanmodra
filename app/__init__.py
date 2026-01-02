@@ -34,7 +34,7 @@ DEFAULT_ENGINE_OPTIONS = {
 }
 
 salt = base64.b64encode(os.urandom(32)).decode("utf-8")
-redis_url = os.getenv("REDIS_URL", "").strip() or None
+
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 # login_manager = LoginManager()
@@ -105,13 +105,15 @@ def create_app(config_class=None):
     
     socketio.init_app(
         app,
-        cors_allowed_origins="*",
-        message_queue=redis_url,
-        logger=True,
-        engineio_logger=True,
+        cors_allowed_origins=[
+            "http://127.0.0.1:5000",
+            "http://localhost:5000",
+            "https://fcman-37884cffcf78.herokuapp.com",
+        ],
         cors_credentials=True,  # ✅ kľúčové: povoľ cookies/credentials
         # async_mode="threading",
         async_mode="gevent",
+        message_queue=os.environ.get("REDIS_URL")
         )
 
     login_manager = LoginManager()
