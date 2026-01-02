@@ -575,88 +575,45 @@
 </script>
 
 <style>
-  .swipebox {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.92);
-    z-index: 999999999; /* nech je nad všetkým */
-    display: none;
-    touch-action: none; /* aby swipe nescrolloval page */
-  }
-  .swipebox.is-open { display: block; }
-
-  .swipebox__stage {
+  .swipebox__stage{
     width: 100%;
     height: 100%;
+    overflow: hidden;
     display: grid;
     place-items: center;
     padding: 18px;
   }
-
-  .swipebox__img {
+  
+  .swipebox__track{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    transform: translateX(-100%); /* stred je aktuálny slide */
+    will-change: transform;
+    transition: transform 220ms ease;
+  }
+  
+  .swipebox__track.is-dragging{
+    transition: none; /* počas ťahania bez animácie */
+  }
+  
+  .swipebox__slide{
+    width: 100%;
+    height: 100%;
+    flex: 0 0 100%;
+    display: grid;
+    place-items: center;
+  }
+  
+  .swipebox__img{
     max-width: 100%;
     max-height: 100%;
     border-radius: 14px;
     user-select: none;
     -webkit-user-drag: none;
+    pointer-events: none; /* aby swipe fungoval aj keď prst ide po img */
   }
-
-  .swipebox__topbar{
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    pointer-events: none;
-  }
-  .swipebox__btn{
-    pointer-events: auto;
-    border: 0;
-    border-radius: 999px;
-    padding: 10px 12px;
-    background: rgba(255,255,255,0.10);
-    color: #fff;
-    font-weight: 800;
-    cursor: pointer;
-  }
-  .swipebox__counter{
-    pointer-events: auto;
-    padding: 8px 10px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.10);
-    color: #fff;
-    font-weight: 800;
-    font-size: 13px;
-  }
-
-  .swipebox__nav{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    pointer-events:none;
-  }
-  .swipebox__nav button{
-    pointer-events:auto;
-    margin: 0 10px;
-    border: 0;
-    width: 44px;
-    height: 44px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.10);
-    color: #fff;
-    font-size: 20px;
-    font-weight: 900;
-    cursor: pointer;
-  }
-
-  @media (max-width: 768px){
-    .swipebox__nav button{ display:none; } /* na mobile nech je to čisté – swipe stačí */
-  }
+  
 </style>
 
 <div id="swipebox" class="swipebox" aria-hidden="true">
@@ -666,7 +623,11 @@
   </div>
 
   <div class="swipebox__stage">
-    <img id="swipeboxImg" class="swipebox__img" alt="">
+    <div id="swipeboxTrack" class="swipebox__track">
+      <div class="swipebox__slide"><img id="swipeboxPrevImg" class="swipebox__img" alt=""></div>
+      <div class="swipebox__slide"><img id="swipeboxCurImg"  class="swipebox__img" alt=""></div>
+      <div class="swipebox__slide"><img id="swipeboxNextImg" class="swipebox__img" alt=""></div>
+    </div>
   </div>
 
   <div class="swipebox__nav">
@@ -680,59 +641,85 @@
   (function () {
     const links = Array.from(document.querySelectorAll("a.js-lightbox-link"));
     if (!links.length) return;
-
-    // poskladaj si URL list (preferuj aktuálne href; fallback je v data-fallback-href)
+  
     const items = links.map(a => ({
       main: a.getAttribute("href"),
       fallback: a.getAttribute("data-fallback-href")
     }));
-
+  
     const box = document.getElementById("swipebox");
-    const img = document.getElementById("swipeboxImg");
     const counter = document.getElementById("swipeboxCounter");
     const btnClose = document.getElementById("swipeboxClose");
     const btnPrev = document.getElementById("swipeboxPrev");
     const btnNext = document.getElementById("swipeboxNext");
-
+  
+    const track = document.getElementById("swipeboxTrack");
+    const imgPrev = document.getElementById("swipeboxPrevImg");
+    const imgCur  = document.getElementById("swipeboxCurImg");
+    const imgNext = document.getElementById("swipeboxNextImg");
+  
     let index = 0;
-
-    function setCounter() {
-      counter.textContent = `${index + 1} / ${items.length}`;
-    }
-
-    function show(i) {
-      index = (i + items.length) % items.length;
-      setCounter();
-
-      // najprv skús main, keď failne, prepni na fallback
-      const { main, fallback } = items[index];
-
-      img.onerror = null;
-      img.src = main;
-
-      img.onerror = function () {
-        if (fallback && img.src !== fallback) img.src = fallback;
+  
+    function mod(i, n){ return (i % n + n) % n; }
+  
+    function setImg(el, obj){
+      el.onerror = null;
+      el.src = obj.main;
+      el.onerror = function () {
+        if (obj.fallback && el.src !== obj.fallback) el.src = obj.fallback;
       };
     }
-
-    function openAt(i) {
+  
+    function render3(){
+      const prevI = mod(index - 1, items.length);
+      const nextI = mod(index + 1, items.length);
+  
+      setImg(imgPrev, items[prevI]);
+      setImg(imgCur,  items[index]);
+      setImg(imgNext, items[nextI]);
+  
+      counter.textContent = `${index + 1} / ${items.length}`;
+  
+      // vždy vycentruj na aktuálny
+      track.classList.remove("is-dragging");
+      track.style.transform = `translateX(-100%)`;
+    }
+  
+    function openAt(i){
+      index = mod(i, items.length);
       box.classList.add("is-open");
       box.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
-      show(i);
+      render3();
     }
-
-    function close() {
+  
+    function close(){
       box.classList.remove("is-open");
       box.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
-      img.src = "";
+      imgPrev.src = imgCur.src = imgNext.src = "";
     }
-
-    function next() { show(index + 1); }
-    function prev() { show(index - 1); }
-
-    // klik na thumbnail -> otvor overlay (a zruš pôvodný lightbox)
+  
+    function goNext(){
+      // animuj doľava na next (track posuň na -200%), po animácii preindexuj a resetni
+      track.style.transform = `translateX(-200%)`;
+      track.addEventListener("transitionend", function handler(){
+        track.removeEventListener("transitionend", handler);
+        index = mod(index + 1, items.length);
+        render3();
+      });
+    }
+  
+    function goPrev(){
+      track.style.transform = `translateX(0%)`;
+      track.addEventListener("transitionend", function handler(){
+        track.removeEventListener("transitionend", handler);
+        index = mod(index - 1, items.length);
+        render3();
+      });
+    }
+  
+    // klik na thumbnail -> open
     links.forEach((a, i) => {
       a.addEventListener("click", (e) => {
         e.preventDefault();
@@ -740,65 +727,106 @@
         openAt(i);
       }, { passive: false });
     });
-
-    // UI buttons
+  
+    // UI tlačidlá
     btnClose.addEventListener("click", close, { passive: true });
-    btnNext.addEventListener("click", next, { passive: true });
-    btnPrev.addEventListener("click", prev, { passive: true });
-
-    // klik na pozadie (mimo obrázka) -> close
-    box.addEventListener("click", (e) => {
-      const stage = e.target.closest(".swipebox__stage");
-      const clickedImg = e.target === img;
-      if (stage && !clickedImg) close();
-      if (!stage) close();
-    }, { passive: true });
-
-    // ESC, šípky
+    btnNext.addEventListener("click", () => { if (box.classList.contains("is-open")) goNext(); }, { passive: true });
+    btnPrev.addEventListener("click", () => { if (box.classList.contains("is-open")) goPrev(); }, { passive: true });
+  
+    // ESC + šípky
     document.addEventListener("keydown", (e) => {
       if (!box.classList.contains("is-open")) return;
       if (e.key === "Escape") close();
-      if (e.key === "ArrowRight") next();
-      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
     });
-
-    // SWIPE
-    let startX = 0, startY = 0, dx = 0, dy = 0, moved = false;
-
+  
+    // klik na pozadie zavrie (mimo tracku)
+    box.addEventListener("click", (e) => {
+      if (!box.classList.contains("is-open")) return;
+      const insideStage = e.target.closest(".swipebox__stage");
+      const insideTrack = e.target.closest(".swipebox__track");
+      if (insideStage && !insideTrack) close();
+      if (!insideStage) close();
+    }, { passive: true });
+  
+    // ---- DRAG / SWIPE ----
+    let startX = 0;
+    let startY = 0;
+    let dx = 0;
+    let dragging = false;
+  
+    function getWidth(){
+      // track je 100% viewport; stačí stage width
+      const stage = box.querySelector(".swipebox__stage");
+      return stage ? stage.clientWidth : window.innerWidth;
+    }
+  
     box.addEventListener("touchstart", (e) => {
       if (!box.classList.contains("is-open")) return;
       if (!e.touches || e.touches.length !== 1) return;
+  
       const t = e.touches[0];
       startX = t.clientX;
       startY = t.clientY;
-      dx = dy = 0;
-      moved = false;
+      dx = 0;
+      dragging = true;
+      track.classList.add("is-dragging");
     }, { passive: true });
-
+  
     box.addEventListener("touchmove", (e) => {
       if (!box.classList.contains("is-open")) return;
+      if (!dragging) return;
       if (!e.touches || e.touches.length !== 1) return;
-
+  
       const t = e.touches[0];
       dx = t.clientX - startX;
-      dy = t.clientY - startY;
-
-      // keď ide o horizontálny swipe, zablokuj scroll
-      if (Math.abs(dx) > Math.abs(dy)) {
-        moved = true;
-        e.preventDefault();
-      }
+      const dy = t.clientY - startY;
+  
+      // ak je to horizontálne gesto, zablokuj scroll
+      if (Math.abs(dx) > Math.abs(dy)) e.preventDefault();
+  
+      const w = getWidth();
+      // aktuálny je -100%, posúvame o dx px
+      const px = (-w) + dx;
+      track.style.transform = `translateX(${px}px)`;
     }, { passive: false });
-
+  
     box.addEventListener("touchend", () => {
       if (!box.classList.contains("is-open")) return;
-      if (!moved) return;
-
-      const threshold = 40; // px
-      if (dx <= -threshold) next();
-      else if (dx >= threshold) prev();
+      if (!dragging) return;
+  
+      dragging = false;
+      track.classList.remove("is-dragging");
+  
+      const w = getWidth();
+      const threshold = Math.max(60, w * 0.18); // prah: 18% šírky alebo min 60px
+  
+      if (dx <= -threshold) {
+        // swipe doľava -> next
+        // nechaj transition zapnutý (už je), nastav percentá pre plynulý dobeh
+        track.style.transform = `translateX(-200%)`;
+        track.addEventListener("transitionend", function handler(){
+          track.removeEventListener("transitionend", handler);
+          index = mod(index + 1, items.length);
+          render3();
+        });
+      } else if (dx >= threshold) {
+        // swipe doprava -> prev
+        track.style.transform = `translateX(0%)`;
+        track.addEventListener("transitionend", function handler(){
+          track.removeEventListener("transitionend", handler);
+          index = mod(index - 1, items.length);
+          render3();
+        });
+      } else {
+        // vráť späť na aktuálny
+        track.style.transform = `translateX(-100%)`;
+      }
     }, { passive: true });
+  
   })();
-</script>
+  </script>
+  
 
 {% endblock content %}
