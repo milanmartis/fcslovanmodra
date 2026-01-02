@@ -12,6 +12,7 @@ from werkzeug.exceptions import NotFound
 from sqlalchemy.exc import OperationalError
 import json
 import redis
+from socketio import RedisManager
 
 from sqlalchemy.pool import QueuePool
 from dotenv import load_dotenv
@@ -34,6 +35,10 @@ DEFAULT_ENGINE_OPTIONS = {
 }
 
 salt = base64.b64encode(os.urandom(32)).decode("utf-8")
+redis_url = os.getenv("SOCKETIO_REDIS_URL") or os.getenv("REDIS_URL")
+
+mgr = RedisManager(redis_url, ssl_cert_reqs=None) if redis_url else None
+
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -103,6 +108,7 @@ def create_app(config_class=None):
     mail.init_app(app)
     csrf.init_app(app)
     
+    
     socketio.init_app(
         app,
         cors_allowed_origins=[
@@ -110,11 +116,10 @@ def create_app(config_class=None):
             "http://localhost:5000",
             "https://fcman-37884cffcf78.herokuapp.com",
         ],
-        cors_credentials=True,  # ✅ kľúčové: povoľ cookies/credentials
-        # async_mode="threading",
+        cors_credentials=True,
         async_mode="gevent",
-        message_queue=os.environ.get("SOCKETIO_REDIS_URL")
-        )
+        client_manager=mgr,
+    )
 
     login_manager = LoginManager()
     login_manager.login_view = "users.login"  # tvoj endpoint
