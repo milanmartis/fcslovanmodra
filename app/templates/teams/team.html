@@ -220,7 +220,10 @@
 
 <h3 class="headline">{{ team.name }}</h3>
 <br>
+{% set cat_name = (team.name if team )|lower %}
+{% set is_u9_u11 = ('u9' in cat_name) or ('u11' in cat_name) %}
 {% set fallback = url_for('static', filename='profile_pics/4fcc7846e3660f38.png') %}
+{% if not is_u9_u11 %}
 {% if current_user.is_authenticated %}
 <div class="lineup-wrap">
 
@@ -514,6 +517,7 @@
 <br>
 
 <br>
+{% endif %}
 
 {% if coach_cards %}
   <div style="margin-top:40px;">
