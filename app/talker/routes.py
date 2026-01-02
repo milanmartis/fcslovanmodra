@@ -845,12 +845,6 @@ def on_send(data: dict[str, Any]):
             emit("talker_error", {"error": "bad_attachment"})
             return
 
-
-        # msg.text = text or None
-        # msg.attachment_url = url
-        # msg.attachment_mime = mime or None
-        # msg.attachment_size = size or None
-
     elif msg_type == "poll":
         question = ((data or {}).get("question") or "").strip()
         options = (data or {}).get("options") or []
@@ -929,10 +923,30 @@ def on_send(data: dict[str, Any]):
         room=str(room.id),
         include_self=True,
     )
-    
-      # ✅ PUSH: pošli všetkým v room okrem odosielateľa
+
+    # ✅ NOVÉ: realtime zvonček/badge (unread_update) – všetkým v room okrem odosielateľa
+    # (User je joinnutý do user:{id} v on_socket_connect)
     try:
-        recipients = get_recipients_for_room(room)  # už exclude "me" robí inside :contentReference[oaicite:1]{index=1}
+        recipients = get_recipients_for_room(room)  # už exclude "me" robí inside :contentReference[oaicite:2]{index=2}
+        for uid in (recipients or []):
+            uid = int(uid)
+            payload = _build_unread_payload_for_user(uid)  # existuje u teba :contentReference[oaicite:3]{index=3}
+
+            socketio.emit(
+                "unread_update",
+                {
+                    "total_unread_count": payload.get("total_unread_count", 0),
+                    "unread_counts": payload.get("unread_counts", []),
+                },
+                room=f"user:{uid}",
+                namespace="/",
+            )
+    except Exception:
+        current_app.logger.exception("unread_update emit failed")
+
+    # ✅ PUSH: pošli všetkým v room okrem odosielateľa
+    try:
+        recipients = get_recipients_for_room(room)  # už exclude "me" robí inside :contentReference[oaicite:4]{index=4}
         if recipients:
             # text do notifikácie podľa typu
             if msg.msg_type == "text":
@@ -950,7 +964,6 @@ def on_send(data: dict[str, Any]):
             else:
                 body = "Nová správa"
 
-            # fallback aby notifikácia nebola prázdna
             if not body:
                 body = "Nová správa"
 
@@ -961,12 +974,13 @@ def on_send(data: dict[str, Any]):
                 data={
                     "type": "talker_message",
                     "room_id": str(room.id),
-                    "roomId": str(room.id),  # kompatibilita so SW payloadom
+                    "roomId": str(room.id),
                     "url": f"/talker/rooms/{room.id}?embed=1",
                 },
             )
     except Exception:
         current_app.logger.exception("push send failed")
+
 
 
 @talker.get("/poll/<int:poll_id>")
