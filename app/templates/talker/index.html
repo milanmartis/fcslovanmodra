@@ -148,7 +148,7 @@
   <center><h1>Talker rooms</h1></center>
 
   {% set embed = request.args.get('embed') %}
-
+{% if rooms %}
   {% for r in rooms %}
   <a class="btn9 roomLink"
      href="{{ url_for('talker.create_room', room_id=r.id, embed=2) }}"
@@ -157,6 +157,9 @@
     {{ r.name }}
   </a>
 {% endfor %}
+{% else %}
+  <p>Nemáte prístup do žiadnej miestnosti - kontaktujte správcu (+421 917 360 277).</p>
+{% endif %}
 </div>
 
 <!-- Modal overlay -->

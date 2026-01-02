@@ -363,7 +363,7 @@
           Test push
         </a>
         -->
-        <button class="push-btn" onclick="javascript:location.href='/talker'" type="button">Back</button>
+        <button class="push-btn" id="backBtn" type="button">Back</button>
         <button class="push-btn" id="pushBtn" type="button">Push…</button>
 
         <div class="talker-badge" id="conn">
@@ -381,7 +381,20 @@
 
       <div class="composer">
         <form id="f" class="composer-bar" autocomplete="off">
-          <textarea id="t" class="input" rows="1" placeholder="Napíš správu… (Enter = odoslať, Shift+Enter = nový riadok)"></textarea>
+          <!-- ✅ video upload -->
+          <input id="fileInput" type="file"
+          accept="video/mp4,video/webm,video/quicktime,image/jpeg,image/png,image/webp,image/gif"
+          style="display:none" />
+        
+          <!-- ✅ attach button -->
+          <button id="attachBtn" class="push-btn" type="button" title="Priložiť video">＋</button>
+        
+          <textarea id="t" class="input" rows="1"
+                    placeholder="Napíš správu… (Enter = odoslať, Shift+Enter = nový riadok)"></textarea>
+        
+          <!-- ✅ poll button -->
+          <button id="pollBtn" class="push-btn" type="button" title="Anketa">☑︎</button>
+        
           <button id="sendBtn" class="send" type="submit" disabled>
             <span class="txt">Send</span>
             <span class="ico" aria-hidden="true">➤</span>
@@ -417,6 +430,9 @@
   const statusEl = document.getElementById("status");
   const pushBtn = document.getElementById("pushBtn");
   const backBtn = document.getElementById("backBtn");
+  const attachBtn = document.getElementById("attachBtn");
+  const fileInput = document.getElementById("fileInput");
+  const pollBtn = document.getElementById("pollBtn");
 
   // zachované (bolo v súbore)
   const unreadPill = document.getElementById("unreadPill");
@@ -537,32 +553,308 @@
     }
   });
 
+
+
+  const pollCache = new Map(); // poll_id -> data
+
+  function pollKey(pid){ return String(pid); }
+  
+  function renderPollInto(bubbleEl, pollData) {
+    const pid = String(pollData.poll_id);
+    const counts = pollData.counts || {};
+    const myVotes = new Set((pollData.my_votes || []).map(Number));
+    const voters = pollData.voters || {}; // { optionId: [username...] }
+  
+    const wrap = document.createElement("div");
+    wrap.className = "poll-wrap";
+    wrap.dataset.pollId = pid;
+  
+    const title = document.createElement("div");
+    title.style.fontWeight = "900";
+    title.style.marginBottom = "8px";
+    title.style.lineHeight = "1.25";
+    title.style.whiteSpace = "normal";
+    title.textContent = "📊 " + (pollData.question || "Anketa");
+  
+    const list = document.createElement("div");
+    list.className = "poll-options";
+    list.style.display = "grid";
+    list.style.gap = "8px";
+  
+    for (const opt of (pollData.options || [])) {
+      const oid = Number(opt.id);
+      const c = Number(counts[String(oid)] || 0);
+      const voted = myVotes.has(oid);
+  
+      // kontajner pre jednu možnosť
+      const row = document.createElement("div");
+      row.style.display = "grid";
+      row.style.gap = "6px";
+  
+      // horný riadok: tlačidlo + toggle
+      const top = document.createElement("div");
+      top.style.display = "flex";
+      top.style.gap = "8px";
+      top.style.alignItems = "center";
+  
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "push-btn";
+      btn.style.flex = "1";
+      btn.dataset.optionId = String(oid);
+      btn.dataset.pollId = pid;
+  
+      // ✅ krajší layout + zalamovanie
+      btn.style.display = "flex";
+      btn.style.alignItems = "center";
+      btn.style.justifyContent = "space-between";
+      btn.style.gap = "10px";
+      btn.style.textAlign = "left";
+      btn.style.whiteSpace = "normal";
+      btn.style.lineHeight = "1.25";
+      btn.style.padding = "10px 12px";
+  
+      btn.classList.toggle("on", voted);
+  
+      // ✅ text + badge count
+      btn.innerHTML = `
+        <span style="flex:1; min-width:0; white-space:normal; overflow-wrap:anywhere;">
+          ${escapeHtml(opt.text)}
+        </span>
+        <span style="
+          display:inline-flex; align-items:center; justify-content:center;
+          min-width:28px; height:22px; padding:0 8px;
+          border-radius:999px; font-size:12px; font-weight:800;
+          border:1px solid rgba(255,255,255,.14);
+          background:rgba(255,255,255,.08);">
+          ${c}
+        </span>
+      `;
+  
+      if (voted) {
+        btn.style.outline = "2px solid rgba(255,255,255,18)";
+      }
+  
+      // ✅ toggle (rozbal hlasujúcich)
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "push-btn";
+      toggle.title = "Zobraziť kto hlasoval";
+      toggle.textContent = "i";
+      toggle.style.minWidth = "42px";
+      toggle.style.display = "inline-flex";
+      toggle.style.alignItems = "center";
+      toggle.style.justifyContent = "center";
+      toggle.style.padding = "10px";
+  
+      // ✅ voters box (pekne, zalamovanie + chips + scroll)
+      const people = voters[String(oid)] || [];
+  
+      const votersBox = document.createElement("div");
+      votersBox.style.display = "none";
+      votersBox.style.padding = "10px 12px";
+      votersBox.style.border = "1px solid rgba(255,255,255,12)";
+      votersBox.style.borderRadius = "12px";
+      votersBox.style.background = "transparent";
+  
+      const head = document.createElement("div");
+      head.style.display = "flex";
+      head.style.alignItems = "baseline";
+      head.style.justifyContent = "space-between";
+      head.style.gap = "10px";
+      head.style.marginBottom = "8px";
+  
+      const hLeft = document.createElement("div");
+      hLeft.style.fontWeight = "900";
+      hLeft.style.whiteSpace = "normal";
+      hLeft.style.lineHeight = "1.25";
+      hLeft.style.overflowWrap = "anywhere";
+      hLeft.textContent = opt.text;
+  
+      const hRight = document.createElement("div");
+      hRight.style.opacity = ".75";
+      hRight.style.fontSize = "12px";
+      hRight.textContent = `${people.length} hlas`;
+  
+      head.appendChild(hLeft);
+      head.appendChild(hRight);
+  
+      const chips = document.createElement("div");
+      chips.style.display = "flex";
+      chips.style.flexWrap = "wrap";
+      chips.style.gap = "6px";
+      chips.style.maxHeight = "120px";
+      chips.style.overflow = "auto";
+  
+      if (!people.length) {
+        const empty = document.createElement("div");
+        empty.style.opacity = ".7";
+        empty.style.fontSize = "12px";
+        empty.textContent = "Zatiaľ nikto nehlasoval.";
+        chips.appendChild(empty);
+      } else {
+        for (const name of people) {
+          const chip = document.createElement("span");
+          chip.textContent = name;
+          chip.style.display = "inline-flex";
+          chip.style.alignItems = "center";
+          chip.style.padding = "5px 8px";
+          chip.style.borderRadius = "999px";
+          chip.style.border = "1px solid rgba(255,255,255,.14)";
+          chip.style.background = "rgba(255,255,255,.08)";
+          chip.style.fontSize = "12px";
+          chip.style.whiteSpace = "nowrap";
+          chips.appendChild(chip);
+        }
+      }
+  
+      votersBox.appendChild(head);
+      votersBox.appendChild(chips);
+  
+      toggle.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const open = votersBox.style.display === "none";
+        votersBox.style.display = open ? "block" : "none";
+        toggle.textContent = open ? "i▴" : "i";
+      });
+  
+      // ✅ hlasovanie
+      btn.addEventListener("click", async () => {
+        try {
+          btn.disabled = true;
+          toggle.disabled = true;
+  
+          const r = await fetch(`/talker/poll/${pid}/vote`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ option_id: oid }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+  
+          // natiahni fresh detail (kvôli my_votes + voters)
+          const rr = await fetch(`/talker/poll/${pid}`, { credentials: "include" });
+          const fresh = await rr.json();
+          pollCache.set(pid, fresh);
+  
+          bubbleEl.querySelector(".poll-wrap")?.remove();
+          renderPollInto(bubbleEl, fresh);
+        } catch (e) {
+          console.error(e);
+          statusEl.textContent = "Hlasovanie zlyhalo.";
+          setTimeout(() => (statusEl.textContent = ""), 3500);
+        } finally {
+          btn.disabled = false;
+          toggle.disabled = false;
+        }
+      });
+  
+      top.appendChild(btn);
+      top.appendChild(toggle);
+  
+      row.appendChild(top);
+      row.appendChild(votersBox);
+  
+      list.appendChild(row);
+    }
+  
+    wrap.appendChild(title);
+    wrap.appendChild(list);
+    bubbleEl.appendChild(wrap);
+  }
+  
+
+
   function renderMessage(m) {
     const mine = (m.user_id === myUserId);
     const row = document.createElement("div");
     row.className = "bubble-row " + (mine ? "me" : "them");
-
+  
     const bubble = document.createElement("div");
     bubble.className = "bubble";
-    bubble.innerHTML = escapeHtml(m.text || "");
-
+  
+    const type = (m.msg_type || "text");
+  
+    if (type === "video" && m.attachment_url) {
+      const cap = (m.text || "").trim();
+      bubble.innerHTML = `
+        <video controls playsinline style="width:100%; border-radius:12px; margin-bottom:6px;">
+          <source src="${escapeHtml(m.attachment_url)}" type="${escapeHtml(m.attachment_mime || "video/mp4")}">
+        </video>
+        ${cap ? `<div>${escapeHtml(cap)}</div>` : ""}
+      `;
+    }
+    
+    else if (type === "image" && m.attachment_url) {
+      const cap = (m.text || "").trim();
+      bubble.innerHTML = `
+        <img src="${escapeHtml(m.attachment_url)}"
+             alt="image"
+             style="width:100%; border-radius:12px; margin-bottom:6px; display:block;" />
+        ${cap ? `<div>${escapeHtml(cap)}</div>` : ""}
+      `;
+    }
+    
+    
+    else if (type === "poll" && m.poll_id) {
+      bubble.innerHTML = `<div style="opacity:.8">Načítavam anketu…</div>`;
+  
+      (async () => {
+        const pid = String(m.poll_id);
+        try {
+          let data = pollCache.get(pid);
+          if (!data) {
+            const r = await fetch(`/talker/poll/${pid}`, { credentials: "include" });
+            data = await r.json();
+            pollCache.set(pid, data);
+          }
+          bubble.innerHTML = "";
+          renderPollInto(bubble, data);
+        } catch (e) {
+          console.error(e);
+          bubble.innerHTML = `<div style="opacity:.8">Nepodarilo sa načítať anketu.</div>`;
+        }
+      })();
+    } else {
+      const text = (m.text || "");
+      const safe = escapeHtml(text);
+    
+      // zobraz čistý text
+      const textDiv = document.createElement("div");
+      textDiv.innerHTML = safe.replace(/\n/g, "<br/>");
+      bubble.appendChild(textDiv);
+    
+      // link previews
+      const urls = extractUrls(text).slice(0, 3); // limit (napr. 3)
+      (async () => {
+        for (const u of urls) {
+          // YouTube -> embed
+          if (isYoutubeUrl(u)) {
+            const iframe = createYoutubeEmbed(u);
+            if (iframe) bubble.appendChild(iframe);
+            continue;
+          }
+          // ostatné -> meta karta
+          try {
+            const meta = await fetchLinkMeta(u);
+            const card = renderLinkCard(meta);
+            bubble.appendChild(card);
+          } catch (e) {}
+        }
+      })();
+    }
+  
     const meta = document.createElement("div");
     meta.className = "meta";
-    const u = document.createElement("span");
-    u.className = "u";
-    u.textContent = m.username || "";
-    const t = document.createElement("span");
-    t.className = "t";
-    t.textContent = fmtTime(m.created_at);
-
-    meta.appendChild(u);
-    meta.appendChild(t);
-
+    meta.innerHTML = `<span class="u">${escapeHtml(m.username || "")}</span><span class="t">${escapeHtml(fmtTime(m.created_at))}</span>`;
+  
     bubble.appendChild(meta);
     row.appendChild(bubble);
-
     listEl.appendChild(row);
   }
+  
+  
 
   // ---------------------------
   // PUSH enable/disable (iOS WebPush / non-iOS FCM)
@@ -849,16 +1141,11 @@
     }
 
 
-    backBtn.addEventListener("click", () => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("embed") === "1" && window.history.length > 1) {
-        window.history.back();
-      }
-      if (params.get("embed") === "2") {
-        window.location.href = "../talker/rooms";
-      }
+    if (backBtn) {
+      backBtn.addEventListener("click", async () => {
+      window.location.href = "/talker";
     });
-
+    }
 
       pushBtn.addEventListener("click", async () => {
       pushBtn.disabled = true;
@@ -951,6 +1238,36 @@
   });
 
 
+
+  socket.on("poll_update", (p) => {
+    try {
+      const pid = String(p?.poll_id || "");
+      if (!pid) return;
+  
+      // update cache
+      const cached = pollCache.get(pid);
+      if (cached) {
+        cached.counts = p.counts || {};
+        pollCache.set(pid, cached);
+      }
+  
+      // update DOM (všetky poll karty na stránke)
+      const wraps = document.querySelectorAll(`.poll-wrap[data-poll-id="${pid}"]`);
+      wraps.forEach(wrap => {
+        const counts = p.counts || {};
+        wrap.querySelectorAll("button[data-option-id]").forEach(btn => {
+          const oid = btn.dataset.optionId;
+          const span = btn.querySelector(".poll-count");
+          if (span) span.textContent = String(Number(counts[String(oid)] || 0));
+        });
+      });
+    } catch (e) {}
+  });
+
+
+
+
+
   socket.on("talker_joined", (d) => {
     console.log("joined:", d.room_id);
     scrollToBottomHard();
@@ -996,7 +1313,7 @@
     const text = inputEl.value.trim();
     if (!text) return;
 
-    socket.emit("talker_send", { room_id: roomId, text });
+    socket.emit("talker_send", { room_id: roomId, msg_type: "text", text });
 
     inputEl.value = "";
     autoResize();
@@ -1036,6 +1353,184 @@
     if (document.visibilityState === "visible") refreshUnreadAndBadge();
   });
   */
+
+
+
+
+
+
+  // ---------------------------
+// video attach/upload -> send as msg_type="video"
+// ---------------------------
+// attach/upload -> send as msg_type="video" alebo "image"
+if (attachBtn && fileInput) {
+  attachBtn.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", async () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+
+    const isImg = (f.type || "").startsWith("image/");
+    const isVid = (f.type || "").startsWith("video/");
+
+    if (!isImg && !isVid) {
+      statusEl.textContent = "Nepodporovaný typ súboru.";
+      setTimeout(() => statusEl.textContent = "", 3000);
+      return;
+    }
+
+    attachBtn.disabled = true;
+    statusEl.textContent = isImg ? "Nahrávam obrázok…" : "Nahrávam video…";
+
+    try {
+      const fd = new FormData();
+      fd.append("file", f);
+
+      const r = await fetch(`/talker/rooms/${roomId}/upload`, {
+        method: "POST",
+        credentials: "include",
+        body: fd,
+      });
+
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.ok) throw new Error(j.detail || j.error || "upload_failed");
+
+      const msgType = isImg ? "image" : "video";
+
+      socket.emit("talker_send", {
+        room_id: roomId,
+        msg_type: msgType,
+        text: inputEl.value.trim(),     // caption (voliteľné)
+        attachment_url: j.url,
+        attachment_mime: j.mime,
+        attachment_size: j.size,
+      });
+
+      inputEl.value = "";
+      autoResize();
+      updateSendState();
+      scrollToBottomHard();
+
+    } catch (e) {
+      console.error(e);
+      statusEl.textContent = "Upload zlyhal.";
+      setTimeout(() => statusEl.textContent = "", 3500);
+    } finally {
+      attachBtn.disabled = false;
+      fileInput.value = "";
+    }
+  });
+}
+
+
+
+// ---------------------------
+// poll -> send as msg_type="poll"
+// ---------------------------
+if (pollBtn) {
+  pollBtn.addEventListener("click", () => {
+    const q = prompt("Otázka ankety:");
+    if (!q) return;
+
+    const raw = prompt("Možnosti (oddelené čiarkou):\nnapr. Áno, Nie, Neviem");
+    if (!raw) return;
+
+    const options = raw.split(",").map(x => x.trim()).filter(Boolean);
+    if (options.length < 2) {
+      alert("Anketa potrebuje aspoň 2 možnosti.");
+      return;
+    }
+
+    socket.emit("talker_send", {
+      room_id: roomId,
+      msg_type: "poll",
+      question: q.trim(),
+      options,
+      allow_multi: false
+    });
+  });
+}
+
+
+
+
+function extractUrls(text) {
+  const urlRegex = /(\b(?:https?:\/\/|www\.)[^\s<]+)\b/gi;
+  const m = String(text || "").match(urlRegex);
+  return m ? m.map(u => u.trim()) : [];
+}
+
+function isYoutubeUrl(url) {
+  return url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/i);
+}
+
+function createYoutubeEmbed(url) {
+  const yt = isYoutubeUrl(url);
+  if (!yt) return null;
+  const youtubeId = yt[1];
+  const iframe = document.createElement("iframe");
+  iframe.src = `https://www.youtube.com/embed/${youtubeId}`;
+  iframe.style.width = "100%";
+  iframe.style.aspectRatio = "16 / 9";
+  iframe.style.border = "0";
+  iframe.style.borderRadius = "12px";
+  iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+  iframe.allowFullscreen = true;
+  return iframe;
+}
+
+async function fetchLinkMeta(url) {
+  const completeUrl = url.startsWith("www.") ? `https://${url}` : url;
+  const r = await fetch("/talker/url-metadata", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: completeUrl }),
+  });
+  const j = await r.json().catch(() => ({}));
+  return { url: completeUrl, ...j };
+}
+
+function renderLinkCard(meta) {
+  const a = document.createElement("a");
+  a.href = meta.url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.style.display = "block";
+  a.style.marginTop = "8px";
+  a.style.padding = "10px";
+  a.style.borderRadius = "12px";
+  a.style.border = "1px solid rgba(255,255,255,12)";
+  a.style.background = "rgba(255,255,255,06)";
+  a.style.color = "inherit";
+  a.style.textDecoration = "none";
+
+  if (meta.image_url) {
+    const img = document.createElement("img");
+    img.src = meta.image_url;
+    img.alt = "";
+    img.style.width = "100%";
+    img.style.borderRadius = "10px";
+    img.style.marginBottom = "8px";
+    img.style.display = "block";
+    a.appendChild(img);
+  }
+
+  const t = document.createElement("div");
+  t.style.fontWeight = "800";
+  t.style.marginBottom = "4px";
+  t.textContent = meta.title || meta.url;
+
+  const d = document.createElement("div");
+  d.style.opacity = ".75";
+  d.style.fontSize = "12px";
+  d.textContent = meta.description || "";
+
+  a.appendChild(t);
+  if (meta.description) a.appendChild(d);
+
+  return a;
+}
 </script>
 
 {% endblock %}

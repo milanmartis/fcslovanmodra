@@ -1,16 +1,25 @@
 # app/talker/routes.py
 from __future__ import annotations
-
+import os
+import uuid
+from werkzeug.utils import secure_filename
+from app.utils import cdn_url
+from app.models import TalkRoom, TalkMessage, PushToken, Team, TalkPoll, TalkPollOption, TalkPollVote, User
+from sqlalchemy.orm import selectinload
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload
+# ✅ zober overené S3 helpery z posts (rovnaké nastavenie bucket/region/signature)
+from app.posts.routes import s3_client, s3_extra_args, BUCKET_NAME
 import json
 from typing import Any
-
+import requests
+from bs4 import BeautifulSoup
 from flask import Blueprint, render_template, request, jsonify, abort, current_app, Response
 from flask_socketio import join_room, emit
 from sqlalchemy.exc import IntegrityError
 from firebase_admin import messaging
 
 from app import db, socketio, csrf
-from app.models import TalkRoom, TalkMessage, PushToken, Team
 from .permissions import user_can_access_room, is_admin_user
 from app.firebase_client import init_firebase
 
@@ -30,6 +39,8 @@ except Exception:  # pragma: no cover
 from flask_login import current_user, login_required
 from functools import wraps
 
+def make_talker_key(room_id: int, filename: str) -> str:
+    return f"talker/rooms/{room_id}/media/{filename}"
 
 def roles_required(*roles):
     def deco(fn):
@@ -50,9 +61,112 @@ def roles_required(*roles):
 talker = Blueprint("talker", __name__, url_prefix="/talker")
 
 
+
+
+@talker.post("/url-metadata")
+@login_required
+@csrf.exempt
+def talker_url_metadata():
+    data = request.get_json(silent=True) or {}
+    url = (data.get("url") or "").strip()
+    if not url:
+        return jsonify(error="bad_url"), 400
+
+    # doplň https:// ak user poslal www...
+    if url.startswith("www."):
+        url = "https://" + url
+
+    try:
+        r = requests.get(url, timeout=4, headers={"User-Agent": "Mozilla/5.0"})
+        html = r.text or ""
+        soup = BeautifulSoup(html, "html.parser")
+
+        def og(name):
+            tag = soup.find("meta", property=name) or soup.find("meta", attrs={"name": name})
+            return (tag.get("content") if tag else "") or ""
+
+        title = og("og:title") or (soup.title.string.strip() if soup.title and soup.title.string else "")
+        desc = og("og:description") or og("description")
+        img = og("og:image")
+
+        return jsonify(title=title, description=desc, image_url=img), 200
+    except Exception as e:
+        return jsonify(error="fetch_failed", detail=str(e)), 200
+
+
+
+
+
 # ============================================================
 # SERVICE WORKER – DEPRECATED TALKER PATH + ROOT SW GENERATOR
 # ============================================================
+@talker.post("/rooms/<int:room_id>/upload")
+@login_required
+@csrf.exempt
+def upload_media(room_id: int):
+    room = TalkRoom.query.get_or_404(room_id)
+    if not user_can_access_room(room):
+        abort(403)
+
+    f = request.files.get("file")
+    if not f or not getattr(f, "filename", ""):
+        return jsonify(error="missing_file"), 400
+
+    # ✅ bezpečnosť: typy (rovnako ako si mal)
+    content_type = (f.mimetype or "").lower()
+    allowed = {"video/mp4", "video/webm", "video/quicktime"}
+    if not (content_type.startswith("video/") or content_type.startswith("image/")):
+        return jsonify(error="bad_mime", detail=content_type), 400
+
+    # ✅ veľkosť (bez načítania do pamäte)
+    f.stream.seek(0, os.SEEK_END)
+    size = f.stream.tell()
+    f.stream.seek(0)
+    if size > 50 * 1024 * 1024:
+        return jsonify(error="file_too_large"), 413
+
+    # filename ako v posts: uuid + pôvodný base + ext
+    original = secure_filename(f.filename)
+    base, ext = os.path.splitext(original)
+    ext = (ext or "").lower()
+
+    # fallback ext podľa MIME
+    if not ext:
+        if content_type == "video/webm":
+            ext = ".webm"
+        elif content_type == "video/quicktime":
+            ext = ".mov"
+        elif content_type in ("image/jpeg", "image/jpg"):
+            ext = ".jpg"
+        elif content_type == "image/png":
+            ext = ".png"
+        elif content_type == "image/webp":
+            ext = ".webp"
+        elif content_type == "image/gif":
+            ext = ".gif"
+        else:
+            ext = ".bin"
+
+    new_filename = f"{uuid.uuid4().hex}_{base}{ext}"
+    s3_key = make_talker_key(room_id, new_filename)
+
+    # ✅ upload ako v posts
+    try:
+        s3_client().upload_fileobj(
+            f.stream,
+            BUCKET_NAME,
+            s3_key,
+            ExtraArgs=s3_extra_args(f),
+        )
+
+        # ✅ vráť CDN URL (rovnako ako posts)
+        url = cdn_url(s3_key)
+
+        return jsonify(ok=True, url=url, mime=content_type, size=size, key=s3_key), 201
+    except Exception as e:
+        current_app.logger.exception("S3 upload failed")
+        return jsonify(error="s3_upload_failed", detail=str(e)), 500
+
 
 @talker.get("/firebase-messaging-sw.js")
 def _deprecated_sw_path():
@@ -493,10 +607,12 @@ def load_messages(room_id: int):
         try:
             after_id_int = int(after_id)
             msgs = (
-                q.filter(TalkMessage.id > after_id_int)
-                 .order_by(TalkMessage.id.asc())
-                 .limit(limit)
-                 .all()
+                TalkMessage.query
+                .filter_by(room_id=room_id)
+                .options(selectinload(TalkMessage.author), selectinload(TalkMessage.poll))
+                .order_by(TalkMessage.id.asc())
+                .limit(200)
+                .all()
             )
         except Exception:
             msgs = q.order_by(TalkMessage.id.desc()).limit(limit).all()
@@ -508,7 +624,16 @@ def load_messages(room_id: int):
     return jsonify([
         {
             "id": m.id,
+            "room_id": m.room_id,
+            "msg_type": getattr(m, "msg_type", "text"),
             "text": m.text,
+            "payload_json": getattr(m, "payload_json", None),
+            "attachment_url": getattr(m, "attachment_url", None),
+            "attachment_mime": getattr(m, "attachment_mime", None),
+            "attachment_size": getattr(m, "attachment_size", None),
+
+            "poll_id": (m.poll.id if getattr(m, "poll", None) else None),
+
             "user_id": m.user_id,
             "username": m.author.username if getattr(m, "author", None) else "",
             "created_at": m.created_at.isoformat() if getattr(m, "created_at", None) else None,
@@ -688,9 +813,8 @@ def on_send(data: dict[str, Any]):
         emit("talker_error", {"error": "bad_room_id"})
         return
 
+    msg_type = ((data or {}).get("msg_type") or "text").strip().lower()
     text = ((data or {}).get("text") or "").strip()
-    if not text:
-        return
 
     room = TalkRoom.query.get(room_id)
     if not room or not user_can_access_room(room):
@@ -698,27 +822,106 @@ def on_send(data: dict[str, Any]):
         return
 
     username = getattr(current_user, "username", None) or getattr(current_user, "email", "user")
-    msg = TalkMessage(room_id=room.id, user_id=current_user.id, text=text)
 
+    # ✅ vytvor message podľa typu
+    msg = TalkMessage(room_id=room.id, user_id=current_user.id, msg_type=msg_type)
+
+    # držíme poll entitu, aby sme ju vedeli poslať v emite
+    poll = None
+
+    # --- validácia + naplnenie msg podľa typu ---
+    if msg_type == "text":
+        if not text:
+            return
+        msg.text = text
+
+    elif msg_type in ("video", "image"):
+        msg.text = (text or "").strip() or None
+        msg.attachment_url = (data or {}).get("attachment_url")
+        msg.attachment_mime = (data or {}).get("attachment_mime")
+        msg.attachment_size = int((data or {}).get("attachment_size") or 0)
+
+        if not msg.attachment_url or not msg.attachment_mime:
+            emit("talker_error", {"error": "bad_attachment"})
+            return
+
+
+        # msg.text = text or None
+        # msg.attachment_url = url
+        # msg.attachment_mime = mime or None
+        # msg.attachment_size = size or None
+
+    elif msg_type == "poll":
+        question = ((data or {}).get("question") or "").strip()
+        options = (data or {}).get("options") or []
+        allow_multi = bool((data or {}).get("allow_multi") or False)
+
+        if not question or not isinstance(options, list):
+            emit("talker_error", {"error": "bad_poll"})
+            return
+
+        clean_opts = [str(x).strip() for x in options if str(x).strip()]
+        if len(clean_opts) < 2:
+            emit("talker_error", {"error": "bad_poll"})
+            return
+
+        msg.text = None
+        msg.payload_json = json.dumps(
+            {"question": question, "allow_multi": allow_multi},
+            ensure_ascii=False
+        )
+
+    else:
+        emit("talker_error", {"error": "unsupported_msg_type"})
+        return
+
+    # ✅ jedna transakcia: add -> flush -> (poll create) -> commit -> emit
     try:
         db.session.add(msg)
+        db.session.flush()  # ✅ msg.id existuje ešte pred commitom
+
+        if msg_type == "poll":
+            question = ((data or {}).get("question") or "").strip()
+            options = (data or {}).get("options") or []
+            allow_multi = bool((data or {}).get("allow_multi") or False)
+
+            clean_opts = [str(x).strip() for x in options if str(x).strip()]
+            if len(clean_opts) < 2:
+                raise ValueError("poll_needs_2_options")
+
+            poll = TalkPoll(message_id=msg.id, question=question, allow_multi=allow_multi)
+            db.session.add(poll)
+            db.session.flush()  # ✅ poll.id
+
+            for i, opt_text in enumerate(clean_opts[:10]):  # max 10 možností
+                db.session.add(
+                    TalkPollOption(
+                        poll_id=poll.id,
+                        text=opt_text,
+                        order_index=i
+                    )
+                )
+
         db.session.commit()
-    except IntegrityError as e:
-        db.session.rollback()
-        emit("talker_error", {"error": "db_integrity_error", "detail": str(e.orig)})
-        return
+
     except Exception as e:
         db.session.rollback()
         emit("talker_error", {"error": "db_error", "detail": str(e)})
         return
 
-    # realtime správa pre online userov v room (vrátane odosielateľa)
+    # ✅ emit až po commite (DB je konzistentná)
     emit(
         "talker_message",
         {
             "id": msg.id,
             "room_id": room.id,
+            "msg_type": msg.msg_type,
             "text": msg.text,
+            "payload_json": msg.payload_json,
+            "attachment_url": msg.attachment_url,
+            "attachment_mime": msg.attachment_mime,
+            "attachment_size": msg.attachment_size,
+            "poll_id": poll.id if poll else None,  # ✅ UI vie nájsť poll
             "user_id": current_user.id,
             "username": username,
             "created_at": msg.created_at.isoformat() if getattr(msg, "created_at", None) else None,
@@ -727,40 +930,126 @@ def on_send(data: dict[str, Any]):
         include_self=True,
     )
 
-    # ✅ recipients (bez odosielateľa)
-    recipient_user_ids = get_recipients_for_room(room)
 
-    # ✅ realtime badge+dropdown update (osobná room user:<id>)
-    try:
-        for uid in recipient_user_ids:
-            payload = _build_unread_payload_for_user(int(uid))
-            socketio.emit("unread_update", payload, room=f"user:{int(uid)}", namespace="/")
-    except Exception:
-        pass
+@talker.get("/poll/<int:poll_id>")
+@login_required
+def poll_detail(poll_id: int):
+    poll = TalkPoll.query.get_or_404(poll_id)
 
-    # ✅ push pre offline userov (len recipienti)
-    try:
-        preview = f"{username}: {msg.text[:120]}"
-        data_payload = {
-            "room_id": room.id,
-            "roomId": room.id,
-            "type": "talker_message",
-            "url": f"/talker/rooms/{room.id}?embed=1",
-        }
-        if recipient_user_ids:
-            send_push_to_users(
-                user_ids=recipient_user_ids,
-                title=room.name,
-                body=preview,
-                data=data_payload,
-            )
-    except Exception as e:
-        print("push error:", e)
+    msg = TalkMessage.query.get_or_404(poll.message_id)
+    room = TalkRoom.query.get_or_404(msg.room_id)
+    if not user_can_access_room(room):
+        abort(403)
 
+    opts = (TalkPollOption.query
+            .filter_by(poll_id=poll.id)
+            .order_by(TalkPollOption.order_index.asc())
+            .all())
+
+    # counts
+    counts_rows = (
+        db.session.query(TalkPollVote.option_id, func.count(TalkPollVote.id))
+        .filter(TalkPollVote.poll_id == poll.id)
+        .group_by(TalkPollVote.option_id)
+        .all()
+    )
+    counts = {str(oid): int(c) for oid, c in counts_rows}
+
+    # my votes
+    my_votes = [
+        v.option_id for v in TalkPollVote.query
+        .filter_by(poll_id=poll.id, user_id=current_user.id)
+        .all()
+    ]
+
+    # ✅ kto ako hlasoval (zoznam hlasujúcich pri každej možnosti)
+    # (User model sa volá "User", relationship nemáš, tak joinneme cez user_id)
+    votes_rows = (
+        db.session.query(TalkPollVote.option_id, User.username)
+        .join(User, User.id == TalkPollVote.user_id)
+        .filter(TalkPollVote.poll_id == poll.id)
+        .order_by(TalkPollVote.id.asc())
+        .all()
+    )
+    voters = {}
+    for option_id, uname in votes_rows:
+        voters.setdefault(str(option_id), []).append(uname or "")
+
+    return jsonify({
+        "poll_id": poll.id,
+        "question": poll.question,
+        "allow_multi": poll.allow_multi,
+        "options": [{"id": o.id, "text": o.text} for o in opts],
+        "counts": counts,
+        "my_votes": my_votes,
+        "voters": voters,   # ✅ toto chceš
+    })
 
 # -------------------------
 # HELPERS
 # -------------------------
+@talker.post("/poll/<int:poll_id>/vote")
+@login_required
+@csrf.exempt
+def poll_vote(poll_id: int):
+    poll = TalkPoll.query.get_or_404(poll_id)
+
+    msg = TalkMessage.query.get_or_404(poll.message_id)
+    room = TalkRoom.query.get_or_404(msg.room_id)
+    if not user_can_access_room(room):
+        abort(403)
+
+    data = request.get_json(silent=True) or {}
+    option_id = int(data.get("option_id") or 0)
+    opt = TalkPollOption.query.filter_by(id=option_id, poll_id=poll.id).first()
+    if not opt:
+        return jsonify(error="bad_option"), 400
+
+    # ✅ NOVÉ: pri allow_multi=False smie mať user len 1 hlas v ankete
+    if not poll.allow_multi:
+        existing = (TalkPollVote.query
+            .filter_by(poll_id=poll.id, user_id=current_user.id)
+            .all()
+        )
+
+        # ak už hlasuje za tú istú možnosť, nič nemeň
+        if any(v.option_id == opt.id for v in existing):
+            pass
+        else:
+            # zmaž jeho predchádzajúci hlas (ak mal)
+            for v in existing:
+                db.session.delete(v)
+            # a vlož nový
+            db.session.add(TalkPollVote(poll_id=poll.id, option_id=opt.id, user_id=current_user.id))
+
+        db.session.commit()
+
+    else:
+        # pôvodné správanie: môže hlasovať za viac možností,
+        # ale nie duplicitne za tú istú
+        v = TalkPollVote(poll_id=poll.id, option_id=opt.id, user_id=current_user.id)
+        try:
+            db.session.add(v)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            pass
+
+    # live update counts
+    counts = (
+        db.session.query(TalkPollOption.id, db.func.count(TalkPollVote.id))
+        .outerjoin(TalkPollVote, TalkPollVote.option_id == TalkPollOption.id)
+        .filter(TalkPollOption.poll_id == poll.id)
+        .group_by(TalkPollOption.id)
+        .all()
+    )
+    payload = {str(oid): int(c) for oid, c in counts}
+
+    socketio.emit("poll_update", {"poll_id": poll.id, "counts": payload}, room=str(room.id), namespace="/")
+    return jsonify(ok=True, counts=payload), 200
+
+
+
 
 def get_recipients_for_room(room: TalkRoom) -> list[int]:
     me = getattr(current_user, "id", None)

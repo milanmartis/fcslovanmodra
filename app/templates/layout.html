@@ -70,7 +70,10 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
  
   
   <style>
-    
+    .club-avatar-btn{
+      margin-top: 0px;
+    }
+
     /* Moderný tenký scrollbar len pre kalendár modal */
 #calenadrModal .modal-content,
 #calenadrModal .modal-body {
@@ -110,8 +113,10 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
   scrollbar-gutter: stable both-edges;
 }
 
+
     /* FULLSCREEN modal na mobile + scroll */
     @media (max-width: 768px) {
+
       #calenadrModal .modal-dialog {
         width: 100vw !important;
         max-width: 100vw !important;

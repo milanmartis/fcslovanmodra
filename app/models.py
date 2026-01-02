@@ -206,7 +206,13 @@ class TalkMessage(db.Model):
     room_id = db.Column(db.Integer, db.ForeignKey("talk_room.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
-    text = db.Column(db.Text, nullable=False)
+    msg_type = db.Column(db.String(20), nullable=False, default="text", server_default="text")
+    text = db.Column(db.Text, nullable=True)  # pri videu/ankete môže byť null
+    payload_json = db.Column(db.Text, nullable=True)  # JSON string (poll data, meta, …)
+
+    attachment_url = db.Column(db.String(900), nullable=True)   # video/file URL (S3 alebo local)
+    attachment_mime = db.Column(db.String(120), nullable=True)  # "video/mp4"
+    attachment_size = db.Column(db.Integer, nullable=True)      # bytes
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
     room = db.relationship("TalkRoom", backref=db.backref("messages", lazy="dynamic", cascade="all, delete-orphan"))
@@ -214,6 +220,45 @@ class TalkMessage(db.Model):
 
     def __repr__(self):
         return f"<TalkMessage {self.id} room={self.room_id} user={self.user_id}>"
+
+
+
+class TalkPoll(db.Model):
+    __tablename__ = "talk_poll"
+    id = db.Column(db.Integer, primary_key=True)
+
+    message_id = db.Column(db.Integer, db.ForeignKey("talk_message.id"), nullable=False, unique=True)
+    question = db.Column(db.String(300), nullable=False)
+    allow_multi = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    message = db.relationship("TalkMessage", backref=db.backref("poll", uselist=False, cascade="all, delete-orphan"))
+
+
+class TalkPollOption(db.Model):
+    __tablename__ = "talk_poll_option"
+    id = db.Column(db.Integer, primary_key=True)
+
+    poll_id = db.Column(db.Integer, db.ForeignKey("talk_poll.id"), nullable=False, index=True)
+    text = db.Column(db.String(250), nullable=False)
+    order_index = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+
+    poll = db.relationship("TalkPoll", backref=db.backref("options", cascade="all, delete-orphan", order_by="TalkPollOption.order_index"))
+
+
+class TalkPollVote(db.Model):
+    __tablename__ = "talk_poll_vote"
+    id = db.Column(db.Integer, primary_key=True)
+
+    poll_id = db.Column(db.Integer, db.ForeignKey("talk_poll.id"), nullable=False, index=True)
+    option_id = db.Column(db.Integer, db.ForeignKey("talk_poll_option.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        db.UniqueConstraint("poll_id", "user_id", "option_id", name="uq_poll_user_option"),
+    )
 
 
 class WebPushSubscription(db.Model):
