@@ -1,6 +1,9 @@
 {% extends "layout.html" %}
 {% block content %}
 <style>
+  .post-title-image{
+    height: 320px;
+  }
   .mr-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -59,19 +62,58 @@
     z-index: 1;
   }
 
-  .mr-media img {
+  .mr-media img,
+  .mr-media video{
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
-    transform: scale(1);
-    transition: transform .35s ease;
-    will-change: transform;
   }
-
-  .mr-card:hover .mr-media img {
+  
+  .mr-video{
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .mr-play{
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none; /* klik ide na <a> */
+  }
+  
+  .mr-play__icon{
+    width: 56px;
+    height: 56px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.55);
+    border: 1px solid rgba(255,255,255,.22);
+    box-shadow: 0 10px 28px rgba(0,0,0,.45);
+    position: relative;
+    backdrop-filter: blur(6px);
+  }
+  .mr-play__icon::before{
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-40%, -50%);
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 16px solid rgba(255,255,255,.92);
+  }
+  
+  /* hover zoom aj pre video */
+  .mr-card:hover .mr-media img,
+  .mr-card:hover .mr-media video{
     transform: scale(1.05);
+    transition: transform .35s ease;
   }
+  
 
   .mr-body {
     padding: 12px 14px 14px;
@@ -429,12 +471,28 @@
         {% endif %}
 
         {% if cover %}
-        {% set cover_url = cdn_url(make_gallery_key(post.id, cover.image_file2)) %}
+          {% set cover_url = cdn_url(make_gallery_key(post.id, cover.image_file2)) %}
+          {% set ext = (cover.image_file2 or '').rsplit('.', 1)[-1].lower() %}
+          {% set is_video = (ext == 'mp4') %}
+
           <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
-            <img class="post-title-image" loading="lazy" decoding="async" fetchpriority="low"
-                 src="{{ cover_url }}" alt="{{ post.title }}">
+            {% if is_video %}
+              <div class="cover-video">
+                <video class="post-title-image" preload="metadata" playsinline muted
+                       style="width:100%; border-radius:12px; background:#000;">
+                  <source src="{{ cover_url }}" type="video/mp4">
+                </video>
+                <span class="cover-play" aria-hidden="true">
+                  <span class="cover-play__icon"></span>
+                </span>
+              </div>
+            {% else %}
+              <img class="post-title-image" loading="lazy" decoding="async"
+                   src="{{ cover_url }}" alt="{{ post.title }}">
+            {% endif %}
           </a>
         {% endif %}
+
 
         <div class="article-metadata">
           {% for cat in category %}
@@ -519,10 +577,25 @@
       <div class="post-panel is-active" data-panel="most">
         <div class="mr-grid">
           {% for p in most_read %}
-            {% set cover_url = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
+            {% set cov = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
             <a class="mr-card" href="{{ url_for('posts.post', post_id=p.id) }}" aria-label="{{ p.title }}">
               <div class="mr-media">
-                {% if cover_url %}<img src="{{ cover_url }}" alt="{{ p.title }}">{% else %}<div class="mr-noimg">Článok</div>{% endif %}
+                {% if cov %}
+                {% if cov.type == "video" %}
+                <div class="mr-video">
+                  <video preload="metadata" playsinline muted>
+                    <source src="{{ cov.url }}" type="video/mp4">
+                  </video>
+                  <span class="mr-play" aria-hidden="true">
+                    <span class="mr-play__icon"></span>
+                  </span>
+                </div>
+              {% else %}
+                <img src="{{ cov.url }}" alt="{{ p.title }}">
+              {% endif %}
+                {% else %}
+                  <div class="mr-noimg">Článok</div>
+                {% endif %}
               </div>
               <div class="mr-body">
                 <div class="mr-meta"><span>{{ (p.published_at or p.date_posted).strftime('%d. %m. %Y') }}</span></div>
@@ -538,10 +611,25 @@
       <div class="post-panel {% if not has_most %}is-active{% endif %}" data-panel="latest">
         <div class="mr-grid">
           {% for p in latest_posts %}
-            {% set cover_url = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
+            {% set cov = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
             <a class="mr-card" href="{{ url_for('posts.post', post_id=p.id) }}" aria-label="{{ p.title }}">
               <div class="mr-media">
-                {% if cover_url %}<img src="{{ cover_url }}" alt="{{ p.title }}">{% else %}<div class="mr-noimg">Článok</div>{% endif %}
+                {% if cov %}
+                {% if cov.type == "video" %}
+                <div class="mr-video">
+                  <video preload="metadata" playsinline muted>
+                    <source src="{{ cov.url }}" type="video/mp4">
+                  </video>
+                  <span class="mr-play" aria-hidden="true">
+                    <span class="mr-play__icon"></span>
+                  </span>
+                </div>
+              {% else %}
+                <img src="{{ cov.url }}" alt="{{ p.title }}">
+              {% endif %}
+                {% else %}
+                  <div class="mr-noimg">Článok</div>
+                {% endif %}
               </div>
               <div class="mr-body">
                 <div class="mr-meta"><span>{{ (p.published_at or p.date_posted).strftime('%d. %m. %Y') }}</span></div>
@@ -704,6 +792,16 @@
     } catch(e){}
   })();
 </script>
-
+<script>
+  (function(){
+    const canHover = window.matchMedia && window.matchMedia("(hover:hover)").matches;
+    if (!canHover) return;
+  
+    document.querySelectorAll(".mr-media video").forEach(v => {
+      v.addEventListener("mouseenter", () => { try { v.play(); } catch(e) {} });
+      v.addEventListener("mouseleave", () => { try { v.pause(); v.currentTime = 0; } catch(e) {} });
+    });
+  })();
+  </script>
 
 {% endblock content %}

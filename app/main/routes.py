@@ -10,7 +10,7 @@ from app.aws_utils import make_sponsor_key, s3_presign
 from app import db
 from app.models import Post, Category, Team, Event, ScoreTable, Sponsor, PostGallery
 from app.utils import cdn_url
-
+import os
 from flask_login import login_user, current_user, logout_user, login_required
 from functools import wraps
 from flask import abort
@@ -272,7 +272,7 @@ def home():
     category = db.session.query(Category).order_by(Category.name.asc()).all()
 
     # =====================================================
-    # 🔥 NAJČÍTANEJŠIE – PRE TVOJ EXISTUJÚCI BLOK
+    # 🔥 NAJČÍTANEJŠIE
     # =====================================================
     most_read = (
         Post.query
@@ -281,33 +281,59 @@ def home():
         .all()
     )
 
-    # ===== Cover obrázky pre Najčítanejšie =====
-    most_read_ids = [p.id for p in most_read]
-    most_read_covers = {}
-
-    if most_read_ids:
-        cover_rows = (
-            PostGallery.query
-            .filter(PostGallery.post_id.in_(most_read_ids))
-            .order_by(PostGallery.post_id.asc(), PostGallery.orderz.asc())
-            .all()
-        )
-
-        # prvý obrázok podľa orderz = titulný
-        for g in cover_rows:
-            if g.post_id not in most_read_covers and g.image_file2:
-                # ✅ CloudFront URL (bez presign)
-                most_read_covers[g.post_id] = cdn_url(
-                    make_gallery_key(g.post_id, g.image_file2)
-                )
-
-    # (voliteľné – pripravené do budúcna)
+    # =====================================================
+    # 🆕 NAJNOVŠIE (sidebar/grid)
+    # =====================================================
     latest_posts = (
         Post.query
         .order_by(Post.date_posted.desc())
         .limit(6)
         .all()
     )
+
+    # =====================================================
+    # ✅ COVER MEDIA (image/video) cez CDN pre všetko, čo sa zobrazuje na home
+    # - most_read
+    # - latest_posts
+    # - posts (aktuálna stránka paginácie)
+    # =====================================================
+    cover_ids = set()
+
+    # most_read + latest
+    cover_ids.update([p.id for p in most_read])
+    cover_ids.update([p.id for p in latest_posts])
+
+    # aktuálne zobrazené posty na stránke
+    try:
+        cover_ids.update([p.id for p in posts.items])
+    except Exception:
+        pass
+
+    covers = {}
+
+    if cover_ids:
+        cover_rows = (
+            PostGallery.query
+            .filter(PostGallery.post_id.in_(list(cover_ids)))
+            .order_by(PostGallery.post_id.asc(), PostGallery.orderz.asc())
+            .all()
+        )
+
+        for g in cover_rows:
+            if g.post_id in covers:
+                continue
+            if not g.image_file2:
+                continue
+
+            # typ: preferuj DB stĺpec media_type (ak existuje), fallback podľa prípony
+            mt = (getattr(g, "media_type", None) or "").lower()
+            ext = (os.path.splitext(g.image_file2 or "")[1] or "").lower()
+            is_video = (mt == "video") or (ext in (".mp4", ".webm", ".mov"))
+
+            covers[g.post_id] = {
+                "url": cdn_url(make_gallery_key(g.post_id, g.image_file2)),
+                "type": "video" if is_video else "image",
+            }
 
     return render_template(
         "home.html",
@@ -325,10 +351,14 @@ def home():
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table(),
+
         most_read=most_read,
-        most_read_covers=most_read_covers,
-        latest_posts=latest_posts,  # zatiaľ nepoužívaš, ale je ready
+        latest_posts=latest_posts,
+
+        # ✅ jedna mapa coverov pre všetko (najčítanejšie, najnovšie aj list)
+        most_read_covers=covers,   # môžeš premenovať na covers, ak chceš
     )
+
 
 
 @main.route("/oklube")

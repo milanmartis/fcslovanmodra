@@ -443,7 +443,14 @@ def post(post_id):
 
         for g in cover_rows:
             if g.post_id not in most_read_covers and g.image_file2:
-                most_read_covers[g.post_id] = cdn_url(make_gallery_key(g.post_id, g.image_file2))
+                mt = (getattr(g, "media_type", None) or "").lower()  # "video" / "image"
+                ext = (os.path.splitext(g.image_file2 or "")[1] or "").lower()
+
+                is_video = (mt == "video") or (ext in (".mp4", ".webm", ".mov"))
+                most_read_covers[g.post_id] = {
+                    "url": cdn_url(make_gallery_key(g.post_id, g.image_file2)),
+                    "type": "video" if is_video else "image",
+                }
 
     # (voliteľné – pripravené do budúcna)
     latest_posts = (
@@ -453,6 +460,17 @@ def post(post_id):
         .limit(6)
         .all()
     )
+    
+    title_media = None
+    if title_image and title_image.image_file2:
+        ext = (os.path.splitext(title_image.image_file2 or "")[1] or "").lower()
+        media_type = "video" if ext == ".mp4" else "image"
+
+        title_media = {
+            "type": media_type,
+            "url": title_image_url,   # už máš vyrátané vyššie
+            "fallback": None,         # ak nemáš fallback starú URL, nechaj None
+        }
 
     return render_template(
         "posts/post.html",
@@ -462,7 +480,7 @@ def post(post_id):
         post=post_obj,
         galleries=galleries_with_urls,
         category=category,
-
+        title_media=title_media,
         most_read=most_read,
         most_read_covers=most_read_covers,
         latest_posts=latest_posts,

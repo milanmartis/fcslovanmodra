@@ -327,6 +327,59 @@
     min-height: 18px;
   }
 
+
+/* --- Fullscreen image viewer --- */
+.imgfs{
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(0,0,0,.88);
+  backdrop-filter: blur(6px);
+}
+.imgfs.on{ display:flex; }
+
+.imgfs__img{
+  max-width: min(1100px, 100%);
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 22px 70px rgba(0,0,0,.6);
+  object-fit: contain;
+  background: rgba(255,255,255,.02);
+}
+
+.imgfs__close{
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  height: 42px;
+  min-width: 42px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.95);
+  font-weight: 900;
+  cursor: pointer;
+}
+.imgfs__hint{
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,.7);
+  user-select: none;
+}
+
+body.lock-scroll{ overflow: hidden; }
+
+
+
   @media (max-width: 520px){
     .talker-page{ padding: 8px; }
     .talker-shell{ height: calc((var(--vh) * 100) - 70px); }
@@ -438,7 +491,12 @@
 
   </div>
 </div>
-
+<!-- Fullscreen image overlay -->
+<div id="imgFs" class="imgfs" aria-hidden="true">
+  <button id="imgFsClose" class="imgfs__close" type="button" aria-label="Close">✕</button>
+  <img id="imgFsImg" class="imgfs__img" alt="image preview" />
+  <div class="imgfs__hint">ESC / klik mimo = zavrieť</div>
+</div>
 <!-- Socket.IO -->
 <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
@@ -840,6 +898,8 @@
       bubble.innerHTML = `
         <img src="${escapeHtml(m.attachment_url)}"
              alt="image"
+             class="js-imgfs"
+             data-fullsrc="${escapeHtml(m.attachment_url)}"
              style="width:100%; border-radius:12px; margin-bottom:6px; display:block;" />
         ${cap ? `<div>${escapeHtml(cap)}</div>` : ""}
       `;
@@ -1733,6 +1793,60 @@ function renderLinkCard(meta) {
 
   return a;
 }
+</script>
+<script>
+  // ---------------------------
+// Fullscreen image viewer
+// ---------------------------
+const imgFs = document.getElementById("imgFs");
+const imgFsImg = document.getElementById("imgFsImg");
+const imgFsClose = document.getElementById("imgFsClose");
+
+function openImgFs(src) {
+  if (!src || !imgFs || !imgFsImg) return;
+  imgFsImg.src = src;
+  imgFs.classList.add("on");
+  imgFs.setAttribute("aria-hidden", "false");
+  document.body.classList.add("lock-scroll");
+}
+
+function closeImgFs() {
+  if (!imgFs || !imgFsImg) return;
+  imgFs.classList.remove("on");
+  imgFs.setAttribute("aria-hidden", "true");
+  // uvoľni src (aby sa video-like veci nepodržali v pamäti)
+  imgFsImg.src = "";
+  document.body.classList.remove("lock-scroll");
+}
+
+// Delegácia: funguje aj na nové správy bez ďalších listenerov
+document.addEventListener("click", (e) => {
+  const t = e.target;
+
+  // klik na obrázok v správe
+  const img = t && t.closest && t.closest("img.js-imgfs");
+  if (img) {
+    e.preventDefault();
+    e.stopPropagation();
+    openImgFs(img.dataset.fullsrc || img.src);
+    return;
+  }
+
+  // klik mimo obrázka v overlay
+  if (imgFs && imgFs.classList.contains("on")) {
+    if (t === imgFs) closeImgFs();
+  }
+});
+
+imgFsClose && imgFsClose.addEventListener("click", (e) => {
+  e.preventDefault();
+  closeImgFs();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && imgFs && imgFs.classList.contains("on")) closeImgFs();
+});
+
 </script>
 
 {% endblock %}
