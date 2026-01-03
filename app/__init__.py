@@ -167,25 +167,25 @@ def create_app(config_class=None):
     # ------------------------------------------------------------
     # ❌ /service-worker.js NEPOUŽÍVAJ ako druhý SW (konflikt s push SW)
     # ------------------------------------------------------------
-    @app.get("/service-worker.js")
-    def service_worker_js():
-        """
-        DEPRECATED:
-        Ak máš niekde starý JS, ktorý registeruje '/service-worker.js',
-        tak to na iOS/Chrome vie rozbiť push, lebo root scope obsadí iný SW.
-        Vrátime 410, aby sa klient odlepil od starej registrácie.
-        """
-        return Response(
-            "/* DEPRECATED – use /firebase-messaging-sw.js */",
-            status=410,
-            mimetype="application/javascript; charset=utf-8",
-            headers={
-                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-                "Pragma": "no-cache",
-                "Expires": "0",
-                "Service-Worker-Allowed": "/",
-            },
-        )
+    # @app.get("/service-worker.js")
+    # def service_worker_js():
+    #     """
+    #     DEPRECATED:
+    #     Ak máš niekde starý JS, ktorý registeruje '/service-worker.js',
+    #     tak to na iOS/Chrome vie rozbiť push, lebo root scope obsadí iný SW.
+    #     Vrátime 410, aby sa klient odlepil od starej registrácie.
+    #     """
+    #     return Response(
+    #         "/* DEPRECATED – use /firebase-messaging-sw.js */",
+    #         status=410,
+    #         mimetype="application/javascript; charset=utf-8",
+    #         headers={
+    #             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    #             "Pragma": "no-cache",
+    #             "Expires": "0",
+    #             "Service-Worker-Allowed": "/",
+    #         },
+    #     )
 
     @app.get("/manifest.webmanifest")
     def manifest_webmanifest():

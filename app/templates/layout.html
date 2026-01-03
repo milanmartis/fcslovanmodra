@@ -839,7 +839,7 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
         (async function () {
           try {
             const csrf = (document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")) || "";
-            const r = await fetch("/talker/update-unread-count/0", {
+            const r = await fetch("/talker/unread/menu", {
               method: "GET",
               credentials: "same-origin"
             });
@@ -857,23 +857,35 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
       </script>
       
       <script>
-      /**
-       * Socket.IO realtime unread updates
-       */
-       (function () {
-        const socket = window.__SOCKET || io("/", {
-          transports: ["websocket", "polling"],
-          withCredentials: true,
-        });
-        window.__SOCKET = socket;
-        window.__UNREAD_SOCKET = socket; // alias, nech ti nič nerozbije
-
-        socket.on("connect", () => console.log("SOCKET CONNECT", socket.id));
-socket.on("disconnect", (r) => console.log("SOCKET DISCONNECT", r));
-      })();
-
-
-    </script>
+        /**
+         * Socket.IO realtime unread updates (GLOBAL)
+         */
+        (function () {
+          if (!window.io) return;
+        
+          // ak to chceš len pre prihlásených
+          if (window.__IS_AUTH !== true) return;
+        
+          const socket = window.__SOCKET || io("/", {
+            transports: ["websocket", "polling"],
+            withCredentials: true,
+          });
+          window.__SOCKET = socket;
+          window.__UNREAD_SOCKET = socket;
+        
+          socket.on("connect", () => console.log("SOCKET CONNECT", socket.id));
+          socket.on("disconnect", (r) => console.log("SOCKET DISCONNECT", r));
+        
+          // ✅ TOTO TAM MUSÍ BYŤ
+          socket.on("unread_update", (payload) => {
+            try {
+              const total = Number(payload?.total_unread_count || 0);
+              window.setBadge?.(total);
+              window.renderUnreadList?.(payload?.unread_counts || []);
+            } catch (e) {}
+          });
+        })();
+        </script>
     <script>
       async function refreshUnreadAndBadge() {
         try {
