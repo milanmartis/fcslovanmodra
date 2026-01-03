@@ -34,30 +34,48 @@
                 </div>
                 <div class="form-group">
                     {{ form.password.label(class="form-control-label") }}
+                  
+                    <div style="position:relative;">
+                      {{ form.password(class="form-control form-control-lg", id="reg_password", autocomplete="new-password") }}
+                      <button type="button" id="toggleRegPwd"
+                              style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                                     border:0; background:transparent; opacity:.7; cursor:pointer;">
+                        👁
+                      </button>
+                    </div>
+                  
+                    <div id="pwdHelp" style="margin-top:8px; font-size:13px; opacity:.85;">
+                      <div id="pwdRuleLen">• min. 8 znakov</div>
+                      <div id="pwdRuleLower">• aspoň 1 malé písmeno</div>
+                      <div id="pwdRuleUpper">• aspoň 1 veľké písmeno</div>
+                      <div id="pwdRuleNum">• aspoň 1 číslo</div>
+                      <div id="pwdRuleSpec">• aspoň 1 špeciálny znak</div>
+                    </div>
+                  
                     {% if form.password.errors %}
-                        {{ form.password(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.password.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.password(class="form-control form-control-lg") }}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.password.errors %}<span>{{ error }}</span>{% endfor %}
+                      </div>
                     {% endif %}
-                </div>
-                <div class="form-group">
+                  </div>
+                  
+                  <div class="form-group">
                     {{ form.confirm_password.label(class="form-control-label") }}
+                    <div style="position:relative;">
+                      {{ form.confirm_password(class="form-control form-control-lg", id="reg_confirm_password", autocomplete="new-password") }}
+                      <button type="button" id="toggleRegPwd2"
+                              style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                                     border:0; background:transparent; opacity:.7; cursor:pointer;">
+                        👁
+                      </button>
+                    </div>
+                  
                     {% if form.confirm_password.errors %}
-                        {{ form.confirm_password(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.confirm_password.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.confirm_password(class="form-control form-control-lg") }}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.confirm_password.errors %}<span>{{ error }}</span>{% endfor %}
+                      </div>
                     {% endif %}
-                </div>
+                  </div>
 
             </fieldset>
             <br>
@@ -178,5 +196,70 @@
     
     </div>
     {% endif %}
+
+
+    <script>
+        (function(){
+          const pwd = document.getElementById("reg_password");
+          const pwd2 = document.getElementById("reg_confirm_password");
+          if (!pwd) return;
+        
+          const rules = {
+            len: document.getElementById("pwdRuleLen"),
+            lower: document.getElementById("pwdRuleLower"),
+            upper: document.getElementById("pwdRuleUpper"),
+            num: document.getElementById("pwdRuleNum"),
+            spec: document.getElementById("pwdRuleSpec"),
+          };
+        
+          function mark(el, ok){
+            if (!el) return;
+            el.style.opacity = ok ? "1" : ".6";
+            el.style.fontWeight = ok ? "800" : "400";
+            el.style.textDecoration = ok ? "none" : "none";
+          }
+        
+          function validate(v){
+            const s = v || "";
+            const okLen  = s.length >= 8;
+            const okLow  = /[a-z]/.test(s);
+            const okUp   = /[A-Z]/.test(s);
+            const okNum  = /\d/.test(s);
+            const okSpec = /[^A-Za-z0-9]/.test(s);
+        
+            mark(rules.len, okLen);
+            mark(rules.lower, okLow);
+            mark(rules.upper, okUp);
+            mark(rules.num, okNum);
+            mark(rules.spec, okSpec);
+        
+            // jemný “moderný” efekt na input
+            const allOk = okLen && okLow && okUp && okNum && okSpec;
+            pwd.classList.toggle("is-valid", allOk);
+            pwd.classList.toggle("is-invalid", !allOk && s.length > 0);
+        
+            if (pwd2 && pwd2.value) {
+              const same = pwd2.value === s;
+              pwd2.classList.toggle("is-valid", same);
+              pwd2.classList.toggle("is-invalid", !same);
+            }
+          }
+        
+          pwd.addEventListener("input", () => validate(pwd.value));
+          if (pwd2) pwd2.addEventListener("input", () => validate(pwd.value));
+        
+          const t1 = document.getElementById("toggleRegPwd");
+          const t2 = document.getElementById("toggleRegPwd2");
+          function toggle(i){
+            if (!i) return;
+            i.type = (i.type === "password") ? "text" : "password";
+          }
+          t1 && t1.addEventListener("click", () => toggle(pwd));
+          t2 && t2.addEventListener("click", () => toggle(pwd2));
+        
+          validate(pwd.value);
+        })();
+        </script>
+        
 {% endblock content %}
 

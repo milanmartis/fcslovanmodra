@@ -1,42 +1,167 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div class="content-section">
-        <form method="POST" action="">
-            {{ form.hidden_tag() }}
-            <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Reset Password</legend>
-                <div class="form-group">
-                    {{ form.password.label(class="form-control-label") }}
-                    {% if form.password.errors %}
-                        {{ form.password(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.password.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.password(class="form-control form-control-lg") }}
-                    {% endif %}
-                </div>
+<div class="content-section">
+  <form method="POST" action="">
+    {{ form.hidden_tag() }}
 
-                <div class="form-group">
-                    {{ form.confirm_password.label(class="form-control-label") }}
-                    {% if form.confirm_password.errors %}
-                        {{ form.confirm_password(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.confirm_password.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.confirm_password(class="form-control form-control-lg") }}
-                    {% endif %}
-                </div>
-         
-            </fieldset>
-            <div class="form-group">
-                {{ form.submit(class="btn btn-outline-info") }}
-            </div>
-        </form>
+    <fieldset class="form-group">
+      <legend class="border-bottom mb-4">Reset Password</legend>
+
+      <div class="form-group">
+        {{ form.password.label(class="form-control-label") }}
+
+        <div style="position:relative;">
+          {% if form.password.errors %}
+            {{ form.password(class="form-control form-control-lg is-invalid", id="reset_password", autocomplete="new-password") }}
+          {% else %}
+            {{ form.password(class="form-control form-control-lg", id="reset_password", autocomplete="new-password") }}
+          {% endif %}
+
+          <button type="button" id="toggleResetPwd"
+                  style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                         border:0; background:transparent; opacity:.75; cursor:pointer;">
+            👁
+          </button>
+        </div>
+
+        <div id="pwdHelp" style="margin-top:8px; font-size:13px; opacity:.9;">
+          <div id="pwdRuleLen">• min. 8 znakov</div>
+          <div id="pwdRuleLower">• aspoň 1 malé písmeno</div>
+          <div id="pwdRuleUpper">• aspoň 1 veľké písmeno</div>
+          <div id="pwdRuleNum">• aspoň 1 číslo</div>
+          <div id="pwdRuleSpec">• aspoň 1 špeciálny znak</div>
+        </div>
+
+        {% if form.password.errors %}
+          <div class="invalid-feedback d-block">
+            {% for error in form.password.errors %}
+              <span>{{ error }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.confirm_password.label(class="form-control-label") }}
+
+        <div style="position:relative;">
+          {% if form.confirm_password.errors %}
+            {{ form.confirm_password(class="form-control form-control-lg is-invalid", id="reset_confirm_password", autocomplete="new-password") }}
+          {% else %}
+            {{ form.confirm_password(class="form-control form-control-lg", id="reset_confirm_password", autocomplete="new-password") }}
+          {% endif %}
+
+          <button type="button" id="toggleResetPwd2"
+                  style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                         border:0; background:transparent; opacity:.75; cursor:pointer;">
+            👁
+          </button>
+        </div>
+
+        <div id="matchHelp" style="margin-top:8px; font-size:13px; opacity:.85; display:none;">
+          Heslá sa musia zhodovať.
+        </div>
+
+        {% if form.confirm_password.errors %}
+          <div class="invalid-feedback d-block">
+            {% for error in form.confirm_password.errors %}
+              <span>{{ error }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+    </fieldset>
+
+    <div class="form-group">
+      {{ form.submit(class="btn btn-outline-info") }}
     </div>
+  </form>
+</div>
+
+<script>
+(function(){
+  const pwd = document.getElementById("reset_password");
+  const pwd2 = document.getElementById("reset_confirm_password");
+  if (!pwd) return;
+
+  const rules = {
+    len: document.getElementById("pwdRuleLen"),
+    lower: document.getElementById("pwdRuleLower"),
+    upper: document.getElementById("pwdRuleUpper"),
+    num: document.getElementById("pwdRuleNum"),
+    spec: document.getElementById("pwdRuleSpec"),
+  };
+  const matchHelp = document.getElementById("matchHelp");
+
+  function mark(el, ok){
+    if (!el) return;
+    el.style.opacity = ok ? "1" : ".6";
+    el.style.fontWeight = ok ? "800" : "400";
+  }
+
+  function validatePassword(v){
+    const s = v || "";
+    const okLen  = s.length >= 8;
+    const okLow  = /[a-z]/.test(s);
+    const okUp   = /[A-Z]/.test(s);
+    const okNum  = /\d/.test(s);
+    const okSpec = /[^A-Za-z0-9]/.test(s);
+
+    mark(rules.len, okLen);
+    mark(rules.lower, okLow);
+    mark(rules.upper, okUp);
+    mark(rules.num, okNum);
+    mark(rules.spec, okSpec);
+
+    const allOk = okLen && okLow && okUp && okNum && okSpec;
+
+    // nezabíjame server errors: len jemná live spätná väzba
+    if (s.length > 0) {
+      pwd.classList.toggle("is-valid", allOk);
+      pwd.classList.toggle("is-invalid", !allOk);
+    } else {
+      pwd.classList.remove("is-valid");
+      // is-invalid necháme, ak ho dal server
+    }
+
+    return allOk;
+  }
+
+  function validateMatch(){
+    if (!pwd2) return true;
+    const a = pwd.value || "";
+    const b = pwd2.value || "";
+    const show = b.length > 0;
+
+    if (matchHelp) matchHelp.style.display = show ? "block" : "none";
+
+    const same = (a === b) && b.length > 0;
+    if (show) {
+      pwd2.classList.toggle("is-valid", same);
+      pwd2.classList.toggle("is-invalid", !same);
+    } else {
+      pwd2.classList.remove("is-valid");
+    }
+    return same;
+  }
+
+  pwd.addEventListener("input", () => { validatePassword(pwd.value); validateMatch(); });
+  if (pwd2) pwd2.addEventListener("input", () => { validatePassword(pwd.value); validateMatch(); });
+
+  const t1 = document.getElementById("toggleResetPwd");
+  const t2 = document.getElementById("toggleResetPwd2");
+
+  function toggle(i){
+    if (!i) return;
+    i.type = (i.type === "password") ? "text" : "password";
+  }
+  t1 && t1.addEventListener("click", () => toggle(pwd));
+  t2 && t2.addEventListener("click", () => toggle(pwd2));
+
+  // init
+  validatePassword(pwd.value);
+  validateMatch();
+})();
+</script>
 {% endblock content %}

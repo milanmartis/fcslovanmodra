@@ -6,8 +6,17 @@ from flask_login import current_user
 from app.models import User
 import phonenumbers
 from wtforms import widgets
+import re
 
+PASSWORD_RE = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$")
 
+def password_policy(form, field):
+    pwd = field.data or ""
+    if not PASSWORD_RE.match(pwd):
+        raise ValidationError(
+            "Heslo musí mať min. 8 znakov, aspoň 1 veľké písmeno, 1 malé písmeno, 1 číslo a 1 špeciálny znak."
+        )
+        
 class MultiCheckboxField(SelectMultipleField):
     widget = widgets.ListWidget(html_tag='ol', prefix_label=False)
     option_widget = widgets.CheckboxInput()
@@ -28,10 +37,15 @@ class RegistrationForm(FlaskForm):
                            validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('E-mail',
                         validators=[DataRequired(), Email()])
-    password = PasswordField('Heslo',
-                             validators=[DataRequired()])
-    confirm_password = PasswordField('Potvrdiť heslo',
-                                     validators=[DataRequired(), EqualTo('password')])
+    password = PasswordField("Heslo", validators=[
+        DataRequired(),
+        Length(min=8, max=128),
+        password_policy,
+    ])
+    confirm_password = PasswordField("Potvrdiť heslo", validators=[
+        DataRequired(),
+        EqualTo("password", message="Heslá sa nezhodujú."),
+    ])
     
     name = StringField('Meno a priezvisko', validators=[DataRequired()])
     phone = StringField('Mobilné číslo (+421...)', validators=[DataRequired()])
@@ -172,11 +186,16 @@ class RequestResetForm(FlaskForm):
 
 
 class ResetPasswordForm(FlaskForm):
-    password = PasswordField('Heslo',
-                             validators=[DataRequired()])
-    confirm_password = PasswordField('Potvrdiť heslo',
-                                     validators=[DataRequired(), EqualTo('password')])
-    submit = SubmitField('Uložiť nové heslo')
+    password = PasswordField("Nové heslo", validators=[
+        DataRequired(),
+        Length(min=8, max=128),
+        password_policy,
+    ])
+    confirm_password = PasswordField("Potvrdiť nové heslo", validators=[
+        DataRequired(),
+        EqualTo("password", message="Heslá sa nezhodujú."),
+    ])
+    submit = SubmitField("Zmeniť heslo")
 
 
 
