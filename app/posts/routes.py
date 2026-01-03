@@ -646,18 +646,25 @@ from app.posts.utils import upload_post_file_to_s3  # <-- NOVÉ
 
 # ---------- Update / Upload file (single) ----------
 
-@posts.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
+@posts.route("/post/<slug>/update", methods=["GET", "POST"])
 @login_required
-@roles_required('Admin', 'WebAdmin')
-def update_post(post_id):
-    post = Post.query.get_or_404(post_id)
+@roles_required("Admin", "WebAdmin")
+def update_post(slug):
+    # 1) nájdi Post podľa slug
+    post = Post.query.filter_by(slug=slug).first_or_404()
+
+    # 2) načítaj cover z galérie podľa post_id + orderz=0 (nie podľa slug!)
     image = (
         PostGallery.query
-        .filter_by(post_id=post_id, orderz=0)
+        .filter_by(post_id=post.id, orderz=0)
         .first()
     )
-    image_url = s3_presign(make_gallery_key(post_id, image.image_file2)) if image else ''
 
+    # 3) náhľad URL (odporúčam CDN; ak chceš presign, nechaj s3_presign)
+    #    keď máš CloudFront, toto je lepšie:
+    image_url = cdn_url(make_gallery_key(post.id, image.image_file2)) if image and image.image_file2 else ""
+
+    # 4) práva
     if post.author != current_user:
         abort(403)
 
@@ -671,33 +678,37 @@ def update_post(post_id):
             post.date_posted = form.date_posted.data
             post.category_id = form.category.data
             db.session.commit()
-            flash('Your post has been updated!', 'success')
-            return redirect(url_for('posts.post', post_id=post.id))
+            flash("Your post has been updated!", "success")
+
+            # redirect na slug detail (nový endpoint)
+            return redirect(url_for("posts.post_by_slug", slug=post.slug))
         except Exception as e:
             current_app.logger.exception("Error in update_post: %s", e)
             db.session.rollback()
-            flash('Chyba pri aktualizácii príspevku. Skúste to znova.', 'danger')
-    elif request.method == 'GET':
+            flash("Chyba pri aktualizácii príspevku. Skúste to znova.", "danger")
+
+    elif request.method == "GET":
         form.title.data = post.title
         form.content.data = post.content
         form.date_posted.data = post.date_posted
         form.category.data = post.category_id
 
     return render_template(
-        'posts/update_post.html',
-        title='Update Post',
+        "posts/update_post.html",
+        title="Update Post",
         image=image,
-        image_url=image_url,  # pre-signed URL na náhľad
+        image_url=image_url,
         post=post,
         form=form,
-        post_id=post_id,
-        legend='Update Post',
+        slug=post.slug,  # nech je konzistentné
+        legend="Update Post",
         current_date=datetime.now(),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
-        score_table=RightColumn.score_table()
+        score_table=RightColumn.score_table(),
     )
+
 
 
 @posts.route('/post/files/<int:post_id>/upload', methods=['POST'])

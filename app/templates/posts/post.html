@@ -255,7 +255,7 @@
         {% if post.author == current_user %}
           <div class="article-metadata-admin">
             <a class="btn btn-secondary btn-sm mt-1 mb-1"
-               href="{{ url_for('posts.update_post', post_id=post.id) }}">
+               href="{{ url_for('posts.update_post', slug=post.slug) }}">
               Update
             </a>
             <button type="button" class="btn btn-sm m-1"
