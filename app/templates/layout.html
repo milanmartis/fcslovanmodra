@@ -861,17 +861,15 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
        * Socket.IO realtime unread updates
        */
        (function () {
-        if (!window.io) return;
-        if (window.__IS_AUTH !== true) return;  // ✅ len pre prihlásených
-        const socket = io({ transports: ["websocket", "polling"], withCredentials: true });
-        window.__UNREAD_SOCKET = socket;
-
-        socket.on("unread_update", (data) => {
-          try {
-            window.setBadge?.(data?.total_unread_count || 0);
-            window.renderUnreadList?.(data?.unread_counts || []);
-          } catch (e) {}
+        const socket = window.__SOCKET || io("/", {
+          transports: ["websocket", "polling"],
+          withCredentials: true,
         });
+        window.__SOCKET = socket;
+        window.__UNREAD_SOCKET = socket; // alias, nech ti nič nerozbije
+
+        socket.on("connect", () => console.log("SOCKET CONNECT", socket.id));
+socket.on("disconnect", (r) => console.log("SOCKET DISCONNECT", r));
       })();
 
 
