@@ -470,15 +470,14 @@
   const unreadPill = document.getElementById("unreadPill");
   const unreadCountEl = document.getElementById("unreadCount");
 
-  const socket = io({
-    transports: ["websocket", "polling"],
-    upgrade: true,
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 500,
-    reconnectionDelayMax: 3000,
-  });
-
+  const socket = window.__UNREAD_SOCKET || window.__SOCKET;
+  if (socket) {
+    socket.on("webpush_resubscribe", async () => {
+      try {
+        await window.enableWebPush?.(); // alebo funkcia ktorú už máš na subscribe
+      } catch (e) {}
+    });
+  }
   // ---------------------------
   // Badge API (best-effort)
   // ---------------------------
@@ -1332,6 +1331,7 @@
   // ---------------------------
   // socket
   // ---------------------------
+  /*
   socket.on("connect", async () => {
     connTextEl.textContent = "Online";
     dotEl.classList.add("on");
@@ -1351,7 +1351,7 @@
 
     await refreshUnreadAndBadge();
   });
-
+*/
   socket.on("unread_update", (payload) => {
     try {
       const total = Number(payload?.total_unread_count || 0);

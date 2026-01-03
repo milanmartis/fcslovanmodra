@@ -250,6 +250,7 @@ def firebase_messaging_sw():
       - register() rob len na /firebase-messaging-sw.js so scope "/"
       - iné SW (napr. /service-worker.js) NEregistruj, lebo sa bude biť scope
     """
+    
     cfg = {
         "apiKey": current_app.config.get("FIREBASE_API_KEY") or "",
         "authDomain": current_app.config.get("FIREBASE_AUTH_DOMAIN") or "",
@@ -297,6 +298,42 @@ function toInt(v) {{
     return null;
   }}
 }}
+
+
+self.addEventListener("pushsubscriptionchange", (event) => {{
+  event.waitUntil((async () => {{
+    try {{
+      // musíš mať dostupný VAPID public key v SW
+      const vapidKey = (self.VAPID_PUBLIC_KEY || (typeof VAPID_PUBLIC_KEY !== "undefined" ? VAPID_PUBLIC_KEY : "")) + "";
+      if (!vapidKey) return;
+
+      // helper (ak už existuje, nepridávaj druhý)
+      function urlBase64ToUint8Array(base64String) {{
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawData = atob(base64);
+        const out = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; i++) out[i] = rawData.charCodeAt(i);
+        return out;
+      }}
+
+      const sub = await self.registration.pushManager.subscribe({{
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      }});
+
+      await fetch("/talker/webpush/subscribe", {{
+        method: "POST",
+        headers: {{ "Content-Type": "application/json" }},
+        credentials: "include",
+        body: JSON.stringify(sub),
+      }});
+    }} catch (e) {{}}
+  }})());
+}});
+
+
+
 
 async function setBadgeEverywhere(count) {{
   const n = Number(count || 0);
@@ -857,15 +894,11 @@ def mark_room_read(room_id):
 # SOCKET.IO EVENTS
 # -------------------------
 
-@socketio.on("connect", namespace="/")
+@socketio.on("connect")  # nechaj default namespace "/"
 def on_socket_connect():
     if not current_user.is_authenticated:
         return False
-    try:
-        join_room(f"user:{current_user.id}", namespace="/")
-    except Exception:
-        pass
-
+    join_room(f"user:{current_user.id}")
 
 @socketio.on("talker_join")
 def on_join(data: dict[str, Any]):
@@ -1373,7 +1406,6 @@ def _send_webpush_to_user(
     total_unread: int,
     data: dict | None = None
 ) -> int:
-    # pywebpush / model musí existovať
     if WebPushSubscription is None or webpush is None:
         return 0
 
@@ -1386,96 +1418,65 @@ def _send_webpush_to_user(
     if not subs:
         return 0
 
-    extra = data or {}
-
-    # ✅ payload: konzistentné polia pre SW aj klient
     payload = {
-        "title": str(title or ""),
-        "body": str(body or ""),
-        "url": str(url or ""),
-        "roomId": int(room_id) if room_id is not None else None,
+        "title": title,
+        "body": body,
+        "url": url,
+        "roomId": room_id,
         "totalUnread": int(total_unread or 0),
-
-        # nech je data dostupné aj cez payload.data.*
-        "data": {k: str(v) for k, v in extra.items()},
+        "data": {k: str(v) for k, v in (data or {}).items()},
     }
-
-    # (voliteľné) ak chceš jednoduchšie čítanie bez payload.data.*
-    # napr. payload.badge alebo payload.type
-    if "badge" in extra:
-        try:
-            payload["badge"] = int(extra.get("badge") or 0)
-        except Exception:
-            payload["badge"] = str(extra.get("badge"))
-
     payload_json = json.dumps(payload, ensure_ascii=False)
 
     ok = 0
     bad_ids: list[int] = []
+    had_invalid = False
 
-    for sub in subs:
+    for s in subs:
         try:
             sub_info = {
-                "endpoint": sub.endpoint,
-                "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
+                "endpoint": s.endpoint,
+                "keys": {"p256dh": s.p256dh, "auth": s.auth},
             }
-
             webpush(
                 subscription_info=sub_info,
                 data=payload_json,
                 vapid_private_key=vapid_private,
                 vapid_claims={"sub": vapid_subject},
-                ttl=15 * 60,  # 15 min (pre chat notifikácie ideálne)
+                ttl=60 * 60,
                 headers={"Urgency": "high"},
             )
             ok += 1
 
         except WebPushException as ex:
             status_code = getattr(getattr(ex, "response", None), "status_code", None)
-
-            # ✅ invalid subscription
             if status_code in (404, 410):
-                sid = getattr(sub, "id", None)
+                sid = getattr(s, "id", None)
                 if sid is not None:
                     bad_ids.append(int(sid))
-            else:
-                current_app.logger.warning(
-                    "WebPush failed user=%s sub=%s status=%s err=%s",
-                    user_id,
-                    getattr(sub, "id", None),
-                    status_code,
-                    ex,
-                )
+                had_invalid = True
+            # iné chyby nechaj tak (napr. 429 rate limit)
 
-        except Exception as ex:
-            current_app.logger.exception(
-                "WebPush exception user=%s sub=%s err=%s",
-                user_id,
-                getattr(sub, "id", None),
-                ex,
-            )
+        except Exception:
+            continue
 
-    # ✅ zmaž neplatné a požiadaj klienta o resubscribe
     if bad_ids:
         try:
-            WebPushSubscription.query.filter(WebPushSubscription.id.in_(bad_ids)).delete(
-                synchronize_session=False
-            )
+            WebPushSubscription.query.filter(WebPushSubscription.id.in_(bad_ids)).delete(synchronize_session=False)
             db.session.commit()
         except Exception:
             db.session.rollback()
 
-        # klient musí spraviť nový subscribe a poslať ho na /webpush/subscribe
+    # ✅ self-heal: ak sme našli invalid subscription, povedz klientovi nech resubscribe
+    if had_invalid:
         try:
-            from app import socketio  # alebo odkiaľ máš socketio
             socketio.emit(
                 "webpush_resubscribe",
                 {"reason": "invalid_subscription"},
-                to=f"user:{user_id}",
+                room=f"user:{user_id}",
                 namespace="/",
             )
         except Exception:
-            # ak socketio nie je dostupné, nič sa nedeje – dorovná sa pri ďalšom load-e stránky
             pass
 
     return ok
