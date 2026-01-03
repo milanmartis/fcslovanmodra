@@ -337,7 +337,9 @@
     .send .txt{ display:none; }
   }
 </style>
-
+<script>
+  const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+</script>
 {% set is_embed = request.args.get('embed') == '1' %}
 
 <div class="talker-page {{ 'is-embed' if is_embed else '' }}">
@@ -381,19 +383,49 @@
 
       <div class="composer">
         <form id="f" class="composer-bar" autocomplete="off">
-          <!-- ✅ video upload -->
+          <!-- ✅ file upload -->
           <input id="fileInput" type="file"
-          accept="video/mp4,video/webm,video/quicktime,image/jpeg,image/png,image/webp,image/gif"
+          accept="
+            video/mp4,video/webm,video/quicktime,
+            image/jpeg,image/png,image/webp,image/gif,
+            application/pdf,
+            application/msword,
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+            application/vnd.ms-excel,
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+          "
           style="display:none" />
-        
-          <!-- ✅ attach button -->
-          <button id="attachBtn" class="push-btn" type="button" title="Priložiť video">＋</button>
-        
+          <style>
+            .action-buttons{
+              display: flex;
+              flex-direction: column; /* nad sebou */
+              gap: 8px;               /* medzera */
+              align-items: center;    /* nech sú pekne zarovnané */
+            }
+            
+            .action-buttons .push-btn{
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+            }
+          </style>
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+          <div class="action-buttons">
+            <!-- ✅ attach button -->
+            <button id="attachBtn" class="push-btn" type="button" title="Vložiť súbor">
+              <i class="fa-solid fa-paperclip"></i>
+            </button>
+          
+            {% if current_user.is_authenticated and (current_user.has_roles('Admin') or current_user.has_roles('Coach')) %}
+              <button id="pollBtn" class="push-btn" type="button" title="Anketa">
+                <i class="fa-solid fa-square-poll-vertical"></i>
+              </button>
+            {% endif %}
+          </div>
           <textarea id="t" class="input" rows="1"
                     placeholder="Napíš správu… (Enter = odoslať, Shift+Enter = nový riadok)"></textarea>
         
-          <!-- ✅ poll button -->
-          <button id="pollBtn" class="push-btn" type="button" title="Anketa">☑︎</button>
+    
         
           <button id="sendBtn" class="send" type="submit" disabled>
             <span class="txt">Send</span>
@@ -515,8 +547,28 @@
   }
 
   function scrollToBottomHard() {
-    bottomEl && bottomEl.scrollIntoView({ block: "end" });
+    const scroller = document.getElementById("scroll");
+    const bottom = document.getElementById("bottom");
+    if (!scroller || !bottom) return;
+  
+    // 1) klasicky nastav scrollTop
+    scroller.scrollTop = scroller.scrollHeight + 999999;
+  
+    // 2) anchor scroll (najspoľahlivejšie)
+    bottom.scrollIntoView({ block: "end" });
+  
+    // 3) dorovnanie po layout-e (obrázky/video sa načítajú neskôr)
+    requestAnimationFrame(() => {
+      scroller.scrollTop = scroller.scrollHeight + 999999;
+      bottom.scrollIntoView({ block: "end" });
+    });
+  
+    setTimeout(() => {
+      scroller.scrollTop = scroller.scrollHeight + 999999;
+      bottom.scrollIntoView({ block: "end" });
+    }, 80);
   }
+  
 
   function focusNoScroll(){
     try { inputEl.focus({ preventScroll: true }); } catch(e){ inputEl.focus(); }
@@ -769,6 +821,7 @@
   function renderMessage(m) {
     const mine = (m.user_id === myUserId);
     const row = document.createElement("div");
+    row.dataset.msgId = String(m.id || "");
     row.className = "bubble-row " + (mine ? "me" : "them");
   
     const bubble = document.createElement("div");
@@ -784,6 +837,9 @@
         </video>
         ${cap ? `<div>${escapeHtml(cap)}</div>` : ""}
       `;
+    
+      const v = bubble.querySelector("video");
+      if (v) v.addEventListener("loadedmetadata", () => scrollToBottomHard(), { once: true });
     }
     
     else if (type === "image" && m.attachment_url) {
@@ -794,7 +850,42 @@
              style="width:100%; border-radius:12px; margin-bottom:6px; display:block;" />
         ${cap ? `<div>${escapeHtml(cap)}</div>` : ""}
       `;
+    
+      const img = bubble.querySelector("img");
+      if (img) img.addEventListener("load", () => scrollToBottomHard(), { once: true });
     }
+
+    else if (type === "file" && m.attachment_url) {
+      const cap = (m.text || "").trim();
+    
+      const name = (m.attachment_name || "").trim();
+      const mime = (m.attachment_mime || "").toLowerCase();
+      const size = Number(m.attachment_size || 0);
+    
+      function niceSize(n) {
+        if (!n || n <= 0) return "";
+        const units = ["B","KB","MB","GB"];
+        let i = 0, x = n;
+        while (x >= 1024 && i < units.length - 1) { x /= 1024; i++; }
+        return `${x.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+      }
+    
+      // ikonka podľa typu
+      let icon = "fa-file";
+      if (mime.includes("pdf")) icon = "fa-file-pdf";
+      else if (mime.includes("word")) icon = "fa-file-word";
+      else if (mime.includes("excel") || mime.includes("spreadsheet")) icon = "fa-file-excel";
+      else if (mime.includes("powerpoint") || mime.includes("presentation")) icon = "fa-file-powerpoint";
+    
+      bubble.innerHTML = `
+        <div style="display:flex; gap:10px; align-items:center; padding:10px;border:0px;background:transparent">
+                   <a href="${escapeHtml(m.attachment_url)}" target="_blank" rel="noopener noreferrer"
+             class="push-btn" style="text-decoration:none; display:inline-flex; align-items:center;"> <i class="fa-solid ${icon}" style="font-size:80px;"></i></a>
+        </div>
+        ${cap ? `<div style="margin-top:8px;">${escapeHtml(cap)}</div>` : ""}
+      `;
+    }
+    
     
     
     else if (type === "poll" && m.poll_id) {
@@ -847,7 +938,43 @@
   
     const meta = document.createElement("div");
     meta.className = "meta";
-    meta.innerHTML = `<span class="u">${escapeHtml(m.username || "")}</span><span class="t">${escapeHtml(fmtTime(m.created_at))}</span>`;
+
+    const canDelete = mine || IS_ADMIN;
+    meta.innerHTML = `
+      <span class="u">${escapeHtml(m.username || "")}</span>
+      <span class="t">${escapeHtml(fmtTime(m.created_at))}</span>
+      ${canDelete ? `
+        <button class="push-btn" data-del="1" title="Vymazať správu"
+                style="height:26px;padding:0 10px;opacity:.85">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      ` : ""}
+    `;
+
+    if (canDelete) {
+      const btn = meta.querySelector('button[data-del="1"]');
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const ok = confirm("Naozaj vymazať túto správu?");
+        if (!ok) return;
+
+        try {
+          const r = await fetch(`/talker/messages/${m.id}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
+          if (!r.ok) throw new Error(await r.text());
+          // UI sa zmaže aj cez socket event, ale nech je to okamžité
+          row.remove();
+        } catch (err) {
+          console.error(err);
+          statusEl.textContent = "Vymazanie zlyhalo.";
+          setTimeout(() => (statusEl.textContent = ""), 3500);
+        }
+      });
+    }
   
     bubble.appendChild(meta);
     row.appendChild(bubble);
@@ -1238,6 +1365,15 @@
   });
 
 
+  socket.on("talker_deleted", (p) => {
+    try {
+      const id = String(p?.id || "");
+      if (!id) return;
+      const el = document.querySelector(`.bubble-row[data-msg-id="${id}"]`);
+      if (el) el.remove();
+    } catch (e) {}
+  });
+
 
   socket.on("poll_update", (p) => {
     try {
@@ -1264,8 +1400,43 @@
     } catch (e) {}
   });
 
+  async function ensureWebPushSubscription() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  
+    const cfg = window.__PUSH_CFG__ || await getPushConfig().catch(() => null);
+    const vapidKeyWebPush = cfg?.vapidPublicKey || cfg?.fcmVapidPublicKey || window.vapidPublicKey || window.fcmVapidPublicKey;
+    if (!vapidKeyWebPush) throw new Error("Missing VAPID public key");
+  
+    await registerRootSW();
+  
+    if (Notification.permission !== "granted") {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") throw new Error("Permission not granted");
+    }
+  
+    const reg = await navigator.serviceWorker.ready;
+  
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKeyWebPush),
+      });
+    }
+  
+    // refresh/upsert na server
+    const r = await fetch("/talker/webpush/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(sub.toJSON()),
+    });
+  
+    if (!r.ok) throw new Error("webpush/subscribe failed: " + (await r.text()));
+  }
+  
 
-
+  socket.on("webpush_resubscribe", () => ensureWebPushSubscription());
 
 
   socket.on("talker_joined", (d) => {
@@ -1366,21 +1537,50 @@
 if (attachBtn && fileInput) {
   attachBtn.addEventListener("click", () => fileInput.click());
 
+  const allowedDocs = new Set([
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ]);
+
   fileInput.addEventListener("change", async () => {
-    const f = fileInput.files && fileInput.files[0];
+    const f = (fileInput.files && fileInput.files[0]) || null;
+    const MAX = 30 * 1024 * 1024; // 20MB
+    if (f.size > MAX) {
+      statusEl.textContent = "Max veľkosť súboru je 30 MB.";
+      setTimeout(() => (statusEl.textContent = ""), 3500);
+      fileInput.value = "";
+      return;
+    }
     if (!f) return;
 
-    const isImg = (f.type || "").startsWith("image/");
-    const isVid = (f.type || "").startsWith("video/");
+    const mime = (f.type || "").toLowerCase();
+    const isImg = mime.startsWith("image/");
+    const isVid = mime.startsWith("video/");
+    const isDoc = allowedDocs.has(mime);
 
-    if (!isImg && !isVid) {
-      statusEl.textContent = "Nepodporovaný typ súboru.";
-      setTimeout(() => statusEl.textContent = "", 3000);
+    // ✅ validácia (pozor: používať f / mime, nie file)
+    if (!isImg && !isVid && !isDoc) {
+      showError("Nepodporovaný formát súboru");
+      fileInput.value = ""; // dôležité: aby sa dal vybrať rovnaký súbor znova
       return;
     }
 
+    // UI
     attachBtn.disabled = true;
-    statusEl.textContent = isImg ? "Nahrávam obrázok…" : "Nahrávam video…";
+
+    // status text podľa typu
+    if (statusEl) {
+      statusEl.textContent = isImg
+        ? "Nahrávam obrázok…"
+        : isVid
+          ? "Nahrávam video…"
+          : "Nahrávam súbor…";
+    }
 
     try {
       const fd = new FormData();
@@ -1393,28 +1593,37 @@ if (attachBtn && fileInput) {
       });
 
       const j = await r.json().catch(() => ({}));
-      if (!r.ok || !j.ok) throw new Error(j.detail || j.error || "upload_failed");
+      if (!r.ok || !j.ok) {
+        throw new Error(j.detail || j.error || "upload_failed");
+      }
 
-      const msgType = isImg ? "image" : "video";
+      // ✅ msg_type podľa typu
+      const msgType = isImg ? "image" : isVid ? "video" : "file";
 
       socket.emit("talker_send", {
         room_id: roomId,
         msg_type: msgType,
-        text: inputEl.value.trim(),     // caption (voliteľné)
+        text: (inputEl && inputEl.value ? inputEl.value.trim() : ""), // caption (voliteľné)
         attachment_url: j.url,
-        attachment_mime: j.mime,
-        attachment_size: j.size,
+        attachment_mime: j.mime || mime,
+        attachment_size: Number(j.size || f.size || 0),
       });
 
-      inputEl.value = "";
-      autoResize();
-      updateSendState();
-      scrollToBottomHard();
+      if (inputEl) inputEl.value = "";
+      if (typeof autoResize === "function") autoResize();
+      if (typeof updateSendState === "function") updateSendState();
+      if (typeof scrollToBottomHard === "function") scrollToBottomHard();
+
+      if (statusEl) statusEl.textContent = "";
 
     } catch (e) {
       console.error(e);
-      statusEl.textContent = "Upload zlyhal.";
-      setTimeout(() => statusEl.textContent = "", 3500);
+      if (statusEl) {
+        statusEl.textContent = "Upload zlyhal.";
+        setTimeout(() => {
+          if (statusEl) statusEl.textContent = "";
+        }, 3500);
+      }
     } finally {
       attachBtn.disabled = false;
       fileInput.value = "";

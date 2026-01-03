@@ -18,6 +18,7 @@ from flask import Blueprint, render_template, request, jsonify, abort, current_a
 from flask_socketio import join_room, emit
 from sqlalchemy.exc import IntegrityError
 from firebase_admin import messaging
+import mimetypes
 
 from app import db, socketio, csrf
 from .permissions import user_can_access_room, is_admin_user
@@ -115,39 +116,88 @@ def upload_media(room_id: int):
     # ✅ bezpečnosť: typy (rovnako ako si mal)
     content_type = (f.mimetype or "").lower()
     allowed = {"video/mp4", "video/webm", "video/quicktime"}
-    if not (content_type.startswith("video/") or content_type.startswith("image/")):
-        return jsonify(error="bad_mime", detail=content_type), 400
+    content_type = (f.content_type or "").lower().strip()
+
+    allowed_docs = {
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    }
+
+    if not (
+        content_type.startswith("image/")
+        or content_type.startswith("video/")
+        or content_type in allowed_docs
+    ):
+        return jsonify(ok=False, error="bad_mime", detail=content_type), 400
 
     # ✅ veľkosť (bez načítania do pamäte)
     f.stream.seek(0, os.SEEK_END)
     size = f.stream.tell()
     f.stream.seek(0)
-    if size > 50 * 1024 * 1024:
+    if size > 30 * 1024 * 1024:
         return jsonify(error="file_too_large"), 413
 
     # filename ako v posts: uuid + pôvodný base + ext
     original = secure_filename(f.filename)
     base, ext = os.path.splitext(original)
-    ext = (ext or "").lower()
+    # ext z filename (bez bodky)
+    ext = (os.path.splitext(f.filename or "")[1] or "").lower().lstrip(".")
 
-    # fallback ext podľa MIME
+    # fallback ext podľa MIME (tiež bez bodky)
     if not ext:
         if content_type == "video/webm":
-            ext = ".webm"
+            ext = "webm"
         elif content_type == "video/quicktime":
-            ext = ".mov"
+            ext = "mov"
         elif content_type in ("image/jpeg", "image/jpg"):
-            ext = ".jpg"
+            ext = "jpg"
         elif content_type == "image/png":
-            ext = ".png"
+            ext = "png"
         elif content_type == "image/webp":
-            ext = ".webp"
+            ext = "webp"
         elif content_type == "image/gif":
-            ext = ".gif"
-        else:
-            ext = ".bin"
+            ext = "gif"
 
-    new_filename = f"{uuid.uuid4().hex}_{base}{ext}"
+        # dokumenty
+        elif content_type == "application/pdf":
+            ext = "pdf"
+
+        elif content_type == "application/msword":
+            ext = "doc"
+
+        elif content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            ext = "docx"
+
+        elif content_type == "application/vnd.ms-excel":
+            ext = "xls"
+
+        elif content_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+            ext = "xlsx"
+
+        elif content_type == "application/vnd.ms-powerpoint":
+            ext = "ppt"
+
+        elif content_type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+            ext = "pptx"
+
+        # text
+        elif content_type == "text/plain":
+            ext = "txt"
+
+        else:
+            ext = "bin"
+
+    # bezpečnost: ak ext stále prázdne alebo divné
+    ext = (ext or "bin").strip().lower().lstrip(".")
+    # voliteľne: zahoď nebezpečné znaky
+    ext = "".join(ch for ch in ext if ch.isalnum()) or "bin"
+
+    new_filename = f"{uuid.uuid4().hex}_{base}.{ext}"
     s3_key = make_talker_key(room_id, new_filename)
 
     # ✅ upload ako v posts
@@ -322,10 +372,33 @@ async function parsePushPayload(event) {{
     return {{}};
   }}
 }}
+async function setBadgeFromPayload(data) {{
+  const n = Number(data?.badge);
+  if (!Number.isFinite(n)) return;
+
+  // Badging API (Chrome/Edge, niekedy aj iOS PWA)
+  if ("setAppBadge" in navigator) {{
+    try {{
+      if (n > 0) await navigator.setAppBadge(n);
+      else await navigator.clearAppBadge();
+    }} catch (e) {{}}
+    return;
+  }}
+
+  // SW kontext (niekedy dostupné cez self.registration)
+  if (self.registration && self.registration.setAppBadge) {{
+    try {{
+      if (n > 0) await self.registration.setAppBadge(n);
+      else await self.registration.clearAppBadge();
+    }} catch (e) {{}}
+  }}
+}}
 
 self.addEventListener("push", (event) => {{
   event.waitUntil((async () => {{
     const payload = await parsePushPayload(event);
+    const badgeData = payload?.data || payload;
+    await setBadgeFromPayload(badgeData);
 
     const title = payload.title || payload?.notification?.title || "Talker";
     const body  = payload.body  || payload?.notification?.body  || "";
@@ -579,11 +652,17 @@ def room_detail(room_id):
 
     embed = request.args.get("embed") == "1"
     base_template = "talker/embed_layout.html" if embed else "layout.html"
+    is_admin = False
+    try:
+        is_admin = is_admin_user() or current_user.has_roles("Admin")
+    except Exception:
+        is_admin = False
 
     return render_template(
         "talker/room_detail.html",
         room=room,
         base_template=base_template,
+        is_admin=is_admin
     )
 
 
@@ -835,7 +914,7 @@ def on_send(data: dict[str, Any]):
             return
         msg.text = text
 
-    elif msg_type in ("video", "image"):
+    elif msg_type in ("video", "image", "file"):
         msg.text = (text or "").strip() or None
         msg.attachment_url = (data or {}).get("attachment_url")
         msg.attachment_mime = (data or {}).get("attachment_mime")
@@ -843,6 +922,31 @@ def on_send(data: dict[str, Any]):
 
         if not msg.attachment_url or not msg.attachment_mime:
             emit("talker_error", {"error": "bad_attachment"})
+            return
+
+        # ✅ povolené MIME typy podľa msg_type
+        allowed_images = {"image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"}
+        allowed_videos = {"video/webm", "video/quicktime", "video/mp4"}
+        allowed_docs = {
+            "application/pdf",
+            "application/msword",  # .doc
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
+            "application/vnd.ms-excel",  # .xls
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
+        }
+
+        ct = (msg.attachment_mime or "").lower().strip()
+
+        if msg_type == "image" and ct not in allowed_images:
+            emit("talker_error", {"error": "bad_attachment_type", "detail": ct})
+            return
+
+        if msg_type == "video" and ct not in allowed_videos:
+            emit("talker_error", {"error": "bad_attachment_type", "detail": ct})
+            return
+
+        if msg_type == "file" and ct not in allowed_docs:
+            emit("talker_error", {"error": "bad_attachment_type", "detail": ct})
             return
 
     elif msg_type == "poll":
@@ -868,7 +972,6 @@ def on_send(data: dict[str, Any]):
     else:
         emit("talker_error", {"error": "unsupported_msg_type"})
         return
-
     # ✅ jedna transakcia: add -> flush -> (poll create) -> commit -> emit
     try:
         db.session.add(msg)
@@ -966,18 +1069,31 @@ def on_send(data: dict[str, Any]):
 
             if not body:
                 body = "Nová správa"
+                
+            # ✅ PUSH ===
+            for uid in recipients:
+                uid = int(uid)
 
-            send_push_to_users(
-                user_ids=recipients,
-                title=f"{room.name}",
-                body=f"{username}: {body}",
-                data={
-                    "type": "talker_message",
-                    "room_id": str(room.id),
-                    "roomId": str(room.id),
-                    "url": f"/talker/rooms/{room.id}?embed=1",
-                },
-            )
+                try:
+                    unread_payload = _build_unread_payload_for_user(uid)
+                    badge = int(unread_payload.get("total_unread_count", 0) or 0)
+                except Exception:
+                    badge = 0
+
+                send_push_to_users(
+                    user_ids=[uid],  # ✅ po jednom userovi -> správny badge
+                    title=f"{room.name}",
+                    body=f"{username}: {body}",
+                    data={
+                        "type": "talker_message",
+                        "room_id": str(room.id),
+                        "roomId": str(room.id),
+                        "url": f"/talker/rooms/{room.id}?embed=1",
+
+                        # ✅ toto je to, čo potrebuje SW na setAppBadge/clearAppBadge
+                        "badge": badge,
+                    },
+                )
     except Exception:
         current_app.logger.exception("push send failed")
 
@@ -1257,6 +1373,7 @@ def _send_webpush_to_user(
     total_unread: int,
     data: dict | None = None
 ) -> int:
+    # pywebpush / model musí existovať
     if WebPushSubscription is None or webpush is None:
         return 0
 
@@ -1269,51 +1386,100 @@ def _send_webpush_to_user(
     if not subs:
         return 0
 
+    extra = data or {}
+
+    # ✅ payload: konzistentné polia pre SW aj klient
     payload = {
-        "title": title,
-        "body": body,
-        "url": url,
-        "roomId": room_id,
+        "title": str(title or ""),
+        "body": str(body or ""),
+        "url": str(url or ""),
+        "roomId": int(room_id) if room_id is not None else None,
         "totalUnread": int(total_unread or 0),
-        "data": {k: str(v) for k, v in (data or {}).items()},
+
+        # nech je data dostupné aj cez payload.data.*
+        "data": {k: str(v) for k, v in extra.items()},
     }
+
+    # (voliteľné) ak chceš jednoduchšie čítanie bez payload.data.*
+    # napr. payload.badge alebo payload.type
+    if "badge" in extra:
+        try:
+            payload["badge"] = int(extra.get("badge") or 0)
+        except Exception:
+            payload["badge"] = str(extra.get("badge"))
+
     payload_json = json.dumps(payload, ensure_ascii=False)
 
     ok = 0
     bad_ids: list[int] = []
 
-    for s in subs:
+    for sub in subs:
         try:
             sub_info = {
-                "endpoint": s.endpoint,
-                "keys": {"p256dh": s.p256dh, "auth": s.auth},
+                "endpoint": sub.endpoint,
+                "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
             }
+
             webpush(
                 subscription_info=sub_info,
                 data=payload_json,
                 vapid_private_key=vapid_private,
                 vapid_claims={"sub": vapid_subject},
-                ttl=60 * 60,
+                ttl=15 * 60,  # 15 min (pre chat notifikácie ideálne)
                 headers={"Urgency": "high"},
             )
             ok += 1
+
         except WebPushException as ex:
             status_code = getattr(getattr(ex, "response", None), "status_code", None)
+
+            # ✅ invalid subscription
             if status_code in (404, 410):
-                sid = getattr(s, "id", None)
+                sid = getattr(sub, "id", None)
                 if sid is not None:
                     bad_ids.append(int(sid))
-        except Exception:
-            continue
+            else:
+                current_app.logger.warning(
+                    "WebPush failed user=%s sub=%s status=%s err=%s",
+                    user_id,
+                    getattr(sub, "id", None),
+                    status_code,
+                    ex,
+                )
 
+        except Exception as ex:
+            current_app.logger.exception(
+                "WebPush exception user=%s sub=%s err=%s",
+                user_id,
+                getattr(sub, "id", None),
+                ex,
+            )
+
+    # ✅ zmaž neplatné a požiadaj klienta o resubscribe
     if bad_ids:
         try:
-            WebPushSubscription.query.filter(WebPushSubscription.id.in_(bad_ids)).delete(synchronize_session=False)
+            WebPushSubscription.query.filter(WebPushSubscription.id.in_(bad_ids)).delete(
+                synchronize_session=False
+            )
             db.session.commit()
         except Exception:
             db.session.rollback()
 
+        # klient musí spraviť nový subscribe a poslať ho na /webpush/subscribe
+        try:
+            from app import socketio  # alebo odkiaľ máš socketio
+            socketio.emit(
+                "webpush_resubscribe",
+                {"reason": "invalid_subscription"},
+                to=f"user:{user_id}",
+                namespace="/",
+            )
+        except Exception:
+            # ak socketio nie je dostupné, nič sa nedeje – dorovná sa pri ďalšom load-e stránky
+            pass
+
     return ok
+
 
 
 def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | None = None) -> int:
@@ -1431,3 +1597,52 @@ def send_push_to_users(user_ids: list[int], title: str, body: str, data: dict | 
 
         sent_total += sum(1 for _, ok, _ in results if ok)
         return sent_total
+
+@talker.delete("/messages/<int:msg_id>")
+@login_required
+@csrf.exempt
+def delete_talker_message(msg_id: int):
+    msg = TalkMessage.query.get_or_404(msg_id)
+    room = TalkRoom.query.get_or_404(msg.room_id)
+
+    if not user_can_access_room(room):
+        abort(403)
+
+    # povolenie: autor správy alebo admin
+    is_admin = False
+    try:
+        is_admin = is_admin_user() or current_user.has_roles("Admin")
+    except Exception:
+        pass
+
+    if (msg.user_id != current_user.id) and (not is_admin):
+        return jsonify(error="forbidden"), 403
+
+    # ak je to poll, vymaž aj poll entitu (a závislosti)
+    try:
+        if msg.msg_type == "poll":
+            poll = TalkPoll.query.filter_by(message_id=msg.id).first()
+            if poll:
+                # votes -> options -> poll
+                TalkPollVote.query.filter_by(poll_id=poll.id).delete(synchronize_session=False)
+                TalkPollOption.query.filter_by(poll_id=poll.id).delete(synchronize_session=False)
+                db.session.delete(poll)
+
+        db.session.delete(msg)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(error="db_error", detail=str(e)), 500
+
+    # notify room (aby sa to zmazalo všetkým bez refreshu)
+    try:
+        socketio.emit(
+            "talker_deleted",
+            {"id": int(msg_id), "room_id": int(room.id)},
+            room=str(room.id),
+            namespace="/",
+        )
+    except Exception:
+        pass
+
+    return jsonify(ok=True, id=int(msg_id)), 200
