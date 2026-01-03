@@ -425,7 +425,7 @@
         <div class="mr-grid">
           {% for p in most_read %}
             {% set cov = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
-            <a class="mr-card" href="{{ url_for('posts.post', post_id=p.id) }}" aria-label="{{ p.title }}">
+            <a class="mr-card" href="{{ url_for('posts.post_by_slug', slug=p.slug) }}" aria-label="{{ p.title }}">
               <div class="mr-media">
                 {% if cov %}
                   {% if cov.type == "video" %}
@@ -460,7 +460,7 @@
         <div class="mr-grid">
           {% for p in latest_posts %}
             {% set cov = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
-            <a class="mr-card" href="{{ url_for('posts.post', post_id=p.id) }}" aria-label="{{ p.title }}">
+            <a class="mr-card" href="{{  url_for('posts.post_by_slug', slug=p.slug) }}" aria-label="{{ p.title }}">
               <div class="mr-media">
                 {% if cov %}
                   {% if cov.type == "video" %}

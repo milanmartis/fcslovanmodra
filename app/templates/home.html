@@ -475,7 +475,7 @@
           {% set ext = (cover.image_file2 or '').rsplit('.', 1)[-1].lower() %}
           {% set is_video = (ext == 'mp4') %}
 
-          <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">
+          <a class="article-title" href="{{ url_for('posts.post_by_slug', slug=post.slug) }}">
             {% if is_video %}
               <div class="cover-video">
                 <video class="post-title-image" preload="metadata" playsinline muted
@@ -508,7 +508,7 @@
         </div>
 
         <h2>
-          <a class="article-title" href="{{ url_for('posts.post', post_id=post.id) }}">{{ post.title }}</a>
+          <a class="article-title" href="{{ url_for('posts.post_by_slug', slug=post.slug) }}">{{ post.title }}</a>
         </h2>
 
         <p class="article-content">
@@ -578,7 +578,7 @@
         <div class="mr-grid">
           {% for p in most_read %}
             {% set cov = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
-            <a class="mr-card" href="{{ url_for('posts.post', post_id=p.id) }}" aria-label="{{ p.title }}">
+            <a class="mr-card" href="{{ url_for('posts.post_by_slug', slug=p.slug) }}" aria-label="{{ p.title }}">
               <div class="mr-media">
                 {% if cov %}
                 {% if cov.type == "video" %}
@@ -612,7 +612,7 @@
         <div class="mr-grid">
           {% for p in latest_posts %}
             {% set cov = (most_read_covers[p.id] if most_read_covers is defined and p.id in most_read_covers else None) %}
-            <a class="mr-card" href="{{ url_for('posts.post', post_id=p.id) }}" aria-label="{{ p.title }}">
+            <a class="mr-card" href="{{ url_for('posts.post_by_slug', slug=p.slug) }}" aria-label="{{ p.title }}">
               <div class="mr-media">
                 {% if cov %}
                 {% if cov.type == "video" %}

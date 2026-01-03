@@ -262,18 +262,42 @@ def new_post():
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table()
     )
+    
+    
+def _render_post_detail(post_obj: Post):
+    post_id = post_obj.id
 
+    # ===== Views +1 =====
+    db.session.query(Post).filter(Post.id == post_id).update({Post.views: Post.views + 1})
+    db.session.commit()
+    db.session.refresh(post_obj)
+
+    # ... sem vlož CELÝ obsah tvojej pôvodnej funkcie post(post_id)
+    # ale bez úvodného načítania post_obj, lebo ho už máš
+
+    return render_template(
+        "posts/post.html",
+        post=post_obj,
+        # ... zvyšok tvojich parametrov nezmenený
+    )
 
 @posts.route("/post/<int:post_id>")
-def post(post_id):
+def post_legacy(post_id):
+    post_obj = Post.query.get_or_404(post_id)
+    return redirect(url_for("posts.post_by_slug", slug=post_obj.slug), code=301)
+
+@posts.route("/post/<slug>")
+def post_by_slug(slug):
     post_obj = (
         db.session.query(Post)
         .options(joinedload(Post.gallery), joinedload(Post.author))
-        .filter(Post.id == post_id)
+        .filter(Post.slug == slug)
         .first()
     )
     if not post_obj:
         abort(404)
+
+    post_id = post_obj.id  # ✅ FIX: post_id musí byť z Post, nie z galérie
 
     # ===== Views +1 (pre Najčítanejšie) =====
     db.session.query(Post).filter(Post.id == post_id).update({
@@ -283,18 +307,17 @@ def post(post_id):
     db.session.refresh(post_obj)
 
     # =====================================================
-    # CACHE: title_image + galleries (DB) + presigned URL
+    # CACHE: title_image + galleries (DB) + URL payload
     # =====================================================
-    # DB cache (stabilné, nemá expiráciu)
     db_cache_key = f"cache:post:gallery_db:{post_id}"
-    # URL cache (musí mať TTL < expires presign)
     url_cache_key = f"cache:post:gallery_urls:{post_id}"
 
     title_image = None
-    galleries_with_urls = []
+    galleries = []  # ✅ vždy existuje (ORM objekty)
+    galleries_with_urls = []  # ✅ vždy existuje (dicty do template)
     title_image_url = None
 
-    # 1) skús natiahnuť už hotové presigned URL (platné len krátko)
+    # 1) skús natiahnuť URL payload
     url_payload = None
     if rds:
         try:
@@ -305,8 +328,8 @@ def post(post_id):
             url_payload = None
 
     if url_payload:
-        # hotovo – url sú už v cache
-        title_image_url = cdn_url(make_gallery_key(post_id, title_image.image_file2))
+        # ✅ FIX: ber title_image_url priamo z cache (title_image ešte nemusí existovať)
+        title_image_url = url_payload.get("title_image_url")
         galleries_with_urls = url_payload.get("galleries_with_urls") or []
 
         # title_image objekt šablóna možno potrebuje → dotiahni z DB cache alebo DB
@@ -320,10 +343,6 @@ def post(post_id):
                 db_payload = None
 
         if db_payload:
-            # vrátime aspoň "title_image" ako dict kompatibilný pre template (má atribúty?)
-            # Ak tvoja šablóna používa title_image.image_file2 atď.,
-            # tak ti stačí dict + v template používať ['image_file2'].
-            # Ak šablóna očakáva ORM objekt, musíš ho dotiahnuť z DB.
             title_image_id = db_payload.get("title_image_id")
             title_image = PostGallery.query.get(title_image_id) if title_image_id else None
         else:
@@ -335,7 +354,7 @@ def post(post_id):
             )
 
     else:
-        # 2) presigned URL cache nemáme → načítaj DB (ideálne z DB cache)
+        # 2) URL payload nemáme → načítaj DB (ideálne z DB cache)
         db_payload = None
         if rds:
             try:
@@ -350,10 +369,10 @@ def post(post_id):
             gallery_ids = db_payload.get("gallery_ids") or []
 
             title_image = PostGallery.query.get(title_image_id) if title_image_id else None
+
             galleries = []
             if gallery_ids:
                 galleries = PostGallery.query.filter(PostGallery.id.in_(gallery_ids)).all()
-                # zachovať poradie podľa uložených id
                 order_map = {gid: i for i, gid in enumerate(gallery_ids)}
                 galleries.sort(key=lambda g: order_map.get(g.id, 9999))
         else:
@@ -371,7 +390,7 @@ def post(post_id):
                 .all()
             )
 
-            # ulož DB cache na 10 min (stabilné)
+            # ulož DB cache
             if rds:
                 try:
                     payload = {
@@ -382,25 +401,23 @@ def post(post_id):
                 except Exception:
                     pass
 
-        # 3) sprav presigned URL (expires 3600s) a ulož do cache na 55 min
-        PRESIGN_EXPIRES = 3600          # 1h
-        URL_CACHE_TTL = 55 * 60         # 55 min (menej ako expires)
+        # 3) vyrob URL (cez CDN) + ulož URL payload
+        URL_CACHE_TTL = 55 * 60  # 55 min
 
         if title_image and title_image.image_file2:
-            title_image_url = cdn_url(
-        make_gallery_key(post_id, title_image.image_file2)
-            )
+            title_image_url = cdn_url(make_gallery_key(post_id, title_image.image_file2))
 
         galleries_with_urls = []
         for g in galleries:
             ext = (os.path.splitext(g.image_file2 or "")[1] or "").lower()
-            media_type = "video" if ext == ".mp4" else "image"
+            media_type = (getattr(g, "media_type", None) or "").lower()
+            is_video = (media_type == "video") or (ext in (".mp4", ".webm", ".mov"))
 
             galleries_with_urls.append({
                 "id": g.id,
                 "title": g.title,
                 "orderz": g.orderz,
-                "media_type": media_type,
+                "media_type": "video" if is_video else "image",
                 "url": cdn_url(make_gallery_key(post_id, g.image_file2)),
                 "image_file2": g.image_file2,
             })
@@ -415,11 +432,11 @@ def post(post_id):
             except Exception:
                 pass
 
-    # ===== Categories (môžeš tiež cacheovať separátne) =====
+    # ===== Categories =====
     category = Category.query.all()
 
     # =====================================================
-    # 🔥 NAJČÍTANEJŠIE – PRE TVOJ EXISTUJÚCI BLOK
+    # 🔥 NAJČÍTANEJŠIE
     # =====================================================
     most_read = (
         Post.query
@@ -429,7 +446,6 @@ def post(post_id):
         .all()
     )
 
-    # ===== Cover obrázky pre Najčítanejšie =====
     most_read_ids = [p.id for p in most_read]
     most_read_covers = {}
 
@@ -443,16 +459,18 @@ def post(post_id):
 
         for g in cover_rows:
             if g.post_id not in most_read_covers and g.image_file2:
-                mt = (getattr(g, "media_type", None) or "").lower()  # "video" / "image"
+                mt = (getattr(g, "media_type", None) or "").lower()
                 ext = (os.path.splitext(g.image_file2 or "")[1] or "").lower()
-
                 is_video = (mt == "video") or (ext in (".mp4", ".webm", ".mov"))
+
                 most_read_covers[g.post_id] = {
                     "url": cdn_url(make_gallery_key(g.post_id, g.image_file2)),
                     "type": "video" if is_video else "image",
                 }
 
-    # (voliteľné – pripravené do budúcna)
+    # =====================================================
+    # 🆕 NAJNOVŠIE
+    # =====================================================
     latest_posts = (
         Post.query
         .filter(Post.id != post_id)
@@ -460,16 +478,18 @@ def post(post_id):
         .limit(6)
         .all()
     )
-    
+
+    # ===== title_media (cover môže byť video/obrázok) =====
     title_media = None
     if title_image and title_image.image_file2:
+        mt = (getattr(title_image, "media_type", None) or "").lower()
         ext = (os.path.splitext(title_image.image_file2 or "")[1] or "").lower()
-        media_type = "video" if ext == ".mp4" else "image"
+        is_video = (mt == "video") or (ext in (".mp4", ".webm", ".mov"))
 
         title_media = {
-            "type": media_type,
-            "url": title_image_url,   # už máš vyrátané vyššie
-            "fallback": None,         # ak nemáš fallback starú URL, nechaj None
+            "type": "video" if is_video else "image",
+            "url": title_image_url,
+            "fallback": None,
         }
 
     return render_template(
