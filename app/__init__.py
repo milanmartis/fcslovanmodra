@@ -119,8 +119,6 @@ def create_app(config_class=None):
         async_mode="gevent",
         # async_mode="threading",
         message_queue=os.environ.get("REDIS_URL")
-
-
     )
 
     login_manager = LoginManager()
