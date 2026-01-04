@@ -324,7 +324,7 @@ def create_app(config_class=None):
     def aws_helpers():
         def aws_image_url():
             bucket = _S3_CACHE["bucket"]
-            return f"https://{bucket}.s3.amazonaws.com/" if bucket else ""
+            return f"https://{bucket}.s3.us-east-1.amazonaws.com/" if bucket else ""
 
         def s3_presign_local(key: str, expires: int = 3600) -> str:
             c = _s3()
