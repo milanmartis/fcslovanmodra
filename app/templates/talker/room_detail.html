@@ -506,7 +506,6 @@ body.lock-scroll{ overflow: hidden; }
 
 <script>
   const roomId = {{ room.id }};
-  window.__ROOM_ID = roomId;
   window.__ACTIVE_TALKER_ROOM_ID = roomId;   // ✅ aby menu vedelo odfiltrovať aktívnu room
   const myUserId = {{ current_user.id }};
 
@@ -1794,131 +1793,6 @@ function renderLinkCard(meta) {
 
   return a;
 }
-</script>
-<script>
-  // ---------------------------
-// Fullscreen image viewer
-// ---------------------------
-const imgFs = document.getElementById("imgFs");
-const imgFsImg = document.getElementById("imgFsImg");
-const imgFsClose = document.getElementById("imgFsClose");
-
-function openImgFs(src) {
-  if (!src || !imgFs || !imgFsImg) return;
-  imgFsImg.src = src;
-  imgFs.classList.add("on");
-  imgFs.setAttribute("aria-hidden", "false");
-  document.body.classList.add("lock-scroll");
-}
-
-function closeImgFs() {
-  if (!imgFs || !imgFsImg) return;
-  imgFs.classList.remove("on");
-  imgFs.setAttribute("aria-hidden", "true");
-  // uvoľni src (aby sa video-like veci nepodržali v pamäti)
-  imgFsImg.src = "";
-  document.body.classList.remove("lock-scroll");
-}
-
-// Delegácia: funguje aj na nové správy bez ďalších listenerov
-document.addEventListener("click", (e) => {
-  const t = e.target;
-
-  // klik na obrázok v správe
-  const img = t && t.closest && t.closest("img.js-imgfs");
-  if (img) {
-    e.preventDefault();
-    e.stopPropagation();
-    openImgFs(img.dataset.fullsrc || img.src);
-    return;
-  }
-
-  // klik mimo obrázka v overlay
-  if (imgFs && imgFs.classList.contains("on")) {
-    if (t === imgFs) closeImgFs();
-  }
-});
-
-imgFsClose && imgFsClose.addEventListener("click", (e) => {
-  e.preventDefault();
-  closeImgFs();
-});
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && imgFs && imgFs.classList.contains("on")) closeImgFs();
-});
-
-
-(function () {
-  // použijeme existujúci roomId z tejto stránky
-  const rid = Number(window.__ROOM_ID || window.__ACTIVE_TALKER_ROOM_ID || 0);
-  if (!rid) return;
-
-  let lastId = 0;
-
-  function updateLastIdFromDom() {
-    try {
-      const nodes = document.querySelectorAll('.bubble-row[data-msg-id]');
-      let maxId = 0;
-      nodes.forEach(n => {
-        const v = Number(n.dataset.msgId || 0);
-        if (v > maxId) maxId = v;
-      });
-      if (maxId > 0) lastId = maxId;
-    } catch(e){}
-  }
-
-  async function fetchNew() {
-    updateLastIdFromDom();
-
-    const url = lastId
-      ? `/talker/rooms/${rid}/messages?after_id=${lastId}&limit=200`
-      : `/talker/rooms/${rid}/messages?limit=50`;
-
-    const r = await fetch(url, { credentials: "include" });
-    if (!r.ok) return;
-
-    const msgs = await r.json();
-    if (!Array.isArray(msgs) || !msgs.length) return;
-
-    // zoradiť od najstarších po najnovšie (aby sa pekne pridávali)
-    msgs.sort((a,b) => Number(a.id||0) - Number(b.id||0));
-
-    const wasNearBottom = isNearBottom(120);
-
-    for (const m of msgs) renderMessage(m);
-
-    lastId = Math.max(lastId, ...msgs.map(m => Number(m.id || 0)));
-
-    if (wasNearBottom) scrollToBottomHard();
-
-    // keď sa vrátiš do appky, označ ako prečítané
-    try {
-      await fetch(`/talker/rooms/${rid}/mark-read`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-    } catch(e){}
-
-    await refreshUnreadAndBadge();
-  }
-
-  // po návrate do appky
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") fetchNew().catch(() => {});
-  });
-
-  // keď sa vráti internet
-  window.addEventListener("online", () => fetchNew().catch(() => {}));
-
-  // po reconnecte socketu
-  const s = window.__SOCKET;
-  if (s) s.on("connect", () => fetchNew().catch(() => {}));
-})();
-
-
 </script>
 
 {% endblock %}
