@@ -862,41 +862,21 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
          */
         (function () {
           if (!window.io) return;
+        
+          // ak to chceš len pre prihlásených
           if (window.__IS_AUTH !== true) return;
         
           const socket = window.__SOCKET || io("/", {
             transports: ["websocket", "polling"],
             withCredentials: true,
-        
-            // ✅ odporúčané
-            reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000,
           });
-        
           window.__SOCKET = socket;
           window.__UNREAD_SOCKET = socket;
         
-          async function syncUnread() {
-            try {
-              const r = await fetch("/talker/unread/menu", { credentials: "include" });
-              if (!r.ok) return;
-              const data = await r.json();
-              const total = Number(data?.total_unread_count || 0);
-              window.setBadge?.(total);
-              window.renderUnreadList?.(data?.unread_counts || []);
-            } catch (e) {}
-          }
-        
-          socket.on("connect", () => {
-            console.log("SOCKET CONNECT", socket.id);
-            // ✅ kľúčové: po KAŽDOM connecte/reconnecte natiahni stav
-            syncUnread();
-          });
-        
+          socket.on("connect", () => console.log("SOCKET CONNECT", socket.id));
           socket.on("disconnect", (r) => console.log("SOCKET DISCONNECT", r));
         
-          // ✅ realtime event
+          // ✅ TOTO TAM MUSÍ BYŤ
           socket.on("unread_update", (payload) => {
             try {
               const total = Number(payload?.total_unread_count || 0);
@@ -904,15 +884,8 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
               window.renderUnreadList?.(payload?.unread_counts || []);
             } catch (e) {}
           });
-        
-          // ✅ voliteľné: keď reconnect failne, aspoň občas zosyncuj
-          setInterval(() => {
-            if (!socket.connected) return;
-            syncUnread();
-          }, 60000);
         })();
         </script>
-        
     <script>
       async function refreshUnreadAndBadge() {
         try {
