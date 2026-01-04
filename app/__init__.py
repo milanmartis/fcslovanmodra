@@ -114,6 +114,7 @@ def create_app(config_class=None):
             "http://127.0.0.1:5000",
             "http://localhost:5000",
             "https://fcman-37884cffcf78.herokuapp.com",
+            "https://www.fcslovanmodra.sk/"
         ],
         cors_credentials=True,
         async_mode="gevent",
