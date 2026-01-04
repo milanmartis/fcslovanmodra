@@ -1847,6 +1847,47 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && imgFs && imgFs.classList.contains("on")) closeImgFs();
 });
 
+
+(function () {
+  const roomId = Number(window.__ROOM_ID); // nastav si v template
+  if (!roomId) return;
+
+  let lastId = 0;
+
+  async function fetchInitial() {
+    const r = await fetch(`/talker/rooms/${roomId}/messages?limit=50`, { credentials: "include" });
+    const msgs = await r.json();
+    // render msgs (tvoja existujúca funkcia)
+    window.renderMessages?.(msgs);
+    lastId = Math.max(0, ...msgs.map(m => Number(m.id || 0)));
+  }
+
+  async function fetchNew() {
+    if (!lastId) return fetchInitial();
+    const r = await fetch(`/talker/rooms/${roomId}/messages?after_id=${lastId}&limit=200`, { credentials: "include" });
+    const msgs = await r.json();
+    if (Array.isArray(msgs) && msgs.length) {
+      window.appendMessages?.(msgs); // doplň do UI
+      lastId = Math.max(lastId, ...msgs.map(m => Number(m.id || 0)));
+    }
+  }
+
+  // 1) initial load
+  fetchInitial().catch(() => {});
+
+  // 2) po návrate do appky
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") fetchNew().catch(() => {});
+  });
+
+  // 3) keď sa vráti internet
+  window.addEventListener("online", () => fetchNew().catch(() => {}));
+
+  // 4) po reconnecte socketu
+  const s = window.__SOCKET;
+  if (s) s.on("connect", () => fetchNew().catch(() => {}));
+})();
+
 </script>
 
 {% endblock %}

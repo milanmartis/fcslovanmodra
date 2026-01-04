@@ -710,32 +710,24 @@ def load_messages(room_id: int):
     if not user_can_access_room(room):
         abort(403)
 
-    try:
-        limit = int(request.args.get("limit", 50))
-    except Exception:
-        limit = 50
-    limit = max(1, min(limit, 200))
-
+    limit = max(1, min(int(request.args.get("limit", 50)), 200))
     after_id = request.args.get("after_id", None)
-    q = TalkMessage.query.filter_by(room_id=room.id)
+
+    q = (
+        TalkMessage.query
+        .filter_by(room_id=room.id)
+        .options(selectinload(TalkMessage.author), selectinload(TalkMessage.poll))
+        .order_by(TalkMessage.id.asc())
+    )
 
     if after_id:
         try:
             after_id_int = int(after_id)
-            msgs = (
-                TalkMessage.query
-                .filter_by(room_id=room_id)
-                .options(selectinload(TalkMessage.author), selectinload(TalkMessage.poll))
-                .order_by(TalkMessage.id.asc())
-                .limit(200)
-                .all()
-            )
+            q = q.filter(TalkMessage.id > after_id_int)
         except Exception:
-            msgs = q.order_by(TalkMessage.id.desc()).limit(limit).all()
-            msgs = list(reversed(msgs))
-    else:
-        msgs = q.order_by(TalkMessage.id.desc()).limit(limit).all()
-        msgs = list(reversed(msgs))
+            pass
+
+    msgs = q.limit(limit).all()
 
     return jsonify([
         {
@@ -747,16 +739,13 @@ def load_messages(room_id: int):
             "attachment_url": getattr(m, "attachment_url", None),
             "attachment_mime": getattr(m, "attachment_mime", None),
             "attachment_size": getattr(m, "attachment_size", None),
-
             "poll_id": (m.poll.id if getattr(m, "poll", None) else None),
-
             "user_id": m.user_id,
             "username": m.author.username if getattr(m, "author", None) else "",
             "created_at": m.created_at.isoformat() if getattr(m, "created_at", None) else None,
         }
         for m in msgs
     ])
-
 
 @talker.post("/push/register")
 @login_required
