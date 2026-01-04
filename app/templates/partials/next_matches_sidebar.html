@@ -50,12 +50,7 @@
 </style>
 
 
-{# ============================================================
- 1) NAJBLIŽŠÍ ZÁPAS – carousel podľa počtu teamz (DB)
- - Indikátory aj slides idú cez rovnaký index (loop.index0)
- - Žiadne team.id - 1 (ID môže byť dieravé)
- - next22 musí byť pripravené v rovnakom poradí ako teamz (1:1)
- ============================================================ #}
+
 
 <div id="games_plans" class="carousel slide"
    data-bs-ride="carousel"
@@ -152,7 +147,7 @@
 
                 <div class="logos">
                   <img class="image-logo" style="padding:6px;"
-                       src="{% if logos.home %}{{ logos.home }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ home_slug ~ '.png' }}{% endif %}">
+                       src="{% if logos.home %}{{ logos.home }}{% else %}{{ aws_image_url() ~ ' clubs/' ~ home_slug ~ '.png' }}{% endif %}">
                   <img class="image-logo" style="padding:6px;"
                        src="{% if logos.away %}{{ logos.away }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ away_slug ~ '.png' }}{% endif %}">
                 </div>
