@@ -58,7 +58,7 @@
     <center>
       <div class="carousel-indicators"
            style="background-color:#0f0f10;margin-bottom: 5px;width: fit-content;">
-        {% for team in teamz[:6] %}
+        {% for team in teamz %}
           <button class="btn text {% if team.id == 1 %} active{% endif %}"
                   data-bs-target="#games_plans"
                   data-bs-slide-to="{{ team.id - 1 }}"
