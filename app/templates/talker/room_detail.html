@@ -506,6 +506,7 @@ body.lock-scroll{ overflow: hidden; }
 
 <script>
   const roomId = {{ room.id }};
+  window.__ROOM_ID = roomId;
   window.__ACTIVE_TALKER_ROOM_ID = roomId;   // ✅ aby menu vedelo odfiltrovať aktívnu room
   const myUserId = {{ current_user.id }};
 
@@ -1849,44 +1850,74 @@ document.addEventListener("keydown", (e) => {
 
 
 (function () {
-  const roomId = Number(window.__ROOM_ID); // nastav si v template
-  if (!roomId) return;
+  // použijeme existujúci roomId z tejto stránky
+  const rid = Number(window.__ROOM_ID || window.__ACTIVE_TALKER_ROOM_ID || 0);
+  if (!rid) return;
 
   let lastId = 0;
 
-  async function fetchInitial() {
-    const r = await fetch(`/talker/rooms/${roomId}/messages?limit=50`, { credentials: "include" });
-    const msgs = await r.json();
-    // render msgs (tvoja existujúca funkcia)
-    window.renderMessages?.(msgs);
-    lastId = Math.max(0, ...msgs.map(m => Number(m.id || 0)));
+  function updateLastIdFromDom() {
+    try {
+      const nodes = document.querySelectorAll('.bubble-row[data-msg-id]');
+      let maxId = 0;
+      nodes.forEach(n => {
+        const v = Number(n.dataset.msgId || 0);
+        if (v > maxId) maxId = v;
+      });
+      if (maxId > 0) lastId = maxId;
+    } catch(e){}
   }
 
   async function fetchNew() {
-    if (!lastId) return fetchInitial();
-    const r = await fetch(`/talker/rooms/${roomId}/messages?after_id=${lastId}&limit=200`, { credentials: "include" });
+    updateLastIdFromDom();
+
+    const url = lastId
+      ? `/talker/rooms/${rid}/messages?after_id=${lastId}&limit=200`
+      : `/talker/rooms/${rid}/messages?limit=50`;
+
+    const r = await fetch(url, { credentials: "include" });
+    if (!r.ok) return;
+
     const msgs = await r.json();
-    if (Array.isArray(msgs) && msgs.length) {
-      window.appendMessages?.(msgs); // doplň do UI
-      lastId = Math.max(lastId, ...msgs.map(m => Number(m.id || 0)));
-    }
+    if (!Array.isArray(msgs) || !msgs.length) return;
+
+    // zoradiť od najstarších po najnovšie (aby sa pekne pridávali)
+    msgs.sort((a,b) => Number(a.id||0) - Number(b.id||0));
+
+    const wasNearBottom = isNearBottom(120);
+
+    for (const m of msgs) renderMessage(m);
+
+    lastId = Math.max(lastId, ...msgs.map(m => Number(m.id || 0)));
+
+    if (wasNearBottom) scrollToBottomHard();
+
+    // keď sa vrátiš do appky, označ ako prečítané
+    try {
+      await fetch(`/talker/rooms/${rid}/mark-read`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+    } catch(e){}
+
+    await refreshUnreadAndBadge();
   }
 
-  // 1) initial load
-  fetchInitial().catch(() => {});
-
-  // 2) po návrate do appky
+  // po návrate do appky
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") fetchNew().catch(() => {});
   });
 
-  // 3) keď sa vráti internet
+  // keď sa vráti internet
   window.addEventListener("online", () => fetchNew().catch(() => {}));
 
-  // 4) po reconnecte socketu
+  // po reconnecte socketu
   const s = window.__SOCKET;
   if (s) s.on("connect", () => fetchNew().catch(() => {}));
 })();
+
 
 </script>
 
