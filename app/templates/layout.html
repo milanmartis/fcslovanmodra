@@ -102,6 +102,170 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
     }
   </style>
   <style>
+  /* ===== Cookie banner ===== */
+.cookie-banner{
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9999;
+  display: none;
+}
+.cookie-banner.is-open{ display:block; }
+
+.cookie-banner__content{
+  background: rgba(18,18,18,0.92);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+.cookie-banner__text p{ margin: 8px 0 0 0; line-height: 1.35; opacity: 0.95; }
+.cookie-banner__links{ font-size: 0.95rem; opacity: 0.95; }
+.cookie-banner__links a{ color:#cfe4ff; text-decoration: underline; }
+.cookie-banner__links span{ opacity:0.6; margin: 0 8px; }
+
+.cookie-banner__actions{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-cookie{
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-cookie--primary{
+  background: #0b5ed7;
+  color:#fff;
+}
+.btn-cookie--ghost{
+  background: rgba(255,255,255,0.10);
+  color:#fff;
+}
+.btn-cookie:focus{ outline: 2px solid rgba(255,255,255,0.35); outline-offset: 2px; }
+
+@media (max-width: 720px){
+  .cookie-banner__actions{ justify-content: stretch; }
+  .btn-cookie{ flex: 1; }
+}
+
+/* ===== Cookie modal ===== */
+.cookie-modal{ display:none; position: fixed; inset: 0; z-index: 10000; }
+.cookie-modal.is-open{ display:block; }
+
+.cookie-modal__backdrop{
+  position:absolute; inset:0;
+  background: rgba(0,0,0,0.55);
+}
+
+.cookie-modal__panel{
+  position: relative;
+  width: min(720px, calc(100% - 24px));
+  margin: 6vh auto 0;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+  overflow: hidden;
+}
+
+.cookie-modal__header{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee;
+}
+.cookie-modal__header h2{ margin:0; font-size: 1.15rem; }
+.cookie-modal__close{
+  border:0;
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+  cursor:pointer;
+}
+
+.cookie-modal__body{ padding: 14px 16px; }
+.cookie-modal__footer{
+  display:flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 14px 16px;
+  border-top: 1px solid #eee;
+}
+
+.cookie-item{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f1f1;
+}
+.cookie-item__desc{ font-size: 0.95rem; color:#444; margin-top: 4px; }
+.cookie-pill{
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5ff;
+  color: #0b5ed7;
+  font-weight: 700;
+}
+
+.cookie-small{ margin-top: 12px; font-size: 0.92rem; color:#555; }
+
+/* Switch */
+.switch{ position: relative; display:inline-block; width: 48px; height: 28px; }
+.switch input{ opacity: 0; width: 0; height: 0; }
+.slider{
+  position:absolute; cursor:pointer;
+  top:0; left:0; right:0; bottom:0;
+  background:#d7d7d7;
+  transition:.2s;
+  border-radius: 999px;
+}
+.slider:before{
+  position:absolute; content:"";
+  height: 22px; width: 22px;
+  left: 3px; top: 3px;
+  background:#fff;
+  transition:.2s;
+  border-radius: 50%;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+.switch input:checked + .slider{ background:#0b5ed7; }
+.switch input:checked + .slider:before{ transform: translateX(20px); }
+
+/* Small settings link */
+.cookie-settings-link{
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 9998;
+  font-size: 0.9rem;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(0,0,0,0.08);
+  padding: 8px 10px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #0b5ed7;
+  display: none;
+}
+.cookie-settings-link.is-visible{ display:inline-block; }
+  </style>
+  
+  <style>
     .club-avatar-btn{
       margin-top: 0px;
     }
@@ -515,10 +679,14 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
             Sme najstarší športový klub v Modre, ktorý bol založený v roku 1926 staviteľom Jozefom Horákom a učiteľom Jozefom Kopom.
             Dnes je v klube registrovaných viac ako 70 hráčok a hráčov v siedmich družstvách.
           </p>
-          <div style="margin-left:15px; font-size: 90%;opacity: 0.9;">
-            <i class="fa fa-location-arrow" aria-hidden="true"></i> Kalinčiakova 6, 900 01 Modra<br>
+          <div style="text-align:left;margin-left:15px; font-size: 90%;opacity: 0.9;">
+            <i style="font-size:116%;" class="fa fa-location-arrow" aria-hidden="true"></i> Kalinčiakova 6, 900 01 Modra<br>
             <!--<i class="fa fa-phone" aria-hidden="true"></i> +421 917 937 501<br>-->
-            <i class="fa fa fa-envelope" aria-hidden="true"></i> fcslovanmodra@gmail.com
+            <i style="font-size:116%;" class="fa fa fa-envelope" aria-hidden="true"></i> fcslovanmodra@gmail.com<br>
+            <!-- “Settings” link anywhere in footer -->
+             
+             <i style="font-size:116%;" class="fa fa fa-cookie-bite"></i> <a href="#" id="cookieSettingsFloating">Nastavenia cookies</a><br>
+             <i style="font-size:116%;"  class="fa fa fa-user-shield"></i><a href="/gdpr">Ochrana osobných údajov</a>
           </div>
         </div>
 
@@ -972,6 +1140,297 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
         if (document.visibilityState === "visible") refreshUnreadAndBadge();
       });
     </script>
+    <script type="text/plain" data-cookiecategory="analytics">
+      console.log("analytics init");
+    </script>
+<!-- Cookie banner -->
+<div id="cookieBanner" class="cookie-banner" aria-hidden="true">
+  <div class="cookie-banner__content">
+    <div class="cookie-banner__text">
+      <strong>Cookies</strong>
+      <p>
+        Používame nevyhnutné cookies na správne fungovanie stránky. S vaším súhlasom môžeme používať aj analytické
+        a marketingové cookies. Svoj výber môžete kedykoľvek zmeniť v “Nastaveniach cookies”.
+      </p>
+      <p class="cookie-banner__links">
+        <a href="/gdpr" target="_blank" rel="noopener">Ochrana osobných údajov</a>
+        <span>·</span>
+        <a href="#" id="openCookieSettingsLink">Nastavenia cookies</a>
+      </p>
+    </div>
+
+    <div class="cookie-banner__actions">
+      <button type="button" class="btn-cookie btn-cookie--ghost" id="btnRejectAll">Odmietnuť</button>
+      <button type="button" class="btn-cookie btn-cookie--ghost" id="btnCustomize">Nastaviť</button>
+      <button type="button" class="btn-cookie btn-cookie--primary" id="btnAcceptAll">Prijať všetko</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cookie settings modal -->
+<div id="cookieModal" class="cookie-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cookieModalTitle">
+  <div class="cookie-modal__backdrop" id="cookieModalBackdrop"></div>
+
+  <div class="cookie-modal__panel">
+    <div class="cookie-modal__header">
+      <h2 id="cookieModalTitle">Nastavenia cookies</h2>
+      <button type="button" class="cookie-modal__close" id="cookieModalClose" aria-label="Zavrieť">×</button>
+    </div>
+
+    <div class="cookie-modal__body">
+      <p>
+        Nevyhnutné cookies sú vždy zapnuté – bez nich stránka nefunguje. Ostatné kategórie môžete povoliť alebo odmietnuť.
+      </p>
+
+      <div class="cookie-item">
+        <div class="cookie-item__left">
+          <strong>Nevyhnutné</strong>
+          <div class="cookie-item__desc">Prihlásenie, bezpečnosť, uloženie nastavení.</div>
+        </div>
+        <div class="cookie-item__right">
+          <span class="cookie-pill">Vždy aktívne</span>
+        </div>
+      </div>
+
+      <div class="cookie-item">
+        <div class="cookie-item__left">
+          <strong>Analytické</strong>
+          <div class="cookie-item__desc">Štatistiky návštevnosti (napr. GA4/Matomo) – iba so súhlasom.</div>
+        </div>
+        <div class="cookie-item__right">
+          <label class="switch">
+            <input type="checkbox" id="cookieAnalytics">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="cookie-item">
+        <div class="cookie-item__left">
+          <strong>Marketingové</strong>
+          <div class="cookie-item__desc">Personalizácia reklám/remarketing – iba so súhlasom.</div>
+        </div>
+        <div class="cookie-item__right">
+          <label class="switch">
+            <input type="checkbox" id="cookieMarketing">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="cookie-item">
+        <div class="cookie-item__left">
+          <strong>Preferencie</strong>
+          <div class="cookie-item__desc">Zapamätanie voľby jazyka, vzhľadu a podobne (nie nevyhnutné).</div>
+        </div>
+        <div class="cookie-item__right">
+          <label class="switch">
+            <input type="checkbox" id="cookiePrefs">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <p class="cookie-small">
+        Súhlas môžete kedykoľvek odvolať alebo upraviť kliknutím na “Nastavenia cookies”.
+      </p>
+    </div>
+
+    <div class="cookie-modal__footer">
+      <button type="button" class="btn-cookie btn-cookie--ghost" id="btnSaveEssential">Len nevyhnutné</button>
+      <button type="button" class="btn-cookie btn-cookie--primary" id="btnSaveSelection">Uložiť výber</button>
+    </div>
+  </div>
+</div>
+
+
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "cookie_consent_v1"; // pri zmene kategórií/logic zmeň verziu
     
+      const banner = document.getElementById("cookieBanner");
+      const modal = document.getElementById("cookieModal");
+      const settingsLink = document.getElementById("cookieSettingsFloating");
+    
+      const btnAcceptAll = document.getElementById("btnAcceptAll");
+      const btnRejectAll = document.getElementById("btnRejectAll");
+      const btnCustomize = document.getElementById("btnCustomize");
+    
+      const openSettingsLink = document.getElementById("openCookieSettingsLink");
+    
+      const modalClose = document.getElementById("cookieModalClose");
+      const modalBackdrop = document.getElementById("cookieModalBackdrop");
+      const btnSaveEssential = document.getElementById("btnSaveEssential");
+      const btnSaveSelection = document.getElementById("btnSaveSelection");
+    
+      const chkAnalytics = document.getElementById("cookieAnalytics");
+      const chkMarketing = document.getElementById("cookieMarketing");
+      const chkPrefs = document.getElementById("cookiePrefs");
+    
+      function safeJsonParse(v) {
+        try { return JSON.parse(v); } catch (e) { return null; }
+      }
+    
+      function getConsent() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? safeJsonParse(raw) : null;
+      }
+    
+      function setConsent(consent) {
+        // consent = { essential:true, analytics:boolean, marketing:boolean, prefs:boolean, ts:ISO }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
+        // Voliteľne: aj cookie pre server (napr. aby si vedel nenačítavať veci server-side)
+        document.cookie = "cookie_consent=" + encodeURIComponent(JSON.stringify(consent)) +
+          ";path=/;max-age=" + (60 * 60 * 24 * 180) + ";SameSite=Lax;Secure";
+      }
+    
+      function openBanner() {
+        if (!banner) return;
+        banner.classList.add("is-open");
+        banner.setAttribute("aria-hidden", "false");
+      }
+    
+      function closeBanner() {
+        if (!banner) return;
+        banner.classList.remove("is-open");
+        banner.setAttribute("aria-hidden", "true");
+        if (settingsLink) settingsLink.classList.add("is-visible");
+      }
+    
+      function openModal() {
+        if (!modal) return;
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+      }
+    
+      function closeModal() {
+        if (!modal) return;
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+      }
+    
+      function syncUIFromConsent(consent) {
+        if (!consent) return;
+        chkAnalytics.checked = !!consent.analytics;
+        chkMarketing.checked = !!consent.marketing;
+        chkPrefs.checked = !!consent.prefs;
+      }
+    
+      // Load deferred scripts by category
+      function runDeferredScripts(consent) {
+        const allow = {
+          analytics: !!consent.analytics,
+          marketing: !!consent.marketing,
+          prefs: !!consent.prefs
+        };
+    
+        const scripts = document.querySelectorAll('script[type="text/plain"][data-cookiecategory]');
+        scripts.forEach((s) => {
+          const cat = (s.getAttribute("data-cookiecategory") || "").toLowerCase().trim();
+          if (!allow[cat]) return;
+    
+          const src = s.getAttribute("data-src");
+          const newScript = document.createElement("script");
+    
+          // prenes atribúty (nonce, async, defer...) ak treba
+          if (s.hasAttribute("data-async")) newScript.async = true;
+          if (s.hasAttribute("data-defer")) newScript.defer = true;
+    
+          if (src) {
+            newScript.src = src;
+          } else {
+            newScript.text = s.textContent || "";
+          }
+    
+          document.head.appendChild(newScript);
+          s.parentNode.removeChild(s);
+        });
+      }
+    
+      function applyConsent(consent) {
+        setConsent(consent);
+        closeBanner();
+        closeModal();
+        runDeferredScripts(consent);
+    
+        // Tu si vieš napojiť vlastné hooky:
+        // window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: consent }));
+      }
+    
+      function acceptAll() {
+        applyConsent({
+          essential: true,
+          analytics: true,
+          marketing: true,
+          prefs: true,
+          ts: new Date().toISOString()
+        });
+      }
+    
+      function rejectAll() {
+        applyConsent({
+          essential: true,
+          analytics: false,
+          marketing: false,
+          prefs: false,
+          ts: new Date().toISOString()
+        });
+      }
+    
+      function saveSelection() {
+        applyConsent({
+          essential: true,
+          analytics: !!chkAnalytics.checked,
+          marketing: !!chkMarketing.checked,
+          prefs: !!chkPrefs.checked,
+          ts: new Date().toISOString()
+        });
+      }
+    
+      // Bind events
+      if (btnAcceptAll) btnAcceptAll.addEventListener("click", acceptAll);
+      if (btnRejectAll) btnRejectAll.addEventListener("click", rejectAll);
+    
+      if (btnCustomize) btnCustomize.addEventListener("click", function () {
+        const existing = getConsent();
+        if (existing) syncUIFromConsent(existing);
+        openModal();
+      });
+    
+      if (openSettingsLink) openSettingsLink.addEventListener("click", function (e) {
+        e.preventDefault();
+        const existing = getConsent();
+        if (existing) syncUIFromConsent(existing);
+        openModal();
+      });
+    
+      if (settingsLink) settingsLink.addEventListener("click", function (e) {
+        e.preventDefault();
+        const existing = getConsent();
+        if (existing) syncUIFromConsent(existing);
+        openModal();
+      });
+    
+      if (modalClose) modalClose.addEventListener("click", closeModal);
+      if (modalBackdrop) modalBackdrop.addEventListener("click", closeModal);
+    
+      if (btnSaveEssential) btnSaveEssential.addEventListener("click", rejectAll);
+      if (btnSaveSelection) btnSaveSelection.addEventListener("click", saveSelection);
+    
+      // Init
+      const consent = getConsent();
+      if (!consent) {
+        // Bez súhlasu zobraz banner (nenutné sa nesmú spustiť)
+        openBanner();
+      } else {
+        // Súhlas už existuje – spusti povolené skripty a ukáž link na zmenu
+        if (settingsLink) settingsLink.classList.add("is-visible");
+        runDeferredScripts(consent);
+      }
+    })();
+    </script>
+
+
 </body>
 </html>

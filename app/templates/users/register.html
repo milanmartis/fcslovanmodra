@@ -179,9 +179,29 @@
             </fieldset>
             {% endif %}
 
-            <div class="form-group" style="float:left;">
-                {{ form.submit(class="btn btn-sm") }}
+            <!-- GDPR/Privacy povinný súhlas pred registráciou -->
+            <div class="gdpr-consent">
+                <label class="consent-check">
+                <input type="checkbox" id="reg_gdpr" required>
+                <span class="consent-box" aria-hidden="true"></span>
+                <span class="consent-text">
+                    Súhlasím so spracovaním osobných údajov na účely vytvorenia a správy účtu a potvrdzujem,
+                    že som sa oboznámil/a s dokumentom
+                    <a href="{{ url_for('main.gdpr') if 'main.gdpr' }}" target="_blank" rel="noopener">
+                    Ochrana osobných údajov (GDPR)
+                    </a>.
+                </span>
+                </label>
+            
+                <div id="reg_gdpr_hint" class="consent-hint" style="display:none;">
+                Pre registráciu je potrebné potvrdiť súhlas.
+                </div>
             </div>
+            
+            <div class="form-group" style="float:left;">
+                {{ form.submit(class="btn btn-sm", id="reg_submit") }}
+            </div>
+
         </form>
         {% if current_user.is_authenticated %}
         <button onclick="javascript:location.href='{{ url_for('users.list_members') }}';" class="btn btn-sm" />Späť</button>
@@ -259,7 +279,41 @@
         
           validate(pwd.value);
         })();
-        </script>
         
+        </script>
+        <script>
+            (function () {
+              const chk = document.getElementById("reg_gdpr");
+              const btn = document.getElementById("reg_submit");
+              const hint = document.getElementById("reg_gdpr_hint");
+              if (!chk || !btn) return;
+            
+              function sync() {
+                const ok = chk.checked === true;
+                btn.disabled = !ok;
+                if (hint) hint.style.display = ok ? "none" : "none";
+              }
+            
+              // default: vypnuté, kým nepotvrdí
+              btn.disabled = true;
+            
+              chk.addEventListener("change", sync);
+            
+              // ak sa niekto pokúsi submitnúť cez enter / inak, ukáž hint
+              const form = btn.closest("form");
+              if (form) {
+                form.addEventListener("submit", function (e) {
+                  if (!chk.checked) {
+                    e.preventDefault();
+                    if (hint) hint.style.display = "block";
+                    chk.focus();
+                  }
+                });
+              }
+            
+              sync();
+            })();
+            </script>
+            
 {% endblock content %}
 

@@ -225,6 +225,17 @@ def tabz():
         score_table=RightColumn.score_table(),
     )
 
+@main.route("/gdpr")
+def gdpr():
+    return render_template(
+        'gdpr.html',
+        current_date=datetime.now(timezone.utc),
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        next_match=RightColumn.next_match(),
+        score_table=RightColumn.score_table(),
+    )
+
 
 @main.route("/stari-pani")
 def old_boys():
