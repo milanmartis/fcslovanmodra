@@ -68,7 +68,36 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
     <title>FC Slovan Modra</title>
   {% endif %}
  
+  <style>
+    /* ✅ MOBILE: user dropdown nech je celý viditeľný + scroll + safe-area rezerva */
+    @media (max-width: 768px) {
+      /* nech dropdown v kolapsnutom navbare nezmizne mimo viewportu */
+      #mainNavbar .dropdown-menu {
+        position: static !important;
+        float: none !important;
+        width: 100%;
+        max-height: calc(100vh - 160px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
   
+        /* dôležité: rezerva dole (iPhone safe area) */
+        padding-bottom: calc(14px + env(safe-area-inset-bottom));
+        margin-bottom: 10px;
+      }
+  
+      /* konkrétne user dropdown (avatar menu) */
+      #mainNavbar .user-dropdown-menu {
+        max-height: calc(100vh - 180px);
+      }
+  
+      /* maličká “spacer” položka na úplné dno (ak chceš vždy extra odstup) */
+      #mainNavbar .dropdown-menu-bottom-spacer {
+        list-style: none;
+        height: calc(12px + env(safe-area-inset-bottom));
+        pointer-events: none;
+      }
+    }
+  </style>
   <style>
     .club-avatar-btn{
       margin-top: 0px;

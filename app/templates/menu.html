@@ -33,8 +33,6 @@
       <!-- Ľavé hlavné menu -->
       <ul class="navbar-nav main-menu">
 
-    
-
         <!-- Články -->
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('main.home') }}">Home</a>
@@ -73,15 +71,7 @@
           </ul>
         </li>
 
-        <!-- STATS 
-        
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.stats') }}">Stats</a>
-        </li>
-        -->
-        <!-- STARI PANI 
-        -->
-        
+        <!-- Starí páni -->
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('main.old_boys') }}">Starí páni</a>
         </li>
@@ -89,42 +79,36 @@
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('sponsors.sponsors_public') }}">Partneri</a>
         </li>
-        <!--
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('products.list_products') }}">FunShop</a>
-          </li>
-        -->
 
-            <!-- Klub -->
-            <li class="nav-item dropdown">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                id="clubDropdown"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                Kontakt
-              </a>
-              <ul class="dropdown-menu" aria-labelledby="clubDropdown">
-                <li>
-                  <a class="dropdown-item" href="{{ url_for('main.about') }}">O klube</a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="{{ url_for('main.dokumenty') }}">Dokumenty</a>
-                </li>
-              </ul>
+        <!-- Kontakt -->
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="clubDropdown"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Kontakt
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="clubDropdown">
+            <li>
+              <a class="dropdown-item" href="{{ url_for('main.about') }}">O klube</a>
             </li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('main.dokumenty') }}">Dokumenty</a>
+            </li>
+          </ul>
+        </li>
       </ul>
 
       <!-- Pravá strana – user menu -->
       {% if current_user.is_authenticated %}
       <ul class="navbar-nav user-menu">
 
-       
         <!-- Avatar + dropdown -->
-        <li class="nav-item dropdown club-avatar-btn ">
+        <li class="nav-item dropdown club-avatar-btn">
           <a
             class="nav-link dropdown-toggle d-flex align-items-center"
             href="#"
@@ -133,21 +117,23 @@
             data-bs-toggle="dropdown"
             aria-expanded="false"
           >
-          <img
-            id="nav-user-avatar"
-            src="{{ nav_avatar_url or url_for('static', filename='profile_pics/default.jpg') }}"
-            alt="User"
-            style="width:34px;height:34px;border-radius:999px;object-fit:cover;"
-          >
-          </a> 
+            <img
+              id="nav-user-avatar"
+              src="{{ nav_avatar_url or url_for('static', filename='profile_pics/default.jpg') }}"
+              alt="User"
+              style="width:34px;height:34px;border-radius:999px;object-fit:cover;"
+            >
+          </a>
+
           {% if current_user.has_roles('Admin') %}
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+          <!-- ✅ pridaná trieda user-dropdown-menu -->
+          <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu" aria-labelledby="userDropdown">
             <li>
               <h6 class="dropdown-header" style="font-size: 0.75rem; opacity: 0.7;">
                 {{ current_user.email }}
               </h6>
             </li>
-            <li><a id="kalendar_button"  class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a></li>
+            <li><a id="kalendar_button" class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a></li>
             <li><a class="dropdown-item" href="{{ url_for('posts.new_post') }}">Nový článok</a></li>
             <li><a class="dropdown-item" href="{{ url_for('products.new_product') }}">Nový produkt</a></li>
             <li><a class="dropdown-item" href="{{ url_for('posts.list_categories') }}">Kategórie článkov</a></li>
@@ -162,22 +148,30 @@
             <li><a class="dropdown-item" href="{{ url_for('users.account') }}">Môj účet</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="{{ url_for('users.logout') }}">Odhlásiť sa</a></li>
+
+            <!-- ✅ “rezerva” dole aj keby nebola safe-area -->
+            <li class="dropdown-menu-bottom-spacer"></li>
           </ul>
           {% else %}
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+          <!-- ✅ pridaná trieda user-dropdown-menu -->
+          <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu" aria-labelledby="userDropdown">
             <li>
               <h6 class="dropdown-header" style="font-size: 0.75rem; opacity: 0.7;">
                 {{ current_user.email }}
               </h6>
             </li>
-            <li><a id="kalendar_button"class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a></li>
+            <li><a id="kalendar_button" class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a></li>
             <li><a class="dropdown-item" href="{{ url_for('talker.index') }}">Chat</a></li>
             <li><a class="dropdown-item" href="{{ url_for('users.account') }}">Môj účet</a></li>
             <li><a class="dropdown-item" href="{{ url_for('users.logout') }}">Odhlásiť sa</a></li>
+
+            <!-- ✅ “rezerva” dole -->
+            <li class="dropdown-menu-bottom-spacer"></li>
           </ul>
           {% endif %}
         </li>
-         <!-- ✅ Správy (badge + dropdown) -->
+
+        <!-- ✅ Správy (badge + dropdown) -->
         <li class="nav-item dropdown club-unread-btn">
           <a
             class="nav-link dropdown-toggle d-flex align-items-center"
@@ -205,7 +199,7 @@
             </li>
 
             <!-- sem sa renderuje zoznam -->
-            <li class="px-0" >
+            <li class="px-0">
               <ul id="navUnreadList" class="list-unstyled mb-0"></ul>
             </li>
 
@@ -218,12 +212,14 @@
             </li>
           </ul>
         </li>
+
       </ul>
       {% else %}
       <ul class="navbar-nav user-menu">
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('users.login') }}">Prihlásiť sa</a>
         </li>
+      </ul>
       {% endif %}
     </div>
   </div>
