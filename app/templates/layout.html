@@ -4,6 +4,9 @@
 <head>
   <meta charset="utf-8">
 
+  <!-- Canonical URL (SEO) -->
+  <link rel="canonical" href="{{ request.url_root.rstrip('/') }}{{ request.path }}">
+
   <!-- PWA / iOS: nezoomovať + safe area -->
   <meta name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">

@@ -13,7 +13,6 @@ from sqlalchemy.exc import OperationalError
 import json
 import redis
 from socketio import RedisManager
-
 from sqlalchemy.pool import QueuePool
 from dotenv import load_dotenv
 import base64
@@ -114,7 +113,8 @@ def create_app(config_class=None):
             "http://127.0.0.1:5000",
             "http://localhost:5000",
             "https://fcman-37884cffcf78.herokuapp.com",
-            "https://www.fcslovanmodra.sk/"
+            "https://www.fcslovanmodra.sk/",
+            "https://fcslovanmodra.sk/",
         ],
         cors_credentials=True,
         async_mode="gevent",
@@ -271,7 +271,22 @@ def create_app(config_class=None):
 
     # ---- Sidebar context + S3 helpers (ponechávam tvoju logiku) ----
     from app.aws_utils import make_sponsor_key, s3_presign
+    @app.before_request
+    def force_non_www_and_https():
+        host = request.host.lower()
 
+        # presmeruj www → non-www
+        if host.startswith("www."):
+            new_url = request.url.replace("://www.", "://", 1)
+            return redirect(new_url, code=301)
+
+        # presmeruj http → https (Heroku posiela X-Forwarded-Proto)
+        if request.headers.get("X-Forwarded-Proto", "http") != "https":
+            return redirect(
+                request.url.replace("http://", "https://", 1),
+                code=301
+            )
+        
     @app.context_processor
     def sidebar_context():
         partners_q = Sponsor.query.order_by(Sponsor.orderz.asc()).all()
