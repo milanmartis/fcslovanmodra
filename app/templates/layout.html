@@ -406,8 +406,8 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
                   <a href="{{ url_for('team.list_teams') }}">Družstvá</a>
                   <a href="{{ url_for('users.list_roles') }}">Roly na stránke</a>
                   <a href="{{ url_for('sponsors.sponsors_admin') }}">Sponzori</a>
-                  <a href="{{ url_for('talker.index') }}">Talker</a>
-                  <a href="{{ url_for('talker_admin.admin_rooms_page') }}">Talker Admin</a>
+                  <a href="{{ url_for('talker.index') }}">Chat</a>
+                  <a href="{{ url_for('talker_admin.admin_rooms_page') }}">Chat Admin</a>
                   <a href="{{ url_for('users.account') }}">Môj účet</a>
                   <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
                 </ul>
@@ -422,7 +422,7 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
                 <h6 style="font-size:70%;color:#6d9bff;opacity: 0.6;">{{current_user.email}}</h6>
                 <ul class="list-group">
                   <a id="kalendar_button" href="#" data-bs-toggle="modal" data-bs-target="#calenadrModal">Kalendár</a>
-                  <a href="{{ url_for('talker.index') }}">Talker</a>
+                  <a href="{{ url_for('talker.index') }}">Chat</a>
                   <a href="{{ url_for('users.account') }}">Môj účet</a>
                   <a href="{{ url_for('users.logout') }}">Odhlásiť sa</a>
                 </ul>
