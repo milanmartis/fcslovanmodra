@@ -113,6 +113,9 @@ def create_app(config_class=None):
         cors_allowed_origins=[
             "https://www.fcslovanmodra.sk",
             "https://fcslovanmodra.sk",
+            "http://127.0.0.1:5000",
+            "http://localhost:5000",
+            "https://fcman-37884cffcf78.herokuapp.com",
         ],
         cors_credentials=True,
         async_mode="gevent",
