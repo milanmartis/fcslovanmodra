@@ -117,8 +117,8 @@ def create_app(config_class=None):
             "https://fcslovanmodra.sk/",
         ],
         cors_credentials=True,
-        async_mode="gevent",
-        # async_mode="threading",
+        # async_mode="gevent",
+        async_mode="threading",
         message_queue=os.environ.get("REDIS_URL")
     )
 
