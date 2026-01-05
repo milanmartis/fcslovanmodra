@@ -449,7 +449,7 @@ class Event(db.Model):
     start_event = db.Column(db.DateTime(timezone=True))
     end_event = db.Column(db.DateTime(timezone=True))
     address = db.Column(db.String(250), nullable=False)
-    link = db.Column(db.String(550), nullable=False)
+    link = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     event_category_id = db.Column(db.Integer, db.ForeignKey('event_category.id'), nullable=False)
     event_team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)

@@ -872,7 +872,9 @@ body.lock-scroll{ overflow: hidden; }
   function renderMessage(m) {
     const mine = (m.user_id === myUserId);
     const row = document.createElement("div");
-    row.dataset.msgId = String(m.id || "");
+    //row.dataset.msgId = String(m.id || "");
+    const messageId = m.message_id || m.id;   // fallback
+    row.dataset.msgId = String(messageId || "");
     row.className = "bubble-row " + (mine ? "me" : "them");
   
     const bubble = document.createElement("div");
@@ -1014,7 +1016,8 @@ body.lock-scroll{ overflow: hidden; }
         if (!ok) return;
 
         try {
-          const r = await fetch(`/talker/messages/${m.id}`, {
+          const messageId = m.message_id || m.id;
+          const r = await fetch(`/talker/messages/${messageId}`, {
             method: "DELETE",
             credentials: "include",
           });
