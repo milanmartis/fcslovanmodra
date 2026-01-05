@@ -111,8 +111,8 @@ def create_app(config_class=None):
     socketio.init_app(
         app,
         cors_allowed_origins=[
-            "https://www.fcslovanmodra.sk/",
-            "https://fcslovanmodra.sk/",
+            "https://www.fcslovanmodra.sk",
+            "https://fcslovanmodra.sk",
         ],
         cors_credentials=True,
         async_mode="gevent",
@@ -269,21 +269,26 @@ def create_app(config_class=None):
 
     # ---- Sidebar context + S3 helpers (ponechávam tvoju logiku) ----
     from app.aws_utils import make_sponsor_key, s3_presign
+    
     @app.before_request
     def force_non_www_and_https():
+        p = request.path or ""
+
+        # ✅ nikdy neredirectuj socket.io a service worker / manifest / API
+        if p.startswith("/socket.io"):
+            return None
+        if p in ("/firebase-messaging-sw.js", "/manifest.webmanifest"):
+            return None
+        if p.startswith("/talker/"):
+            # sem si daj podľa potreby - ale aspoň socket a unread nech neskáču
+            return None
+
         host = request.host.lower()
-
-        # presmeruj www → non-www
         if host.startswith("www."):
-            new_url = request.url.replace("://www.", "://", 1)
-            return redirect(new_url, code=301)
+            return redirect(request.url.replace("://www.", "://", 1), code=301)
 
-        # presmeruj http → https (Heroku posiela X-Forwarded-Proto)
         if request.headers.get("X-Forwarded-Proto", "http") != "https":
-            return redirect(
-                request.url.replace("http://", "https://", 1),
-                code=301
-            )
+            return redirect(request.url.replace("http://", "https://", 1), code=301)
         
     @app.context_processor
     def sidebar_context():

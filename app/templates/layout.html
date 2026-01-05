@@ -860,10 +860,8 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
     document.addEventListener("DOMContentLoaded", initCarouselTouchSwipe);
   </script>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
 
-  <script src="{{ url_for('static', filename='js/talker-push-v2.js') }}" defer></script>
+
 
   <script>
     async function preprocessImage(file, opts = {}) {
@@ -1057,49 +1055,34 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
       </script>
       
       <script>
-        /**
-         * Socket.IO realtime unread updates (GLOBAL)
-         */
-         <script>
-          (function () {
-            if (!window.io) return;
-          
-            // len pre prihlásených
-            if (window.__IS_AUTH !== true) return;
-          
-            // ak už existuje socket, nepúšťaj nový
-            if (window.__SOCKET) return;
-          
-            const socket = io(window.location.origin, {
-              path: "/socket.io",        
-              transports: ["websocket", "polling"],
-              withCredentials: true,
-              timeout: 8000,
-              reconnection: true,
-              reconnectionAttempts: 10,
-              reconnectionDelay: 500
-            });
-          
-            window.__SOCKET = socket;
-            window.__UNREAD_SOCKET = socket;
-          
-            socket.on("connect", () => console.log("SOCKET CONNECT", socket.id));
-            socket.on("disconnect", (r) => console.log("SOCKET DISCONNECT", r));
-          
-            // ✅ ukáže reálny dôvod (CORS/401/302/path/...)
-            socket.on("connect_error", (err) => {
-              console.log("SOCKET CONNECT_ERROR", err?.message || err, err);
-            });
-          
-            socket.on("unread_update", (payload) => {
-              try {
-                const total = Number(payload?.total_unread_count || 0);
-                window.setBadge?.(total);
-                window.renderUnreadList?.(payload?.unread_counts || []);
-              } catch (e) {}
-            });
-          })();
-          </script>
+        (function () {
+          if (!window.io) return;
+          if (window.__IS_AUTH !== true) return;
+          if (window.__SOCKET) return;
+        
+          const socket = io(window.location.origin, {
+            path: "/socket.io",
+            transports: ["websocket", "polling"],
+            withCredentials: true,
+            timeout: 8000
+          });
+        
+          window.__SOCKET = socket;
+          window.__UNREAD_SOCKET = socket;
+        
+          socket.on("connect", () => console.log("SOCKET CONNECT", socket.id));
+          socket.on("disconnect", (r) => console.log("SOCKET DISCONNECT", r));
+          socket.on("connect_error", (err) => console.log("SOCKET CONNECT_ERROR", err?.message || err, err));
+        
+          socket.on("unread_update", (payload) => {
+            try {
+              const total = Number(payload?.total_unread_count || 0);
+              window.setBadge?.(total);
+              window.renderUnreadList?.(payload?.unread_counts || []);
+            } catch (e) {}
+          });
+        })();
+        </script>
           
         </script>
     <script>

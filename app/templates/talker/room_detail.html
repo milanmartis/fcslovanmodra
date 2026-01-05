@@ -497,8 +497,8 @@ body.lock-scroll{ overflow: hidden; }
   <img id="imgFsImg" class="imgfs__img" alt="image preview" />
   <div class="imgfs__hint">ESC / klik mimo = zavrieť</div>
 </div>
-<!-- Socket.IO -->
-<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
+
 
 <!-- ✅ Firebase (potrebné pre non-iOS FCM flow, lebo kód používa window.firebase) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -528,8 +528,10 @@ body.lock-scroll{ overflow: hidden; }
   const unreadPill = document.getElementById("unreadPill");
   const unreadCountEl = document.getElementById("unreadCount");
 
-  const socket = window.__SOCKET || io("/", { transports:["websocket","polling"], withCredentials:true });
-  window.__SOCKET = socket;
+  const socket = window.__SOCKET;
+  if (!socket) {
+    console.error("Socket not initialized (missing global socket from layout.html)");
+  }
   // ---------------------------
   // Badge API (best-effort)
   // ---------------------------
