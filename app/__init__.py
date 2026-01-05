@@ -22,6 +22,7 @@ from botocore.config import Config as BotoConfig
 # ✅ nevolaj init_firebase() pri importe modulu (môže to robiť side-effecty)
 # zober si ho až v create_app, keď je app pripravená
 # from app.firebase_client import init_firebase
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
@@ -75,7 +76,7 @@ def create_app(config_class=None):
 
     app = Flask(__name__)
     app.config.from_object(config_class)
-    
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     global rds
     rds = _make_redis()
     app.extensions["redis_cache"] = rds
