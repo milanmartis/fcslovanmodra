@@ -111,15 +111,12 @@ def create_app(config_class=None):
     socketio.init_app(
         app,
         cors_allowed_origins=[
-            "http://127.0.0.1:5000",
-            "http://localhost:5000",
-            "https://fcman-37884cffcf78.herokuapp.com",
             "https://www.fcslovanmodra.sk/",
             "https://fcslovanmodra.sk/",
         ],
         cors_credentials=True,
-        # async_mode="gevent",
-        async_mode="threading",
+        async_mode="gevent",
+        # async_mode="threading",
         message_queue=os.environ.get("REDIS_URL")
     )
 
