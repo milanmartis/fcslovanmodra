@@ -872,32 +872,37 @@ body.lock-scroll{ overflow: hidden; }
   function renderMessage(m) {
     const mine = (m.user_id === myUserId);
     const row = document.createElement("div");
-    //row.dataset.msgId = String(m.id || "");
-    const messageId = m.message_id || m.id;   // fallback
+  
+    const messageId = m.message_id || m.id; // fallback
     row.dataset.msgId = String(messageId || "");
     row.className = "bubble-row " + (mine ? "me" : "them");
   
     const bubble = document.createElement("div");
     bubble.className = "bubble";
   
+    // ✅ content wrapper
+    const content = document.createElement("div");
+    content.className = "msg-content";
+    bubble.appendChild(content);
+  
     const type = (m.msg_type || "text");
   
     if (type === "video" && m.attachment_url) {
       const cap = (m.text || "").trim();
-      bubble.innerHTML = `
+      content.innerHTML = `
         <video controls playsinline style="width:100%; border-radius:12px; margin-bottom:6px;">
           <source src="${escapeHtml(m.attachment_url)}" type="${escapeHtml(m.attachment_mime || "video/mp4")}">
         </video>
         ${cap ? `<div>${escapeHtml(cap)}</div>` : ""}
       `;
-    
-      const v = bubble.querySelector("video");
+  
+      const v = content.querySelector("video");
       if (v) v.addEventListener("loadedmetadata", () => scrollToBottomHard(), { once: true });
     }
-    
+  
     else if (type === "image" && m.attachment_url) {
       const cap = (m.text || "").trim();
-      bubble.innerHTML = `
+      content.innerHTML = `
         <img src="${escapeHtml(m.attachment_url)}"
              alt="image"
              class="js-imgfs"
@@ -905,46 +910,35 @@ body.lock-scroll{ overflow: hidden; }
              style="width:100%; border-radius:12px; margin-bottom:6px; display:block;" />
         ${cap ? `<div>${escapeHtml(cap)}</div>` : ""}
       `;
-    
-      const img = bubble.querySelector("img");
+  
+      const img = content.querySelector("img");
       if (img) img.addEventListener("load", () => scrollToBottomHard(), { once: true });
     }
-
+  
     else if (type === "file" && m.attachment_url) {
       const cap = (m.text || "").trim();
-    
-      const name = (m.attachment_name || "").trim();
+  
       const mime = (m.attachment_mime || "").toLowerCase();
-      const size = Number(m.attachment_size || 0);
-    
-      function niceSize(n) {
-        if (!n || n <= 0) return "";
-        const units = ["B","KB","MB","GB"];
-        let i = 0, x = n;
-        while (x >= 1024 && i < units.length - 1) { x /= 1024; i++; }
-        return `${x.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-      }
-    
-      // ikonka podľa typu
+  
       let icon = "fa-file";
       if (mime.includes("pdf")) icon = "fa-file-pdf";
       else if (mime.includes("word")) icon = "fa-file-word";
       else if (mime.includes("excel") || mime.includes("spreadsheet")) icon = "fa-file-excel";
       else if (mime.includes("powerpoint") || mime.includes("presentation")) icon = "fa-file-powerpoint";
-    
-      bubble.innerHTML = `
+  
+      content.innerHTML = `
         <div style="display:flex; gap:10px; align-items:center; padding:10px;border:0px;background:transparent">
-                   <a href="${escapeHtml(m.attachment_url)}" target="_blank" rel="noopener noreferrer"
-             class="push-btn" style="text-decoration:none; display:inline-flex; align-items:center;"> <i class="fa-solid ${icon}" style="font-size:80px;"></i></a>
+          <a href="${escapeHtml(m.attachment_url)}" target="_blank" rel="noopener noreferrer"
+             class="push-btn" style="text-decoration:none; display:inline-flex; align-items:center;">
+            <i class="fa-solid ${icon}" style="font-size:80px;"></i>
+          </a>
         </div>
         ${cap ? `<div style="margin-top:8px;">${escapeHtml(cap)}</div>` : ""}
       `;
     }
-    
-    
-    
+  
     else if (type === "poll" && m.poll_id) {
-      bubble.innerHTML = `<div style="opacity:.8">Načítavam anketu…</div>`;
+      content.innerHTML = `<div style="opacity:.8">Načítavam anketu…</div>`;
   
       (async () => {
         const pid = String(m.poll_id);
@@ -955,45 +949,44 @@ body.lock-scroll{ overflow: hidden; }
             data = await r.json();
             pollCache.set(pid, data);
           }
-          bubble.innerHTML = "";
-          renderPollInto(bubble, data);
+          content.innerHTML = "";
+          renderPollInto(content, data);
         } catch (e) {
           console.error(e);
-          bubble.innerHTML = `<div style="opacity:.8">Nepodarilo sa načítať anketu.</div>`;
+          content.innerHTML = `<div style="opacity:.8">Nepodarilo sa načítať anketu.</div>`;
         }
       })();
-    } else {
+    }
+  
+    else {
       const text = (m.text || "");
       const safe = escapeHtml(text);
-    
-      // zobraz čistý text
+  
       const textDiv = document.createElement("div");
       textDiv.innerHTML = safe.replace(/\n/g, "<br/>");
-      bubble.appendChild(textDiv);
-    
-      // link previews
-      const urls = extractUrls(text).slice(0, 3); // limit (napr. 3)
+      content.appendChild(textDiv);
+  
+      const urls = extractUrls(text).slice(0, 3);
       (async () => {
         for (const u of urls) {
-          // YouTube -> embed
           if (isYoutubeUrl(u)) {
             const iframe = createYoutubeEmbed(u);
-            if (iframe) bubble.appendChild(iframe);
+            if (iframe) content.appendChild(iframe);
             continue;
           }
-          // ostatné -> meta karta
           try {
             const meta = await fetchLinkMeta(u);
             const card = renderLinkCard(meta);
-            bubble.appendChild(card);
+            content.appendChild(card);
           } catch (e) {}
         }
       })();
     }
   
+    // ✅ meta + delete
     const meta = document.createElement("div");
     meta.className = "meta";
-
+  
     const canDelete = mine || IS_ADMIN;
     meta.innerHTML = `
       <span class="u">${escapeHtml(m.username || "")}</span>
@@ -1005,24 +998,23 @@ body.lock-scroll{ overflow: hidden; }
         </button>
       ` : ""}
     `;
-
+  
     if (canDelete) {
       const btn = meta.querySelector('button[data-del="1"]');
       btn.addEventListener("click", async (e) => {
         e.preventDefault();
         e.stopPropagation();
-
+  
         const ok = confirm("Naozaj vymazať túto správu?");
         if (!ok) return;
-
+  
         try {
-          const messageId = m.message_id || m.id;
-          const r = await fetch(`/talker/messages/${messageId}`, {
+          const mid = m.message_id || m.id;
+          const r = await fetch(`/talker/messages/${mid}`, {
             method: "DELETE",
             credentials: "include",
           });
           if (!r.ok) throw new Error(await r.text());
-          // UI sa zmaže aj cez socket event, ale nech je to okamžité
           row.remove();
         } catch (err) {
           console.error(err);
