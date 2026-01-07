@@ -118,8 +118,8 @@ def create_app(config_class=None):
             "https://fcman-37884cffcf78.herokuapp.com",
         ],
         cors_credentials=True,
-        async_mode="gevent",
-        # async_mode="threading",
+        # async_mode="gevent",
+        async_mode="threading",
         message_queue=os.environ.get("REDIS_URL")
     )
 
@@ -273,25 +273,25 @@ def create_app(config_class=None):
     # ---- Sidebar context + S3 helpers (ponechávam tvoju logiku) ----
     from app.aws_utils import make_sponsor_key, s3_presign
     
-    @app.before_request
-    def force_non_www_and_https():
-        p = request.path or ""
+    # @app.before_request
+    # def force_non_www_and_https():
+    #     p = request.path or ""
 
-        # ✅ nikdy neredirectuj socket.io a service worker / manifest / API
-        if p.startswith("/socket.io"):
-            return None
-        if p in ("/firebase-messaging-sw.js", "/manifest.webmanifest"):
-            return None
-        if p.startswith("/talker/"):
-            # sem si daj podľa potreby - ale aspoň socket a unread nech neskáču
-            return None
+    #     # ✅ nikdy neredirectuj socket.io a service worker / manifest / API
+    #     if p.startswith("/socket.io"):
+    #         return None
+    #     if p in ("/firebase-messaging-sw.js", "/manifest.webmanifest"):
+    #         return None
+    #     if p.startswith("/talker/"):
+    #         # sem si daj podľa potreby - ale aspoň socket a unread nech neskáču
+    #         return None
 
-        host = request.host.lower()
-        if host.startswith("www."):
-            return redirect(request.url.replace("://www.", "://", 1), code=301)
+    #     host = request.host.lower()
+    #     if host.startswith("www."):
+    #         return redirect(request.url.replace("://www.", "://", 1), code=301)
 
-        if request.headers.get("X-Forwarded-Proto", "http") != "https":
-            return redirect(request.url.replace("http://", "https://", 1), code=301)
+    #     if request.headers.get("X-Forwarded-Proto", "http") != "https":
+    #         return redirect(request.url.replace("http://", "https://", 1), code=301)
         
     @app.context_processor
     def sidebar_context():

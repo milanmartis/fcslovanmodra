@@ -60,7 +60,7 @@
 <center>
   <div class="carousel-indicators"
        style="background-color:#0f0f10;margin-bottom: 5px;width: fit-content;">
-    {% for team in teamz %}
+    {% for team in teamz[:4] %}
       <button class="btn text{% if loop.first %} active{% endif %}"
               data-bs-target="#games_plans"
               data-bs-slide-to="{{ loop.index0 }}"
@@ -238,12 +238,7 @@
 <br>
 
 
-{# ============================================================
- 3) TABUĽKY – carousel podľa počtu teamz (DB)
- - preč: teamz[:6], range(6)
- - indikátory aj slides idú cez teamz a loop.index0
- - score_table filtrujeme podľa tteam.team_id == team.id (nie podľa loop.index)
- ============================================================ #}
+
 
 {% if request.endpoint != 'main.stats' %}
 
@@ -254,7 +249,7 @@
 
     <div class="carousel-indicators"
          style="position:relative;top:-31px;background-color:rgb(17, 17, 17);margin-bottom: 5px;width: fit-content;margin:auto;">
-      {% for team in teamz %}
+      {% for team in teamz[:4] %}
         <button
           type="button"
           class="btn text{% if loop.first %} active{% endif %}"
@@ -269,7 +264,7 @@
 
     <div class="carousel-inner">
 
-      {% for team in teamz %}
+      {% for team in teamz[:4] %}
         <div class="carousel-item-tabz2 carousel-item{% if loop.first %} active{% endif %}"
              data-bs-ride="carousel"
              data-bs-touch="true"
