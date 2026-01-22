@@ -74,7 +74,7 @@
 
 <div class="carousel-inner" style="margin-top:-30px">
   {# next22 musí byť zo servera list rovnakej dĺžky ako teamz #}
-  {% for next222 in next22 %}
+  {% for next222 in next22[:4] %}
     <div class="carousel-item-tabz3 carousel-item{% if loop.first %} active{% endif %}">
 
       {# pripravíme si názvy tímov pre zápas #}
