@@ -341,6 +341,10 @@ def create_app(config_class=None):
         if _S3_CACHE["client"] is None:
             _S3_CACHE["client"] = _build_s3_client()
         return _S3_CACHE["client"]
+    
+    @app.context_processor
+    def inject_current_year():
+        return {"current_year": datetime.now().year}
 
     @app.context_processor
     def aws_helpers():

@@ -735,10 +735,16 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
         </div>
       </div>
     </div>
+    <br>
 
     <div class="container">
+      <p style="margin: auto; width: 100%; max-width: 650px; font-size: 75%; line-height: 130%; opacity:0.7;" class="text-center">
+      Chceli by ste rovnakú stránku s redakčným systémom, e-shopom a kalendárom pre váš športový klub? Automatická aktualizácia tabuliek, výsledkov, programu, správa tímov a hráčov, online predaj dresov a lístkov, live stream zápasov, 
+      notifikácie pre členov a fanúšikov a mnoho ďalšieho? Kontakt: <a href="tel:+421917360277">+421 917 360 277</a>, <a target="_blank" href="https://appdesign.sk">appdesign.sk</a>
+      </p>
+   
       <p style="margin-top:20px;font-size: 75%;" class="text-center">
-        Copyright @{{ current_year }} | Powered by
+        &copy;{{ current_year }} | Powered by
         <a target="_blank" href="https://appdesign.sk">appdesign.sk</a>
       </p>
     </div>
@@ -1084,7 +1090,7 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
         })();
         </script>
           
-        </script>
+    
     <script>
       async function refreshUnreadAndBadge() {
         try {
@@ -1165,6 +1171,7 @@ window.__IS_AUTH = {{ "true" if is_auth else "false" }};
     </div>
   </div>
 </div>
+
 
 <!-- Cookie settings modal -->
 <div id="cookieModal" class="cookie-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cookieModalTitle">
