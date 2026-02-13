@@ -1,6 +1,23 @@
 /* ===========================
    FC SLOVAN NAVBAR THEME
    =========================== */
+/* iOS PWA / mobile: nech navbar nezačne pod status barom */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .site-header {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* ak chceš priamo navbar posunúť */
+  .club-navbar.navbar {
+    margin-top: calc(16px + env(safe-area-inset-top));
+  }
+}
+
+/* pre istotu aj mimo @supports */
+.site-header {
+  padding-top: constant(safe-area-inset-top); /* staré iOS */
+  padding-top: env(safe-area-inset-top);
+}
 
    :root {
     /* Hlavné farby klubu – neskôr ich vieš meniť dynamicky */
