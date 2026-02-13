@@ -2,6 +2,11 @@
 <style>
     /* skry čas vždy */
   /* legenda */
+
+#info-updated, #info-added { z-index: 999999 !important; color:#fff;font-size: 111%%;}
+#info-updated .modal-dialog, #info-added .modal-dialog { z-index: 999999 !important;color:#fff;font-size: 111%%; }
+
+
 .calendar-legend{
     margin-top: 14px;
     display: flex;
@@ -311,11 +316,19 @@
   
     <!-- Info modals -->
     <div id="info-updated" class="modal fade" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-sm"><h1>Shedule updated successfully</h1></div>
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content p-3 text-center">
+          <h5 class="m-0" style="color:#fff;font-size: 121%;opacity:0.7;">Schedule updated successfully</h5>
+        </div>
+      </div>
     </div>
   
     <div id="info-added" class="modal fade" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-sm"><h1>Shedule added</h1></div>
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content p-3 text-center">
+          <h5 class="m-0" style="color:#fff;font-size: 121%;opacity:0.7;">Schedule added</h5>
+        </div>
+      </div>
     </div>
   
     {# --- Práva --- #}
@@ -904,7 +917,9 @@
           type: "POST",
           contentType: "application/json",
           data: JSON.stringify(payload),
-          success: function() {
+          success: function(resp) {
+            showModal("info-updated");
+            setTimeout(() => hideModal("info-updated"), 1900);
             try { $("#schedule-calendar").fullCalendar("refetchEvents"); } catch (e) {}
           },
           error: function() {
@@ -935,7 +950,9 @@
           type: "POST",
           contentType: "application/json",
           data: JSON.stringify(payload),
-          success: function() {
+          success: function(resp) {
+            showModal("info-updated");
+            setTimeout(() => hideModal("info-updated"), 1900);
             try { $("#schedule-calendar").fullCalendar("refetchEvents"); } catch (e) {}
           },
           error: function() {
@@ -976,6 +993,9 @@
         success: function() {
           hideModal("schedule-add");
           $("#schedule-calendar").fullCalendar("refetchEvents");
+        
+          showModal("info-added");
+          setTimeout(() => hideModal("info-added"), 1900);
         }
       });
     });
@@ -1006,9 +1026,12 @@
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify(payload),
-        success: function() {
+        success: function(resp) {
           hideModal("schedule-edit");
           $("#schedule-calendar").fullCalendar("refetchEvents");
+        
+          showModal("info-updated");
+          setTimeout(() => hideModal("info-updated"), 1900);
         }
       });
     });
