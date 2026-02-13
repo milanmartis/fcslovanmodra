@@ -21,7 +21,16 @@ from app.main.routes import RightColumn, Next
 
 
 calendar = Blueprint("calendar", __name__)
+from datetime import time
 
+def parse_dt_keep_time(val, fallback_dt):
+    if not val:
+        return None
+    dt = parser.isoparse(val)
+    # ak prišiel iba dátum (bez času), zachovaj čas z fallbacku
+    if isinstance(dt, datetime) and dt.time() == time(0,0) and "T" not in val and fallback_dt:
+        dt = dt.replace(hour=fallback_dt.hour, minute=fallback_dt.minute, second=fallback_dt.second)
+    return dt
 
 # ----------------------------
 # Roles decorator (kompatibilný s has_role aj has_roles)
@@ -349,8 +358,8 @@ def update():
             return jsonify({"error": "not_found"}), 404
 
         event.title = data.get("title2", event.title)
-        event.start_event = parser.isoparse(data["start2"])
-        event.end_event = parser.isoparse(data["end2"])
+        event.start_event = parse_dt_keep_time(data.get("start2"), event.start_event)
+        event.end_event   = parse_dt_keep_time(data.get("end2"), event.end_event)
         event.address = data.get("address2", "")
         event.link = data.get("link2", "")
         event.event_category_id = int(data["category2"])
