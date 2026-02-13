@@ -184,13 +184,15 @@
               {% set home_slug = home_name|default('')|string|slugify %}
               {% set away_slug = away_name|default('')|string|slugify %}
 
+              {% set nm = (next_match.start_event|to_local) if next_match and next_match.start_event else None %}
+
               <p style="margin-bottom:6px; color:#fff;">
-                {% if current_date.strftime('%d. %m. %Y') == next_match.start_event.strftime('%d. %m. %Y') %}
+                {% if nm and current_date and (current_date.strftime('%d. %m. %Y') == nm.strftime('%d. %m. %Y')) %}
                   <strong>Dnes</strong>
                 {% else %}
-                  {{ next_match.start_event.strftime('%d. %m. %Y') }}
+                  {{ nm.strftime('%d. %m. %Y') if nm else '---' }}
                 {% endif %}
-                o <strong>{{ next_match.start_event.strftime('%H:%M') }}</strong>
+                o <strong>{{ nm.strftime('%H:%M') if nm else '--:--' }}</strong>
               </p>
 
               <!-- countdown – POZOR: class + data atribút, nie id -->
@@ -199,7 +201,7 @@
                   deň | hod | min | sek
                 </p>
                 <p class="countdown"
-                   data-start-event="{{ next_match.start_event.isoformat() }}"
+                   data-start-event="{{ (next_match.start_event|to_local).isoformat() }}"
                    style="padding:0;margin:2px 0 0 0;"></p>
               </div>
 
@@ -382,8 +384,8 @@
                         {% endif %}
 
                         <tr>
-                          <td>{{ match.start_event.strftime('%d.%m.%Y') }}</td>
-                          <td>{{ match.start_event.strftime('%H:%M') }}</td>
+                          <td>{{ (match.start_event|to_local).strftime('%d.%m.%Y') }}</td>
+                          <td>{{ (match.start_event|to_local).strftime('%H:%M') }}</td>
                           <td>{{ home }} - {{ away }}</td>
                          <!-- <td>
                             <a href="{{ match.link }}" target="_blank">
@@ -441,8 +443,8 @@
                         {% set home = tmp[0] if tmp|length > 0 else '---' %}
                         {% set away = tmp[1] if tmp|length > 1 else '---' %}
                         <tr>
-                          <td>{{ match.start_event.strftime('%d.%m.%Y') }}</td>
-                          <td>{{ match.start_event.strftime('%H:%M') }}</td>
+                          <td>{{ (match.start_event|to_local).strftime('%d.%m.%Y') }}</td>
+                          <td>{{ (match.start_event|to_local).strftime('%H:%M') }}</td>
                           <td>{{ home }} - {{ away }}</td>
                           <td>
                             <a href="{{ match.link }}" target="_blank">

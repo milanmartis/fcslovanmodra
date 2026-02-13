@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 import base64
 import os
 import boto3
+from app.utils import to_local
 from botocore.config import Config as BotoConfig
 # ✅ nevolaj init_firebase() pri importe modulu (môže to robiť side-effecty)
 # zober si ho až v create_app, keď je app pripravená
@@ -367,5 +368,7 @@ def create_app(config_class=None):
                 return ""
 
         return dict(aws_image_url=aws_image_url, s3_presign=s3_presign_local)
+    
+    app.jinja_env.filters["to_local"] = to_local
 
     return app

@@ -99,20 +99,26 @@
               {% if next222 is string %}
                 <h6>{{ next222 }}</h6>
               {% else %}
-                {% if current_date.strftime('%d. %m. %Y') == next222.start_event.strftime('%d. %m. %Y') %}
-                  {% set datetext = "Dnes" %}
-                {% else %}
-                  {% set datetext = next222.start_event.strftime('%d. %m. %Y') %}
-                {% endif %}
-                <h6>{{ datetext }} o <b>{{ next222.start_event.strftime('%H:%M') }}</b></h6>
+              {% set nm = (next222.start_event|to_local) if (next222 and next222.start_event is defined and next222.start_event) else None %}
 
-                <div class="btn-live-frame" style="display: inline;">
-                  <p style="padding:0px; margin:0px;opacity: 1.0;color:#fff;font-size: 70%;"
-                     id="countdown_desc"></p>
-                  <p style="padding:0px; margin:0px;"
-                     id="countdown"
-                     data-start-event="{{ next222.start_event.isoformat() }}"></p>
-                </div>
+              {% set cd = (current_date|to_local) if current_date else None %}
+              
+              {% if nm and cd and (cd.strftime('%d. %m. %Y') == nm.strftime('%d. %m. %Y')) %}
+                {% set datetext = "Dnes" %}
+              {% else %}
+                {% set datetext = nm.strftime('%d. %m. %Y') if nm else '---' %}
+              {% endif %}
+              
+              <h6>{{ datetext }} o <b>{{ nm.strftime('%H:%M') if nm else '--:--' }}</b></h6>
+              
+              <div class="btn-live-frame" style="display: inline;">
+                <p class="countdown_desc"
+                        style="padding:0px; margin:0px;opacity: 1.0;color:#fff;font-size: 70%;"></p>
+
+                      <p class="countdown"
+                        style="padding:0px; margin:0px;"
+                        data-start-event="{{ nm.isoformat() if nm else '' }}"></p>
+              </div>
 
                 <br>
 

@@ -398,9 +398,20 @@ def dokumenty():
     )
 
 
+# @main.route("/sidebar/next-matches-fragment")
+# def sidebar_next_matches_fragment():
+#     return render_template("partials/next_matches_sidebar.html")
+
+
 @main.route("/sidebar/next-matches-fragment")
 def sidebar_next_matches_fragment():
-    return render_template("partials/next_matches_sidebar.html")
+    current_date = datetime.now(timezone.utc)  # ✅ toto sem
+
+    return render_template(
+        "partials/next_matches_sidebar.html",
+        current_date=current_date,
+        # + všetky ostatné veci čo tam používaš (teamz, next22, score_table, partners...)
+    )
 
 
 class Next:
