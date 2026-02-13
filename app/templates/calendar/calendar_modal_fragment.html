@@ -6,7 +6,10 @@
 #info-updated, #info-added { z-index: 999999 !important; color:#fff;font-size: 111%%;}
 #info-updated .modal-dialog, #info-added .modal-dialog { z-index: 999999 !important;color:#fff;font-size: 111%%; }
 
-
+.fc-event.is-past {
+  opacity: 0.5 !important;
+  filter: grayscale(0.3);
+} 
 .calendar-legend{
     margin-top: 14px;
     display: flex;
@@ -806,7 +809,15 @@
         // --- vytiahni team a category (podľa toho, ako to posiela backend) ---
         const tId = Number(event.team || event.event_team_id || event.team_id || 0);
         const cId = Number(event.category || event.event_category_id || event.category_id || 0);
-      
+        const now = moment();
+
+        // za “minulé” beriem event, ktorý už skončil
+        const endM = parseAnyDate(event.end) || parseAnyDate(event.start);
+        if (endM && endM.isValid() && endM.isBefore(now)) {
+          element.addClass("is-past");
+        } else {
+          element.removeClass("is-past");
+        }
         // TEAM_NAME a CAT_NAME sú mapy id->name (ak ich už máš v page, použijú sa)
         const tName = (window.TEAM_NAME && window.TEAM_NAME[tId]) ? window.TEAM_NAME[tId] : "";
         const cNameRaw = (window.CAT_NAME && window.CAT_NAME[cId]) ? window.CAT_NAME[cId] : "";
