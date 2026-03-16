@@ -3,196 +3,251 @@
 <h3>Team Page Update</h3>
 
 <div class="content-section">
-    <form method="POST" action="" id="form-team-id">
-        {{ form.hidden_tag() }}
-        <input type="hidden" id="team_id" name="team_id" value="{{ team.id }}">
+  <form method="POST" action="" id="form-team-id">
+    {{ form.hidden_tag() }}
+    <input type="hidden" id="team_id" name="team_id" value="{{ team.id if team else '' }}">
 
-        <fieldset class="form-group">
-            <div class="form-group">
-                {{ form.name.label(class="form-control-label") }}
-                {% if form.name.errors %}
-                    {{ form.name(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.name.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.name(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                {{ form.main_league.label(class="form-control-label") }}
-                {% if form.main_league.errors %}
-                    {{ form.main_league(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.main_league.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.main_league(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-
-            <div class="row mb-3">
-                <div class="form-group col-9">
-                    {{ form.score_scrap.label(class="form-control-label") }}
-                    {% if form.score_scrap.errors %}
-                        {{ form.score_scrap(class="form-control form-control-lg is-invalid", id="score_scrap") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.score_scrap.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.score_scrap(class="form-control form-control-lg", id="score_scrap") }}
-                    {% endif %}
-                </div>
-                <div class="form-group col-3">
-                    <label class="form-control-label" for="update-score-table">&nbsp;</label>
-                    <button id="update-score-table"
-                            type="submit"
-                            name="what"
-                            value="score"
-                            class="form-control form-control-lg btn btn-update">
-                        Update
-                    </button>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="form-group col-9">
-                    {{ form.player_list_scrap.label(class="form-control-label") }}
-                    {% if form.player_list_scrap.errors %}
-                        {{ form.player_list_scrap(class="form-control form-control-lg is-invalid", id="player_list_scrap") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.player_list_scrap.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.player_list_scrap(class="form-control form-control-lg", id="player_list_scrap") }}
-                    {% endif %}
-                </div>
-                <div class="form-group col-3">
-                    <label class="form-control-label" for="update-player-list">&nbsp;</label>
-                    <button id="update-player-list"
-                            type="submit"
-                            name="what"
-                            value="players"
-                            class="form-control form-control-lg btn btn-update">
-                        Update
-                    </button>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="form-group col-9">
-                    {{ form.events_results_scrap.label(class="form-control-label") }}
-                    {% if form.events_results_scrap.errors %}
-                        {{ form.events_results_scrap(class="form-control form-control-lg is-invalid", id="events_results_scrap") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.events_results_scrap.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.events_results_scrap(class="form-control form-control-lg", id="events_results_scrap") }}
-                    {% endif %}
-                </div>
-                <div class="form-group col-3">
-                    <label class="form-control-label" for="update-events-results">&nbsp;</label>
-                    <button id="update-events-results"
-                            type="submit"
-                            name="what"
-                            value="events"
-                            class="form-control form-control-lg btn btn-update">
-                        Update
-                    </button>
-                </div>
-            </div>
-        </fieldset>
-
-        <div class="form-group" style="float:left;">
-            {{ form.submit(class="btn btn-outline-info") }}
-        </div>
-    </form>
-
-    <button onclick="javascript:location.href='{{ url_for('team.list_teams') }}';"
-            class="btn btn-sm ml-2">
-        Back
-    </button>
-
-    <div id="info-updated"
-         class="modal fade bd-example-modal-lg"
-         tabindex="-1"
-         role="dialog"
-         aria-labelledby="myLargeModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-sm">
-            <h1>Schedule updated successfully</h1>
-        </div>
+    <div class="form-row">
+      <div class="form-group col-12 col-md-6">
+        {{ form.name.label(class="form-control-label") }}
+        {{ form.name(class="form-control form-control-lg") }}
+        {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+    
+      <div class="form-group col-12 col-md-6">
+        {{ form.name_short.label(class="form-control-label") }}
+        {{ form.name_short(class="form-control form-control-lg") }}
+        {% for error in form.name_short.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
     </div>
 
-    <div id="info-added"
-         class="modal fade bd-example-modal-lg"
-         tabindex="-1"
-         role="dialog"
-         aria-labelledby="myLargeModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-sm">
-            <h1>Schedule added</h1>
-        </div>
+    <div class="form-group">
+      {{ form.visible.label(class="form-control-label") }}
+      {{ form.visible(class="form-control form-control-lg") }}
+      {% for error in form.visible.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
     </div>
+
+
+    <fieldset class="form-group">
+
+
+      <div class="form-group">
+        {{ form.main_league.label(class="form-control-label") }}
+        {% if form.main_league.errors %}
+          {{ form.main_league(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.main_league.errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% else %}
+          {{ form.main_league(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+
+      {# --- SCORE TABLE --- #}
+      <div class="row mb-3">
+        <div class="form-group col-9">
+          {{ form.score_scrap.label(class="form-control-label") }}
+          {% if form.score_scrap.errors %}
+            {{ form.score_scrap(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.score_scrap.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.score_scrap(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+        <div class="form-group col-3">
+          <label class="form-control-label" for="update-score-table">&nbsp;</label>
+          <button id="update-score-table"
+                  type="button"
+                  data-what="score"
+                  data-field="score_scrap"
+                  class="form-control form-control-lg btn btn-update">
+            Update
+          </button>
+        </div>
+      </div>
+
+      {# --- PLAYERS --- #}
+      <div class="row mb-3">
+        <div class="form-group col-9">
+          {{ form.player_list_scrap.label(class="form-control-label") }}
+          {% if form.player_list_scrap.errors %}
+            {{ form.player_list_scrap(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.player_list_scrap.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.player_list_scrap(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+        <div class="form-group col-3">
+          <label class="form-control-label" for="update-player-list">&nbsp;</label>
+          <button id="update-player-list"
+                  type="button"
+                  data-what="players"
+                  data-field="player_list_scrap"
+                  class="form-control form-control-lg btn btn-update">
+            Update
+          </button>
+        </div>
+      </div>
+
+      {# --- RESULTS / VÝSLEDKY --- #}
+      <div class="row mb-3">
+        <div class="form-group col-9">
+          {{ form.events_results_scrap.label(class="form-control-label") }}
+          {% if form.events_results_scrap.errors %}
+            {{ form.events_results_scrap(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.events_results_scrap.errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+          {% else %}
+            {{ form.events_results_scrap(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+        <div class="form-group col-3">
+          <label class="form-control-label" for="update-events-results">&nbsp;</label>
+          <button id="update-events-results"
+                  type="button"
+                  data-what="events"
+                  data-field="events_results_scrap"
+                  class="form-control form-control-lg btn btn-update">
+            Update
+          </button>
+        </div>
+      </div>
+
+    </fieldset>
+
+    <div class="form-group" style="float:left;">
+      {# toto je normálny submit pre uloženie META #}
+      {{ form.submit(class="btn btn-outline-info") }}
+    </div>
+  </form>
+
+  <button onclick="javascript:location.href='{{ url_for('team.list_teams') }}';"
+          class="btn btn-sm ml-2">Back</button>
+
+{# -------------------- STATUS MODAL (Bootstrap 5) -------------------- #}
+<div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content" id="statusModalContent">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0" id="statusModalTitle">Update</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="d-flex align-items-start">
+          <div class="me-2" style="font-size:18px; line-height:1;" id="statusModalIcon">ℹ️</div>
+          <div>
+            <div id="statusModalMsg" style="font-size: 13px;"></div>
+            <div id="statusModalSub" class="text-muted mt-1" style="font-size: 11px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 {% endblock content %}
 
 {% block scripts %}
-{{ super() }}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    function setupUpdateButton(buttonId, inputId) {
-        const button = document.getElementById(buttonId);
-        const input = document.getElementById(inputId);
-
-        if (!button) return;
-
-        button.addEventListener('click', function () {
-            this.innerText = 'Loading...';
-            this.disabled = true;
-        });
-
-        if (input) {
-            input.addEventListener('input', function () {
-                button.innerText = 'Update';
-                button.disabled = false;
-            });
+  {{ super() }}
+  <script>
+    $(function () {
+  
+      function showStatusModal(category, title, message) {
+        var icon = "ℹ️";
+        if (category === "success") icon = "✅";
+        if (category === "warning") icon = "⚠️";
+        if (category === "danger")  icon = "❌";
+  
+        $("#statusModalIcon").text(icon);
+        $("#statusModalTitle").text(title || "Update");
+        $("#statusModalMsg").text(message || "");
+        $("#statusModalSub").text("");
+        $("#statusModal").modal("show");
+      }
+  
+      function setBtnLoading($btn, isLoading) {
+        if (isLoading) {
+          $btn.data("oldText", $btn.text());
+          $btn.prop("disabled", true).text("Updating...");
+        } else {
+          $btn.prop("disabled", false).text($btn.data("oldText") || "Update");
         }
-    }
-
-    setupUpdateButton('update-score-table', 'score_scrap');
-    setupUpdateButton('update-player-list', 'player_list_scrap');
-    setupUpdateButton('update-events-results', 'events_results_scrap');
-
-    const updatePlayerBtn = document.getElementById('update-player-list');
-    if (updatePlayerBtn) {
-        updatePlayerBtn.addEventListener('click', function () {
-            if (typeof refreshNextMatchesSidebar === 'function') {
-                refreshNextMatchesSidebar();
+      }
+  
+      function ajaxUpdate($btn) {
+        var what = String($btn.data("what") || "").trim().toLowerCase();
+        var field = String($btn.data("field") || "").trim();
+  
+        if (!what || !field) {
+          showStatusModal("danger", "Chyba", "Button nemá data-what alebo data-field.");
+          return;
+        }
+  
+        var $form = $("#form-team-id");
+        var value = ($form.find("[name='" + field + "']").val() || "").trim();
+  
+        if (!value) {
+          showStatusModal("warning", "Chýba link", "Prosím vyplň link do poľa.");
+          return;
+        }
+  
+        var data = $form.serializeArray();
+  
+        // dôležité: odstráň prípadné existujúce what z hidden inputov
+        data = data.filter(function (x) { return x.name !== "what"; });
+  
+        data.push({ name: "what", value: what });
+        data.push({ name: field, value: value });
+  
+        setBtnLoading($btn, true);
+  
+        $.ajax({
+          url: window.location.href,
+          method: "POST",
+          data: $.param(data),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken": $("#form-team-id").find("input[name='csrf_token']").val()
+          },
+          success: function (resp) {
+            showStatusModal(resp.category || "success", "Update", resp.message || "Hotovo.");
+          },
+          error: function (xhr) {
+            var resp = xhr.responseJSON || {};
+            var raw = (xhr.responseText || "").trim();
+            var msg = resp.message || "Update zlyhal (HTTP " + xhr.status + ").";
+          
+            // ak je to CSRF/HTML, aspoň ukáž prvých ~200 znakov
+            if (!resp.message && raw) {
+              msg += " Detail: " + raw.slice(0, 200);
             }
+          
+            showStatusModal(resp.category || "danger", "Update", msg);
+          },
+          complete: function () {
+            setBtnLoading($btn, false);
+          }
         });
-    }
-
-    const updateScoreBtn = document.getElementById('update-score-table');
-    if (updateScoreBtn) {
-        updateScoreBtn.addEventListener('click', function () {
-            if (window.parent) {
-                window.parent.postMessage({ type: 'calendar-updated' }, '*');
-            }
-        });
-    }
-});
-</script>
+      }
+  
+      // jeden handler pre všetky 3
+      $("#update-score-table, #update-player-list, #update-events-results").on("click", function (e) {
+        e.preventDefault();
+        ajaxUpdate($(this));
+      });
+  
+    });
+  </script>
+  
 {% endblock scripts %}
