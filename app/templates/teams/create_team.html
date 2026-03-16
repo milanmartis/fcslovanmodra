@@ -36,7 +36,6 @@
                 {% endif %}
             </div>
 
-            <!-- SCORE TABLE -->
             <div class="row mb-3">
                 <div class="form-group col-9">
                     {{ form.score_scrap.label(class="form-control-label") }}
@@ -63,7 +62,6 @@
                 </div>
             </div>
 
-            <!-- PLAYERS -->
             <div class="row mb-3">
                 <div class="form-group col-9">
                     {{ form.player_list_scrap.label(class="form-control-label") }}
@@ -74,7 +72,6 @@
                                 <span>{{ error }}</span>
                             {% endfor %}
                         </div>
-                    {% endfor %}
                     {% else %}
                         {{ form.player_list_scrap(class="form-control form-control-lg", id="player_list_scrap") }}
                     {% endif %}
@@ -91,7 +88,6 @@
                 </div>
             </div>
 
-            <!-- RESULTS / EVENTS -->
             <div class="row mb-3">
                 <div class="form-group col-9">
                     {{ form.events_results_scrap.label(class="form-control-label") }}
@@ -155,7 +151,6 @@
 
 {% block scripts %}
 {{ super() }}
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     function setupUpdateButton(buttonId, inputId) {
