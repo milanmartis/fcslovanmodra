@@ -36,23 +36,23 @@
                 {% endif %}
             </div>
 
-            {# --- SCORE TABLE --- #}
+            <!-- SCORE TABLE -->
             <div class="row mb-3">
                 <div class="form-group col-9">
                     {{ form.score_scrap.label(class="form-control-label") }}
                     {% if form.score_scrap.errors %}
-                        {{ form.score_scrap(class="form-control form-control-lg is-invalid") }}
+                        {{ form.score_scrap(class="form-control form-control-lg is-invalid", id="score_scrap") }}
                         <div class="invalid-feedback">
                             {% for error in form.score_scrap.errors %}
                                 <span>{{ error }}</span>
                             {% endfor %}
                         </div>
                     {% else %}
-                        {{ form.score_scrap(class="form-control form-control-lg") }}
+                        {{ form.score_scrap(class="form-control form-control-lg", id="score_scrap") }}
                     {% endif %}
                 </div>
                 <div class="form-group col-3">
-                    <label class="form-control-label" for="update-score-table"></label>
+                    <label class="form-control-label" for="update-score-table">&nbsp;</label>
                     <button id="update-score-table"
                             type="submit"
                             name="what"
@@ -63,23 +63,24 @@
                 </div>
             </div>
 
-            {# --- PLAYERS --- #}
+            <!-- PLAYERS -->
             <div class="row mb-3">
                 <div class="form-group col-9">
                     {{ form.player_list_scrap.label(class="form-control-label") }}
                     {% if form.player_list_scrap.errors %}
-                        {{ form.player_list_scrap(class="form-control form-control-lg is-invalid") }}
+                        {{ form.player_list_scrap(class="form-control form-control-lg is-invalid", id="player_list_scrap") }}
                         <div class="invalid-feedback">
                             {% for error in form.player_list_scrap.errors %}
                                 <span>{{ error }}</span>
                             {% endfor %}
                         </div>
+                    {% endfor %}
                     {% else %}
-                        {{ form.player_list_scrap(class="form-control form-control-lg") }}
+                        {{ form.player_list_scrap(class="form-control form-control-lg", id="player_list_scrap") }}
                     {% endif %}
                 </div>
                 <div class="form-group col-3">
-                    <label class="form-control-label" for="update-player-list"></label>
+                    <label class="form-control-label" for="update-player-list">&nbsp;</label>
                     <button id="update-player-list"
                             type="submit"
                             name="what"
@@ -90,19 +91,19 @@
                 </div>
             </div>
 
-            {# --- RESULTS / VÝSLEDKY --- #}
+            <!-- RESULTS / EVENTS -->
             <div class="row mb-3">
                 <div class="form-group col-9">
                     {{ form.events_results_scrap.label(class="form-control-label") }}
                     {% if form.events_results_scrap.errors %}
-                        {{ form.events_results_scrap(class="form-control form-control-lg is-invalid") }}
+                        {{ form.events_results_scrap(class="form-control form-control-lg is-invalid", id="events_results_scrap") }}
                         <div class="invalid-feedback">
                             {% for error in form.events_results_scrap.errors %}
                                 <span>{{ error }}</span>
                             {% endfor %}
                         </div>
                     {% else %}
-                        {{ form.events_results_scrap(class="form-control form-control-lg") }}
+                        {{ form.events_results_scrap(class="form-control form-control-lg", id="events_results_scrap") }}
                     {% endif %}
                 </div>
                 <div class="form-group col-3">
@@ -116,8 +117,6 @@
                     </button>
                 </div>
             </div>
-
-
         </fieldset>
 
         <div class="form-group" style="float:left;">
@@ -126,57 +125,79 @@
     </form>
 
     <button onclick="javascript:location.href='{{ url_for('team.list_teams') }}';"
-            class="btn btn-sm ml-2">Back</button>
+            class="btn btn-sm ml-2">
+        Back
+    </button>
 
-    <div
-        id="info-updated"
-        class="modal fade bd-example-modal-lg"
-        tabindex="-1"
-        role="dialog"
-        aria-labelledby="myLargeModalLabel"
-        aria-hidden="true">
+    <div id="info-updated"
+         class="modal fade bd-example-modal-lg"
+         tabindex="-1"
+         role="dialog"
+         aria-labelledby="myLargeModalLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-sm">
-            <h1>Shedule updated successfully</h1>
+            <h1>Schedule updated successfully</h1>
         </div>
     </div>
 
-    <div
-        id="info-added"
-        class="modal fade bd-example-modal-lg"
-        tabindex="-1"
-        role="dialog"
-        aria-labelledby="myLargeModalLabel"
-        aria-hidden="true">
+    <div id="info-added"
+         class="modal fade bd-example-modal-lg"
+         tabindex="-1"
+         role="dialog"
+         aria-labelledby="myLargeModalLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-sm">
-            <h1>Shedule added</h1>
+            <h1>Schedule added</h1>
         </div>
     </div>
 </div>
 {% endblock content %}
 
 {% block scripts %}
-  {{ super() }}
-  <script>
-    $(function () {
-      function refreshSidebarAfterUpdate() {
-        if (typeof refreshNextMatchesSidebar === "function") {
-          refreshNextMatchesSidebar();
+{{ super() }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function setupUpdateButton(buttonId, inputId) {
+        const button = document.getElementById(buttonId);
+        const input = document.getElementById(inputId);
+
+        if (!button) return;
+
+        button.addEventListener('click', function () {
+            this.innerText = 'Loading...';
+            this.disabled = true;
+        });
+
+        if (input) {
+            input.addEventListener('input', function () {
+                button.innerText = 'Update';
+                button.disabled = false;
+            });
         }
-      }
+    }
 
-      // SCORE TABLE – necháme submit normálne, iba pošleme správu
-      $('#update-score-table').on('click', function () {
-        if (window.parent) {
-          window.parent.postMessage({ type: "calendar-updated" }, "*");
-        }
-      });
+    setupUpdateButton('update-score-table', 'score_scrap');
+    setupUpdateButton('update-player-list', 'player_list_scrap');
+    setupUpdateButton('update-events-results', 'events_results_scrap');
 
-      // PLAYERS – necháme submit normálne, iba refresh sidebaru
-      $('#update-player-list').on('click', function () {
-        refreshSidebarAfterUpdate();
-      });
+    const updatePlayerBtn = document.getElementById('update-player-list');
+    if (updatePlayerBtn) {
+        updatePlayerBtn.addEventListener('click', function () {
+            if (typeof refreshNextMatchesSidebar === 'function') {
+                refreshNextMatchesSidebar();
+            }
+        });
+    }
 
-      // RESULTS / PROGRAM – nič špeciálne, len submit; netreba JS
-    });
-  </script>
+    const updateScoreBtn = document.getElementById('update-score-table');
+    if (updateScoreBtn) {
+        updateScoreBtn.addEventListener('click', function () {
+            if (window.parent) {
+                window.parent.postMessage({ type: 'calendar-updated' }, '*');
+            }
+        });
+    }
+});
+</script>
 {% endblock scripts %}

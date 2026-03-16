@@ -8,39 +8,48 @@ var form = document.getElementById("form-team-id");
 	var player_list_scrap=null;
 	// const update_score_table = document.querySelector('#update-score-table');
 
-	document.addEventListener('DOMContentLoaded', function() {
-		const updateScoreBtn = document.querySelector('#update-score-table');
-		if (updateScoreBtn) {
-		  updateScoreBtn.addEventListener('click', function() {
-			this.innerText = 'Loading...';
-			this.disabled = true;
-		  });
+	document.addEventListener('DOMContentLoaded', function () {
+		function setupUpdateButton(buttonId, inputId) {
+			const button = document.getElementById(buttonId);
+			const input = document.getElementById(inputId);
+	
+			if (!button) return;
+	
+			button.addEventListener('click', function () {
+				this.innerText = 'Loading...';
+				this.disabled = true;
+			});
+	
+			if (input) {
+				input.addEventListener('input', function () {
+					button.innerText = 'Update';
+					button.disabled = false;
+				});
+			}
 		}
-	  
-		const updatePlayerBtn = document.querySelector('#update-player-list');
+	
+		setupUpdateButton('update-score-table', 'score_scrap');
+		setupUpdateButton('update-player-list', 'player_list_scrap');
+		setupUpdateButton('update-events-results', 'events_results_scrap');
+	
+		const updatePlayerBtn = document.getElementById('update-player-list');
 		if (updatePlayerBtn) {
-		  updatePlayerBtn.addEventListener('click', function() {
-			this.innerText = 'Loading...';
-			this.disabled = true;
-		  });
+			updatePlayerBtn.addEventListener('click', function () {
+				if (typeof refreshNextMatchesSidebar === 'function') {
+					refreshNextMatchesSidebar();
+				}
+			});
 		}
-	  
-		const scoreScrap = document.getElementById('score_scrap');
-		if (scoreScrap && updateScoreBtn) {
-		  scoreScrap.addEventListener('input', function () {
-			updateScoreBtn.innerText = 'Update';
-			updateScoreBtn.disabled = false;
-		  });
+	
+		const updateScoreBtn = document.getElementById('update-score-table');
+		if (updateScoreBtn) {
+			updateScoreBtn.addEventListener('click', function () {
+				if (window.parent) {
+					window.parent.postMessage({ type: 'calendar-updated' }, '*');
+				}
+			});
 		}
-	  
-		const playerListScrap = document.getElementById('player_list_scrap');
-		if (playerListScrap && updatePlayerBtn) {
-		  playerListScrap.addEventListener('input', function () {
-			updatePlayerBtn.innerText = 'Update';
-			updatePlayerBtn.disabled = false;
-		  });
-		}
-	  });
+	});
 
 
 
