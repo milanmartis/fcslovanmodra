@@ -689,27 +689,26 @@ def team_name(team_name):
 
 
 @team_bp.route("/teams/<int:team_id>/update", methods=["GET", "POST"])
-@login_required
 @csrf.exempt
-@any_roles_required(global_roles=["Admin"], club_roles=["Coach", "WebAdmin"])
+@login_required
+@roles_required_compat("Admin", "WebAdmin")
 def update_team(team_id):
-    team_obj = _team_or_404(team_id)
+    current_app.logger.warning("UPDATE_TEAM START team_id=%s", team_id)
+    current_app.logger.warning("FORM=%s", dict(request.form))
+    current_app.logger.warning("WHAT=%s", request.form.get("what"))
+    current_app.logger.warning("HEADERS=%s", {
+        "xrw": request.headers.get("X-Requested-With"),
+        "accept": request.headers.get("Accept"),
+        "referer": request.headers.get("Referer"),
+        "origin": request.headers.get("Origin"),
+        "sec-fetch-mode": request.headers.get("Sec-Fetch-Mode"),
+        "sec-fetch-dest": request.headers.get("Sec-Fetch-Dest"),
+    })
+    current_app.logger.warning("REQUEST_ID=%s", request.headers.get("X-Request-Id"))
+    
+    team_obj = Team.query.get_or_404(team_id)
     form = TeamForm(obj=team_obj)
-
-    raw_what = (request.form.get("what") or request.form.get("action") or "").strip().lower()
-    what = raw_what or None
-
-    WHAT_SCORE = {"score", "table", "league", "score_table", "scoretable"}
-    WHAT_PLAYERS = {"players", "player", "lineup", "player_list"}
-    WHAT_EVENTS = {"events", "event", "results", "matches", "fixtures"}
-
-    if request.method == "POST" and _is_ajax() and what and (what not in (WHAT_SCORE | WHAT_PLAYERS | WHAT_EVENTS)):
-        return jsonify({"ok": False, "category": "danger", "message": f"Neznáma akcia what='{what}'"}), 400
-
-    current_app.logger.warning(
-        "UPDATE_TEAM CID=%s team_id=%s what=%r form_keys=%s score_scrap=%r",
-        _cid(), team_id, what, list(request.form.keys()), request.form.get("score_scrap")
-    )
+    what = request.form.get("what")
 
     if request.method == "GET":
         return render_template(
@@ -719,550 +718,131 @@ def update_team(team_id):
             team=team_obj,
             legend="Update Team",
             teamz=RightColumn.main_menu(),
-            current_date=datetime.now(),
+            current_date=datetime.now(timezone.utc),  # ✅ UTC aware
             next22=Next.next(),
             next_match=RightColumn.next_match(),
             score_table=RightColumn.score_table(),
         )
 
     # ==========================================================
-    # 1) TABLE OF LIGUE
+    # 1) TABLE OF LIGUE (score_scrap)
     # ==========================================================
-    if what in WHAT_SCORE:
-        score_scrap = (request.form.get("score_scrap") or getattr(team_obj, "score_scrap", None) or "").strip()
+    if what == "score":
+        current_app.logger.info("SCORE UPDATE START team_id=%s", team_id)
+
+        score_scrap = request.form.get("score_scrap") or getattr(team_obj, "score_scrap", None)
+        current_app.logger.info("score_scrap=%s", score_scrap)
+
         if not score_scrap:
+            current_app.logger.warning("score_scrap is empty")
             msg = "Table of Ligue: link je prázdny."
-            current_app.logger.warning("SCORE: missing score_scrap")
             if _is_ajax():
                 return jsonify({"ok": False, "category": "warning", "message": msg}), 400
             flash(msg, "warning")
             return redirect(url_for("team.update_team", team_id=team_id))
 
+        ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
+        current_app.logger.info("old score rows deleted for team_id=%s", team_id)
+
         try:
             html = _fetch_html(score_scrap)
+            current_app.logger.info("html downloaded len=%s", len(html))
+
             dom_rows = _parse_score_table_dom(html)
-
-            current_app.logger.warning("SCORE: parsed rows=%s", len(dom_rows))
-
-            if not dom_rows:
-                msg = "Table of Ligue: nenašiel som tabuľku."
-                current_app.logger.warning("SCORE: no rows after parse")
-                if _is_ajax():
-                    return jsonify({"ok": False, "category": "warning", "message": msg}), 400
-                flash(msg, "warning")
-                return redirect(url_for("team.update_team", team_id=team_id))
-
-            seen = set()
-            cleaned = []
-            for row in dom_rows:
-                club = str(row.get("club", "")).strip()
-                if not club:
-                    continue
-                k = club.lower()
-                if k in seen:
-                    continue
-                seen.add(k)
-                cleaned.append(row)
-
-            current_app.logger.warning("SCORE: cleaned unique rows=%s", len(cleaned))
-
-            if not cleaned:
-                msg = "Table of Ligue: tabuľka sa našla, ale riadky sú prázdne/duplicitné."
-                current_app.logger.warning("SCORE: cleaned empty")
-                if _is_ajax():
-                    return jsonify({"ok": False, "category": "warning", "message": msg}), 400
-                flash(msg, "warning")
-                return redirect(url_for("team.update_team", team_id=team_id))
-
-            ScoreTable.query.filter(
-                ScoreTable.team_id == team_id,
-                ScoreTable.club_id == _cid()
-            ).delete(synchronize_session=False)
+            current_app.logger.info("dom_rows_count=%s", len(dom_rows))
+            current_app.logger.info("dom_rows_sample=%s", dom_rows[:3])
 
             inserted = 0
-            for row in cleaned:
-                club = str(row.get("club", "")).strip()
-                logo = str(row.get("logo", "")).strip()[:2048]
-                score_txt = str(row.get("Skóre", "")).strip()[:64]
 
-                db.session.add(ScoreTable(
-                    club=club,
-                    logo=logo,
-                    games=int(row.get("Z", 0) or 0),
-                    wins=int(row.get("V", 0) or 0),
-                    draws=int(row.get("R", 0) or 0),
-                    loses=int(row.get("P", 0) or 0),
-                    score=score_txt,
-                    points=int(row.get("B", 0) or 0),
+            if dom_rows:
+                for row in dom_rows:
+                    db.session.add(ScoreTable(
+                        club=str(row.get("club", "")).strip(),
+                        logo=str(row.get("logo", "")).strip(),
+                        games=int(row.get("Z", 0)),
+                        wins=int(row.get("V", 0)),
+                        draws=int(row.get("R", 0)),
+                        loses=int(row.get("P", 0)),
+                        score=str(row.get("Skóre", "")).strip(),
+                        points=int(row.get("B", 0)),
+                        team_id=team_id,
+                    ))
+                    inserted += 1
+
+                db.session.commit()
+                current_app.logger.info("score update committed inserted=%s", inserted)
+
+                msg = f"Table of Ligue: úspešne aktualizované ({inserted} záznamov)."
+                if _is_ajax():
+                    return jsonify({"ok": True, "category": "success", "message": msg})
+
+                flash(msg, "success")
+                return redirect(url_for("team.update_team", team_id=team_id))
+
+            current_app.logger.warning("no table rows found")
+            msg = "Table of Ligue: nenašiel som tabuľku."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+            flash(msg, "warning")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.exception("score update failed: %s", e)
+            msg = "Table of Ligue: nepodarilo sa spracovať tabuľku."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
+            flash(msg, "danger")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+    # ==========================================================
+    # 2) PLAYERS LINEUP (player_list_scrap)
+    # ==========================================================
+    if what == "players":
+        player_list_scrap = request.form.get("player_list_scrap") or getattr(team_obj, "player_list_scrap", None)
+        if not player_list_scrap:
+            msg = "Players LineUp: link je prázdny."
+            if _is_ajax():
+                return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+            flash(msg, "warning")
+            return redirect(url_for("team.update_team", team_id=team_id))
+
+        html = ""
+        try:
+            html = _fetch_html(player_list_scrap)
+
+            players = _parse_players_from_html(html)
+            if not players:
+                msg = "Players LineUp: nenašiel som žiadnych hráčov na stránke (alebo tabuľku)."
+                if _is_ajax():
+                    return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+                flash(msg, "warning")
+                return redirect(url_for("team.update_team", team_id=team_id))
+
+            Player.query.filter(Player.team_id == team_id).delete()
+
+            inserted = 0
+            for p in players:
+                db.session.add(Player(
+                    name=p["name"],
+                    position=int(p.get("position", 0) or 0),
+                    team=team_obj.name,
+                    score=int(p.get("score", 0) or 0),
+                    yellow_card=int(p.get("yellow_card", 0) or 0),
+                    red_card=int(p.get("red_card", 0) or 0),
                     team_id=team_id,
-                    club_id=_cid(),
                 ))
                 inserted += 1
 
             db.session.commit()
-
-            msg = f"Table of Ligue: úspešne aktualizované ({inserted} záznamov)."
-            current_app.logger.warning("SCORE: commit OK inserted=%s", inserted)
-            if _is_ajax():
-                return jsonify({"ok": True, "category": "success", "message": msg})
-            flash(msg, "success")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-        except IntegrityError:
-            db.session.rollback()
-            current_app.logger.exception("SCORE: IntegrityError")
-            msg = "Table of Ligue: DB konflikt (duplicitný riadok alebo NOT NULL). Pozri log."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-            flash(msg, "danger")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-        except DataError:
-            db.session.rollback()
-            current_app.logger.exception("SCORE: DataError")
-            msg = "Table of Ligue: DB DataError (napr. príliš dlhý text). Pozri log."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-            flash(msg, "danger")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-        except requests.RequestException:
-            db.session.rollback()
-            current_app.logger.exception("SCORE: RequestException")
-            msg = "Table of Ligue: nepodarilo sa načítať stránku (sieťová chyba)."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-            flash(msg, "danger")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-        except Exception:
-            db.session.rollback()
-            current_app.logger.exception("SCORE: Unexpected error")
-            msg = "Table of Ligue: neočakávaná chyba pri spracovaní/ukladaní. Pozri log."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-            flash(msg, "danger")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-
-    # 2) PLAYERS
-    # ==========================================================
-
-    def _strip_accents(s: str) -> str:
-        s = (s or "").strip().lower()
-        s = unicodedata.normalize("NFKD", s)
-        return "".join(ch for ch in s if not unicodedata.combining(ch))
-
-    def _name_key(name: str) -> str:
-        return _strip_accents(re.sub(r"\s+", " ", (name or "")).strip())
-
-    def _parse_players_from_dom(html: str) -> list[dict]:
-        """
-        Súpiska (hraci):
-        - vyberie hráčov podľa sekcií Brankári/Obrancovia/Záložníci/Útočníci
-        - + staff: Tréner/Technický vedúci/Lekár/Fyzioterapeut (101-104)
-        - vráti name + position
-        """
-        soup = BeautifulSoup(html, "lxml")
-
-        HEADINGS = [
-            (re.compile(r"^\s*brank[aá]ri\s*$", re.I), 1),
-            (re.compile(r"^\s*obrancovia\s*$", re.I), 2),
-            (re.compile(r"^\s*z[aá]lo[zž]n[ií]ci\s*$", re.I), 3),
-            (re.compile(r"^\s*[uú]to[cč]n[ií]ci\s*$", re.I), 4),
-
-            # --- staff (podľa zdroja) ---
-            (re.compile(r"^\s*tr[eé]ner\s*$", re.I), 101),
-            (re.compile(r"^\s*technick[yý]\s+ved[uú]ci\s*$", re.I), 102),
-            (re.compile(r"^\s*lek[aá]r\s*$", re.I), 103),
-            (re.compile(r"^\s*fyzioterapeut\s*$", re.I), 104),
-        ]
-
-        # veci, ktoré NIKDY nechceme uložiť ako meno
-        BAD_NAME_RX = re.compile(
-            r"(sledujte\s+n[aá]s|copyright|inzercia|ochrana\s+osobn|nariadenie\s+dsa|sportnet\.sk|futbalnet\.sk|©|\|)",
-            re.I
-        )
-
-        def match_pos(text: str) -> int:
-            t = (text or "").strip()
-            for rx, pos in HEADINGS:
-                if rx.match(t):
-                    return pos
-            return 0
-
-        def is_player_link(a) -> bool:
-            href = (a.get("href") or "").strip()
-            # len reálne profily členov
-            return href.startswith("/futbalnet/clen/")
-
-        def norm_name(s: str) -> str:
-            return re.sub(r"\s+", " ", (s or "")).strip()
-
-        def looks_like_real_name(name: str) -> bool:
-            if not name:
-                return False
-            if len(name) < 3:
-                return False
-            # hard stop na footery
-            if BAD_NAME_RX.search(name):
-                return False
-            # príliš dlhé = takmer určite bordel
-            if len(name) > 80:
-                return False
-            # ak je to celé bez písmen -> nie
-            if not re.search(r"[A-Za-zÁÄČĎÉÍĹĽŇÓÔÖŘŠŤÚÜÝŽáäčďéíĺľňóôöřšťúüýž]", name):
-                return False
-            # príliš veľa slov = podozrivé (footer text)
-            if len(name.split()) > 4:
-                return False
-            return True
-
-        out: list[dict] = []
-        seen = set()
-
-        # 1) nájdi nadpisy sekcií (string nodes)
-        heading_nodes: list[tuple] = []
-        for node in soup.find_all(string=True):
-            pos = match_pos(str(node))
-            if pos:
-                heading_nodes.append((node, pos))
-
-        # fallback: žiadne nadpisy -> len profily (pos=0)
-        if not heading_nodes:
-            for a in soup.find_all("a", href=True):
-                if not is_player_link(a):
-                    continue
-                name = norm_name(a.get_text(" ", strip=True))
-                if not looks_like_real_name(name):
-                    continue
-                k = _name_key(name)
-                if k in seen:
-                    continue
-                seen.add(k)
-                out.append({"name": name, "position": 0, "score": 0, "yellow_card": 0, "red_card": 0, "photo_url": ""})
-            return out
-
-        # 2) pre každý nadpis zbieraj linky až po ďalší nadpis
-        #    dôležité: stopujeme aj keď narazíme na footer/nav typické texty
-        for idx, (node, pos) in enumerate(heading_nodes):
-            start_el = node.parent
-            end_el = heading_nodes[idx + 1][0].parent if idx + 1 < len(heading_nodes) else None
-
-            for el in start_el.next_elements:
-                if end_el is not None and el is end_el:
-                    break
-
-                if not hasattr(el, "name"):
-                    continue
-
-                if el.name == "a" and el.has_attr("href") and is_player_link(el):
-                    name = norm_name(el.get_text(" ", strip=True))
-                    if not looks_like_real_name(name):
-                        continue
-
-                    k = _name_key(name)
-                    if k in seen:
-                        continue
-                    seen.add(k)
-
-                    out.append({
-                        "name": name,
-                        "position": int(pos),
-                        "score": 0,
-                        "yellow_card": 0,
-                        "red_card": 0,
-                        "photo_url": "",
-                    })
-
-        return out
-
-    def _parse_player_stats_from_dom(html: str) -> dict[str, dict]:
-        """
-        Štatistika hráčov (statistika-hracov):
-        - vytiahne photo + čísla
-        - vráti dict keyed podľa normalizovaného mena
-        { name_key: {score, yellow_card, red_card, photo_url} }
-        """
-        soup = BeautifulSoup(html, "lxml")
-
-        def is_player_link(a) -> bool:
-            href = (a.get("href") or "").strip()
-            return href.startswith("/futbalnet/clen/")
-
-        stats: dict[str, dict] = {}
-
-        for a in soup.find_all("a", href=True):
-            if not is_player_link(a):
-                continue
-
-            name = re.sub(r"\s+", " ", a.get_text(" ", strip=True)).strip()
-            if not name:
-                continue
-
-            # skús nájsť obrázok v okolí
-            photo_url = ""
-            img = None
-            # najčastejšie býva img v rovnakom "carde" ako meno
-            parent = a.parent
-            if parent:
-                img = parent.find("img")
-            if not img:
-                img = a.find_previous("img")
-            if img:
-                photo_url = _abs_url((img.get("src") or "").strip())
-
-            # čísla sú hneď za menom (v rovnakom kontajneri)
-            nums: list[int] = []
-            container = a.parent
-            if container:
-                # vezmeme texty zo siblingov za <a>
-                for sib in a.next_siblings:
-                    if len(nums) >= 4:
-                        break
-                    if hasattr(sib, "get_text"):
-                        t = sib.get_text(" ", strip=True)
-                    else:
-                        t = str(sib).strip()
-                    # vyber všetky standalone čísla
-                    for m in re.findall(r"\b\d+\b", t):
-                        nums.append(int(m))
-                        if len(nums) >= 4:
-                            break
-
-            # heuristika Sportnet: [góly, ŽK, ČK, ...]
-            score = nums[0] if len(nums) > 0 else 0
-            yellow = nums[1] if len(nums) > 1 else 0
-            red = nums[2] if len(nums) > 2 else 0
-
-            k = _name_key(name)
-            stats[k] = {
-                "score": int(score),
-                "yellow_card": int(yellow),
-                "red_card": int(red),
-                "photo_url": photo_url,
-            }
-
-        return stats
-
-
-    if what in WHAT_PLAYERS:
-        player_list_scrap = (
-            request.form.get("player_list_scrap")
-            or getattr(team_obj, "player_list_scrap", None)
-            or ""
-        ).strip()
-
-        if not player_list_scrap:
-            msg = "Players LineUp: link je prázdny."
-            current_app.logger.warning("PLAYERS: missing player_list_scrap")
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "warning", "message": msg}), 400
-            flash(msg, "warning")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-        try:
-            html, status, ct, final_url = _fetch_url(player_list_scrap)
-
-            players: List[Dict] = []
-
-            # 0) JSON režim
-            looks_json = (
-                "application/json" in (ct or "")
-                or (html.lstrip().startswith("{") or html.lstrip().startswith("["))
-            )
-            if looks_json:
-                try:
-                    payload = json.loads(html)
-                    players = _parse_players_from_json_payload(payload)
-                    current_app.logger.warning("PLAYERS: JSON mode parsed=%s", len(players))
-                except Exception:
-                    current_app.logger.exception("PLAYERS: JSON parse failed")
-
-            # 1) Sportnet roster DOM
-            if not players:
-                players = _parse_players_from_dom(html)
-
-            # 2) fallback: tabuľky
-            if not players:
-                players = _parse_players_from_html(html)
-
-            # 3) stats + fotky
-            stats_map: dict[str, dict] = {}
-            try:
-                stats_url = re.sub(r"/hraci/?($|\?)", r"/statistika-hracov/\1", final_url)
-                stats_html, s_status, s_ct, s_final = _fetch_url(stats_url)
-                stats_map = _parse_player_stats_from_dom(stats_html)
-                current_app.logger.warning("PLAYERS: stats parsed=%s from=%s", len(stats_map), s_final)
-            except Exception:
-                current_app.logger.exception("PLAYERS: stats fetch/parse failed (non-fatal)")
-
-            # merge stats into players
-            merged: List[Dict] = []
-            for p in players:
-                name = str((p or {}).get("name", "")).strip()
-                if not name:
-                    continue
-                k = _name_key(name)
-                st = stats_map.get(k, {})
-
-                merged.append({
-                    "name": name,
-                    "position": int((p or {}).get("position", 0) or 0),
-                    "score": int(st.get("score", (p or {}).get("score", 0) or 0)),
-                    "yellow_card": int(st.get("yellow_card", (p or {}).get("yellow_card", 0) or 0)),
-                    "red_card": int(st.get("red_card", (p or {}).get("red_card", 0) or 0)),
-                    "photo_url": str(st.get("photo_url", (p or {}).get("photo_url", "") or "")).strip(),
-                })
-
-            current_app.logger.warning(
-                "PLAYERS: parsed rows=%s status=%s ct=%s final=%s",
-                len(merged), status, ct, final_url
-            )
-
-            if not merged:
-                msg = "Players LineUp: nenašiel som žiadnych hráčov na stránke."
-                if _is_ajax():
-                    return jsonify({"ok": False, "category": "warning", "message": msg}), 400
-                flash(msg, "warning")
-                return redirect(url_for("team.update_team", team_id=team_id))
-
-            # dedup + clean + DEFENZÍVNY FILTER proti footer bordelu
-            BAD_NAME_RX = re.compile(
-                r"(sledujte\s+n[aá]s|copyright|inzercia|ochrana\s+osobn|nariadenie\s+dsa|sportnet\.sk|futbalnet\.sk|©|\|)",
-                re.I
-            )
-
-            def _looks_ok_name(n: str) -> bool:
-                n = (n or "").strip()
-                if not n:
-                    return False
-                if BAD_NAME_RX.search(n):
-                    return False
-                if len(n) > 80:  # ochrana proti footer textu
-                    return False
-                if len(n.split()) > 4:
-                    return False
-                return True
-
-            seen = set()
-            cleaned: List[Dict] = []
-            for p in merged:
-                name = str((p or {}).get("name", "")).strip()
-                if not _looks_ok_name(name):
-                    continue
-
-                k = _name_key(name)
-                if k in seen:
-                    continue
-                seen.add(k)
-
-                photo_url = str((p or {}).get("photo_url", "") or "").strip()
-
-                # ✅ RÝCHLY FIX BEZ MIGRÁCIE: orezanie dĺžok podľa DB limitu (250)
-                name_db = name[:250]
-                photo_db = photo_url[:250]
-
-                cleaned.append({
-                    "name": name_db,
-                    "position": int((p or {}).get("position", 0) or 0),
-                    "score": int((p or {}).get("score", 0) or 0),
-                    "yellow_card": int((p or {}).get("yellow_card", 0) or 0),
-                    "red_card": int((p or {}).get("red_card", 0) or 0),
-                    "photo_url": photo_db,
-                })
-
-            current_app.logger.warning("PLAYERS: cleaned unique rows=%s", len(cleaned))
-
-            if not cleaned:
-                msg = "Players LineUp: našiel som dáta, ale mená hráčov sú prázdne/duplicitné alebo filtrom vyhodené."
-                if _is_ajax():
-                    return jsonify({"ok": False, "category": "warning", "message": msg}), 400
-                flash(msg, "warning")
-                return redirect(url_for("team.update_team", team_id=team_id))
-
-            # ----------------------------------------------------
-            # ✅ FIX FK: najprv zmaž sloty (a prípadne celý lineup)
-            # ----------------------------------------------------
-            lineup = TeamLineup.query.filter_by(team_id=team_id).first()
-            if lineup is not None and hasattr(lineup, "club_id"):
-                lineup = TeamLineup.query.filter_by(team_id=team_id, club_id=_cid()).first()
-
-            if lineup:
-                slots_q = TeamLineupSlot.query.filter_by(lineup_id=lineup.id)
-                if hasattr(TeamLineupSlot, "club_id"):
-                    slots_q = slots_q.filter(TeamLineupSlot.club_id == _cid())
-                slots_q.delete(synchronize_session=False)
-                db.session.flush()
-
-            # delete old players (club-scoped)
-            del_q = Player.query.filter(Player.team_id == team_id)
-            if hasattr(Player, "club_id"):
-                del_q = del_q.filter(Player.club_id == _cid())
-            del_q.delete(synchronize_session=False)
-            db.session.flush()
-
-            # insert new players
-            inserted = 0
-            for p in cleaned:
-                obj = Player(
-                    name=p["name"],
-                    position=p["position"],
-                    team=team_obj.name,
-                    score=p["score"],
-                    yellow_card=p["yellow_card"],
-                    red_card=p["red_card"],
-                    team_id=team_id,
-                    photo_url=p["photo_url"],
-                )
-                if hasattr(obj, "club_id"):
-                    obj.club_id = _cid()
-
-                db.session.add(obj)
-                inserted += 1
-
-            db.session.flush()  # nech sú player.id dostupné pre rebuild
-
-            # ----------------------------------------------------
-            # ✅ REBUILD: po inserte obnov lineup sloty
-            # ----------------------------------------------------
-            ordered_players = Player.query.filter_by(team_id=team_id).order_by(Player.position.asc(), Player.name.asc()).all()
-            if hasattr(Player, "club_id"):
-                ordered_players = Player.query.filter_by(team_id=team_id, club_id=_cid()).order_by(Player.position.asc(), Player.name.asc()).all()
-
-            _ensure_lineup(team_id, ordered_players)
-
-            db.session.commit()
-
             msg = f"Players LineUp: úspešne aktualizované ({inserted} hráčov)."
-            current_app.logger.warning("PLAYERS: commit OK inserted=%s", inserted)
-
             if _is_ajax():
                 return jsonify({"ok": True, "category": "success", "message": msg})
             flash(msg, "success")
             return redirect(url_for("team.update_team", team_id=team_id))
 
-        except IntegrityError:
-            db.session.rollback()
-            current_app.logger.exception("PLAYERS: IntegrityError")
-            msg = "Players LineUp: DB konflikt (duplicitný hráč / NOT NULL). Pozri log."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-            flash(msg, "danger")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-        except DataError:
-            db.session.rollback()
-            current_app.logger.exception("PLAYERS: DataError")
-            msg = "Players LineUp: DB DataError (napr. príliš dlhý text). Pozri log."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-            flash(msg, "danger")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
         except requests.RequestException:
             db.session.rollback()
-            current_app.logger.exception("PLAYERS: RequestException")
             msg = "Players LineUp: nepodarilo sa načítať stránku (sieťová chyba)."
             if _is_ajax():
                 return jsonify({"ok": False, "category": "danger", "message": msg}), 400
@@ -1271,19 +851,17 @@ def update_team(team_id):
 
         except Exception:
             db.session.rollback()
-            current_app.logger.exception("PLAYERS: Unexpected error")
-            msg = "Players LineUp: nepodarilo sa spracovať hráčov (parse/neočakávaná chyba)."
+            msg = "Players LineUp: nepodarilo sa spracovať hráčov (parse chyba)."
             if _is_ajax():
                 return jsonify({"ok": False, "category": "danger", "message": msg}), 400
             flash(msg, "danger")
             return redirect(url_for("team.update_team", team_id=team_id))
 
-
     # ==========================================================
-    # 3) EVENTS
+    # 3) MATCHES RESULTS (events_results_scrap)
     # ==========================================================
-    if what in WHAT_EVENTS:
-        events_results_scrap = (request.form.get("events_results_scrap") or getattr(team_obj, "events_results_scrap", None) or "").strip()
+    if what == "events":
+        events_results_scrap = request.form.get("events_results_scrap") or getattr(team_obj, "events_results_scrap", None)
         if not events_results_scrap:
             msg = "Matches results: link je prázdny."
             if _is_ajax():
@@ -1293,76 +871,56 @@ def update_team(team_id):
 
         match_cat_id = _get_match_event_category_id()
 
+        Event.query.filter(
+            Event.event_team_id == team_id,
+            Event.event_category_id == match_cat_id
+        ).delete()
+
         try:
             all_items = _fetch_all_api_items(events_results_scrap)
 
-            prepared = []
             seen_keys = set()
+            inserted = 0
 
             for item in all_items:
                 data = _event_data_from_api_match(item)
                 if not data:
                     continue
 
-                key = (str(data["match_id"]), data["start_dt"])
+                key = (data["match_id"], data["start_dt"])
                 if key in seen_keys:
                     continue
                 seen_keys.add(key)
-                prepared.append(data)
 
-            if not prepared:
-                msg = "Matches results: API nenašlo žiadne zápasy."
-                if _is_ajax():
-                    return jsonify({"ok": False, "category": "warning", "message": msg}), 400
-                flash(msg, "warning")
-                return redirect(url_for("team.update_team", team_id=team_id))
-
-            q = Event.query.filter(
-                Event.event_team_id == team_id,
-                Event.event_category_id == match_cat_id
-            )
-            if hasattr(Event, "club_id"):
-                q = q.filter(Event.club_id == _cid())
-            q.delete(synchronize_session=False)
-
-            inserted = 0
-            for data in prepared:
-                ev = Event(
+                db.session.add(Event(
                     title=data["title"],
-                    start_event=data["start_dt"],
-                    end_event=data["end_dt"],
+                    start_event=data["start_dt"],  # ✅ naive UTC
+                    end_event=data["end_dt"],      # ✅ naive UTC
                     address=data["address"],
                     link=data["link"],
                     user_id=current_user.id,
                     event_category_id=match_cat_id,
                     event_team_id=team_id,
-                )
-                if hasattr(ev, "club_id"):
-                    ev.club_id = _cid()
-
-                db.session.add(ev)
+                ))
                 inserted += 1
 
             db.session.commit()
 
-            msg = f"Matches results: úspešne aktualizované ({inserted} zápasov)."
-            if _is_ajax():
-                return jsonify({"ok": True, "category": "success", "message": msg})
-            flash(msg, "success")
-            return redirect(url_for("team.update_team", team_id=team_id))
+            if inserted:
+                msg = f"Matches results: úspešne aktualizované ({inserted} zápasov)."
+                if _is_ajax():
+                    return jsonify({"ok": True, "category": "success", "message": msg})
+                flash(msg, "success")
+            else:
+                msg = "Matches results: API nenašlo žiadne zápasy."
+                if _is_ajax():
+                    return jsonify({"ok": False, "category": "warning", "message": msg}), 400
+                flash(msg, "warning")
 
-        except IntegrityError:
-            db.session.rollback()
-            current_app.logger.exception("EVENTS: IntegrityError")
-            msg = "Matches results: DB konflikt (duplicitný event / NOT NULL). Pozri log."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-            flash(msg, "danger")
             return redirect(url_for("team.update_team", team_id=team_id))
 
         except requests.RequestException:
             db.session.rollback()
-            current_app.logger.exception("EVENTS: RequestException")
             msg = "Matches results: nepodarilo sa načítať API (sieťová chyba)."
             if _is_ajax():
                 return jsonify({"ok": False, "category": "danger", "message": msg}), 400
@@ -1371,49 +929,32 @@ def update_team(team_id):
 
         except Exception:
             db.session.rollback()
-            current_app.logger.exception("EVENTS: Unexpected error")
-            msg = "Matches results: neočakávaná chyba pri spracovaní/ukladaní. Pozri log."
+            msg = "Matches results: nepodarilo sa spracovať zápasy (parse chyba)."
             if _is_ajax():
                 return jsonify({"ok": False, "category": "danger", "message": msg}), 400
             flash(msg, "danger")
             return redirect(url_for("team.update_team", team_id=team_id))
 
-    def _posted_visible_int(default: int = 0) -> int:
-        """
-        Bezpečne zoberie visible z request.form aj keď príde viac hodnôt
-        (hidden 0 + checkbox 1, alebo len SelectField).
-        Vyberieme POSLEDNÚ hodnotu, lebo tá býva '1' ak je checkbox zaškrtnutý.
-        """
-        vals = request.form.getlist("visible")
-        if not vals:
-            return int(default)
-        try:
-            return int(vals[-1])
-        except Exception:
-            return int(default)
-    
     # ==========================================================
-    # 4) SAVE META
+    # 4) SAVE META (normálny submit bez what)
     # ==========================================================
     if form.validate_on_submit() and not what:
         team_obj.name = form.name.data
-        if hasattr(team_obj, "name_short") and hasattr(form, "name_short"):
-            team_obj.name_short = (form.name_short.data or "").strip()
-        if hasattr(team_obj, "visible"):
-            team_obj.visible = _posted_visible_int(default=getattr(team_obj, "visible", 0))
+
         if hasattr(team_obj, "main_league") and hasattr(form, "main_league"):
             team_obj.main_league = form.main_league.data
+
         if hasattr(team_obj, "score_scrap") and hasattr(form, "score_scrap"):
             team_obj.score_scrap = form.score_scrap.data
+
         if hasattr(team_obj, "player_list_scrap") and hasattr(form, "player_list_scrap"):
             team_obj.player_list_scrap = form.player_list_scrap.data
+
         if hasattr(team_obj, "events_results_scrap") and hasattr(form, "events_results_scrap"):
             team_obj.events_results_scrap = form.events_results_scrap.data
+
         if hasattr(team_obj, "events_program_scrap") and hasattr(form, "events_program_scrap"):
             team_obj.events_program_scrap = form.events_program_scrap.data
-
-        if hasattr(team_obj, "club_id"):
-            team_obj.club_id = team_obj.club_id or _cid()
 
         try:
             db.session.commit()
@@ -1424,9 +965,6 @@ def update_team(team_id):
 
         return redirect(url_for("team.list_teams"))
 
-    if _is_ajax() and request.method == "POST" and what:
-        return jsonify({"ok": False, "category": "danger", "message": "Akcia sa nevybavila (nesedí what alebo chýba handler)."}), 400
-
     return render_template(
         "teams/create_team.html",
         title="Update Team",
@@ -1434,7 +972,7 @@ def update_team(team_id):
         team=team_obj,
         legend="Update Team",
         teamz=RightColumn.main_menu(),
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),  # ✅ UTC aware
         next22=Next.next(),
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table(),
