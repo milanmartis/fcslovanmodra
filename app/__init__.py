@@ -120,8 +120,8 @@ def create_app(config_class=None):
             "https://fcman-37884cffcf78.herokuapp.com",
         ],
         cors_credentials=True,
-        async_mode="gevent",
-        # async_mode="threading",
+        # async_mode="gevent",
+        async_mode="threading",
         message_queue=os.environ.get("REDIS_URL")
     )
 
