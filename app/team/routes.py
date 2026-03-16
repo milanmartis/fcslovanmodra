@@ -704,6 +704,7 @@ def update_team(team_id):
         "sec-fetch-mode": request.headers.get("Sec-Fetch-Mode"),
         "sec-fetch-dest": request.headers.get("Sec-Fetch-Dest"),
     })
+    current_app.logger.warning("REQUEST_ID=%s", request.headers.get("X-Request-Id"))
     
     team_obj = Team.query.get_or_404(team_id)
     form = TeamForm(obj=team_obj)
