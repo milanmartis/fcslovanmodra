@@ -728,71 +728,55 @@ def update_team(team_id):
     # 1) TABLE OF LIGUE (score_scrap)
     # ==========================================================
     if what == "score":
-        current_app.logger.info("SCORE UPDATE START team_id=%s", team_id)
+        current_app.logger.warning("SCORE UPDATE START team_id=%s", team_id)
 
         score_scrap = request.form.get("score_scrap") or getattr(team_obj, "score_scrap", None)
-        current_app.logger.info("score_scrap=%s", score_scrap)
+        current_app.logger.warning("score_scrap=%s", score_scrap)
 
         if not score_scrap:
-            current_app.logger.warning("score_scrap is empty")
-            msg = "Table of Ligue: link je prázdny."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "warning", "message": msg}), 400
-            flash(msg, "warning")
+            current_app.logger.warning("SCORE EMPTY URL")
+            flash("Table of Ligue: link je prázdny.", "warning")
             return redirect(url_for("team.update_team", team_id=team_id))
 
-        ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
-        current_app.logger.info("old score rows deleted for team_id=%s", team_id)
-
         try:
-            html = _fetch_html(score_scrap)
-            current_app.logger.info("html downloaded len=%s", len(html))
+            current_app.logger.warning("SCORE DELETE START")
+            ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
+            current_app.logger.warning("SCORE DELETE DONE")
 
+            current_app.logger.warning("SCORE FETCH START")
+            html = _fetch_html(score_scrap)
+            current_app.logger.warning("SCORE FETCH DONE len=%s", len(html) if html else 0)
+
+            current_app.logger.warning("SCORE PARSE START")
             dom_rows = _parse_score_table_dom(html)
-            current_app.logger.info("dom_rows_count=%s", len(dom_rows))
-            current_app.logger.info("dom_rows_sample=%s", dom_rows[:3])
+            current_app.logger.warning("SCORE PARSE DONE rows=%s", len(dom_rows))
 
             inserted = 0
+            for row in dom_rows:
+                db.session.add(ScoreTable(
+                    club=str(row.get("club", "")).strip(),
+                    logo=str(row.get("logo", "")).strip(),
+                    games=int(row.get("Z", 0)),
+                    wins=int(row.get("V", 0)),
+                    draws=int(row.get("R", 0)),
+                    loses=int(row.get("P", 0)),
+                    score=str(row.get("Skóre", "")).strip(),
+                    points=int(row.get("B", 0)),
+                    team_id=team_id,
+                ))
+                inserted += 1
 
-            if dom_rows:
-                for row in dom_rows:
-                    db.session.add(ScoreTable(
-                        club=str(row.get("club", "")).strip(),
-                        logo=str(row.get("logo", "")).strip(),
-                        games=int(row.get("Z", 0)),
-                        wins=int(row.get("V", 0)),
-                        draws=int(row.get("R", 0)),
-                        loses=int(row.get("P", 0)),
-                        score=str(row.get("Skóre", "")).strip(),
-                        points=int(row.get("B", 0)),
-                        team_id=team_id,
-                    ))
-                    inserted += 1
+            current_app.logger.warning("SCORE COMMIT START inserted=%s", inserted)
+            db.session.commit()
+            current_app.logger.warning("SCORE COMMIT DONE")
 
-                db.session.commit()
-                current_app.logger.info("score update committed inserted=%s", inserted)
-
-                msg = f"Table of Ligue: úspešne aktualizované ({inserted} záznamov)."
-                if _is_ajax():
-                    return jsonify({"ok": True, "category": "success", "message": msg})
-
-                flash(msg, "success")
-                return redirect(url_for("team.update_team", team_id=team_id))
-
-            current_app.logger.warning("no table rows found")
-            msg = "Table of Ligue: nenašiel som tabuľku."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "warning", "message": msg}), 400
-            flash(msg, "warning")
+            flash(f"Table of Ligue: úspešne aktualizované ({inserted} záznamov).", "success")
             return redirect(url_for("team.update_team", team_id=team_id))
 
         except Exception as e:
             db.session.rollback()
-            current_app.logger.exception("score update failed: %s", e)
-            msg = "Table of Ligue: nepodarilo sa spracovať tabuľku."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-            flash(msg, "danger")
+            current_app.logger.exception("SCORE UPDATE FAILED: %s", e)
+            flash("Table of Ligue: nepodarilo sa spracovať tabuľku.", "danger")
             return redirect(url_for("team.update_team", team_id=team_id))
 
     # ==========================================================
