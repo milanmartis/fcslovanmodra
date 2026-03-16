@@ -693,6 +693,18 @@ def team_name(team_name):
 @login_required
 @roles_required_compat("Admin", "WebAdmin")
 def update_team(team_id):
+    current_app.logger.warning("UPDATE_TEAM START team_id=%s", team_id)
+    current_app.logger.warning("FORM=%s", dict(request.form))
+    current_app.logger.warning("WHAT=%s", request.form.get("what"))
+    current_app.logger.warning("HEADERS=%s", {
+        "xrw": request.headers.get("X-Requested-With"),
+        "accept": request.headers.get("Accept"),
+        "referer": request.headers.get("Referer"),
+        "origin": request.headers.get("Origin"),
+        "sec-fetch-mode": request.headers.get("Sec-Fetch-Mode"),
+        "sec-fetch-dest": request.headers.get("Sec-Fetch-Dest"),
+    })
+    
     team_obj = Team.query.get_or_404(team_id)
     form = TeamForm(obj=team_obj)
     what = request.form.get("what")
