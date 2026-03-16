@@ -99,26 +99,31 @@
               {% if next222 is string %}
                 <h6>{{ next222 }}</h6>
               {% else %}
-              {% set nm = (next222.start_event|to_local) if (next222 and next222.start_event is defined and next222.start_event) else None %}
 
-              {% set cd = (current_date|to_local) if current_date else None %}
-              
-              {% if nm and cd and (cd.strftime('%d. %m. %Y') == nm.strftime('%d. %m. %Y')) %}
-                {% set datetext = "Dnes" %}
-              {% else %}
-                {% set datetext = nm.strftime('%d. %m. %Y') if nm else '---' %}
-              {% endif %}
-              
-              <h6>{{ datetext }} o <b>{{ nm.strftime('%H:%M') if nm else '--:--' }}</b></h6>
-              
-              <div class="btn-live-frame" style="display: inline;">
-                <p class="countdown_desc"
-                        style="padding:0px; margin:0px;opacity: 1.0;color:#fff;font-size: 70%;"></p>
+                {# ✅ vždy rob lokálny čas na serveri pre UI (Bratislava) #}
+                {% set nm_dt = (next222.start_event|to_local) if (next222 and next222.start_event) else None %}
+                {% set cd_dt = (current_date|to_local) if current_date else None %}
 
-                      <p class="countdown"
-                        style="padding:0px; margin:0px;"
-                        data-start-event="{{ nm.isoformat() if nm else '' }}"></p>
-              </div>
+                {% if nm_dt and cd_dt and (cd_dt.date() == nm_dt.date()) %}
+                  {% set datetext = "Dnes" %}
+                {% else %}
+                  {# ✅ použij format_local (server-side) #}
+                  {% set datetext = (next222.start_event|format_local('%d. %m. %Y')) if (next222 and next222.start_event) else '---' %}
+                {% endif %}
+
+                <h6>
+                  {{ datetext }} o
+                  <b>{{ (next222.start_event|format_local('%H:%M')) if (next222 and next222.start_event) else '--:--' }}</b>
+                </h6>
+
+                <div class="btn-live-frame" style="display: inline;">
+                  <p style="padding:0px; margin:0px;opacity: 1.0;color:#fff;font-size: 70%;"
+                    class="countdown_desc"></p>
+
+                  {# ✅ countdown musí dostať UTC ISO (Z), lebo JS odpočítava podľa absolútneho času #}
+                  <p class="countdown"
+                     data-start-event="{{ next222.start_event|to_utc_iso }}"></p>
+                </div>
 
                 <br>
 
@@ -153,7 +158,7 @@
 
                 <div class="logos">
                   <img class="image-logo" style="padding:6px;"
-                       src="{% if logos.home %}{{ logos.home }}{% else %}{{ aws_image_url() ~ ' clubs/' ~ home_slug ~ '.png' }}{% endif %}">
+                       src="{% if logos.home %}{{ logos.home }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ home_slug ~ '.png' }}{% endif %}">
                   <img class="image-logo" style="padding:6px;"
                        src="{% if logos.away %}{{ logos.away }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ away_slug ~ '.png' }}{% endif %}">
                 </div>
@@ -348,60 +353,65 @@ if (myCarousel) {
 </script>
 
 <script>
-function initNextMatchCountdown() {
-    var el = document.getElementById("countdown");
-    var elDesc = document.getElementById("countdown_desc");
-    if (!el || !elDesc) return;
-
-    var dateAttr = el.getAttribute("data-start-event");
-    if (!dateAttr) return;
-
-    var countDownDate = new Date(dateAttr).getTime();
-    if (isNaN(countDownDate)) return;
-
-    elDesc.innerHTML = "deň | hod | min | sek";
-    elDesc.style.opacity = 0.95;
-
-    if (window._nextMatchTimer) {
-        clearInterval(window._nextMatchTimer);
-    }
-
-    window._nextMatchTimer = setInterval(function() {
-        var now = new Date().getTime();
-        var distance = countDownDate - now;
-
+  function initNextMatchCountdown() {
+    const els = document.querySelectorAll(".countdown");
+    if (!els.length) return;
+  
+    // vyčisti staré intervaly
+    if (!window._nextMatchTimers) window._nextMatchTimers = [];
+    window._nextMatchTimers.forEach(id => clearInterval(id));
+    window._nextMatchTimers = [];
+  
+    els.forEach((el) => {
+      const desc = el.parentElement?.querySelector(".countdown_desc");
+      const dateAttr = el.getAttribute("data-start-event");
+      if (!dateAttr) return;
+  
+      const countDownDate = new Date(dateAttr).getTime();
+      if (isNaN(countDownDate)) return;
+  
+      if (desc) {
+        desc.innerHTML = "deň | hod | min | sek";
+        desc.style.opacity = 0.95;
+      }
+  
+      const timerId = setInterval(function() {
+        const now = new Date().getTime();
+        let distance = countDownDate - now;
+  
         if (distance <= 0) {
-            clearInterval(window._nextMatchTimer);
-            el.innerHTML = "HRÁ SA";
-            return;
+          clearInterval(timerId);
+          el.innerHTML = "HRÁ SA";
+          return;
         }
-
-        var safeDistance = distance - 200;
+  
+        let safeDistance = distance - 200;
         if (safeDistance < 0) safeDistance = 0;
-
-        var days = Math.floor(safeDistance / (1000 * 60 * 60 * 24));
-        var hours = Math.floor((safeDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        var minutes = Math.floor((safeDistance % (1000 * 60 * 60)) / (1000 * 60));
-        var seconds = Math.floor((safeDistance % (1000 * 60)) / 1000);
-
+  
+        const days = Math.floor(safeDistance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((safeDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((safeDistance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((safeDistance % (1000 * 60)) / 1000);
+  
         el.innerHTML =
-            "<button class=\"btn-live\">" + days + "</button>" +
-            "<button class=\"btn-live\">" + hours + "</button>" +
-            "<button class=\"btn-live\">" + minutes + "</button>" +
-            "<button class=\"btn-live\">" + seconds + "</button>";
-    }, 1000);
-}
-
-document.addEventListener("DOMContentLoaded", initNextMatchCountdown);
-
-window.addEventListener("message", function(event) {
-    if (!event.data || event.data.type !== "calendar-updated") {
-        return;
-    }
-
-    $.get("{{ url_for('main.sidebar_next_matches_fragment') }}", function(html) {
-        $("#sidebar-next-matches").html(html);
-        initNextMatchCountdown();
+          "<button class=\"btn-live\">" + days + "</button>" +
+          "<button class=\"btn-live\">" + hours + "</button>" +
+          "<button class=\"btn-live\">" + minutes + "</button>" +
+          "<button class=\"btn-live\">" + seconds + "</button>";
+      }, 1000);
+  
+      window._nextMatchTimers.push(timerId);
     });
-});
+  }
+  
+  document.addEventListener("DOMContentLoaded", initNextMatchCountdown);
+  
+  window.addEventListener("message", function(event) {
+    if (!event.data || event.data.type !== "calendar-updated") return;
+  
+    $.get("{{ url_for('main.sidebar_next_matches_fragment') }}", function(html) {
+      $("#sidebar-next-matches").html(html);
+      initNextMatchCountdown();
+    });
+  });
 </script>

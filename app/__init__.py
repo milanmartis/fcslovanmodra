@@ -7,7 +7,7 @@ from flask_socketio import SocketIO
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from slugify import slugify as _slugify
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from werkzeug.exceptions import NotFound
 from sqlalchemy.exc import OperationalError
 import json
@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 import base64
 import os
 import boto3
-from app.utils import to_local
+
 from botocore.config import Config as BotoConfig
 # ✅ nevolaj init_firebase() pri importe modulu (môže to robiť side-effecty)
 # zober si ho až v create_app, keď je app pripravená
@@ -78,6 +78,7 @@ def create_app(config_class=None):
     app = Flask(__name__)
     app.config.from_object(config_class)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
     global rds
     rds = _make_redis()
     app.extensions["redis_cache"] = rds
@@ -105,10 +106,10 @@ def create_app(config_class=None):
     bcrypt.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
-    
+
     # socket_redis = (os.getenv("SOCKETIO_REDIS_URL") or os.getenv("REDIS_URL") or "").strip() or None
     # mgr = RedisManager(socket_redis, ssl_cert_reqs=None) if socket_redis else None
-    
+
     socketio.init_app(
         app,
         cors_allowed_origins=[
@@ -228,6 +229,12 @@ def create_app(config_class=None):
     app.register_blueprint(talker)
     app.register_blueprint(talker_admin)
 
+    # ✅ timezone filtre do Jinja
+    from app.utils import to_local, to_utc_iso, format_local
+    app.jinja_env.filters["to_local"] = to_local
+    app.jinja_env.filters["to_utc_iso"] = to_utc_iso
+    app.jinja_env.filters["format_local"] = format_local  # ✅ priamo formátovaný lokálny string
+
     from slugify import slugify
     app.jinja_env.filters["slugify"] = slugify
 
@@ -273,11 +280,11 @@ def create_app(config_class=None):
 
     # ---- Sidebar context + S3 helpers (ponechávam tvoju logiku) ----
     from app.aws_utils import make_sponsor_key, s3_presign
-    
+
     @app.before_request
     def force_non_www_and_https():
         p = request.path or ""
-
+    
         # ✅ nikdy neredirectuj socket.io a service worker / manifest / API
         if p.startswith("/socket.io"):
             return None
@@ -286,16 +293,30 @@ def create_app(config_class=None):
         if p.startswith("/talker/"):
             # sem si daj podľa potreby - ale aspoň socket a unread nech neskáču
             return None
-
+    
         host = request.host.lower()
         if host.startswith("www."):
             return redirect(request.url.replace("://www.", "://", 1), code=301)
-
+    
         if request.headers.get("X-Forwarded-Proto", "http") != "https":
             return redirect(request.url.replace("http://", "https://", 1), code=301)
-        
+
     @app.context_processor
     def sidebar_context():
+        # ✅ cache všetkého čo je v sidebare
+        cache_key = "cache:sidebar:v1"
+        ttl = 30  # sekundy (daj 30-120)
+
+        if rds:
+            try:
+                raw = rds.get(cache_key)
+                if raw:
+                    data = json.loads(raw)
+                    # partners je list dictov, zvyšok je serializovateľné
+                    return data
+            except Exception:
+                pass
+
         partners_q = Sponsor.query.order_by(Sponsor.orderz.asc()).all()
         partners = []
         for s in partners_q:
@@ -306,15 +327,24 @@ def create_app(config_class=None):
                 "url": s.url or "",
                 "image_url": s3_presign(key),
             })
-        return dict(
+
+        data = dict(
             partners=partners,
-            current_date=datetime.now(),
+            current_date=datetime.now(timezone.utc),   # ✅ timezone
             next22=Next.next(),
             teamz=RightColumn.main_menu(),
             next_match=RightColumn.next_match(),
             score_table=RightColumn.score_table(),
             hide_sidebar_tables=False,
         )
+
+        if rds:
+            try:
+                rds.setex(cache_key, ttl, json.dumps(data, ensure_ascii=False, default=str))
+            except Exception:
+                pass
+
+        return data
 
     _S3_CACHE = {"client": None, "bucket": (app.config.get("AWS_S3_BUCKET") or "").strip()}
 
@@ -342,7 +372,7 @@ def create_app(config_class=None):
         if _S3_CACHE["client"] is None:
             _S3_CACHE["client"] = _build_s3_client()
         return _S3_CACHE["client"]
-    
+
     @app.context_processor
     def inject_current_year():
         return {"current_year": datetime.now().year}
@@ -368,7 +398,5 @@ def create_app(config_class=None):
                 return ""
 
         return dict(aws_image_url=aws_image_url, s3_presign=s3_presign_local)
-    
-    app.jinja_env.filters["to_local"] = to_local
 
     return app

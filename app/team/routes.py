@@ -1,23 +1,21 @@
 from __future__ import annotations
+
 from app.posts.routes import s3_presign
-from app.users.routes import make_member_key 
+from app.users.routes import make_member_key
+
 import json
 import re
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Dict, List, Optional
-
-from app import csrf
 
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
-from urllib.parse import (
-    urlparse, parse_qsl, urlencode, urlunparse, quote_plus
-)
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse, quote_plus
 
 from flask import (
     Blueprint, render_template, url_for, flash,
@@ -25,7 +23,7 @@ from flask import (
 )
 from flask_login import login_required, current_user
 
-from app import db
+from app import csrf, db
 from app.main.routes import RightColumn, Next
 from app.team.forms import TeamForm
 from app.models import (
@@ -393,7 +391,47 @@ def _get_match_event_category_id() -> int:
     return 1
 
 
+def _parse_api_datetime_utc(start_str: str) -> datetime:
+    """
+    Sportnet typicky posiela ISO s 'Z' (UTC).
+    Vrátime AWARE datetime v UTC.
+    """
+    if not start_str:
+        raise ValueError("empty datetime string")
+
+    s = start_str.strip()
+
+    # Ak končí Z -> UTC
+    if s.endswith("Z"):
+        s2 = s[:-1]
+        # môže byť aj s .ms
+        if "." in s2:
+            s2 = s2.split(".")[0]
+        dt = datetime.strptime(s2, "%Y-%m-%dT%H:%M:%S")
+        return dt.replace(tzinfo=timezone.utc)
+
+    # Ak má offset (+01:00) -> fromisoformat to zvládne (py3.11+)
+    try:
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            # fallback: ber ako UTC
+            return dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        # fallback na tvoj pôvodný parsing bez TZ -> ber ako UTC
+        s2 = s
+        if "." in s2:
+            s2 = s2.split(".")[0]
+        dt = datetime.strptime(s2, "%Y-%m-%dT%H:%M:%S")
+        return dt.replace(tzinfo=timezone.utc)
+
+
 def _event_data_from_api_match(item: dict) -> dict | None:
+    """
+    FIX TIMEZONE:
+    - API datetime parsujeme ako UTC aware
+    - do DB ukladáme NAIVE UTC (bez tzinfo), aby tvoja to_local() fungovala jednotne
+    """
     try:
         match_id = item.get("_id") or item.get("id") or item.get("matchId")
         if not match_id:
@@ -425,21 +463,17 @@ def _event_data_from_api_match(item: dict) -> dict | None:
         if not start_str:
             return None
 
-        dt_str = start_str.replace("Z", "")
-        try:
-            start_dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S")
-        except ValueError:
-            start_dt = datetime.strptime(dt_str.split(".")[0], "%Y-%m-%dT%H:%M:%S")
+        start_dt_utc_aware = _parse_api_datetime_utc(start_str)
 
         end_str = item.get("endDate") or item.get("dateTo") or item.get("date_to")
         if end_str:
-            dt_to = end_str.replace("Z", "")
-            try:
-                end_dt = datetime.strptime(dt_to, "%Y-%m-%dT%H:%M:%S")
-            except ValueError:
-                end_dt = datetime.strptime(dt_to.split(".")[0], "%Y-%m-%dT%H:%M:%S")
+            end_dt_utc_aware = _parse_api_datetime_utc(end_str)
         else:
-            end_dt = start_dt + timedelta(hours=2)
+            end_dt_utc_aware = start_dt_utc_aware + timedelta(hours=2)
+
+        # ✅ DB: NAIVE UTC
+        start_dt = start_dt_utc_aware.replace(tzinfo=None)
+        end_dt = end_dt_utc_aware.replace(tzinfo=None)
 
         event_address = "Navigácia na štadión"
         destination_str = f"Štadión {home_name}"
@@ -526,7 +560,7 @@ def _load_starters_subs_with_slots(lineup: TeamLineup, ordered_players: list[Pla
 def team_youth():
     return render_template(
         "teams/youth.html",
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),  # ✅ UTC aware
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -540,7 +574,7 @@ def list_teams():
     return render_template(
         "teams/list_teams.html",
         teams=teams,
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),  # ✅ UTC aware
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -604,7 +638,7 @@ def team_name(team_name):
 
     lineup = _ensure_lineup(team_obj.id, ordered_players)
     starters, subs = _load_starters_subs_with_slots(lineup, ordered_players)
-    
+
     coaches = (
         Member.query
         .join(User)
@@ -617,7 +651,6 @@ def team_name(team_name):
         )
         .all()
     )
-
 
     fallback = url_for('static', filename='img/avatar.svg')
 
@@ -645,7 +678,7 @@ def team_name(team_name):
         formation=(lineup.formation or "4-3-3"),
         trener=trener,
         teamz=RightColumn.main_menu(),
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),  # ✅ UTC aware
         next22=Next.next(),
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table(),
@@ -672,7 +705,7 @@ def update_team(team_id):
             team=team_obj,
             legend="Update Team",
             teamz=RightColumn.main_menu(),
-            current_date=datetime.now(),
+            current_date=datetime.now(timezone.utc),  # ✅ UTC aware
             next22=Next.next(),
             next_match=RightColumn.next_match(),
             score_table=RightColumn.score_table(),
@@ -682,8 +715,13 @@ def update_team(team_id):
     # 1) TABLE OF LIGUE (score_scrap)
     # ==========================================================
     if what == "score":
+        current_app.logger.info("SCORE UPDATE START team_id=%s", team_id)
+
         score_scrap = request.form.get("score_scrap") or getattr(team_obj, "score_scrap", None)
+        current_app.logger.info("score_scrap=%s", score_scrap)
+
         if not score_scrap:
+            current_app.logger.warning("score_scrap is empty")
             msg = "Table of Ligue: link je prázdny."
             if _is_ajax():
                 return jsonify({"ok": False, "category": "warning", "message": msg}), 400
@@ -691,12 +729,16 @@ def update_team(team_id):
             return redirect(url_for("team.update_team", team_id=team_id))
 
         ScoreTable.query.filter(ScoreTable.team_id == team_id).delete()
+        current_app.logger.info("old score rows deleted for team_id=%s", team_id)
 
-        html = ""
         try:
             html = _fetch_html(score_scrap)
+            current_app.logger.info("html downloaded len=%s", len(html))
 
             dom_rows = _parse_score_table_dom(html)
+            current_app.logger.info("dom_rows_count=%s", len(dom_rows))
+            current_app.logger.info("dom_rows_sample=%s", dom_rows[:3])
+
             inserted = 0
 
             if dom_rows:
@@ -715,62 +757,26 @@ def update_team(team_id):
                     inserted += 1
 
                 db.session.commit()
+                current_app.logger.info("score update committed inserted=%s", inserted)
 
                 msg = f"Table of Ligue: úspešne aktualizované ({inserted} záznamov)."
-
-                # ✅ TU presne: najprv AJAX JSON return
                 if _is_ajax():
                     return jsonify({"ok": True, "category": "success", "message": msg})
 
-                # ✅ fallback pre normálny submit
                 flash(msg, "success")
                 return redirect(url_for("team.update_team", team_id=team_id))
 
-            # ... (tu pokračuje tvoj fallback read_html parsing)
-            # po úspešnom commitnutí aj tam musí byť rovnaký pattern:
-            # if _is_ajax(): return jsonify(...)
-            # flash + redirect
-
-            # príklad, keď sa nenašla tabuľka:
+            current_app.logger.warning("no table rows found")
             msg = "Table of Ligue: nenašiel som tabuľku."
             if _is_ajax():
                 return jsonify({"ok": False, "category": "warning", "message": msg}), 400
             flash(msg, "warning")
             return redirect(url_for("team.update_team", team_id=team_id))
 
-        except requests.RequestException:
+        except Exception as e:
             db.session.rollback()
-            msg = "Table of Ligue: nepodarilo sa načítať stránku (sieťová chyba)."
-
-            # ✅ TU presne: pri chybe najprv JSON a žiadny redirect
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-
-            flash(msg, "danger")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-        except Exception:
-            db.session.rollback()
-            msg = "Table of Ligue: nepodarilo sa spracovať tabuľku (parse chyba)."
-
-            # ✅ TU presne
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-
-            flash(msg, "danger")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-        except requests.RequestException:
-            db.session.rollback()
-            msg = "Table of Ligue: nepodarilo sa načítať stránku (sieťová chyba)."
-            if _is_ajax():
-                return jsonify({"ok": False, "category": "danger", "message": msg}), 400
-            flash(msg, "danger")
-            return redirect(url_for("team.update_team", team_id=team_id))
-
-        except Exception:
-            db.session.rollback()
-            msg = "Table of Ligue: nepodarilo sa spracovať tabuľku (parse chyba)."
+            current_app.logger.exception("score update failed: %s", e)
+            msg = "Table of Ligue: nepodarilo sa spracovať tabuľku."
             if _is_ajax():
                 return jsonify({"ok": False, "category": "danger", "message": msg}), 400
             flash(msg, "danger")
@@ -875,8 +881,8 @@ def update_team(team_id):
 
                 db.session.add(Event(
                     title=data["title"],
-                    start_event=data["start_dt"],
-                    end_event=data["end_dt"],
+                    start_event=data["start_dt"],  # ✅ naive UTC
+                    end_event=data["end_dt"],      # ✅ naive UTC
                     address=data["address"],
                     link=data["link"],
                     user_id=current_user.id,
@@ -953,7 +959,7 @@ def update_team(team_id):
         team=team_obj,
         legend="Update Team",
         teamz=RightColumn.main_menu(),
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),  # ✅ UTC aware
         next22=Next.next(),
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table(),

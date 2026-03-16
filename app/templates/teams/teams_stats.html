@@ -184,24 +184,26 @@
               {% set home_slug = home_name|default('')|string|slugify %}
               {% set away_slug = away_name|default('')|string|slugify %}
 
-              {% set nm = (next_match.start_event|to_local) if next_match and next_match.start_event else None %}
+              {# ✅ lokálny datetime na výpis #}
+              {% set nm_dt = (next_match.start_event|to_local) if next_match and next_match.start_event else None %}
+              {% set cd_dt = (current_date|to_local) if current_date else None %}
 
               <p style="margin-bottom:6px; color:#fff;">
-                {% if nm and current_date and (current_date.strftime('%d. %m. %Y') == nm.strftime('%d. %m. %Y')) %}
+                {% if nm_dt and cd_dt and (cd_dt.date() == nm_dt.date()) %}
                   <strong>Dnes</strong>
                 {% else %}
-                  {{ nm.strftime('%d. %m. %Y') if nm else '---' }}
+                  {{ nm_dt.strftime('%d. %m. %Y') if nm_dt else '---' }}
                 {% endif %}
-                o <strong>{{ nm.strftime('%H:%M') if nm else '--:--' }}</strong>
+                o <strong>{{ nm_dt.strftime('%H:%M') if nm_dt else '--:--' }}</strong>
               </p>
 
-              <!-- countdown – POZOR: class + data atribút, nie id -->
+              <!-- countdown – ✅ class + data atribút, ISO UTC string -->
               <div class="btn222-live-frame" style="display:inline-block;">
                 <p style="padding:0;margin:0;opacity:0.9;color:#fff;font-size:70%;">
                   deň | hod | min | sek
                 </p>
                 <p class="countdown"
-                   data-start-event="{{ (next_match.start_event|to_local).isoformat() }}"
+                   data-start-event="{{ next_match.start_event|to_utc_iso }}"
                    style="padding:0;margin:2px 0 0 0;"></p>
               </div>
 
@@ -342,7 +344,7 @@
                         <th style="color:#6d9bff;">Dátum</th>
                         <th style="color:#6d9bff;">Čas</th>
                         <th style="color:#6d9bff;">Zápas</th>
-                       <!-- <th style="color:#6d9bff;">Miesto</th>-->
+                        <!-- <th style="color:#6d9bff;">Miesto</th> -->
                         <th style="color:#6d9bff;">Výsledok</th>
                       </tr>
                       </thead>
@@ -383,15 +385,17 @@
                           {% endif %}
                         {% endif %}
 
+                        {% set mdt = (match.start_event|to_local) if match.start_event else None %}
+
                         <tr>
-                          <td>{{ (match.start_event|to_local).strftime('%d.%m.%Y') }}</td>
-                          <td>{{ (match.start_event|to_local).strftime('%H:%M') }}</td>
+                          <td>{{ mdt.strftime('%d.%m.%Y') if mdt else '---' }}</td>
+                          <td>{{ mdt.strftime('%H:%M') if mdt else '--:--' }}</td>
                           <td>{{ home }} - {{ away }}</td>
-                         <!-- <td>
+                          <!-- <td>
                             <a href="{{ match.link }}" target="_blank">
                               {{ match.address }}
                             </a>
-                          </td>-->
+                          </td> -->
                           <td style="line-height:96%;font-size: 108%; font-weight: 700;color:#6d9bff;">
                             {% if score_val %}
                               {{ score_val }}
@@ -430,7 +434,7 @@
                         <th style="color:#6d9bff;">Čas</th>
                         <th style="color:#6d9bff;">Zápas</th>
                         <th style="color:#6d9bff;">Miesto</th>
-                       <!-- <th style="color:#6d9bff;">Výsledok</th>-->
+                        <!-- <th style="color:#6d9bff;">Výsledok</th> -->
                       </tr>
                       </thead>
                       <tbody>
@@ -442,22 +446,25 @@
                         {% endif %}
                         {% set home = tmp[0] if tmp|length > 0 else '---' %}
                         {% set away = tmp[1] if tmp|length > 1 else '---' %}
+
+                        {% set mdt = (match.start_event|to_local) if match.start_event else None %}
+
                         <tr>
-                          <td>{{ (match.start_event|to_local).strftime('%d.%m.%Y') }}</td>
-                          <td>{{ (match.start_event|to_local).strftime('%H:%M') }}</td>
+                          <td>{{ mdt.strftime('%d.%m.%Y') if mdt else '---' }}</td>
+                          <td>{{ mdt.strftime('%H:%M') if mdt else '--:--' }}</td>
                           <td>{{ home }} - {{ away }}</td>
                           <td>
                             <a href="{{ match.link }}" target="_blank">
                               {{ match.address }}
                             </a>
                           </td>
-                          <!--<td>
+                          <!-- <td>
                             {% if match.score %}
                               {{ match.score }}
                             {% else %}
                               –
                             {% endif %}
-                          </td>-->
+                          </td> -->
                         </tr>
                       {% endfor %}
                       </tbody>

@@ -12,7 +12,7 @@ from botocore.config import Config as BotoConfig
 from botocore.exceptions import NoCredentialsError
 from flask import (
     Blueprint, abort, current_app, flash, jsonify,
-    redirect, render_template, request, url_for
+    redirect, render_template, request, url_for, Response
 )
 # from flask_login import current_user, login_required
 # from flask_security import roles_required
@@ -134,7 +134,7 @@ def list_posts():
     if rds:
         cached_html = rds.get(cache_key)
         if cached_html:
-            return cached_html
+            return Response(cached_html, mimetype="text/html; charset=utf-8")
 
     posts_paginated = (
         db.session.query(Post)
@@ -280,11 +280,6 @@ def _render_post_detail(post_obj: Post):
         post=post_obj,
         # ... zvyšok tvojich parametrov nezmenený
     )
-
-@posts.route("/post/<int:post_id>")
-def post_legacy(post_id):
-    post_obj = Post.query.get_or_404(post_id)
-    return redirect(url_for("posts.post_by_slug", slug=post_obj.slug), code=301)
 
 @posts.route("/post/<slug>")
 def post_by_slug(slug):

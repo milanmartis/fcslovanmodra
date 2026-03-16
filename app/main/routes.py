@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from flask import send_from_directory, current_app
-
+from datetime import datetime, timezone
 from flask import render_template, request, Blueprint, flash
 from sqlalchemy.sql import func, and_
 from sqlalchemy.orm import subqueryload
@@ -218,7 +218,7 @@ def stats():
 def tabz():
     return render_template(
         'tabz.html',
-        current_date=datetime.now(timezone.utc),
+        current_date = datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -229,7 +229,7 @@ def tabz():
 def gdpr():
     return render_template(
         'gdpr.html',
-        current_date=datetime.now(timezone.utc),
+        current_date = datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -241,7 +241,7 @@ def gdpr():
 def old_boys():
     return render_template(
         'stari_pani.html',
-        current_date=datetime.now(timezone.utc),
+        current_date = datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -357,7 +357,7 @@ def home():
         category=category,
         cdn_url=cdn_url,
         make_gallery_key=make_gallery_key,
-        current_date=datetime.now(timezone.utc),
+        current_date = datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -377,7 +377,7 @@ def about():
     return render_template(
         'about.html',
         title='About',
-        current_date=datetime.now(timezone.utc),
+        current_date = datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -390,7 +390,7 @@ def dokumenty():
     return render_template(
         'dokumenty.html',
         title='Dokumenty',
-        current_date=datetime.now(timezone.utc),
+        current_date = datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),
@@ -405,12 +405,16 @@ def dokumenty():
 
 @main.route("/sidebar/next-matches-fragment")
 def sidebar_next_matches_fragment():
-    current_date = datetime.now(timezone.utc)  # ✅ toto sem
+    current_date = datetime.now(timezone.utc)
 
+    # ✅ musíš poslať všetko čo sidebar template používa
     return render_template(
         "partials/next_matches_sidebar.html",
         current_date=current_date,
-        # + všetky ostatné veci čo tam používaš (teamz, next22, score_table, partners...)
+        next22=Next.next(),
+        teamz=RightColumn.main_menu(),
+        score_table=RightColumn.score_table(),
+        partners=Sponsor.query.order_by(Sponsor.id.asc()).all(),
     )
 
 
@@ -496,4 +500,3 @@ class RightColumn:
         except Exception:
             flash('Chyba pri načítavaní tabuľky výsledkov.', 'danger')
             return []
-
