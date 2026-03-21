@@ -394,7 +394,7 @@ def _get_match_event_category_id() -> int:
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
-API_LOCAL_TZ = ZoneInfo("Europe/Bratislava")
+API_LOCAL_TZ = ZoneInfo("Europe/London")
 
 def _parse_api_datetime_utc(start_str: str) -> datetime:
     if not start_str:
