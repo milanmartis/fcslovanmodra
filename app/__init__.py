@@ -300,15 +300,19 @@ def create_app(config_class=None):
 
     @app.context_processor
     def sidebar_context():
-        partners_q = (
+        sponsors_q = (
             Sponsor.query
-            .filter_by(kind="partner")
+            .filter(Sponsor.kind.in_(["main", "partner"]))
             .order_by(Sponsor.orderz.asc())
             .all()
         )
 
+        bucket = (app.config.get("AWS_S3_BUCKET") or "").strip()
+        region = (app.config.get("AWS_REGION") or "us-east-1").strip()
+        public_base = f"https://{bucket}.s3.{region}.amazonaws.com/" if bucket else ""
+
         partners = []
-        for s in partners_q:
+        for s in sponsors_q:
             key = make_sponsor_key(s.image_file)
             presigned = s3_presign(key)
 
@@ -316,7 +320,8 @@ def create_app(config_class=None):
                 "id": s.id,
                 "name": s.name or "",
                 "url": s.url or "",
-                "image_url": presigned or (aws_image_url() + key),
+                "kind": s.kind or "",
+                "image_url": presigned or (public_base + key if public_base else ""),
             })
 
         return dict(
