@@ -494,6 +494,10 @@ def _event_data_from_api_match(item: dict) -> dict | None:
         start_str = item.get("startDate") or item.get("dateFrom") or item.get("date_from")
         if not start_str:
             return None
+        
+        print("SPORTNET start_str =", start_str)
+        start_dt_utc_aware = _parse_api_datetime_utc(start_str)
+        print("PARSED UTC =", start_dt_utc_aware)
 
         # LOCAL aware
         start_dt_local_aware = _parse_api_datetime_local(start_str)
