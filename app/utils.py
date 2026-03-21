@@ -38,9 +38,8 @@ def to_local(dt: datetime, tz_name: str = APP_TZ) -> datetime | None:
 
     tz = ZoneInfo(tz_name)
 
-    # DB datetime ber ako UTC, ak je naive
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        return dt.replace(tzinfo=tz)
 
     return dt.astimezone(tz)
 
