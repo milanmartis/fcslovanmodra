@@ -120,7 +120,8 @@ def create_app(config_class=None):
     socketio.init_app(
         app,
         cors_allowed_origins=["https://fcslovanmodra.sk", "https://www.fcslovanmodra.sk"],
-        async_mode="threading",
+        async_mode="geventlet",  # eventlet je lepší než threading, ale musí být nainstalovaný (pip install eventlet)
+        # async_mode="threading",
     )
     login_manager = LoginManager()
     login_manager.login_view = "users.login"  # tvoj endpoint
