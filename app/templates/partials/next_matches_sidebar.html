@@ -1,15 +1,14 @@
 <style>
   .card-glass {
-    text-align: center;
-    margin: auto;
+      text-align: center;
+      margin: auto;
     border-radius: 26px;
     background: rgba(17,17,17,0.92);
     border: 1px solid rgba(109,155,255,0.2);
     backdrop-filter: blur(12px);
     box-shadow: 0 0 22px rgba(0,0,0,0.6);
   }
-
-  .logos {
+  .logos{
     display: block;
     width: fit-content;
     border-radius: 22px;
@@ -19,28 +18,24 @@
     padding: 2px;
     box-shadow: 0 0 16px rgba(109, 155, 255, 0.87);
   }
-
-  .image-logo {
+  .image-logo{
     height: 90px;
     width: auto;
     max-width: 49%;
     object-fit: contain;
   }
-
-  tr {
+  tr{
+    padding: 0px;
+    margin: 0px;
+  }
+  td{
     padding: 0px;
     margin: 0px;
   }
 
-  td {
-    padding: 0px;
-    margin: 0px;
-  }
-
-  .score-tab {
+  .score-tab{
     display: inline;
   }
-
   @media (max-width: 440px) {
     .carousel-item-tabz2 table.scoretable th,
     .carousel-item-tabz2 table.scoretable td {
@@ -48,300 +43,375 @@
       padding: 4px;
     }
 
-    .scrore-tab {
+    .scrore-tab{
       display: none;
     }
   }
 </style>
 
-<div id="games_plans"
-     class="carousel slide"
-     data-bs-ride="carousel"
-     data-bs-touch="true"
-     data-bs-interval="false">
 
-  <center>
-    <div class="carousel-indicators"
-         style="background-color:#0f0f10;margin-bottom:5px;width:fit-content;">
-      {% for team in teamz[:4] %}
-        <button class="btn text{% if loop.first %} active{% endif %}"
-                data-bs-target="#games_plans"
-                data-bs-slide-to="{{ loop.index0 }}"
-                aria-current="{% if loop.first %}true{% else %}false{% endif %}"
-                aria-label="Slide {{ loop.index }}">
-          {{ team.name }}
-        </button>
-      {% endfor %}
-    </div>
-  </center>
 
-  <div class="carousel-inner" style="margin-top:-30px">
-    {% for next222 in (next22 or [])[:4] %}
-      <div class="carousel-item-tabz3 carousel-item{% if loop.first %} active{% endif %}">
 
-        {% if next222 is string %}
-          {% set next_name2 = ['---', '---'] %}
-        {% else %}
-          {% if next222.title is defined and next222.title is string %}
-            {% set next_name2 = next222.title.split(' - ') %}
-          {% else %}
-            {% set next_name2 = ['---', '---'] %}
-          {% endif %}
-        {% endif %}
+<div id="games_plans" class="carousel slide"
+   data-bs-ride="carousel"
+   data-bs-touch="true"
+   data-bs-interval="false">
 
-        <div class="content-section mt-6">
-          <div class="card-glass content-section-sidebar">
-            <br>
-
-            <div class="dez-post-media dez-img-effect zoom-slow">
-              <h3 style="padding-top:12px;">Najbližší zápas</h3>
-              <center>
-
-                {% if next222 is string %}
-                  <h6>{{ next222 }}</h6>
-                {% else %}
-
-                  {% set nm_dt = (next222.start_event|to_local) if (next222 and next222.start_event) else None %}
-                  {% set cd_dt = (current_date|to_local) if current_date else None %}
-
-                  {% if nm_dt and cd_dt and (cd_dt.date() == nm_dt.date()) %}
-                    {% set datetext = "Dnes" %}
-                  {% else %}
-                    {% set datetext = (next222.start_event|format_local('%d. %m. %Y')) if (next222 and next222.start_event) else '---' %}
-                  {% endif %}
-
-                  <h6>
-                    {{ datetext }} o
-                    <b>{{ (next222.start_event|format_local('%H:%M')) if (next222 and next222.start_event) else '--:--' }}</b>
-                  </h6>
-
-                  <div class="btn-live-frame" style="display:inline;">
-                    <p style="padding:0px; margin:0px; opacity:1.0; color:#fff; font-size:70%;"
-                       class="countdown_desc"></p>
-
-                    <p class="countdown"
-                       data-start-event="{{ next222.start_event|to_utc_iso }}"></p>
-                  </div>
-
-                  <br>
-
-                  {% set home_name = next_name2[0] %}
-                  {% set away_name = next_name2[1] %}
-
-                  {% set home_slug = (home_name|default('', true))|slugify %}
-                  {% set away_slug = (away_name|default('', true))|slugify %}
-
-                  {% set logos = namespace(home=None, away=None) %}
-
-                  {% for row in score_table %}
-                    {% set club_slug = (row.club|default('', true))|slugify %}
-
-                    {% set raw_logo = row.logo|default('', true) %}
-                    {% set cleaned_logo = raw_logo|replace('https://','')|replace('http://','') %}
-                    {% set host_part = cleaned_logo.split('/logo')[0] %}
-                    {% set logo_slug_source = host_part.split('.futbalnet.sk')[0] %}
-                    {% set logo_slug = logo_slug_source|slugify %}
-
-                    {% set final_slug = club_slug if club_slug else logo_slug %}
-
-                    {% if not logos.home and final_slug == home_slug %}
-                      {% set logos.home = row.logo %}
-                    {% elif not logos.away and final_slug == away_slug %}
-                      {% set logos.away = row.logo %}
-                    {% endif %}
-                  {% endfor %}
-
-                  <div class="logos">
-                    <img class="image-logo"
-                         style="padding:6px;"
-                         src="{% if logos.home %}{{ logos.home }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ home_slug ~ '.png' }}{% endif %}"
-                         alt="{{ home_name }}">
-
-                    <img class="image-logo"
-                         style="padding:6px;"
-                         src="{% if logos.away %}{{ logos.away }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ away_slug ~ '.png' }}{% endif %}"
-                         alt="{{ away_name }}">
-                  </div>
-
-                  <br>
-
-                  {% for team in teamz if team.id == next222.event_team_id %}
-                    <h6><p style="opacity:0.7;">{{ team.main_league }}</p></h6>
-                  {% endfor %}
-
-                  <h3 style="text-align:center;">{{ next_name2[0] }}</h3>
-                  <h6 style="text-align:center;">vs.</h6>
-                  <h3 style="text-align:center; margin-top:-5px;">{{ next_name2[1] }}</h3>
-
-                  <p style="opacity:0.7;">
-                    <i class="fa fa-map-marker" aria-hidden="true"></i>
-                    <a href="{{ next222.link }}" target="_blank" rel="noopener noreferrer">
-                      {{ next222.address }}
-                    </a>
-                  </p>
-                {% endif %}
-
-              </center>
-            </div>
-          </div>
-        </div>
-
-      </div>
+<center>
+  <div class="carousel-indicators"
+       style="background-color:#0f0f10;margin-bottom: 5px;width: fit-content;">
+    {% for team in teamz[:4] %}
+      <button class="btn text{% if loop.first %} active{% endif %}"
+              data-bs-target="#games_plans"
+              data-bs-slide-to="{{ loop.index0 }}"
+              aria-current="{% if loop.first %}true{% else %}false{% endif %}"
+              aria-label="Slide {{ loop.index }}">
+        {{ team.name }}
+      </button>
     {% endfor %}
   </div>
+</center>
+
+<div class="carousel-inner" style="margin-top:-30px">
+  {# next22 musí byť zo servera list rovnakej dĺžky ako teamz #}
+  {% for next222 in next22[:4] %}
+    <div class="carousel-item-tabz3 carousel-item{% if loop.first %} active{% endif %}">
+
+      {# pripravíme si názvy tímov pre zápas #}
+      {% if next222 is string %}
+        {% set next_name2 = ['---', '---'] %}
+      {% else %}
+        {% if next222.title is defined and next222.title is string %}
+          {% set next_name2 = next222.title.split(' - ') %}
+        {% else %}
+          {% set next_name2 = ['---', '---'] %}
+        {% endif %}
+      {% endif %}
+
+      <div class="content-section mt-6">
+        <div class="card-glass content-section-sidebar">
+          <br>
+
+          <div class="dez-post-media dez-img-effect zoom-slow">
+            <h3 style="padding-top:12px;">Najbližší zápas</h3>
+            <center>
+
+              {% if next222 is string %}
+                <h6>{{ next222 }}</h6>
+              {% else %}
+
+                {# ✅ vždy rob lokálny čas na serveri pre UI (Bratislava) #}
+                {% set nm_dt = (next222.start_event|to_local) if (next222 and next222.start_event) else None %}
+                {% set cd_dt = (current_date|to_local) if current_date else None %}
+
+                {% if nm_dt and cd_dt and (cd_dt.date() == nm_dt.date()) %}
+                  {% set datetext = "Dnes" %}
+                {% else %}
+                  {# ✅ použij format_local (server-side) #}
+                  {% set datetext = (next222.start_event|format_local('%d. %m. %Y')) if (next222 and next222.start_event) else '---' %}
+                {% endif %}
+
+                <h6>
+                  {{ datetext }} o
+                  <b>{{ (next222.start_event|format_local('%H:%M')) if (next222 and next222.start_event) else '--:--' }}</b>
+                </h6>
+
+                <div class="btn-live-frame" style="display: inline;">
+                  <p style="padding:0px; margin:0px;opacity: 1.0;color:#fff;font-size: 70%;"
+                    class="countdown_desc"></p>
+
+                  {# ✅ countdown musí dostať UTC ISO (Z), lebo JS odpočítava podľa absolútneho času #}
+                  <p class="countdown"
+                     data-start-event="{{ next222.start_event|to_utc_iso }}"></p>
+                </div>
+
+                <br>
+
+                {# mená tímov zo zápasu #}
+                {% set home_name = next_name2[0] %}
+                {% set away_name = next_name2[1] %}
+
+                {# slugy z názvov #}
+                {% set home_slug = (home_name|default('', true))|slugify %}
+                {% set away_slug = (away_name|default('', true))|slugify %}
+
+                {# pre logá nájdeme URL podľa score_table.logo #}
+                {% set logos = namespace(home=None, away=None) %}
+
+                {% for row in score_table %}
+                  {% set club_slug = (row.club|default('', true))|slugify %}
+
+                  {% set raw_logo = row.logo|default('', true) %}
+                  {% set cleaned_logo = raw_logo|replace('https://','')|replace('http://','') %}
+                  {% set host_part = cleaned_logo.split('/logo')[0] %}
+                  {% set logo_slug_source = host_part.split('.futbalnet.sk')[0] %}
+                  {% set logo_slug = logo_slug_source|slugify %}
+
+                  {% set final_slug = club_slug if club_slug else logo_slug %}
+
+                  {% if not logos.home and final_slug == home_slug %}
+                    {% set logos.home = row.logo %}
+                  {% elif not logos.away and final_slug == away_slug %}
+                    {% set logos.away = row.logo %}
+                  {% endif %}
+                {% endfor %}
+
+                <div class="logos">
+                  <img class="image-logo" style="padding:6px;"
+                       src="{% if logos.home %}{{ logos.home }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ home_slug ~ '.png' }}{% endif %}">
+                  <img class="image-logo" style="padding:6px;"
+                       src="{% if logos.away %}{{ logos.away }}{% else %}{{ aws_image_url() ~ 'clubs/' ~ away_slug ~ '.png' }}{% endif %}">
+                </div>
+                <br>
+
+                {# Nadpis ligy – podľa event_team_id nájdi tím v teamz #}
+                {% for team in teamz if team.id == next222.event_team_id %}
+                  <h6><p style="opacity:0.7;">{{ team.main_league }}</p></h6>
+                {% endfor %}
+
+                <h3 style="text-align:center;">{{ next_name2[0] }}</h3>
+                <h6 style="text-align:center;">vs.</h6>
+                <h3 style="text-align:center;margin-top:-5px;">{{ next_name2[1] }}</h3>
+                <p style="opacity:0.7;">
+                  <i class="fa fa-map-marker" aria-hidden="true"></i>
+                  <a href="{{ next222.link }}" target="_blank">{{ next222.address }}</a>
+                </p>
+              {% endif %}
+
+            </center>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  {% endfor %}
+</div>
 </div>
 
 <br>
 
+
+{# ============================================================
+ 2) PARTNERI – nechávam bez zmeny
+ ============================================================ #}
+
 {% if request.endpoint != 'sponsors.sponsors_public' %}
-  <div class="content-section mt-26">
-    <div class="dez-post-media dez-img-effect zoom-slow">
-      <h3 style="padding-top:12px;">Partneri</h3>
-      <center>
-        <p style="font-size:90%; opacity:0.6; margin-top:-9px;">
-          Navštívte stránky našich partnerov
-        </p>
-      </center>
+<div class="content-section mt-26">
+<div class="dez-post-media dez-img-effect zoom-slow">
+  <h3 style="padding-top:12px;">Partneri</h3>
+  <center><p style="font-size:90%; opacity: 0.6; margin-top:-9px;">Navštívte stránky našich partnerov</p></center>
 
-      <div id="carouselExampleControls"
-           class="carousel slide"
-           data-bs-touch="true"
-           data-bs-ride="carousel"
-           data-bs-interval="4000"
-           data-bs-wrap="true">
+  <div id="carouselExampleControls"
+       class="carousel slide"
+       data-bs-touch="true"
+       data-bs-ride="carousel"
+       data-bs-interval="4000"
+       data-bs-wrap="true">
 
-        <div class="carousel-inner">
-          {% if partners %}
-            {% for s in partners %}
-              <div class="carousel-item-tabz carousel-item {% if loop.first %}active{% endif %}">
-                <a class="sponsor-img d-block w-100"
-                   href="{{ s.url or '#' }}"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                  <img width="80%"
-                       src="{{ s.image_url }}"
-                       alt="{{ s.name or 'Sponsor' }}">
-                </a>
-              </div>
-            {% endfor %}
-          {% else %}
-            <div class="carousel-item-tabz carousel-item active">
-              <div class="p-3">
-                <p>Momentálne nie sú pridaní žiadni partneri.</p>
-              </div>
-            </div>
-          {% endif %}
+    <div class="carousel-inner">
+      {% if partners %}
+        {% for s in partners %}
+          <div class="carousel-item-tabz carousel-item {% if loop.first %}active{% endif %}">
+            <a class="sponsor-img d-block w-100"
+               href="{{ s.url or '#' }}"
+               target="_blank">
+              <img width="80%"
+                   src="{{ s.image_url }}"
+                   alt="{{ s.name or 'Sponsor' }}">
+            </a>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="carousel-item-tabz carousel-item active">
+          <div class="p-3">
+            <p>Momentálne nie sú pridaní žiadni partneri.</p>
+          </div>
         </div>
-
-        <button class="carousel-control-prev"
-                type="button"
-                data-bs-target="#carouselExampleControls"
-                data-bs-slide="prev">
-          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-          <span class="sr-only">Previous</span>
-        </button>
-
-        <button class="carousel-control-next"
-                type="button"
-                data-bs-target="#carouselExampleControls"
-                data-bs-slide="next">
-          <span class="carousel-control-next-icon" aria-hidden="true"></span>
-          <span class="sr-only">Next</span>
-        </button>
-      </div>
+      {% endif %}
     </div>
+
+    <button class="carousel-control-prev" role="button"
+            data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="sr-only">Previous</span>
+    </button>
+    <button class="carousel-control-next" role="button"
+            data-bs-target="#carouselExampleControls" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="sr-only">Next</span>
+    </button>
   </div>
+</div>
+</div>
 {% endif %}
 
 <br>
 <br>
+
+
+
 
 {% if request.endpoint != 'main.stats' %}
-  <div class="card-glass content-section mt-26">
-    <div class="dez-post-media dez-img-effect zoom-slow">
 
-      <div id="tabz"
-           class="carousel slide"
-           data-bs-ride="carousel"
-           data-bs-touch="true"
-           data-bs-interval="false">
+<div class="card-glass content-section mt-26">
+<div class="dez-post-media dez-img-effect zoom-slow">
 
-        <div class="carousel-indicators"
-             style="position:relative;top:-31px;background-color:rgb(17,17,17);margin-bottom:5px;width:fit-content;margin:auto;">
-          {% for team in teamz[:4] %}
-            <button type="button"
-                    class="btn text{% if loop.first %} active{% endif %}"
-                    data-bs-target="#tabz"
-                    data-bs-slide-to="{{ loop.index0 }}"
-                    aria-label="Slide {{ loop.index }}">
-              {{ team.name }}
-            </button>
-          {% endfor %}
+  <div id="tabz" class="carousel slide" data-bs-ride="carousel" data-bs-touch="true" data-bs-interval="false">
+
+    <div class="carousel-indicators"
+         style="position:relative;top:-31px;background-color:rgb(17, 17, 17);margin-bottom: 5px;width: fit-content;margin:auto;">
+      {% for team in teamz[:4] %}
+        <button
+          type="button"
+          class="btn text{% if loop.first %} active{% endif %}"
+          data-bs-target="#tabz"
+          data-bs-slide-to="{{ loop.index0 }}"
+          aria-label="Slide {{ loop.index }}"
+        >
+          {{ team.name }}
+        </button>
+      {% endfor %}
+    </div>
+
+    <div class="carousel-inner">
+
+      {% for team in teamz[:4] %}
+        <div class="carousel-item-tabz2 carousel-item{% if loop.first %} active{% endif %}"
+             data-bs-ride="carousel"
+             data-bs-touch="true"
+             data-bs-interval="false">
+
+          <h3 style="opacity:0.85;padding:0px;font-size: 93%;">{{ team.main_league }}</h3>
+
+          <table class="table scoretable">
+            <thead>
+            <tr class="table-headding">
+              <th>#</th>
+              <th>Tím</th>
+              <th style="text-align: center;" title="zápasy">Z</th>
+              <th style="text-align: center;" title="víťaztvá">V</th>
+              <th style="text-align: center;" title="remízy">R</th>
+              <th style="text-align: center;" title="prehry">P</th>
+              <th style="text-align: center;" title="skóre">S</th>
+              <th title="body">B</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for tteam in score_table if tteam.team_id == team.id and tteam.club %}
+              <tr style="margin: 0px;line-height: 59%;">
+                {% if tteam.club | slugify == 'fc-slovan-modra' %}
+                  {% set color = '; color:#bfd2fc; opacity:100%;' %}
+                {% else %}
+                  {% set color = '' %}
+                {% endif %}
+
+                <th style="opacity:0.8;{{ color }}" scope="row">{{ loop.index }}</th>
+                <td style="text-align:left;{{ color }}">
+                  {{ tteam.club
+                      |replace("Devínska Nová Ves", "Devínska N.V.")
+                      |replace("Futbalová akadémia Lafranconi FTVŠ UK","FA FTVŠ UK") }}
+                </td>
+
+                <td style="opacity:0.8;text-align:center;{{ color }}">{{ tteam.games }}</td>
+                <td style="opacity:0.8;text-align:center;{{ color }}">{{ tteam.wins }}</td>
+                <td style="opacity:0.8;text-align:center;{{ color }}">{{ tteam.draws }}</td>
+                <td style="opacity:0.8;text-align:center;{{ color }}">{{ tteam.loses }}</td>
+                <td style="opacity:0.8;text-align:center;{{ color }}">{{ tteam.score }}</td>
+                <td style="opacity:1;text-align:center;font-weight:600;{{ color }}">{{ tteam.points }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+
+          <a style="font-size:80%;position:relative;top:-20px; padding-bottom:20px;margin-top:-20px;color:#fff; opacity:0.7;"
+             href="{{ url_for('main.stats', team=team.name) }}">
+            Viac info o {{ team.name }}
+          </a>
+          <br>
+
         </div>
+      {% endfor %}
 
-        <div class="carousel-inner">
-          {% for team in teamz[:4] %}
-            <div class="carousel-item-tabz2 carousel-item{% if loop.first %} active{% endif %}"
-                 data-bs-ride="carousel"
-                 data-bs-touch="true"
-                 data-bs-interval="false">
-
-              <h3 style="opacity:0.85; padding:0px; font-size:93%;">
-                {{ team.main_league }}
-              </h3>
-
-              <table class="table scoretable">
-                <thead>
-                  <tr class="table-headding">
-                    <th>#</th>
-                    <th>Tím</th>
-                    <th style="text-align:center;" title="zápasy">Z</th>
-                    <th style="text-align:center;" title="víťaztvá">V</th>
-                    <th style="text-align:center;" title="remízy">R</th>
-                    <th style="text-align:center;" title="prehry">P</th>
-                    <th style="text-align:center;" title="skóre">S</th>
-                    <th title="body">B</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {% for tteam in score_table if tteam.team_id == team.id and tteam.club %}
-                    <tr style="margin:0px; line-height:59%;">
-                      {% if tteam.club | slugify == 'fc-slovan-modra' %}
-                        {% set color = '; color:#bfd2fc; opacity:100%;' %}
-                      {% else %}
-                        {% set color = '' %}
-                      {% endif %}
-
-                      <th style="opacity:0.8;{{ color }}" scope="row">{{ loop.index }}</th>
-                      <td style="text-align:left;{{ color }}">
-                        {{ tteam.club
-                            |replace("Devínska Nová Ves", "Devínska N.V.")
-                            |replace("Futbalová akadémia Lafranconi FTVŠ UK", "FA FTVŠ UK") }}
-                      </td>
-
-                      <td style="opacity:0.8; text-align:center;{{ color }}">{{ tteam.games }}</td>
-                      <td style="opacity:0.8; text-align:center;{{ color }}">{{ tteam.wins }}</td>
-                      <td style="opacity:0.8; text-align:center;{{ color }}">{{ tteam.draws }}</td>
-                      <td style="opacity:0.8; text-align:center;{{ color }}">{{ tteam.loses }}</td>
-                      <td style="opacity:0.8; text-align:center;{{ color }}">{{ tteam.score }}</td>
-                      <td style="opacity:1; text-align:center; font-weight:600;{{ color }}">{{ tteam.points }}</td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-
-              <a style="font-size:80%; position:relative; top:-20px; padding-bottom:20px; margin-top:-20px; color:#fff; opacity:0.7;"
-                 href="{{ url_for('main.stats', team=team.name) }}">
-                Viac info o {{ team.name }}
-              </a>
-
-              <br>
-            </div>
-          {% endfor %}
-        </div>
-
-      </div>
     </div>
   </div>
+</div>
+</div>
+
 {% endif %}
+
+
+<script>
+const myCarousel = document.querySelector('#carouselExampleControls');
+if (myCarousel) {
+  const carousel = new bootstrap.Carousel(myCarousel, {
+    interval: 4000,
+    ride: 'carousel',
+    wrap: true
+  });
+}
+</script>
+
+<script>
+  function initNextMatchCountdown() {
+    const els = document.querySelectorAll(".countdown");
+    if (!els.length) return;
+  
+    // vyčisti staré intervaly
+    if (!window._nextMatchTimers) window._nextMatchTimers = [];
+    window._nextMatchTimers.forEach(id => clearInterval(id));
+    window._nextMatchTimers = [];
+  
+    els.forEach((el) => {
+      const desc = el.parentElement?.querySelector(".countdown_desc");
+      const dateAttr = el.getAttribute("data-start-event");
+      if (!dateAttr) return;
+  
+      const countDownDate = new Date(dateAttr).getTime();
+      if (isNaN(countDownDate)) return;
+  
+      if (desc) {
+        desc.innerHTML = "deň | hod | min | sek";
+        desc.style.opacity = 0.95;
+      }
+  
+      const timerId = setInterval(function() {
+        const now = new Date().getTime();
+        let distance = countDownDate - now;
+  
+        if (distance <= 0) {
+          clearInterval(timerId);
+          el.innerHTML = "HRÁ SA";
+          return;
+        }
+  
+        let safeDistance = distance - 200;
+        if (safeDistance < 0) safeDistance = 0;
+  
+        const days = Math.floor(safeDistance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((safeDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((safeDistance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((safeDistance % (1000 * 60)) / 1000);
+  
+        el.innerHTML =
+          "<button class=\"btn-live\">" + days + "</button>" +
+          "<button class=\"btn-live\">" + hours + "</button>" +
+          "<button class=\"btn-live\">" + minutes + "</button>" +
+          "<button class=\"btn-live\">" + seconds + "</button>";
+      }, 1000);
+  
+      window._nextMatchTimers.push(timerId);
+    });
+  }
+  
+  document.addEventListener("DOMContentLoaded", initNextMatchCountdown);
+  
+  window.addEventListener("message", function(event) {
+    if (!event.data || event.data.type !== "calendar-updated") return;
+  
+    $.get("{{ url_for('main.sidebar_next_matches_fragment') }}", function(html) {
+      $("#sidebar-next-matches").html(html);
+      initNextMatchCountdown();
+    });
+  });
+</script>

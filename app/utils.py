@@ -39,9 +39,11 @@ def to_local(dt: datetime, tz_name: str = APP_TZ) -> datetime | None:
     tz = ZoneInfo(tz_name)
 
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=tz)
+        dt = dt.replace(tzinfo=tz)
+    else:
+        dt = dt.astimezone(tz)
 
-    return dt.astimezone(tz)
+    return dt
 
 
 def format_local(dt, fmt="%d.%m.%Y %H:%M", tz_name=APP_TZ):
