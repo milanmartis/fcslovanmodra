@@ -40,7 +40,7 @@ def _app_tz():
     Nastav v configu:
         APP_TIMEZONE = "Europe/Bratislava"
     """
-    tz_name = current_app.config.get("APP_TIMEZONE", "Europe/Bratislava")
+    tz_name = current_app.config.get("APP_TIMEZONE", "Europe/London")
 
     if ZoneInfo is None:
         # Fallback ak by nebola zoneinfo (malo by byť zbytočné na py3.9+)
