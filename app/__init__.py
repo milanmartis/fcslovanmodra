@@ -298,48 +298,36 @@ def create_app(config_class=None):
         if request.headers.get("X-Forwarded-Proto", "http") != "https":
             return redirect(request.url.replace("http://", "https://", 1), code=301)
 
-    # @app.context_processor
-    # def sidebar_context():
-    #     cache_key = "cache:sidebar:v1"
-    #     ttl = 300
+    @app.context_processor
+    def sidebar_context():
+        partners_q = (
+            Sponsor.query
+            .filter_by(kind="partner")
+            .order_by(Sponsor.orderz.asc())
+            .all()
+        )
 
-    #     if rds:
-    #         try:
-    #             raw = rds.get(cache_key)
-    #             if raw:
-    #                 data = json.loads(raw)
-    #                 return data
-    #         except Exception:
-    #             pass
+        partners = []
+        for s in partners_q:
+            key = make_sponsor_key(s.image_file)
+            presigned = s3_presign(key)
 
-    #     partners_q = Sponsor.query.order_by(Sponsor.orderz.asc()).all()
-    #     partners = []
-    #     for s in partners_q:
-    #         key = make_sponsor_key(s.image_file)
-    #         partners.append({
-    #             "id": s.id,
-    #             "name": s.name or "",
-    #             "url": s.url or "",
-    #             "image_url": s3_presign(key),
-    #         })
+            partners.append({
+                "id": s.id,
+                "name": s.name or "",
+                "url": s.url or "",
+                "image_url": presigned or (aws_image_url() + key),
+            })
 
-    #     data = dict(
-    #         partners=partners,
-    #         current_date=now_local(timezone.utc),
-    #         next22=[],
-    #         teamz=[],
-    #         next_match=None,
-    #         score_table=None,
-    #         hide_sidebar_tables=True,
-    #     )
-
-    #     if rds:
-    #         try:
-    #             rds.setex(cache_key, ttl, json.dumps(data, ensure_ascii=False, default=str))
-    #         except Exception:
-    #             pass
-
-    #     return data
+        return dict(
+            partners=partners,
+            current_date=datetime.now(),
+            next22=Next.next(),
+            teamz=RightColumn.main_menu(),
+            next_match=RightColumn.next_match(),
+            score_table=RightColumn.score_table(),
+            hide_sidebar_tables=False,
+        )
 
     _S3_CACHE = {"client": None, "bucket": (app.config.get("AWS_S3_BUCKET") or "").strip()}
 
