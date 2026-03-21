@@ -38,7 +38,7 @@ def _app_tz():
     """
     Timezone aplikácie (pre interpretáciu naive datetime z klienta).
     Nastav v configu:
-        APP_TIMEZONE = "Europe/Bratislava"
+        APP_TIMEZONE = "Europe/Lodon"
     """
     tz_name = current_app.config.get("APP_TIMEZONE", "Europe/London")
 
@@ -49,7 +49,7 @@ def _app_tz():
     try:
         return ZoneInfo(tz_name)
     except Exception:
-        return ZoneInfo("Europe/Bratislava")
+        return ZoneInfo("Europe/London")
 
 
 def _to_local_naive(dt: datetime) -> datetime:
