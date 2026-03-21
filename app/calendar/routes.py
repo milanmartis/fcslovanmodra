@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from app.utils import to_utc_iso
 from datetime import datetime, time, timezone
 from functools import wraps
 
@@ -52,24 +52,21 @@ def _app_tz():
         return ZoneInfo("Europe/Bratislava")
 
 
-def _to_utc_naive(dt: datetime) -> datetime:
+def _to_local_naive(dt: datetime) -> datetime:
     """
-    Z datetime spraví UTC-naive (tzinfo=None) pre DB.
+    Z datetime spraví LOCAL-naive (tzinfo=None) pre DB.
+    Teda 19:00 ostane 19:00.
     """
     if dt.tzinfo:
-        return dt.astimezone(timezone.utc).replace(tzinfo=None)
-    # dt je naive → interpretuj ako APP_TIMEZONE
-    tz = _app_tz()
-    aware = dt.replace(tzinfo=tz)
-    return aware.astimezone(timezone.utc).replace(tzinfo=None)
-
+        return dt.astimezone(_app_tz()).replace(tzinfo=None)
+    return dt
 
 def parse_client_dt(val: str | None, fallback_dt: datetime | None = None) -> datetime | None:
     """
     Parsovanie dátumu/času z klienta:
 
-    - ISO s tzinfo (Z alebo +01:00) → konvertuj na UTC-naive
-    - naive ISO bez tz → ber ako APP_TIMEZONE a konvertuj na UTC-naive
+    - ISO s tzinfo (Z alebo +01:00) → konvertuj na APP_TIMEZONE a ulož ako local-naive
+    - naive ISO bez tz → ber ako lokálny čas a ulož bez posunu
     - date-only (YYYY-MM-DD) → zachovaj čas z fallback_dt (ak existuje)
     """
     if not val:
@@ -77,7 +74,6 @@ def parse_client_dt(val: str | None, fallback_dt: datetime | None = None) -> dat
 
     dt = parser.isoparse(val)
 
-    # date-only prišiel ako 00:00 a zároveň string neobsahuje "T"
     if (
         isinstance(dt, datetime)
         and dt.time() == time(0, 0)
@@ -92,23 +88,36 @@ def parse_client_dt(val: str | None, fallback_dt: datetime | None = None) -> dat
         )
 
     if isinstance(dt, datetime):
-        return _to_utc_naive(dt)
+        return _to_local_naive(dt)
 
-    # isoparse môže vrátiť date - pre istotu
     if fallback_dt:
         combined = datetime.combine(dt, fallback_dt.time())
     else:
         combined = datetime.combine(dt, time(0, 0))
-    return _to_utc_naive(combined)
+
+    return _to_local_naive(combined)
 
 
-def iso_utc_z(dt: datetime | None) -> str | None:
-    """
-    DB má UTC-naive → pošli klientovi ISO s 'Z' (UTC).
-    """
-    if not dt:
-        return None
-    return dt.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+
+def _event_to_fc(e: Event) -> dict:
+    return {
+        "id": e.id,
+        "title": e.title,
+        "start": e.start_event.isoformat() if e.start_event else None,
+        "end": e.end_event.isoformat() if e.end_event else None,
+        "address": e.address,
+        "link": e.link,
+        "team": e.event_team_id,
+        "category": e.event_category_id,
+    }
+    
+# def iso_utc_z(dt: datetime | None) -> str | None:
+#     """
+#     DB má UTC-naive → pošli klientovi ISO s 'Z' (UTC).
+#     """
+#     if not dt:
+#         return None
+#     return dt.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 # ============================================================
@@ -181,25 +190,7 @@ def _editable_team_ids() -> list[int]:
     return _trainer_team_ids()
 
 
-# ============================================================
-# SERIALIZATION
-# ============================================================
 
-def _event_to_fc(e: Event) -> dict:
-    """
-    FullCalendar v3 JSON.
-    Časy posielame ako UTC ('Z'), FC ich zobrazí v local time.
-    """
-    return {
-        "id": e.id,
-        "title": e.title,
-        "start": iso_utc_z(e.start_event),
-        "end": iso_utc_z(e.end_event),
-        "address": e.address,
-        "link": e.link,
-        "team": e.event_team_id,
-        "category": e.event_category_id,
-    }
 
 
 # ============================================================
@@ -232,7 +223,7 @@ def index():
             form=form,
             form2=form2,
             calendar=events,
-            current_date=datetime.now(),
+            current_date=datetime.now(timezone.utc),
             next22=next22,
             teamz=teamz,
             next_match=next_match,
@@ -271,7 +262,7 @@ def modal():
             teams=teams,
             cats=cats,
             editable_team_ids=editable_team_ids,
-            current_date=datetime.now(),
+            current_date=datetime.now(timezone.utc),
         )
     except Exception:
         current_app.logger.exception("calendar.modal ERROR")

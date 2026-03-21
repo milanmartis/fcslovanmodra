@@ -152,7 +152,7 @@ def list_posts():
         'home.html',
         posts=posts_paginated,
         category=category,
-        current_date=datetime.now(),
+        current_date=datetime.now(timezone.utc),
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         next_match=RightColumn.next_match(),

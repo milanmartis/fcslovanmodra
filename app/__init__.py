@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 import base64
 import os
 import boto3
+from app.utils import now_local
 
 from botocore.config import Config as BotoConfig
 # ✅ nevolaj init_firebase() pri importe modulu (môže to robiť side-effecty)
@@ -78,6 +79,12 @@ def create_app(config_class=None):
     app = Flask(__name__)
     app.config.from_object(config_class)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+    
+    from app.utils import to_local, to_utc_iso, format_local
+    print("USING UTILS FROM:", to_local.__module__, to_local.__code__.co_filename)
+    app.jinja_env.filters["to_local"] = to_local
+    app.jinja_env.filters["to_utc_iso"] = to_utc_iso
+    app.jinja_env.filters["format_local"] = format_local
 
     global rds
     rds = _make_redis()
@@ -112,19 +119,9 @@ def create_app(config_class=None):
 
     socketio.init_app(
         app,
-        cors_allowed_origins=[
-            "https://www.fcslovanmodra.sk",
-            "https://fcslovanmodra.sk",
-            "http://127.0.0.1:5000",
-            "http://localhost:5000",
-            "https://fcman-37884cffcf78.herokuapp.com",
-        ],
-        cors_credentials=True,
-        # async_mode="gevent",
+        cors_allowed_origins=["https://fcslovanmodra.sk", "https://www.fcslovanmodra.sk"],
         async_mode="threading",
-        message_queue=os.environ.get("REDIS_URL")
     )
-
     login_manager = LoginManager()
     login_manager.login_view = "users.login"  # tvoj endpoint
     login_manager.login_message = "Please log in to access this page."
@@ -169,7 +166,7 @@ def create_app(config_class=None):
         return resp
 
     # ------------------------------------------------------------
-    # ❌ /service-worker.js NEPOUŽÍVAJ ako druhý SW (konflikt s push SW)
+    # ../service-worker.js NEPOUŽÍVAJ ako druhý SW (konflikt s push SW)
     # ------------------------------------------------------------
     # @app.get("/service-worker.js")
     # def service_worker_js():
@@ -301,50 +298,48 @@ def create_app(config_class=None):
         if request.headers.get("X-Forwarded-Proto", "http") != "https":
             return redirect(request.url.replace("http://", "https://", 1), code=301)
 
-    @app.context_processor
-    def sidebar_context():
-        # ✅ cache všetkého čo je v sidebare
-        cache_key = "cache:sidebar:v1"
-        ttl = 30  # sekundy (daj 30-120)
+    # @app.context_processor
+    # def sidebar_context():
+    #     cache_key = "cache:sidebar:v1"
+    #     ttl = 300
 
-        if rds:
-            try:
-                raw = rds.get(cache_key)
-                if raw:
-                    data = json.loads(raw)
-                    # partners je list dictov, zvyšok je serializovateľné
-                    return data
-            except Exception:
-                pass
+    #     if rds:
+    #         try:
+    #             raw = rds.get(cache_key)
+    #             if raw:
+    #                 data = json.loads(raw)
+    #                 return data
+    #         except Exception:
+    #             pass
 
-        partners_q = Sponsor.query.order_by(Sponsor.orderz.asc()).all()
-        partners = []
-        for s in partners_q:
-            key = make_sponsor_key(s.image_file)
-            partners.append({
-                "id": s.id,
-                "name": s.name or "",
-                "url": s.url or "",
-                "image_url": s3_presign(key),
-            })
+    #     partners_q = Sponsor.query.order_by(Sponsor.orderz.asc()).all()
+    #     partners = []
+    #     for s in partners_q:
+    #         key = make_sponsor_key(s.image_file)
+    #         partners.append({
+    #             "id": s.id,
+    #             "name": s.name or "",
+    #             "url": s.url or "",
+    #             "image_url": s3_presign(key),
+    #         })
 
-        data = dict(
-            partners=partners,
-            current_date=datetime.now(timezone.utc),   # ✅ timezone
-            next22=Next.next(),
-            teamz=RightColumn.main_menu(),
-            next_match=RightColumn.next_match(),
-            score_table=RightColumn.score_table(),
-            hide_sidebar_tables=False,
-        )
+    #     data = dict(
+    #         partners=partners,
+    #         current_date=now_local(timezone.utc),
+    #         next22=[],
+    #         teamz=[],
+    #         next_match=None,
+    #         score_table=None,
+    #         hide_sidebar_tables=True,
+    #     )
 
-        if rds:
-            try:
-                rds.setex(cache_key, ttl, json.dumps(data, ensure_ascii=False, default=str))
-            except Exception:
-                pass
+    #     if rds:
+    #         try:
+    #             rds.setex(cache_key, ttl, json.dumps(data, ensure_ascii=False, default=str))
+    #         except Exception:
+    #             pass
 
-        return data
+    #     return data
 
     _S3_CACHE = {"client": None, "bucket": (app.config.get("AWS_S3_BUCKET") or "").strip()}
 
@@ -375,7 +370,7 @@ def create_app(config_class=None):
 
     @app.context_processor
     def inject_current_year():
-        return {"current_year": datetime.now().year}
+        return {"current_year": now_local().year}
 
     @app.context_processor
     def aws_helpers():

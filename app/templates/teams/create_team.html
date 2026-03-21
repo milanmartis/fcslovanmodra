@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+
 {% block content %}
 <h3>Team Page Update</h3>
 
@@ -50,6 +51,7 @@
                         {{ form.score_scrap(class="form-control form-control-lg", id="score_scrap") }}
                     {% endif %}
                 </div>
+
                 <div class="form-group col-3">
                     <label class="form-control-label" for="update-score-table">&nbsp;</label>
                     <button id="update-score-table"
@@ -76,6 +78,7 @@
                         {{ form.player_list_scrap(class="form-control form-control-lg", id="player_list_scrap") }}
                     {% endif %}
                 </div>
+
                 <div class="form-group col-3">
                     <label class="form-control-label" for="update-player-list">&nbsp;</label>
                     <button id="update-player-list"
@@ -102,6 +105,7 @@
                         {{ form.events_results_scrap(class="form-control form-control-lg", id="events_results_scrap") }}
                     {% endif %}
                 </div>
+
                 <div class="form-group col-3">
                     <label class="form-control-label" for="update-events-results">&nbsp;</label>
                     <button id="update-events-results"
@@ -152,47 +156,54 @@
 {% block scripts %}
 {{ super() }}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    function setupUpdateButton(buttonId, inputId) {
-        const button = document.getElementById(buttonId);
-        const input = document.getElementById(inputId);
-
-        if (!button) return;
-
-        button.addEventListener('click', function () {
-            this.innerText = 'Loading...';
-            this.disabled = true;
-        });
-
-        if (input) {
-            input.addEventListener('input', function () {
-                button.innerText = 'Update';
-                button.disabled = false;
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('form-team-id');
+    
+        function bindAjaxUpdate(buttonId, actionName) {
+            const btn = document.getElementById(buttonId);
+            if (!btn || !form) return;
+    
+            btn.addEventListener('click', async function (e) {
+                e.preventDefault();
+    
+                const originalText = btn.innerText;
+                btn.innerText = 'Loading...';
+                btn.disabled = true;
+    
+                try {
+                    const formData = new FormData(form);
+                    formData.set('action_type', actionName);
+    
+                    const response = await fetch(form.action || window.location.href, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    });
+    
+                    const data = await response.json();
+    
+                    alert(data.message || 'Hotovo');
+    
+                    if (data.ok && typeof window.refreshNextMatchesSidebar === 'function') {
+                        window.refreshNextMatchesSidebar();
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Update zlyhal.');
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
             });
         }
-    }
-
-    setupUpdateButton('update-score-table', 'score_scrap');
-    setupUpdateButton('update-player-list', 'player_list_scrap');
-    setupUpdateButton('update-events-results', 'events_results_scrap');
-
-    const updatePlayerBtn = document.getElementById('update-player-list');
-    if (updatePlayerBtn) {
-        updatePlayerBtn.addEventListener('click', function () {
-            if (typeof refreshNextMatchesSidebar === 'function') {
-                refreshNextMatchesSidebar();
-            }
-        });
-    }
-
-    const updateScoreBtn = document.getElementById('update-score-table');
-    if (updateScoreBtn) {
-        updateScoreBtn.addEventListener('click', function () {
-            if (window.parent) {
-                window.parent.postMessage({ type: 'calendar-updated' }, '*');
-            }
-        });
-    }
-});
-</script>
+    
+        bindAjaxUpdate('update-score-table', 'score');
+        bindAjaxUpdate('update-player-list', 'players');
+        bindAjaxUpdate('update-events-results', 'events');
+    });
+    </script>
 {% endblock scripts %}

@@ -1,4 +1,22 @@
 import os
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+
+APP_TZ = os.getenv("APP_TIMEZONE", "Europe/Bratislava")
+
+
+def app_tz() -> ZoneInfo:
+    return ZoneInfo(APP_TZ)
+
+
+def now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def now_local() -> datetime:
+    return now_utc().astimezone(app_tz())
+
 
 def cdn_url(key: str) -> str:
     base = os.getenv("CDN_BASE_URL", "").rstrip("/")
@@ -14,33 +32,32 @@ def make_clubs_key(filename: str) -> str:
     return f"clubs/{f}"
 
 
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
-
-def to_local(dt: datetime, tz_name: str = "Europe/Bratislava") -> datetime | None:
+def to_local(dt: datetime, tz_name: str = APP_TZ) -> datetime | None:
     if not dt:
         return None
+
     tz = ZoneInfo(tz_name)
 
-    # ✅ ak je dt naive, berieme ho ako LOKÁLNY čas (Bratislava)
+    # DB datetime ber ako UTC, ak je naive
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=tz)
+        dt = dt.replace(tzinfo=timezone.utc)
 
     return dt.astimezone(tz)
 
-def format_local(dt, fmt="%d.%m.%Y %H:%M", tz_name="Europe/Bratislava"):
+
+def format_local(dt, fmt="%d.%m.%Y %H:%M", tz_name=APP_TZ):
     if not dt:
         return ""
     return to_local(dt, tz_name).strftime(fmt)
 
+
 def to_utc_iso(dt: datetime) -> str:
-    """
-    Vráti ISO string v UTC s timezone, aby JS Date() nikdy neuhádol zle.
-    Výstup: 2026-02-13T12:00:00Z
-    """
     if not dt:
         return ""
+
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    dt = dt.astimezone(timezone.utc)
+    else:
+        dt = dt.astimezone(timezone.utc)
+
     return dt.isoformat().replace("+00:00", "Z")

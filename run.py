@@ -1,17 +1,11 @@
 import os
-from flask_socketio import SocketIO
-from app import create_app
+from dotenv import load_dotenv
+
+load_dotenv()  # načíta .env z aktuálneho priečinka
+
+from app import create_app, socketio
 
 app = create_app()
 
-socketio = SocketIO(
-    app,
-    async_mode="threading",
-    cors_allowed_origins="*",
-    logger=True,
-    engineio_logger=True,
-)
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host="0.0.0.0", port=port, debug=True, use_reloader=False)
+    socketio.run(app, host="localhost", port=5000, debug=True, use_reloader=False, allow_unsafe_werkzeug=True)

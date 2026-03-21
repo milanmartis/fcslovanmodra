@@ -117,8 +117,8 @@ class Config:
     FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID")
     FIREBASE_MESSAGING_SENDER_ID = os.getenv("FIREBASE_MESSAGING_SENDER_ID")
     FIREBASE_APP_ID = os.getenv("FIREBASE_APP_ID")
-    APP_TIMEZONE = "Europe/Bratislava"
-
+    # APP_TIMEZONE = "Europe/Bratislava"
+    APP_TIMEZONE = os.getenv("APP_TIMEZONE", "Europe/Bratislava")
     # VAPID (PUBLIC ide do frontend-u, PRIVATE nikdy neposielať do JS)
     VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
     VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")

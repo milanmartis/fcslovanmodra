@@ -391,46 +391,77 @@ def _get_match_event_category_id() -> int:
     return 1
 
 
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+API_LOCAL_TZ = ZoneInfo("Europe/Bratislava")
+
 def _parse_api_datetime_utc(start_str: str) -> datetime:
+    if not start_str:
+        raise ValueError("empty datetime string")
+
+    s = start_str.strip()
+
+    if s.endswith("Z"):
+        s2 = s[:-1]
+        if "." in s2:
+            s2 = s2.split(".")[0]
+        dt = datetime.strptime(s2, "%Y-%m-%dT%H:%M:%S")
+        return dt.replace(tzinfo=timezone.utc)
+
+    dt = datetime.fromisoformat(s)
+
+    # TEST: ak príde naive datetime, NEPOSÚVAJ ho do UTC
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=API_LOCAL_TZ)
+
+    return dt.astimezone(API_LOCAL_TZ)
+    
+def _parse_api_datetime_local(start_str: str) -> datetime:
     """
-    Sportnet typicky posiela ISO s 'Z' (UTC).
-    Vrátime AWARE datetime v UTC.
+    Sportnet datetime -> AWARE LOCAL (Europe/Bratislava)
+
+    Pravidlá:
+    - ak príde čas s offsetom alebo Z, prevedie sa do Europe/Bratislava
+    - ak príde čas bez timezone, berie sa ako Europe/Bratislava
+    - výsledok vždy vracia AWARE LOCAL datetime
     """
     if not start_str:
         raise ValueError("empty datetime string")
 
     s = start_str.strip()
 
-    # Ak končí Z -> UTC
+    # napr. 2026-03-22T14:00:00Z
     if s.endswith("Z"):
         s2 = s[:-1]
-        # môže byť aj s .ms
         if "." in s2:
             s2 = s2.split(".")[0]
         dt = datetime.strptime(s2, "%Y-%m-%dT%H:%M:%S")
-        return dt.replace(tzinfo=timezone.utc)
+        return dt.replace(tzinfo=ZoneInfo("UTC")).astimezone(API_LOCAL_TZ)
 
-    # Ak má offset (+01:00) -> fromisoformat to zvládne (py3.11+)
     try:
         dt = datetime.fromisoformat(s)
+
+        # ak API pošle bez timezone, ber to ako lokálny čas Bratislava
         if dt.tzinfo is None:
-            # fallback: ber ako UTC
-            return dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc)
+            return dt.replace(tzinfo=API_LOCAL_TZ)
+
+        # ak API pošle s timezone, preveď do Bratislavy
+        return dt.astimezone(API_LOCAL_TZ)
+
     except Exception:
-        # fallback na tvoj pôvodný parsing bez TZ -> ber ako UTC
         s2 = s
         if "." in s2:
             s2 = s2.split(".")[0]
         dt = datetime.strptime(s2, "%Y-%m-%dT%H:%M:%S")
-        return dt.replace(tzinfo=timezone.utc)
+        return dt.replace(tzinfo=API_LOCAL_TZ)
 
 
 def _event_data_from_api_match(item: dict) -> dict | None:
     """
-    FIX TIMEZONE:
-    - API datetime parsujeme ako UTC aware
-    - do DB ukladáme NAIVE UTC (bez tzinfo), aby tvoja to_local() fungovala jednotne
+    FIX:
+    - čas zo Sportnetu berieme ako lokálny čas Europe/Bratislava
+    - do DB ukladáme NAIVE LOCAL čas (bez tzinfo), aby zostal napr. 15:00 ako 15:00
     """
     try:
         match_id = item.get("_id") or item.get("id") or item.get("matchId")
@@ -439,6 +470,7 @@ def _event_data_from_api_match(item: dict) -> dict | None:
 
         home = item.get("homeTeam") or {}
         away = item.get("awayTeam") or {}
+
         home_name = (home.get("name") or "").strip()
         away_name = (away.get("name") or "").strip()
         if not home_name or not away_name:
@@ -463,17 +495,18 @@ def _event_data_from_api_match(item: dict) -> dict | None:
         if not start_str:
             return None
 
-        start_dt_utc_aware = _parse_api_datetime_utc(start_str)
+        # LOCAL aware
+        start_dt_local_aware = _parse_api_datetime_local(start_str)
 
         end_str = item.get("endDate") or item.get("dateTo") or item.get("date_to")
         if end_str:
-            end_dt_utc_aware = _parse_api_datetime_utc(end_str)
+            end_dt_local_aware = _parse_api_datetime_local(end_str)
         else:
-            end_dt_utc_aware = start_dt_utc_aware + timedelta(hours=2)
+            end_dt_local_aware = start_dt_local_aware + timedelta(hours=2)
 
-        # ✅ DB: NAIVE UTC
-        start_dt = start_dt_utc_aware.replace(tzinfo=None)
-        end_dt = end_dt_utc_aware.replace(tzinfo=None)
+        # DB: NAIVE LOCAL
+        start_dt = start_dt_local_aware.replace(tzinfo=None)
+        end_dt = end_dt_local_aware.replace(tzinfo=None)
 
         event_address = "Navigácia na štadión"
         destination_str = f"Štadión {home_name}"
@@ -589,9 +622,14 @@ def new_team():
     form = TeamForm()
     if form.validate_on_submit():
         team_obj = Team(
-            name=form.name.data,
-            score_scrap=form.score_scrap.data,
-            player_list_scrap=form.player_list_scrap.data,
+            name=(form.name.data or "").strip(),
+            name_short=(form.name_short.data or "").strip(),
+            visible=int(form.visible.data) if hasattr(form, "visible") else 1,
+            main_league=(form.main_league.data or "").strip(),
+            score_scrap=(form.score_scrap.data or "").strip(),
+            player_list_scrap=(form.player_list_scrap.data or "").strip(),
+            events_results_scrap=(form.events_results_scrap.data or "").strip(),
+            events_program_scrap=(form.events_program_scrap.data or "").strip(),
         )
         db.session.add(team_obj)
         db.session.commit()
@@ -607,7 +645,6 @@ def new_team():
         next_match=RightColumn.next_match(),
         score_table=RightColumn.score_table(),
     )
-
 
 @team_bp.route("/team/<team_name>")
 def team_name(team_name):
