@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from app.posts.routes import s3_presign
 from app.users.routes import make_member_key
-
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 import json
 import re
 import time
@@ -391,10 +392,8 @@ def _get_match_event_category_id() -> int:
     return 1
 
 
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
 
-API_LOCAL_TZ = ZoneInfo("Europe/London")
+API_LOCAL_TZ = ZoneInfo("Europe/Bratislava")
 
 def _parse_api_datetime_utc(start_str: str) -> datetime:
     if not start_str:
@@ -500,6 +499,7 @@ def _event_data_from_api_match(item: dict) -> dict | None:
         print("PARSED UTC =", start_dt_utc_aware)
 
         # LOCAL aware
+        # LOCAL aware
         start_dt_local_aware = _parse_api_datetime_local(start_str)
 
         end_str = item.get("endDate") or item.get("dateTo") or item.get("date_to")
@@ -508,9 +508,12 @@ def _event_data_from_api_match(item: dict) -> dict | None:
         else:
             end_dt_local_aware = start_dt_local_aware + timedelta(hours=2)
 
-        # DB: NAIVE LOCAL
-        start_dt = start_dt_local_aware.replace(tzinfo=None)
-        end_dt = end_dt_local_aware.replace(tzinfo=None)
+        # DB: ukladaj korektne UTC AWARE
+        start_dt = start_dt_local_aware.astimezone(timezone.utc)
+        end_dt = end_dt_local_aware.astimezone(timezone.utc)
+
+        print("LOCAL START =", start_dt_local_aware, "tz=", start_dt_local_aware.tzinfo)
+        print("UTC START   =", start_dt, "tz=", start_dt.tzinfo)
 
         event_address = "Navigácia na štadión"
         destination_str = f"Štadión {home_name}"
