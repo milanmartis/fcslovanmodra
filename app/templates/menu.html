@@ -40,7 +40,7 @@
 
         <!-- A tím -->
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('team.team_name', team_name='A team') }}">A tím</a>
+          <a class="nav-link" href="{{ url_for('main.stats', team='A team') }}">A tím</a>
         </li>
 
         <!-- Mládež -->
@@ -62,7 +62,7 @@
             {% for team in teamz %}
               {% if not loop.first %}
                 <li>
-                  <a class="dropdown-item" href="{{ url_for('team.team_name', team_name=team.name) }}">
+                  <a class="dropdown-item" href="{{ url_for('main.stats', team=team.name) }}">
                     {{ team.name }}
                   </a>
                 </li>
