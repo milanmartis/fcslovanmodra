@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Dict, List, Optional
-
+import unicodedata
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -123,23 +123,27 @@ def _to_int_series(s: pd.Series) -> pd.Series:
 
 
 def _best_read_html_tables(html: str) -> List[pd.DataFrame]:
-    """Robustná verzia pd.read_html nad už stiahnutým HTML – skúsi viac 'flavors'."""
+    """
+    Robustná verzia pd.read_html:
+    - nikdy nevyhodí výnimku
+    - keď nič nenájde, vráti []
+    """
     flavors_to_try = [
         ["lxml"], ["bs4"], ["html5lib"],
         ["lxml", "bs4"], ["lxml", "html5lib"], ["bs4", "html5lib"],
         ["lxml", "bs4", "html5lib"],
     ]
-    last_exc: Optional[Exception] = None
+
+    last_exc = None
+
     for flavors in flavors_to_try:
         try:
-            dfs = pd.read_html(html, flavor=flavors, match=r".+")
-            return dfs
+            return pd.read_html(html, flavor=flavors, match=r".+")
         except Exception as e:
             last_exc = e
             print(f"********* read_html FAIL - flavors: {flavors} | error: {repr(e)}")
-            continue
-    if last_exc:
-        raise last_exc
+
+    print(f"********* read_html ALL FAIL -> returning [] | last={repr(last_exc)}")
     return []
 
 
@@ -290,60 +294,240 @@ def _find_player_name_col(df: pd.DataFrame) -> str:
 
 
 def _parse_players_from_html(html: str) -> List[Dict]:
-    tables = _best_read_html_tables(html)
-    if not tables:
+    try:
+        tables = _best_read_html_tables(html)
+        if not tables:
+            return []
+
+        best_df = None
+        best_score = -1
+
+        for raw in tables:
+            df = _normalize_columns(raw)
+            colset = {str(c).lower().strip() for c in df.columns}
+
+            score = 0
+            if any(x in colset for x in ["hráč", "hrac", "meno", "name", "player"]):
+                score += 2
+            if any(x in colset for x in ["g", "goals", "žk", "zk", "čk", "ck", "karty", "cards"]):
+                score += 1
+            if len(df.columns) >= 2 and len(df) >= 5:
+                score += 1
+
+            if score > best_score:
+                best_score = score
+                best_df = df
+
+        if best_df is None:
+            return []
+
+        name_col = _find_player_name_col(best_df)
+        cols_low = {str(c).lower().strip(): c for c in best_df.columns}
+
+        goals_col = cols_low.get("g") or cols_low.get("goals") or cols_low.get("skóre") or cols_low.get("skore")
+        yellow_col = cols_low.get("žk") or cols_low.get("zk") or cols_low.get("yellow")
+        red_col = cols_low.get("čk") or cols_low.get("ck") or cols_low.get("red")
+        pos_col = cols_low.get("post") or cols_low.get("poz") or cols_low.get("pozícia") or cols_low.get("pozicia") or cols_low.get("position")
+
+        out = []
+        seen = set()
+
+        for _, row in best_df.iterrows():
+            name = _normalize_player_name(str(row.get(name_col, "")))
+            if not name or name.lower() in {"nan", "none"}:
+                continue
+
+            key = name.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+
+            out.append({
+                "name": name,
+                "score": _safe_int_val(row.get(goals_col)) if goals_col else 0,
+                "yellow_card": _safe_int_val(row.get(yellow_col)) if yellow_col else 0,
+                "red_card": _safe_int_val(row.get(red_col)) if red_col else 0,
+                "position": _safe_int_val(row.get(pos_col)) if pos_col else 0,
+            })
+
+        return out
+
+    except Exception as e:
+        print("********* _parse_players_from_html FAILED:", repr(e))
         return []
 
-    best_df = None
-    best_score = -1
-    for raw in tables:
-        df = _normalize_columns(raw)
-        colset = {str(c).lower().strip() for c in df.columns}
 
-        score = 0
-        if any(x in colset for x in ["hráč", "hrac", "meno", "name", "player"]):
-            score += 2
-        if any(x in colset for x in ["g", "goals", "žk", "zk", "čk", "ck", "karty", "cards"]):
-            score += 1
-        if len(df.columns) >= 2 and len(df) >= 5:
-            score += 1
+def _strip_accents(s: str) -> str:
+    s = (s or "").strip().lower()
+    s = unicodedata.normalize("NFKD", s)
+    return "".join(ch for ch in s if not unicodedata.combining(ch))
 
-        if score > best_score:
-            best_score = score
-            best_df = df
 
-    if best_df is None:
-        return []
+def _name_key(name: str) -> str:
+    return _strip_accents(re.sub(r"\s+", " ", (name or "")).strip())
 
-    name_col = _find_player_name_col(best_df)
-    cols_low = {str(c).lower().strip(): c for c in best_df.columns}
 
-    goals_col = cols_low.get("g") or cols_low.get("goals") or cols_low.get("skóre") or cols_low.get("skore")
-    yellow_col = cols_low.get("žk") or cols_low.get("zk") or cols_low.get("yellow")
-    red_col = cols_low.get("čk") or cols_low.get("ck") or cols_low.get("red")
-    pos_col = cols_low.get("post") or cols_low.get("poz") or cols_low.get("pozícia") or cols_low.get("pozicia") or cols_low.get("position")
+def _parse_players_from_dom(html: str) -> List[Dict]:
+    soup = BeautifulSoup(html, "lxml")
 
-    out: List[Dict] = []
+    HEADINGS = [
+        (re.compile(r"^\s*brank[aá]ri\s*$", re.I), 1),
+        (re.compile(r"^\s*obrancovia\s*$", re.I), 2),
+        (re.compile(r"^\s*z[aá]lo[zž]n[ií]ci\s*$", re.I), 3),
+        (re.compile(r"^\s*[uú]to[cč]n[ií]ci\s*$", re.I), 4),
+        (re.compile(r"^\s*tr[eé]ner\s*$", re.I), 101),
+        (re.compile(r"^\s*technick[yý]\s+ved[uú]ci\s*$", re.I), 102),
+        (re.compile(r"^\s*lek[aá]r\s*$", re.I), 103),
+        (re.compile(r"^\s*fyzioterapeut\s*$", re.I), 104),
+    ]
+
+    BAD_NAME_RX = re.compile(
+        r"(sledujte\s+n[aá]s|copyright|inzercia|ochrana\s+osobn|nariadenie\s+dsa|sportnet\.sk|futbalnet\.sk|©|\|)",
+        re.I
+    )
+
+    def match_pos(text: str) -> int:
+        t = (text or "").strip()
+        for rx, pos in HEADINGS:
+            if rx.match(t):
+                return pos
+        return 0
+
+    def is_player_link(a) -> bool:
+        href = (a.get("href") or "").strip()
+        return href.startswith("/futbalnet/clen/")
+
+    def norm_name(s: str) -> str:
+        return re.sub(r"\s+", " ", (s or "")).strip()
+
+    def looks_like_real_name(name: str) -> bool:
+        if not name or len(name) < 3:
+            return False
+        if BAD_NAME_RX.search(name):
+            return False
+        if len(name) > 80:
+            return False
+        if len(name.split()) > 4:
+            return False
+        if not re.search(r"[A-Za-zÁ-ž]", name):
+            return False
+        return True
+
+    out = []
     seen = set()
 
-    for _, row in best_df.iterrows():
-        name = _normalize_player_name(str(row.get(name_col, "")))
-        if not name or name.lower() in {"nan", "none"}:
-            continue
-        if name in seen:
-            continue
-        seen.add(name)
+    heading_nodes = []
+    for node in soup.find_all(string=True):
+        pos = match_pos(str(node))
+        if pos:
+            heading_nodes.append((node, pos))
 
-        out.append({
-            "name": name,
-            "score": _safe_int_val(row.get(goals_col)) if goals_col else 0,
-            "yellow_card": _safe_int_val(row.get(yellow_col)) if yellow_col else 0,
-            "red_card": _safe_int_val(row.get(red_col)) if red_col else 0,
-            "position": _safe_int_val(row.get(pos_col)) if pos_col else 0,
-        })
+    if not heading_nodes:
+        for a in soup.find_all("a", href=True):
+            if not is_player_link(a):
+                continue
+
+            name = norm_name(a.get_text(" ", strip=True))
+            if not looks_like_real_name(name):
+                continue
+
+            k = _name_key(name)
+            if k in seen:
+                continue
+            seen.add(k)
+
+            out.append({
+                "name": name,
+                "position": 0,
+                "score": 0,
+                "yellow_card": 0,
+                "red_card": 0,
+            })
+
+        return out
+
+    for idx, (node, pos) in enumerate(heading_nodes):
+        start_el = node.parent
+        end_el = heading_nodes[idx + 1][0].parent if idx + 1 < len(heading_nodes) else None
+
+        for el in start_el.next_elements:
+            if end_el is not None and el is end_el:
+                break
+
+            if not hasattr(el, "name"):
+                continue
+
+            if el.name == "a" and el.has_attr("href") and is_player_link(el):
+                name = norm_name(el.get_text(" ", strip=True))
+                if not looks_like_real_name(name):
+                    continue
+
+                k = _name_key(name)
+                if k in seen:
+                    continue
+                seen.add(k)
+
+                out.append({
+                    "name": name,
+                    "position": int(pos),
+                    "score": 0,
+                    "yellow_card": 0,
+                    "red_card": 0,
+                })
 
     return out
 
+
+def _parse_players_from_json_payload(payload) -> List[Dict]:
+    try:
+        data = payload
+
+        if isinstance(data, dict):
+            for k in ("players", "items", "data", "results", "squad", "teamPlayers"):
+                if isinstance(data.get(k), list):
+                    data = data[k]
+                    break
+
+        if not isinstance(data, list):
+            return []
+
+        out = []
+        seen = set()
+
+        for it in data:
+            if not isinstance(it, dict):
+                continue
+
+            name = (
+                it.get("name")
+                or it.get("fullName")
+                or it.get("playerName")
+                or it.get("title")
+                or ""
+            )
+
+            name = _normalize_player_name(str(name))
+            if not name:
+                continue
+
+            key = name.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+
+            out.append({
+                "name": name,
+                "score": _safe_int_val(it.get("goals") or it.get("score") or it.get("g") or 0),
+                "yellow_card": _safe_int_val(it.get("yellow") or it.get("yellow_card") or it.get("zk") or 0),
+                "red_card": _safe_int_val(it.get("red") or it.get("red_card") or it.get("ck") or 0),
+                "position": _safe_int_val(it.get("position") or it.get("pos") or 0),
+            })
+
+        return out
+
+    except Exception as e:
+        print("********* _parse_players_from_json_payload FAILED:", repr(e))
+        return []
 
 # ------------------------- Sportnet API (events) -------------------------
 
@@ -839,7 +1023,25 @@ def update_team(team_id):
         try:
             html = _fetch_html(player_list_scrap)
 
-            players = _parse_players_from_html(html)
+            players = []
+
+            looks_json = html.lstrip().startswith("{") or html.lstrip().startswith("[")
+
+            if looks_json:
+                try:
+                    payload = json.loads(html)
+                    players = _parse_players_from_json_payload(payload)
+                    current_app.logger.warning("PLAYERS: JSON mode parsed=%s", len(players))
+                except Exception:
+                    current_app.logger.exception("PLAYERS: JSON parse failed")
+
+            if not players:
+                players = _parse_players_from_dom(html)
+                current_app.logger.warning("PLAYERS: DOM parsed=%s", len(players))
+
+            if not players:
+                players = _parse_players_from_html(html)
+                current_app.logger.warning("PLAYERS: TABLE parsed=%s", len(players))
             if not players:
                 msg = "Players LineUp: nenašiel som žiadnych hráčov na stránke (alebo tabuľku)."
                 if _is_ajax():
@@ -847,7 +1049,14 @@ def update_team(team_id):
                 flash(msg, "warning")
                 return redirect(url_for("team.update_team", team_id=team_id))
 
-            Player.query.filter(Player.team_id == team_id).delete()
+            lineup = TeamLineup.query.filter_by(team_id=team_id).first()
+
+            if lineup:
+                TeamLineupSlot.query.filter_by(lineup_id=lineup.id).delete(synchronize_session=False)
+                db.session.flush()
+
+            Player.query.filter(Player.team_id == team_id).delete(synchronize_session=False)
+            db.session.flush()
 
             inserted = 0
             for p in players:
@@ -861,6 +1070,17 @@ def update_team(team_id):
                     team_id=team_id,
                 ))
                 inserted += 1
+                
+            db.session.flush()
+
+            ordered_players = (
+                Player.query
+                .filter_by(team_id=team_id)
+                .order_by(Player.position.asc(), Player.name.asc())
+                .all()
+            )
+
+            _ensure_lineup(team_id, ordered_players)
 
             db.session.commit()
             msg = f"Players LineUp: úspešne aktualizované ({inserted} hráčov)."

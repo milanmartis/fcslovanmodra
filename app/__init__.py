@@ -295,8 +295,9 @@ def create_app(config_class=None):
         if host.startswith("www."):
             return redirect(request.url.replace("://www.", "://", 1), code=301)
     
-        if request.headers.get("X-Forwarded-Proto", "http") != "https":
-            return redirect(request.url.replace("http://", "https://", 1), code=301)
+        if not app.debug:
+            if request.headers.get("X-Forwarded-Proto", "http") != "https":
+                return redirect(request.url.replace("http://", "https://", 1), code=301)
 
     @app.context_processor
     def sidebar_context():
