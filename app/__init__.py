@@ -10,6 +10,7 @@ from slugify import slugify as _slugify
 from datetime import timedelta, datetime, timezone
 from werkzeug.exceptions import NotFound
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import case
 import json
 import redis
 from socketio import RedisManager
@@ -304,7 +305,15 @@ def create_app(config_class=None):
         sponsors_q = (
             Sponsor.query
             .filter(Sponsor.kind.in_(["main", "partner"]))
-            .order_by(Sponsor.orderz.asc())
+            .order_by(
+                case(
+                    (Sponsor.kind == "main", 0),
+                    (Sponsor.kind == "partner", 1),
+                    else_=2,
+                ),
+                Sponsor.orderz.asc(),
+                Sponsor.id.asc(),
+            )
             .all()
         )
 

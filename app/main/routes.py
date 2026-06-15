@@ -4,6 +4,7 @@ from flask import send_from_directory, current_app
 from datetime import datetime, timezone
 from flask import render_template, request, Blueprint, flash
 from sqlalchemy.sql import func, and_
+from sqlalchemy import case
 from sqlalchemy.orm import subqueryload
 
 from app.aws_utils import make_sponsor_key, s3_presign
@@ -28,6 +29,35 @@ def roles_required(*roles):
     return deco
 
 main = Blueprint('main', __name__)
+
+
+def sidebar_sponsors():
+    sponsors = (
+        Sponsor.query
+        .filter(Sponsor.kind.in_(["main", "partner"]))
+        .order_by(
+            case(
+                (Sponsor.kind == "main", 0),
+                (Sponsor.kind == "partner", 1),
+                else_=2,
+            ),
+            Sponsor.orderz.asc(),
+            Sponsor.id.asc(),
+        )
+        .all()
+    )
+
+    data = []
+    for sponsor in sponsors:
+        key = make_sponsor_key(sponsor.image_file)
+        data.append({
+            "id": sponsor.id,
+            "name": sponsor.name or "",
+            "url": sponsor.url or "",
+            "kind": sponsor.kind or "",
+            "image_url": s3_presign(key),
+        })
+    return data
 
 
 def make_gallery_key(post_id: int, filename: str) -> str:
@@ -414,7 +444,7 @@ def sidebar_next_matches_fragment():
         next22=Next.next(),
         teamz=RightColumn.main_menu(),
         score_table=RightColumn.score_table(),
-        partners=Sponsor.query.order_by(Sponsor.id.asc()).all(),
+        partners=sidebar_sponsors(),
     )
 
 

@@ -4,11 +4,13 @@
 <center>
   <div class="content-section mt-6">
 
-    <div class="row col-12  d-flex justify-content-center">
-      <p class="btn-teams-position">Hlavní partneri</p>
-    </div>
-
     {% for s in main_sponsors %}
+      <div class="row col-12 d-flex justify-content-center">
+        <p class="btn-teams-position">
+          {% if loop.first %}Generálny sponzor{% else %}Hlavný sponzor{% endif %}
+        </p>
+      </div>
+
       <a class="sponsor-img d-block w-100"
          href="{{ s.url or '#' }}"
          target="_blank">
